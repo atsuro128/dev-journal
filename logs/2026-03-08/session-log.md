@@ -18,3 +18,10 @@
   - 各サブリポジトリで初期コミット
 - 判断: CLAUDE.mdと.claude/はroot-projectに残す（理由: Claude Codeの起動はroot-projectで行うため、実行基盤は統括側に置く）
 - 判断: project/はPermission Deniedによりコピー方式で対応（理由: IDEがディレクトリを掴んでいたため。元のproject/は後で手動削除）
+- 判断: expense-saasは実装コードのみとし、設計資料（deliverables, references, guide）はdev-journalに配置（理由: 資料更新コミットと実装コミットの混在による視認性低下を回避）
+- 判断: directory-structure.md, project-structure.mdはdev-journalに残す（理由: 設計資料の一部であり、ai-dev-frameworkの責務ではない）
+- 作業: ADR-001を修正（expense-saasの責務を実装コードのみに変更）
+- 作業: CLAUDE.mdのパス参照を修正（deliverables, references, guideをdev-journal配下に）
+- 作業: .claude/commands/ 全6ファイルのパス参照を新構成に更新
+- 作業: カレントディレクトリ誤認によるdev-journal内ファイル誤削除の復元（git checkoutで対応）
+- 作業: root-project, ai-dev-framework, dev-journalの安全タグ打ち（v0-before-restructuring）
