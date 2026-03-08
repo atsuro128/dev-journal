@@ -62,17 +62,16 @@
 - テンプレート（templates/）
 
 **expense-saas/**
-- アプリケーションコード（現 project/）
-- プロダクト固有の CLAUDE.md（ai-dev-framework のパターンを適用した実例）
-- 設計成果物（deliverables/）
-- 技術参照資料（references/）
-- プロダクト固有のルール・ADR（技術選定ADRなど）
-- ガイド（guide/）
+- アプリケーションコード（現 project/）— 実装コードのみ
 
 **dev-journal/**
 - progress-management/（進捗管理）
 - daily-reports/（作業日報）
 - logs/（セッションログ）
+- review-findings/（レビュー記録）
+- deliverables/（設計成果物）
+- references/（参照資料）
+- guide/（プロジェクト進行ガイド）
 
 ## 理由
 
@@ -84,6 +83,6 @@
 ## 影響・結果
 
 - **移行作業が発生する**: ファイルの移動、参照パスの更新、CLAUDE.mdの分割・再設計が必要
-- **CLAUDE.mdの二層構造**: ai-dev-framework側は「設計・テンプレート」、expense-saas側は「適用済みの実体」となる。フレームワークの変更がプロダクト側に自動反映されるわけではない点に注意
+- **CLAUDE.mdはroot-projectに一元管理**: Claude Codeの起動がroot-projectのため、実行基盤（CLAUDE.md, .claude/）は統括側に置く
 - **セッションログ・日報の運用変更**: コミット前のセッションログ記録先が dev-journal に移るため、運用フローの調整が必要
 - **既存のルール・参照パスの大幅な書き換え**: CLAUDE.md、rules/内の相互参照、directory-structure.md 等の更新が必要
