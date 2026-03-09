@@ -14,3 +14,5 @@
 - 判断: edit-scope-checkも警告のみにする（理由: CLAUDE.mdのルールで既に指示済み、ブロックは無限ループリスクがある）
 - 判断: commit-session-log-checkはexit 2のまま維持（理由: ブロック原因が1回の対応で解消する収束型のため無限ループにならない）
 - 判断: hook-warnings.logはdev-journalに格納しセッションログと一緒にコミットする（理由: dev-journalはポートフォリオとして公開するが本来は内部資料用であり、管理場所として適切）
+- 作業: ai-operations/フォルダを新設し、references/ai-operations.mdを移動、hooks-design.mdを作成
+- 判断: AI運用設計資料はreferencesとは別にai-operations/で管理する（理由: referencesが雑多になることを防ぎ、今後の拡充に備える）

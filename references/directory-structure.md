@@ -40,11 +40,13 @@ root-project/
 │  ├─ issue-template.md
 │  ├─ README-template.md
 │  └─ RFC-template.md
+├─ ai-operations/                    # AI運用設計
+│  ├─ overview.md                    # AI運用方針（全体）
+│  └─ hooks-design.md               # Hooks設計資料
 ├─ references/                       # 参照資料
 │  ├─ decisions/
 │  ├─ dev-commands.md
 │  ├─ directory-structure.md         # 本ファイル
-│  ├─ ai-operations.md
 │  ├─ glossary.md
 │  ├─ links.md
 │  ├─ project-structure.md           # project/ の構成
@@ -81,6 +83,7 @@ root-project/
 | ディレクトリ | 役割 |
 |---|---|
 | `CLAUDE.md` / `rules/` / `prompts/` / `.claude/commands/` | AIエージェント設定・規約 |
+| `ai-operations/` | AI運用設計（hooks設計、運用方針等） |
 | `references/` | 仕様・内部資料 |
 | `templates/` / `scripts/` / `deliverables/` | 作業補助・成果物 |
 | `progress-management/` | 進捗・課題管理 |
