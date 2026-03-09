@@ -13,3 +13,4 @@
 - 作業: edit-scope-check.py・stop-check.pyに警告ログ記録機能を追加（dev-journal/logs/hooks/hook-warnings.log）
 - 判断: edit-scope-checkも警告のみにする（理由: CLAUDE.mdのルールで既に指示済み、ブロックは無限ループリスクがある）
 - 判断: commit-session-log-checkはexit 2のまま維持（理由: ブロック原因が1回の対応で解消する収束型のため無限ループにならない）
+- 判断: hook-warnings.logはdev-journalに格納しセッションログと一緒にコミットする（理由: dev-journalはポートフォリオとして公開するが本来は内部資料用であり、管理場所として適切）
