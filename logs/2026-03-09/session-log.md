@@ -28,3 +28,6 @@
 - 作業: stop-check.pyをexit 2（ブロック）に変更、3回連続発火でループ回避する仕組みを追加
 - 判断: stop-checkカウンターファイルはtempディレクトリに配置する（理由: git管理領域に置くとカウンターファイル自体が未コミット変更として検知される循環が発生）
 - 作業: 全hookにWindows環境向けUTF-8エンコーディング指定を追加（文字化け対策）
+- 作業: stop-checkのブロックメッセージにcommit-message.md参照を追加
+- 判断: CLAUDE.mdのコミットルール参照をstop-hookで強制する（理由: CLAUDE.mdの指示だけでは読み飛ばされるため、hookでcommit-message.mdへの誘導を仕組み化）
+- 判断: セッションログ更新のhook強制は見送り（理由: commit-message.mdを読めばルールとして記載されており、hookの複雑化に見合わない）
