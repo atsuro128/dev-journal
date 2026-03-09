@@ -31,3 +31,5 @@
 - 作業: stop-checkのブロックメッセージにcommit-message.md参照を追加
 - 判断: CLAUDE.mdのコミットルール参照をstop-hookで強制する（理由: CLAUDE.mdの指示だけでは読み飛ばされるため、hookでcommit-message.mdへの誘導を仕組み化）
 - 判断: セッションログ更新のhook強制は見送り（理由: commit-message.mdを読めばルールとして記載されており、hookの複雑化に見合わない）
+- 作業: commit-session-log-checkを廃止し、settings.jsonから参照を削除
+- 作業: hooks-design.mdのstop-check記述を現状に合わせて更新（exit 2 + カウンター方式 + commit-message.md参照）
