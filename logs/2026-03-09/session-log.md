@@ -16,3 +16,15 @@
 - 判断: hook-warnings.logはdev-journalに格納しセッションログと一緒にコミットする（理由: dev-journalはポートフォリオとして公開するが本来は内部資料用であり、管理場所として適切）
 - 作業: ai-operations/フォルダを新設し、references/ai-operations.mdを移動、hooks-design.mdを作成
 - 判断: AI運用設計資料はreferencesとは別にai-operations/で管理する（理由: referencesが雑多になることを防ぎ、今後の拡充に備える）
+
+## 22:21 セッション
+- 作業: ディレクトリ構成資料をリポジトリ別に分割（references/directory-structures/ に4ファイル新設、旧ファイル削除）
+- 判断: expense-saasからdocs/を除外する（理由: ADR-001で「実装コードのみ」と定義、設計・運用ドキュメントはdev-journal管理）
+- 判断: api.md・runbook.mdはportfolio_project_steps.mdのStep 7に成果物として明記する（理由: ツリーから除外しても忘れないようにする）
+- 作業: check-structureコマンドの参照先を新構成に更新
+- 作業: commit-message.mdにディレクトリ移動ルールを追記（git操作前にコミット先リポジトリへ移動すること）
+- 判断: コミットルールはcommit-message.mdに一本化する（理由: CLAUDE.mdとの重複を解消）
+- 作業: CLAUDE.mdのコミット運用セクションを削除し、セクション1にcommit-message.md参照を集約
+- 作業: stop-check.pyをexit 2（ブロック）に変更、3回連続発火でループ回避する仕組みを追加
+- 判断: stop-checkカウンターファイルはtempディレクトリに配置する（理由: git管理領域に置くとカウンターファイル自体が未コミット変更として検知される循環が発生）
+- 作業: 全hookにWindows環境向けUTF-8エンコーディング指定を追加（文字化け対策）
