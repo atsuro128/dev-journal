@@ -223,10 +223,10 @@
 - `prompts/implementation.md`：実装フェーズで繰り返し使う指示文テンプレートを整備（Phase 2 着手前）
 - `prompts/refactor.md`：リファクタリング指示文テンプレートを整備（Phase 2〜3 中に整備）
 - `skills/release/`：リリース前チェックリスト・デプロイ手順・ロールバック手順を整備（Phase 4 着手前）
-- `project/docs/architecture.md`：Step 3 の成果をプロダクト向けドキュメントとして転記・整形（Phase 4）
-- `project/docs/api.md`：openapi.yaml の概要・利用方法・認証方式を記載（Phase 4）
-- `project/docs/tech-stack.md`：採用技術の一覧＋選定理由＋トレードオフを記載（Phase 4）
-- `project/docs/runbook.md`：デプロイ・障害対応・ヘルスチェック手順を記載（Phase 4）
+- `deliverables/docs/30_arch/architecture.md` を公開向けに整形（Phase 4）
+- `deliverables/docs/50_detail_design/api.md`：openapi.yaml の概要・利用方法・認証方式を記載（Phase 4）
+- `references/tech-stack-notes/`：選定理由サマリの整形（Phase 4）
+- `deliverables/docs/70_operations/runbook.md`：デプロイ・障害対応・ヘルスチェック手順を記載（Phase 4）
 
 **完了条件**
 - デプロイ済みで第三者が触れる
