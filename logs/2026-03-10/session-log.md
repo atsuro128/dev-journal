@@ -35,3 +35,4 @@
 ## 18:40 セッション
 - 作業: `.claude/commands/` の6コマンドを `.claude/skills/` 形式に移行（status, requirement, review, scope, daily-report, check-structure）
 - 判断: Skills形式を採用（理由: フロントマターでトリガー条件・ツール制限・隔離実行等を制御でき、Claudeの自動実行精度が向上するため）
+- 作業: 各スキルに高度な機能を適用（bash injection, context:fork, allowed-tools, disable-model-invocation, argument-hint）
