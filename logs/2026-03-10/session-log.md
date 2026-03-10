@@ -4,3 +4,5 @@
 - 作業: `deliverables/docs/20_domain/state_machine.md` を作成（状態遷移詳細設計、事前条件・事後条件、禁止遷移、再申請フロー、同時操作制御）
 - 作業: `references/decisions/20_domain-design-decisions.md` を作成（tenant_id冗長保持、集約境界、再申請方式、遷移メソッド設計、楽観的ロック、User-Tenant関連設計の6判断）
 - 作業: Step 1 完了条件を確認し「完了」に更新（完了日: 2026-03-09）。progress.md を Step 2 進行中に更新
+- 作業: `guide/portfolio_project_steps.md` に「各ステップ共通ワークフロー」セクションを追加（成果物作成→レビュー→指摘対応→完了の流れを明記）
+- 判断: レビュー工程が portfolio_project_steps.md に未記載だった問題を修正。ワークフロー・ステータス定義・参照先を追加し、progress.md と連動可能にした（理由: プロジェクトの地図となるガイドにレビュー工程が欠落していると、毎回「成果物作成→即完了」と判断してしまうため）
