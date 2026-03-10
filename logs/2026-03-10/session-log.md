@@ -9,3 +9,7 @@
 - 作業: AGENTS.md を root-project 直下に移動（codex が認識できるようにするため）。参照パスを全て root-project 基準に修正
 - 作業: review-procedure.md, re-review-procedure.md のパスを root-project 基準に修正
 - 作業: review-findings/open/, review-findings/pending-review/ ディレクトリを作成
+- 作業: `ai-dev-framework/rules/codex-review.md` を作成（Claude Code が codex にレビュー依頼を出すためのルール・トリガー条件・実行手順）
+- 作業: CLAUDE.md の標準作業手順と条件付き参照ルールに codex レビュー自動実行を追加
+- 作業: portfolio_project_steps.md のワークフローを更新（レビュー依頼 = Claude が codex を自動実行する形に修正）
+- 判断: Step 成果物コミット完了をトリガーに Claude Code が codex exec をバックグラウンド実行する運用を採用（理由: 人手を介さずレビューサイクルを回すため）

@@ -51,10 +51,10 @@
 
 | # | フェーズ | 担当 | 内容 |
 |---|---------|------|------|
-| 1 | 成果物作成 | Claude | 各ステップの成果物と【root-project 整備】を作成 |
-| 2 | レビュー依頼 | Claude | 成果物作成後、ユーザーに完了を報告し、codex へのレビュー依頼を促す |
-| 3 | レビュー実施 | ユーザー + codex | `ai-dev-framework/agents/review-procedure.md` に従いレビュー。指摘は `review-findings/open/` に起票 |
-| 4 | 指摘対応 | Claude | `review-findings/open/` の指摘に対応し、`pending-review/` に移動。再レビューは `agents/re-review-procedure.md` に従う |
+| 1 | 成果物作成 | Claude | 各ステップの成果物と【root-project 整備】を作成・コミット |
+| 2 | レビュー依頼 | Claude | 成果物コミット後、`ai-dev-framework/rules/codex-review.md` に従い codex を自動実行 |
+| 3 | レビュー実施 | ユーザー + codex | `ai-dev-framework/agents/review-procedure.md` に従いレビュー。指摘は `dev-journal/review-findings/open/` に起票 |
+| 4 | 指摘対応 | Claude | `dev-journal/review-findings/open/` の指摘に対応し、`pending-review/` に移動。再レビューは `agents/re-review-procedure.md` に従う |
 | 5 | 完了条件確認 | ユーザー | 各ステップの完了条件を全て満たしていることを確認 |
 | 6 | 完了 | Claude | `progress.md` のマイルストーン・タスクを更新 |
 
