@@ -1,6 +1,6 @@
 # ai-dev-framework ディレクトリ構成
 
-AI駆動開発フレームワーク。ルール体系・テンプレート・エージェント設計を管理する。
+AI駆動開発フレームワーク。テンプレート・エージェント設計・スクリプトを管理する。
 
 ```
 ai-dev-framework/
@@ -10,18 +10,6 @@ ai-dev-framework/
 │   └── review-procedure.md
 ├── prompts/                     # 指示文テンプレート
 │   └── README.md
-├── rules/                       # 規約・ポリシー
-│   ├── architecture.md
-│   ├── branching.md
-│   ├── coding-standards.md
-│   ├── commit-message.md
-│   ├── data-handling.md
-│   ├── issue-management.md
-│   ├── review-checklist.md
-│   ├── review-findings.md
-│   ├── security-policy.md
-│   ├── session-log.md
-│   └── testing.md
 ├── scripts/                     # 自動化スクリプト
 │   ├── db-reset.sh
 │   ├── lint.sh
@@ -32,3 +20,7 @@ ai-dev-framework/
     ├── README-template.md
     └── RFC-template.md
 ```
+
+## 備考
+
+- 旧 `rules/` ディレクトリは `root-project/.claude/rules/` に移行済み（ADR-002）

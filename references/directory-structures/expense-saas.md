@@ -5,6 +5,11 @@
 ```
 expense-saas/
 ├── README.md
+├── .gitignore
+├── .github/
+│   ├── PULL_REQUEST_TEMPLATE.md
+│   └── workflows/
+│       └── explanation.md
 ├── apps/
 │   ├── api/                     # バックエンド API (Rust / Actix Web)
 │   │   ├── Cargo.toml
@@ -18,6 +23,11 @@ expense-saas/
 │   └── ui/                      # 共有UIコンポーネント (shadcn/ui)
 ├── database/                    # SQLx マイグレーション / シード / ERD
 ├── docker/                      # ローカル開発用コンテナ
+├── docs/                        # 公開向けドキュメント（実装フェーズで配置）
+│   ├── api.md
+│   ├── architecture.md
+│   ├── runbook.md
+│   └── tech-stack.md
 ├── infra/                       # IaC（Terraform 等）
 ├── scripts/                     # プロダクト側スクリプト
 └── tests/                       # E2E / 統合テスト
@@ -28,4 +38,5 @@ expense-saas/
 - **`apps/api/`**: Rust プロジェクトのため `Cargo.toml` で管理。npm の管轄外。
 - **`packages/`**: フロントエンド (TypeScript) 側の共有パッケージのみを配置。DB アクセスは Rust 側で SQLx を使い `database/` のマイグレーションを参照する。
 - **`database/`**: SQLx のマイグレーションファイルを格納。Rust バックエンドから直接参照する。
-- **`docs/` を置かない理由**: ADR-001 により本リポジトリは実装コードのみを管理する。設計・運用ドキュメントは `dev-journal/deliverables/docs/` で管理する。
+- **`docs/`**: 公開向けドキュメント（architecture, api, runbook, tech-stack）を配置。設計プロセスのドキュメントは `dev-journal/deliverables/docs/` で管理する。
+- **`.github/`**: PR テンプレート・CI ワークフロー定義を配置。

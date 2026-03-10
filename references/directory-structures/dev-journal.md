@@ -15,16 +15,19 @@ dev-journal/
 │       ├── 00_goals.md
 │       ├── 01_glossary.md
 │       ├── 02_scope.md
-│       └── 10_requirements/          # 要件定義
-│           ├── requirements.md
-│           ├── usecases.md
-│           ├── workflow.md
-│           ├── rbac.md
-│           └── preliminary/          # 事前調査
-│               ├── 01_business-overview.md
-│               ├── 02_actor-analysis.md
-│               ├── 03_business-flow.md
-│               └── 04_business-rules.md
+│       ├── 10_requirements/          # 要件定義
+│       │   ├── requirements.md
+│       │   ├── usecases.md
+│       │   ├── workflow.md
+│       │   ├── rbac.md
+│       │   └── preliminary/          # 事前調査
+│       │       ├── 01_business-overview.md
+│       │       ├── 02_actor-analysis.md
+│       │       ├── 03_business-flow.md
+│       │       └── 04_business-rules.md
+│       └── 20_domain/               # ドメイン設計
+│           ├── domain_model.md
+│           └── state_machine.md
 ├── guide/                            # プロジェクト進行ガイド
 │   ├── implementation-guide.md
 │   └── portfolio_project_steps.md
@@ -46,5 +49,7 @@ dev-journal/
 │   ├── links.md
 │   └── tech-stack-notes/
 └── review-findings/                  # レビュー記録
-    └── resolved/
+    ├── open/                         # 未対応の指摘
+    ├── pending-review/               # 対応済み・再レビュー待ち
+    └── resolved/                     # 解消済みの指摘
 ```

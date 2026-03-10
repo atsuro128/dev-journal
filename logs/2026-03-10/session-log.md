@@ -60,3 +60,10 @@
 
 ## 21:01 セッション
 - 作業: 2026-03-10 日報を作成（`dev-journal/daily-reports/2026-03-10.md`）。本日の全リポジトリコミット履歴・セッションログ・progress.md から自動集約
+
+## 21:10 セッション
+- 作業: ディレクトリ構成ドキュメント4ファイルを実際のファイル構成に合わせて最新化（`references/directory-structures/`）
+  - root-project.md: `.claude/rules/`（5ファイル）、`.claude/skills/`（10スキル）、`AGENTS.md` を追加。gitignore 対象（memory/、settings.local.json）は除外
+  - ai-dev-framework.md: 実在しない `rules/` を削除、移行済みの旨を備考に記載
+  - expense-saas.md: `.github/`、`.gitignore`、`docs/`（4ファイル）を追加。docs の説明を実態に合わせて修正
+  - dev-journal.md: `20_domain/` を追加、`review-findings/` に `open/`・`pending-review/` を明記
