@@ -21,3 +21,7 @@
   - 020: T1 提出の事前条件に Approver 0人チェック（WFL-013）を追加、ドメインエラーに NoApproverInTenant を追加（state_machine.md, domain_model.md）
   - 021: ATT-011 を不変条件（所有権・権限）・責務マッピング（ハンドラ層）に追加（domain_model.md）
 - 作業: 4件の指摘ファイルを review-findings/open/ → pending-review/ に移動
+- 作業: ミス発生時のふりかえりルールを作成（`ai-dev-framework/rules/incident-review.md`）
+- 作業: 教訓集を初期化（`.claude/memory/lessons-learned.md`）、初回教訓としてセッションログ漏れの根本原因と対策を記録
+- 作業: `commit-message.md` にコミット後検証ステップ・絶対パス使用ルールを追加
+- 判断: ミスの再発防止は「注意する」ではなく「手順への検証ステップ組み込み」で対処する方針を採用（理由: 人間の注意力に依存する対策はセッションを跨ぐと効果がないため）
