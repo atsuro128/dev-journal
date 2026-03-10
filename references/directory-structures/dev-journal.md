@@ -26,7 +26,6 @@ dev-journal/
 │               ├── 03_business-flow.md
 │               └── 04_business-rules.md
 ├── guide/                            # プロジェクト進行ガイド
-│   ├── github.md
 │   ├── implementation-guide.md
 │   └── portfolio_project_steps.md
 ├── logs/                             # セッションログ（日付別）

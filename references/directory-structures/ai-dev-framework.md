@@ -16,7 +16,6 @@ ai-dev-framework/
 │   ├── coding-standards.md
 │   ├── commit-message.md
 │   ├── data-handling.md
-│   ├── github.md
 │   ├── issue-management.md
 │   ├── review-checklist.md
 │   ├── review-findings.md
