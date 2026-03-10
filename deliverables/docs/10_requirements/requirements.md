@@ -119,7 +119,7 @@
 
 | ルールID | ルール |
 |---------|--------|
-| TNT-001 | 全テーブルに tenant_id カラムが必須 |
+| TNT-001 | テナント境界を持つ業務テーブルに tenant_id カラムが必須（User テーブルは TenantMembership を介して関連するため例外） |
 | TNT-002 | 全クエリに WHERE tenant_id = ? が必須 |
 | TNT-003 | tenant_id の付与・検証はリポジトリ層で強制 |
 | TNT-004 | PostgreSQL RLS でアプリ層の保証を二重化 |

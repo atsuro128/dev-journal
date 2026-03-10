@@ -64,6 +64,7 @@ stateDiagram-v2
 |---|------|-------------|---------|
 | 1 | status == draft | InvalidStateTransition | WFL-002 |
 | 2 | items.count ≧ 1 | EmptyReportSubmission | RPT-014 |
+| 3 | 同一テナントに Approver ロールのメンバーが1人以上存在する | NoApproverInTenant | WFL-013 |
 
 **事後処理**:
 

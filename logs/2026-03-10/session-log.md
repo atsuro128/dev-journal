@@ -13,3 +13,11 @@
 - 作業: CLAUDE.md の標準作業手順と条件付き参照ルールに codex レビュー自動実行を追加
 - 作業: portfolio_project_steps.md のワークフローを更新（レビュー依頼 = Claude が codex を自動実行する形に修正）
 - 判断: Step 成果物コミット完了をトリガーに Claude Code が codex exec をバックグラウンド実行する運用を採用（理由: 人手を介さずレビューサイクルを回すため）
+
+## 15:00 セッション
+- 作業: Step 2 レビュー指摘対応（018〜021の4件すべて妥当と判断し修正）
+  - 018: TNT-001 文言を「テナント境界を持つ業務テーブル」に修正、User の例外を明記（requirements.md, domain_model.md）
+  - 019: ExpenseItem / Attachment に deleted_at を追加（domain_model.md ER図・定義テーブル）
+  - 020: T1 提出の事前条件に Approver 0人チェック（WFL-013）を追加、ドメインエラーに NoApproverInTenant を追加（state_machine.md, domain_model.md）
+  - 021: ATT-011 を不変条件（所有権・権限）・責務マッピング（ハンドラ層）に追加（domain_model.md）
+- 作業: 4件の指摘ファイルを review-findings/open/ → pending-review/ に移動
