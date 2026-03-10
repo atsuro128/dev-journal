@@ -31,3 +31,7 @@
 ## 15:34 セッション
 - 作業: ルール・ガイド類の整理（不要ファイル削除、ディレクトリ構成資料の更新）
 - 作業: リポジトリの公開設定を見直し
+
+## 18:40 セッション
+- 作業: `.claude/commands/` の6コマンドを `.claude/skills/` 形式に移行（status, requirement, review, scope, daily-report, check-structure）
+- 判断: Skills形式を採用（理由: フロントマターでトリガー条件・ツール制限・隔離実行等を制御でき、Claudeの自動実行精度が向上するため）
