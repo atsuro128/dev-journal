@@ -36,3 +36,12 @@
 - 作業: `.claude/commands/` の6コマンドを `.claude/skills/` 形式に移行（status, requirement, review, scope, daily-report, check-structure）
 - 判断: Skills形式を採用（理由: フロントマターでトリガー条件・ツール制限・隔離実行等を制御でき、Claudeの自動実行精度が向上するため）
 - 作業: 各スキルに高度な機能を適用（bash injection, context:fork, allowed-tools, disable-model-invocation, argument-hint）
+
+## 19:30 セッション
+- 作業: `ai-dev-framework/rules/` を完全廃止し、`.claude/rules/` と `.claude/skills/` に役割分担して移行
+  - `.claude/rules/`（ファイルスコープ指針 x 4）: coding-standards, architecture, testing, security-policy — paths frontmatter で expense-saas 配下のファイルを触る時だけ自動ロード
+  - `.claude/skills/`（プロセス系 x 6）: /issue, /review-findings, /incident-review, /codex-review, /session-log, /commit — 状況トリガーで発火
+  - 未使用ファイル削除: review-checklist.md, branching.md, data-handling.md（中身空）
+- 作業: CLAUDE.md を更新（セクション3・4統合、rules参照削除、番号振り直し）
+- 作業: AGENTS.md, stop-check.py, /daily-report, /review の参照パスを更新
+- 判断: `.claude/rules/` はファイルスコープ（paths globでトリガー）、`.claude/skills/` はプロセス・状況トリガーという役割分担を採用（理由: rules の paths は glob パターンのみ対応で状況条件は表現できないため、プロセス系は description ベースの skills が適切）
