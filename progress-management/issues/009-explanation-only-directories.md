@@ -36,7 +36,7 @@ project-management
 
 ## 提案
 - `references/decisions/` → Step 2〜3 の仕様確定時に ADR を作成（issue-003 と関連）
-- `references/tech-stack-notes/` → Step 1 完了時に技術選定メモを作成
+- `references/tech-stack-notes/` → Step 3 実施時に技術選定メモを作成
 - `project/` 配下 → 該当ステップの実装時に対応（別途管理不要）
 
 ## 解決内容
