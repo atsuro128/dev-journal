@@ -35,6 +35,8 @@
 
 ```
 1. 成果物作成（Claude）
+   ├─ 作成中: 重大な問題 → 即 issue 起票（発見経緯: proactive）
+   └─ コミット前: 懸念トリアージ → 高影響度は issue 昇格
    ↓
 2. レビュー依頼
    ↓
@@ -51,7 +53,7 @@
 
 | # | フェーズ | 担当 | 内容 |
 |---|---------|------|------|
-| 1 | 成果物作成 | Claude | 各ステップの成果物と【root-project 整備】を作成・コミット |
+| 1 | 成果物作成 | Claude | 各ステップの成果物と【root-project 整備】を作成・コミット。Issue 発掘規約に従い、問題の即時起票・懸念の記録とトリアージを実施 |
 | 2 | レビュー依頼 | Claude | 成果物コミット後、`ai-dev-framework/rules/codex-review.md` に従い codex を自動実行 |
 | 3 | レビュー実施 | ユーザー + codex | `ai-dev-framework/agents/review-procedure.md` に従いレビュー。指摘は `dev-journal/review-findings/open/` に起票 |
 | 4 | 指摘対応 | Claude | `dev-journal/review-findings/open/` の指摘に対応し、`pending-review/` に移動。再レビューは `agents/re-review-procedure.md` に従う |

@@ -49,3 +49,11 @@
 ## 20:25 セッション
 - 作業: CLAUDE.md をベストプラクティスに基づいて整理（48行→19行）。ルール性の高い記述を `.claude/rules/workflow.md` に分離し、CLAUDE.md はプロジェクトの「地図」（技術スタック・リポジトリ構成・参照先）のみに絞った
 - 判断: CLAUDE.md にはClaude が自発的にやらないことだけ書き、自明な指示（「目的を理解する」「方針を整理する」等）は削除する方針を採用（理由: 公式ベストプラクティスで200行以内・具体的・自明でないことが推奨されており、冗長な指示は遵守率を下げるため）
+
+## 21:00 セッション
+- 作業: Issue 発掘の能動的ワークフロー組み込み（Option C）を実装。4ファイルを変更
+  - `ai-dev-framework/templates/issue-template.md`: 「発見経緯」フィールド追加（proactive / review / escalation / user-report の4分類）
+  - `.claude/rules/workflow.md`: 「Issue 発掘規約」セクション追加（即時起票条件3つ、懸念セクション記録基準3つ、テーブル形式、コミット前トリアージ義務）
+  - `.claude/skills/issue/SKILL.md`: 「発見経緯の分類」テーブルと「成果物作成中の即時起票フロー」を追加
+  - `dev-journal/guide/portfolio_project_steps.md`: 共通ワークフローのフロー図にブランチ追加、フェーズ1テーブルの内容に Issue 発掘を追記
+- 判断: フェーズ番号を増やさずフェーズ1内に Issue 発掘を組み込む方式を採用（理由: progress.md のステータス体系に影響させないため）
