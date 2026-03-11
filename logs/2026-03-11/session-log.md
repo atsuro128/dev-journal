@@ -18,3 +18,8 @@
 - 原因: marketplace.visualstudio.com が同一IP（150.171.73.16）を複数回返し、ipset v7.17 で `-exist` フラグが期待通り動作せず重複エラーが発生
 - 対応1: DNS結果を `sort -u` で重複排除し、`ipset add` に `|| true` を安全策として追加
 - 対応2: devcontainer.json の postStartCommand 内の em dash（U+2014）を ASCII `--` に変更（非ASCII文字によるシェルパース問題を排除）
+
+## 19:21 セッション
+- 作業: Dev Container 環境の動作確認（DEVCONTAINER=true、各ツールバージョン、サブリポジトリのリモート設定を確認）
+- 修正: コンテナ内のワークスペースパスを `/workspace` から `/root-project` に変更（Dockerfile・devcontainer.json）
+- 判断: マウント先パスをリポジトリ名と一致させる（理由: `/workspace` は汎用的すぎてプロジェクトの実態と乖離しており、`root-project` に合わせることで一貫性を保つ）
