@@ -258,7 +258,7 @@
 **目的**：動くものを出し、継続的に改善できる形にする
 
 **実装フェーズ構成**
-- Phase 1（基盤）：プロジェクト初期設定・DBマイグレーション・認証API・CI基盤（lint / test / build）
+- Phase 1（基盤）：プロジェクト初期設定・Docker Compose（ローカル PostgreSQL）・DBマイグレーション・認証API・CI基盤（lint / test / build）
 - Phase 2（コア機能）：RBACミドルウェア・経費レポートCRUD・状態遷移・添付ファイル・承認フロー・フロントエンド主要画面
 - Phase 3（付随機能）：監査ログ・通知・CSVエクスポート・招待フロー・メンバー管理
 - Phase 4（デプロイ・仕上げ）：AWSインフラ構築（Terraform or CDK）・staging/production デプロイ・ヘルスチェック・CloudWatchアラート
@@ -270,6 +270,7 @@
 - README（日英）、運用メモ（ログ/ヘルスチェック/アラート方針）
 
 **【root-project 整備】**
+- `docker-compose.yml`：ローカル開発用の PostgreSQL サービス定義（Dev Container には DB クライアントのみ含まれるため、DB サーバーは Docker Compose で提供する）（Phase 1 着手時に作成）
 - `rules/branching.md`：ブランチ戦略（main / develop / feature / hotfix）を確定・記載（Phase 1 着手前に完了）
 - `rules/commit-message.md`：Conventional Commits 規約を詳細化（型の一覧・スコープ例・NG例）（Phase 1 着手前に完了）
 - `scripts/setup.sh`：ローカル開発環境のセットアップ手順をスクリプト化（Phase 1 完了後）
