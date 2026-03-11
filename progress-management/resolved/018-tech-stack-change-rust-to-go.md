@@ -50,7 +50,7 @@ Step 3（アーキテクチャ設計）
 ---
 
 ## 解決内容
-<!-- pending-review へ移動する前に記入 -->
+全ドキュメント・設定ファイルのバックエンド技術スタック記述を Rust から Go に更新。具体的なフレームワーク・ライブラリ選定（Echo/Chi, sqlc/pgx 等）は Step 3 ADR に委ねる方針。変更対象: CLAUDE.md, AGENTS.md, DevContainer (Dockerfile/devcontainer.json/init-firewall.sh), コーディング規約, セキュリティポリシー, テスト方針, settings.json, 実装手順書, 開発コマンド, ディレクトリ構成, 参考リンク集, 用語集, PROJECT_SUMMARY.md, README テンプレート, expense-saas/.gitignore, Cargo.toml 削除。
 
 ## 解決日
-<!-- YYYY-MM-DD -->
+2026-03-11

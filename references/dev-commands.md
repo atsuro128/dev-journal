@@ -7,10 +7,11 @@ docker compose up -d
 
 ## Backend
 ```
-cargo build
-cargo test
-cargo clippy
-cargo fmt --check
+go build ./...
+go test ./...
+go vet ./...
+golangci-lint run
+gofmt -l .
 ```
 
 ## Frontend
@@ -23,5 +24,5 @@ npm run build
 
 ## マイグレーション
 ```
-sqlx migrate run
+# マイグレーションツールは Step 3 で選定（golang-migrate / goose 等）
 ```

@@ -55,7 +55,7 @@
 | RLS | Row Level Security。PostgreSQL の行レベルセキュリティ機能。テナント分離のDB層保証として使用 |
 | JWT | JSON Web Token。RS256 アルゴリズムで署名。アクセストークン（15分）＋リフレッシュトークン（7日） |
 | Argon2id | パスワードハッシュアルゴリズム。本プロジェクトの標準 |
-| SQLx | Rust のデータベースライブラリ。コンパイル時 SQL 検証機能を持つ |
+| DB アクセスライブラリ | データベースアクセスライブラリ。具体的なツールは Step 3 で選定（sqlc / pgx 等） |
 | 署名付きURL | Presigned URL。S3 上のファイルに一時的なアクセスを許可する URL。発行前に認可チェック必須 |
 | 監査ログ | Audit Log。誰が・いつ・何を変更したかの記録。INSERT ONLY（更新・削除不可） |
 | カーソルベースページネーション | Cursor-based Pagination。`?cursor=xxx&limit=20` 形式のページネーション |

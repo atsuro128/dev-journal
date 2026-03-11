@@ -158,13 +158,13 @@
 - `deliverables/docs/30_arch/architecture.md`（システム構成）
 - `deliverables/docs/30_arch/diagrams.md`（構成図・データフロー図）
 - `deliverables/docs/30_arch/adr/`（ADR：技術選定理由のメモ集）
-  - `0001-tech-stack.md`（Rust / React / PostgreSQL / SQLx 等の選定理由）
+  - `0001-tech-stack.md`（Go / React / PostgreSQL 等の選定理由）
   - `0002-multi-tenant.md`（テナント分離方式：shared DB + tenant_id）
   - `0003-rls-tenant-isolation.md`（PostgreSQL RLS によるアプリ層との二重保証）
   - `0004-infra.md`（AWS ECS Fargate / RDS / S3 / Terraform 等の選定理由）
 
 **このフェーズで決める代表例**
-- フロント/バックエンド構成、DB、ORM（SQLx）、認証方式（JWT RS256）、ファイルストレージ（S3）、デプロイ先（AWS ECS Fargate）
+- フロント/バックエンド構成、DB、DBアクセスライブラリ、認証方式（JWT RS256）、ファイルストレージ（S3）、デプロイ先（AWS ECS Fargate）
 - PostgreSQL RLS の適用方針（アプリ層の WHERE tenant_id との二重保証）
 - IaC ツール選定（Terraform or CDK）
 - ログ/ヘルスチェック/監視の方針（最低限）
@@ -209,12 +209,12 @@
 - `deliverables/docs/50_detail_design/security.md`（セキュリティ設計）
   - レート制限（認証済み: 100 req/min/user、未認証: 20 req/min/IP）
   - CORS方針、セキュリティヘッダー（HSTS, X-Content-Type-Options 等）
-  - `cargo audit` / `npm audit` のCI組み込み方針
+  - `govulncheck` / `npm audit` のCI組み込み方針
 
 **【root-project 整備】**
-- `rules/coding-standards.md`：コーディング規約を詳細化（Rust: snake_case・unwrap禁止等 / TypeScript: strict mode・any禁止等）
+- `rules/coding-standards.md`：コーディング規約を詳細化（Go: gofmt準拠・panic禁止等 / TypeScript: strict mode・any禁止等）
 - `rules/data-handling.md`：tenant_id 強制・RLS・監査ログ INSERT ONLY・署名付きURL発行前チェック等のデータ取り扱いルールを記載
-- `skills/backend/`：バックエンド実装チェックリスト（tenant_id 漏れ・エラーハンドリング・unwrap 使用箇所等）を整備
+- `skills/backend/`：バックエンド実装チェックリスト（tenant_id 漏れ・エラーハンドリング・panic 使用箇所等）を整備
 - `skills/db/`：DBスキーマ設計・インデックス方針・マイグレーション手順の観点を整備
 - `skills/security/`：認証認可チェック・セキュリティヘッダー・CORS・MIME バリデーション等のレビュー観点を整備
 
@@ -234,8 +234,8 @@
 - CI（GitHub Actions 等）で自動実行
 
 **テストレベルと対象ツール**
-- 単体テスト：Rust 標準テスト（ドメインロジック・状態遷移・バリデーション）
-- 統合テスト：Rust + テスト用DB（APIエンドポイント・認証認可・DB操作）
+- 単体テスト：Go 標準テスト（ドメインロジック・状態遷移・バリデーション）
+- 統合テスト：Go + テスト用DB（APIエンドポイント・認証認可・DB操作）
 - E2Eテスト：Playwright（申請〜承認〜支払いの一連フロー）
 
 **ポートフォリオで評価が上がるテスト（最優先）**
@@ -274,7 +274,7 @@
 - `rules/branching.md`：ブランチ戦略（main / develop / feature / hotfix）を確定・記載（Phase 1 着手前に完了）
 - `rules/commit-message.md`：Conventional Commits 規約を詳細化（型の一覧・スコープ例・NG例）（Phase 1 着手前に完了）
 - `scripts/setup.sh`：ローカル開発環境のセットアップ手順をスクリプト化（Phase 1 完了後）
-- `scripts/lint.sh`：`cargo clippy` / `npm run lint` をまとめた lint スクリプト実装（Phase 1 完了後）
+- `scripts/lint.sh`：`golangci-lint run` / `npm run lint` をまとめた lint スクリプト実装（Phase 1 完了後）
 - `scripts/db-reset.sh`：DB リセット・シード投入スクリプト実装（Phase 1 完了後）
 - `prompts/implementation.md`：実装フェーズで繰り返し使う指示文テンプレートを整備（Phase 2 着手前）
 - `prompts/refactor.md`：リファクタリング指示文テンプレートを整備（Phase 2〜3 中に整備）
@@ -311,7 +311,7 @@ deliverables/
       architecture.md
       diagrams.md
       adr/
-        0001-tech-stack.md          # Rust / React / PostgreSQL / SQLx 選定理由
+        0001-tech-stack.md          # Go / React / PostgreSQL 選定理由
         0002-multi-tenant.md        # shared DB + tenant_id 方式の選定理由
         0003-rls-tenant-isolation.md # PostgreSQL RLS による二重保証の設計判断
         0004-infra.md               # AWS ECS Fargate / Terraform 等の選定理由
@@ -323,7 +323,7 @@ deliverables/
       openapi.yaml
       authz.md               # RBAC + テナント分離 + RLS設定 + 通知・監査ログの権限
       files.md               # 署名付きURL・MIME バリデーション・発行前認可チェック
-      security.md            # レート制限・CORS・セキュリティヘッダー・cargo audit 方針
+      security.md            # レート制限・CORS・セキュリティヘッダー・govulncheck 方針
     60_test/
       test_strategy.md       # 単体 / 統合 / E2E (Playwright) の層別方針
       test_cases.md

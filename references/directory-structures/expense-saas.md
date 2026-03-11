@@ -11,9 +11,10 @@ expense-saas/
 │   └── workflows/
 │       └── explanation.md
 ├── apps/
-│   ├── api/                     # バックエンド API (Rust / Actix Web)
-│   │   ├── Cargo.toml
-│   │   └── src/
+│   ├── api/                     # バックエンド API (Go)
+│   │   ├── go.mod
+│   │   ├── cmd/
+│   │   └── internal/
 │   └── web/                     # フロントエンド (React / TypeScript / Vite)
 │       ├── package.json
 │       └── src/
@@ -21,7 +22,7 @@ expense-saas/
 │   ├── config/                  # ESLint / TSConfig 等の共通設定
 │   ├── types/                   # TypeScript 型定義
 │   └── ui/                      # 共有UIコンポーネント (shadcn/ui)
-├── database/                    # SQLx マイグレーション / シード / ERD
+├── database/                    # マイグレーション / シード / ERD
 ├── docker/                      # ローカル開発用コンテナ
 ├── docs/                        # 公開向けドキュメント（実装フェーズで配置）
 │   ├── api.md
@@ -35,8 +36,8 @@ expense-saas/
 
 ## 構成の判断根拠
 
-- **`apps/api/`**: Rust プロジェクトのため `Cargo.toml` で管理。npm の管轄外。
-- **`packages/`**: フロントエンド (TypeScript) 側の共有パッケージのみを配置。DB アクセスは Rust 側で SQLx を使い `database/` のマイグレーションを参照する。
-- **`database/`**: SQLx のマイグレーションファイルを格納。Rust バックエンドから直接参照する。
+- **`apps/api/`**: Go プロジェクトのため `go.mod` で管理。npm の管轄外。
+- **`packages/`**: フロントエンド (TypeScript) 側の共有パッケージのみを配置。DB アクセスは Go 側で `database/` のマイグレーションを参照する。
+- **`database/`**: マイグレーションファイルを格納。Go バックエンドから参照する。
 - **`docs/`**: 公開向けドキュメント（architecture, api, runbook, tech-stack）を配置。設計プロセスのドキュメントは `dev-journal/deliverables/docs/` で管理する。
 - **`.github/`**: PR テンプレート・CI ワークフロー定義を配置。

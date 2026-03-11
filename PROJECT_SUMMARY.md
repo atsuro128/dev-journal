@@ -40,10 +40,10 @@
 
 | レイヤー | 技術 | 選定理由 |
 |----------|------|----------|
-| Backend | Rust (Actix Web) | 型安全性・メモリ安全性による堅牢な API 実装。コンパイル時エラー検出でランタイムバグを最小化。パフォーマンスの高さも利点 |
+| Backend | Go | シンプルな言語仕様による高い生産性。SaaS 企業での採用率の高さ、充実した標準ライブラリ、コンパイル速度の速さが利点 |
 | Frontend | React (TypeScript) | コンポーネント設計の柔軟性、エコシステムの成熟度、TypeScript による型安全なフロント開発 |
 | DB | PostgreSQL | JSONB 型による柔軟なデータ格納、Row Level Security (RLS) によるテナント分離の二重保証が可能、実務での採用実績の多さ |
-| ORM | SQLx or Diesel | コンパイル時 SQL 検証（SQLx）またはタイプセーフなクエリビルダ（Diesel） |
+| DB Access | Step 3 で選定（sqlc / pgx 等） | 型安全なクエリ生成またはシンプルなDBドライバ |
 | Infra | AWS (ECS Fargate / RDS / S3 / CloudFront) | コンテナベースのデプロイで運用負荷を軽減、マネージドサービス活用 |
 | CI/CD | GitHub Actions | GitHub との統合、ワークフロー定義の容易さ |
 | 認証 | JWT (RS256) | ステートレスな認証、マイクロサービス拡張時にも対応可能 |
@@ -404,8 +404,8 @@ draft → submitted → approved → paid
 
 | レベル | ツール | 対象 | カバレッジ目標 |
 |--------|--------|------|---------------|
-| 単体テスト | Rust 標準テスト | ドメインロジック（状態遷移、金額計算、バリデーション） | 90%+ |
-| 統合テスト | Rust + テスト用DB | API エンドポイント、認証・認可、DB 操作 | 主要パス網羅 |
+| 単体テスト | Go 標準テスト | ドメインロジック（状態遷移、金額計算、バリデーション） | 90%+ |
+| 統合テスト | Go + テスト用DB | API エンドポイント、認証・認可、DB 操作 | 主要パス網羅 |
 | E2E テスト | Playwright | ユーザーシナリオ（申請〜承認〜支払の一連フロー） | 主要フロー網羅 |
 
 ### 重点テスト項目
@@ -499,7 +499,7 @@ draft → submitted → approved → paid
 ## 開発フェーズ
 
 ### Phase 1: 基盤構築
-- プロジェクト初期設定（Rust + React + Docker Compose）
+- プロジェクト初期設定（Go + React + Docker Compose）
 - DB マイグレーション（全テーブル作成）
 - 認証 API（signup / login / refresh / logout）
 - テナント作成・基本 CRUD
@@ -535,12 +535,12 @@ draft → submitted → approved → paid
 
 - 認証: JWT (RS256) の検証、リフレッシュトークンローテーション
 - 認可: 全 API で Tenant 所属とロールをチェック（ミドルウェア層）
-- 入力検証: リクエストボディのバリデーション（型・範囲・長さ）、SQLx のパラメタライズドクエリで SQL インジェクション防止
+- 入力検証: リクエストボディのバリデーション（型・範囲・長さ）、パラメタライズドクエリで SQL インジェクション防止
 - ファイルアップロード: MIME タイプ・拡張子の二重チェック、サイズ制限 (5MB)、ストレージパスに `tenant_id` を含める
 - CORS: フロントエンドドメインのみ許可
 - レート制限: API Gateway or ミドルウェアで実施
 - セキュリティヘッダー: HSTS, X-Content-Type-Options, X-Frame-Options
-- 依存関係監査: `cargo audit` / `npm audit` を CI に組み込み
+- 依存関係監査: `govulncheck` / `npm audit` を CI に組み込み
 
 ---
 

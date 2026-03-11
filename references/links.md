@@ -2,15 +2,15 @@
 
 技術スタックの公式ドキュメント・参考資料。
 
-## Backend (Rust)
+## Backend (Go)
 
-- [Rust 公式ドキュメント](https://doc.rust-lang.org/book/)
-- [Actix Web](https://actix.rs/docs)
-- [SQLx](https://github.com/launchbadge/sqlx)
-- [jsonwebtoken (JWT)](https://github.com/Keats/jsonwebtoken)
-- [argon2 (パスワードハッシュ)](https://github.com/RustCrypto/password-hashes/tree/master/argon2)
-- [tracing (構造化ログ)](https://docs.rs/tracing/latest/tracing/)
-- [cargo audit](https://github.com/rustsec/rustsec/tree/main/cargo-audit)
+- [Go 公式ドキュメント](https://go.dev/doc/)
+- [Effective Go](https://go.dev/doc/effective_go)
+- [golang-jwt (JWT)](https://github.com/golang-jwt/jwt)
+- [argon2 (パスワードハッシュ)](https://github.com/matthewhartstonge/argon2)
+- [log/slog (構造化ログ)](https://pkg.go.dev/log/slog)
+- [govulncheck (脆弱性チェック)](https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck)
+- [golangci-lint](https://golangci-lint.run/)
 
 ## Frontend (React / TypeScript)
 
