@@ -29,3 +29,13 @@
 - 議論: 技術スタックの見直し。Rust 未経験 + 1ヶ月目標 + 自社開発 SaaS 狙いの観点から、Rust → Go への変更を検討
 - 判断: バックエンドを Rust から Go に変更する方針で合意（理由: 学習コスト、転職市場の需要、ポートフォリオ完成リスクの総合判断）
 - 作業: Issue #018（tech-stack-change-rust-to-go）を起票
+
+## 23:00 セッション
+- 作業: Issue #018 の実装 — 全リポジトリのバックエンド技術スタック記述を Rust から Go に一括変更
+- 作業: root-project — CLAUDE.md, AGENTS.md, Dockerfile（Go 1.24.1 + golangci-lint）, devcontainer.json, init-firewall.sh（proxy.golang.org）, coding-standards.md, security-policy.md, testing.md, settings.json を更新
+- 作業: dev-journal — portfolio_project_steps.md, implementation-guide.md（全面書き換え）, dev-commands.md, directory-structures/expense-saas.md, links.md, 01_glossary.md, PROJECT_SUMMARY.md を更新。Issue #018 を resolved/ に移動
+- 作業: ai-dev-framework — AGENTS.md, README-template.md を更新
+- 作業: expense-saas — .gitignore を Go 向けに変更、Cargo.toml を削除
+- 作業: stop-check hook のブロック時にもログファイルへ記録するよう修正
+- 作業: Stop hook の動作調査 — hook は正常に発火・ブロックしていることを確認。ループ回避スキップが多発していた原因はブロック後にコミットアクションが取られなかったため
+- 判断: 具体的なフレームワーク・ライブラリ選定（Echo/Chi, sqlc/pgx 等）は Step 3 ADR に委ねる（理由: このIssueは「Go への汎用的な更新」がスコープであり、詳細選定は別ステップの責務）
