@@ -12,3 +12,9 @@
 - 修正: VSCode で devcontainer を開く際に postStartCommand (init-firewall.sh) がエラーで失敗する問題を修正
 - 原因: 複数ドメインが同一IPに解決される場合、`ipset add` が重複エラーを出し、`set -e` でスクリプトが即終了していた
 - 対応: `ipset add` に `-exist` フラグを追加し、重複時にエラーにならないよう修正（2箇所）
+
+## 18:45 セッション
+- 修正: 前回の `-exist` フラグ追加だけでは解決しなかった postStartCommand エラーの再修正
+- 原因: marketplace.visualstudio.com が同一IP（150.171.73.16）を複数回返し、ipset v7.17 で `-exist` フラグが期待通り動作せず重複エラーが発生
+- 対応1: DNS結果を `sort -u` で重複排除し、`ipset add` に `|| true` を安全策として追加
+- 対応2: devcontainer.json の postStartCommand 内の em dash（U+2014）を ASCII `--` に変更（非ASCII文字によるシェルパース問題を排除）
