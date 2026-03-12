@@ -44,3 +44,10 @@
   - `ai-operations/overview.md`: 「ポートフォリオ」→「プロジェクト」
 - 備考: コミット履歴の該当語句（4件）は公開時に squash で対応予定
 - 追加作業: `portfolio_project_steps.md` → `project_steps.md` にリネーム。参照5箇所（CLAUDE.md, AGENTS.md, review-procedure.md, Issue #005, directory-structures/dev-journal.md）を更新
+
+## 16:09 セッション
+- 作業: Dev Container ビルドエラーの修正
+- 原因: `.gitconfig` を `/home/node/.gitconfig` に直接バインドマウントしていたため、`postCreateCommand` の `git config --global` が atomic write（削除→再作成）でマウントポイントと衝突し `Device or resource busy` エラーが発生
+- 対応:
+  - マウント先を `/home/node/.gitconfig.host`（読み取り専用）に変更
+  - `postCreateCommand` 先頭で `.gitconfig.host` → `.gitconfig` にコピーしてから `git config` を実行
