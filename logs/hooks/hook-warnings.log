@@ -57,3 +57,8 @@
 [2026-03-12 15:11:30] stop-check: 未コミット変更あり（root-project, ai-dev-framework, dev-journal）
 [2026-03-12 15:11:32] stop-check: 未コミット変更あり（root-project, ai-dev-framework, dev-journal）
 [2026-03-12 15:11:34] stop-check: ループ回避スキップ（root-project, ai-dev-framework, dev-journal）
+[2026-03-12 15:15:24] stop-check: 未コミット変更あり（root-project）
+[2026-03-12 15:16:13] stop-check: 未コミット変更あり（root-project）
+[2026-03-12 15:16:15] stop-check: ループ回避スキップ（root-project）
+[2026-03-12 15:29:24] stop-check: 未コミット変更あり（root-project, dev-journal）
+[2026-03-12 15:31:03] stop-check: 未コミット変更あり（root-project, dev-journal）

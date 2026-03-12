@@ -28,3 +28,18 @@
 - 原因: VS Code は親ディレクトリの .gitignore を参照し、除外対象フォルダ内のファイルを全検索から除外する（`search.useParentIgnoreFiles` がデフォルト true）
 - 対応: .gitignore からサブリポジトリの除外エントリを削除。ワークスペースファイル（root-project.code-workspace）は試行の結果不要と判断し削除
 - 副作用: `git status` にサブリポジトリが untracked として表示されるが、明示的に `git add` しない限りコミット・push には含まれない
+
+## 15:18 セッション
+- 作業: 公開向け語句整理 — 「ポートフォリオ」「転職」「面接」等の練習用プロジェクトを示す語句を除去
+- 方針: 中程度（deliverables・ガイド・AGENTS.md・ADR を対象、内部ログ・日報は据え置き）
+- 対象ファイルと変更:
+  - `PROJECT_SUMMARY.md`: 未編集のまま `private-materials/` へ移動（内部資料として保管）
+  - `AGENTS.md`: 「ポートフォリオプロジェクト」→ プロダクト名のみに
+  - `deliverables/docs/00_goals.md`: 概要・見出しから転職/ポートフォリオ表現を除去
+  - `deliverables/docs/10_requirements/requirements.md`: 「ポートフォリオの現実的な目標」→「小〜中規模 SaaS の現実的な目標」
+  - `guide/portfolio_project_steps.md`: タイトル・説明文・テスト見出しから除去
+  - `guide/implementation-guide.md`: 目標・Step 22 見出しから除去
+  - `references/decisions/ADR-001-repository-restructuring.md`: 4箇所を中立表現に
+  - `references/decisions/ADR-002-ai-operations-redesign.md`: 3箇所を中立表現に
+  - `ai-operations/overview.md`: 「ポートフォリオ」→「プロジェクト」
+- 備考: ファイル名 `portfolio_project_steps.md` は参照箇所15箇所以上あるためリネーム見送り。コミット履歴の該当語句（4件）は公開時に squash で対応予定
