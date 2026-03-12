@@ -51,3 +51,11 @@
 - 対応:
   - マウント先を `/home/node/.gitconfig.host`（読み取り専用）に変更
   - `postCreateCommand` 先頭で `.gitconfig.host` → `.gitconfig` にコピーしてから `git config` を実行
+
+## 17:20 セッション
+- 作業: ファイアウォール（init-firewall.sh）にローカル専用の拡張ポイントを追加
+- 背景: git 管理外のローカル設定ファイルから追加ドメインを読み込めるようにし、公開リポジトリを汚さずにファイアウォールを拡張可能にする
+- 実施内容:
+  - `init-firewall.sh` にローカルドメインファイル読み込み処理を追加（ファイルがなければ既存動作に影響なし）
+  - `.devcontainer/firewall-local-domains.txt` を新規作成（ローカル用途のドメインを記載）
+  - `.git/info/exclude` に `firewall-local-domains.txt` を追加し git 管理外に設定
