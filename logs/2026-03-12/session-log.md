@@ -21,3 +21,10 @@
   - 4リポジトリとも force push 完了
   - ホスト側 `git config --global` を `atsuro128` / noreply メールに更新
   - `.devcontainer/devcontainer.json` に `.gitconfig` の bind mount を追加（コンテナ内への自動反映）
+
+## 14:48 セッション
+- 作業: VS Code 全体検索（Ctrl+Shift+F）でネストされた独立 git リポジトリ内ファイルがヒットしない問題の修正
+- 背景: root-project/.gitignore でサブリポジトリ（dev-journal/ / ai-dev-framework/ / expense-saas/）を除外していたため、VS Code がこれらのディレクトリを検索対象から除外していた
+- 原因: VS Code は親ディレクトリの .gitignore を参照し、除外対象フォルダ内のファイルを全検索から除外する（`search.useParentIgnoreFiles` がデフォルト true）
+- 対応: .gitignore からサブリポジトリの除外エントリを削除。ワークスペースファイル（root-project.code-workspace）は試行の結果不要と判断し削除
+- 副作用: `git status` にサブリポジトリが untracked として表示されるが、明示的に `git add` しない限りコミット・push には含まれない
