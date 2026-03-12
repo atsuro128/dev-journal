@@ -20,7 +20,7 @@ project-management
 肉付けタイミングが管理されていないと、必要な時に規約が未整備のまま作業が進むリスク。
 
 ## 提案
-portfolio_project_steps.md の【root-project整備】に従い、対応するステップで肉付けする:
+project_steps.md の【root-project整備】に従い、対応するステップで肉付けする:
 - `branching.md` → Step 7 Phase 1 着手前
 - `review-checklist.md` → Step 6
 - `security-policy.md` → Step 1

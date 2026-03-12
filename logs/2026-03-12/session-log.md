@@ -42,4 +42,5 @@
   - `references/decisions/ADR-001-repository-restructuring.md`: 4箇所を中立表現に
   - `references/decisions/ADR-002-ai-operations-redesign.md`: 3箇所を中立表現に
   - `ai-operations/overview.md`: 「ポートフォリオ」→「プロジェクト」
-- 備考: ファイル名 `portfolio_project_steps.md` は参照箇所15箇所以上あるためリネーム見送り。コミット履歴の該当語句（4件）は公開時に squash で対応予定
+- 備考: コミット履歴の該当語句（4件）は公開時に squash で対応予定
+- 追加作業: `portfolio_project_steps.md` → `project_steps.md` にリネーム。参照5箇所（CLAUDE.md, AGENTS.md, review-procedure.md, Issue #005, directory-structures/dev-journal.md）を更新

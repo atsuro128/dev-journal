@@ -30,7 +30,7 @@ dev-journal/
 │           └── state_machine.md
 ├── guide/                            # プロジェクト進行ガイド
 │   ├── implementation-guide.md
-│   └── portfolio_project_steps.md
+│   └── project_steps.md
 ├── logs/                             # セッションログ（日付別）
 │   ├── YYYY-MM-DD/
 │   │   └── session-log.md
