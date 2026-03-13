@@ -39,3 +39,5 @@
 - ミス: セッションログの時刻を `22:xx` というプレースホルダーのままコミットした → issue 019 起票
 - ミス: ミス指摘時に /incident-review スキルを自発実行しなかった → issue 020 起票
 - 作業: issue 019 対応 — session-log スキルの時刻取得手順を【必須】・太字で強調（推測・仮置き厳禁を明記）→ resolved
+- 作業: issue ディレクトリ構造を review-findings と統一（issues/ 直下 → issues/open/, issues/pending-review/, issues/resolved/ の3層構造に変更）
+- 作業: issue スキル・progress.md の参照パスを新構造に合わせて修正

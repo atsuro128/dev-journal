@@ -44,4 +44,4 @@ Step 2: ドメイン設計（レビュー待ち）
 - [ ] Step 3: アーキテクチャ設計の着手
 
 ## 課題・ブロッカー
-未解決の課題は `progress-management/issues/` を参照。解決済みは `progress-management/resolved/` に移動。
+未解決の課題は `progress-management/issues/open/` を参照。解決済みは `progress-management/issues/resolved/` に移動。
