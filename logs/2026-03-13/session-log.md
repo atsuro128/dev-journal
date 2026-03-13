@@ -33,6 +33,6 @@
 - 作業: issue カテゴリに `ai-ops`（AI運用）を追加（スキル・テンプレート両方）
 - 判断: ミスの根本原因・防止策は issue で一元管理する（理由: memory は Dev Container 環境で揮発するため廃止済み）
 
-## 22:xx セッション
+## 21:48 セッション
 - 作業: codex レビュー実行時に auth.openai.com への接続が `No route to host` で失敗する問題を調査
 - 判断: init-firewall.sh のホワイトリストに auth.openai.com を追加（理由: api.openai.com は登録済みだが、codex の OAuth トークン交換に必要な auth.openai.com が未登録だった）
