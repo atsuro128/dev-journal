@@ -38,3 +38,4 @@
 - 判断: init-firewall.sh のホワイトリストに auth.openai.com を追加（理由: api.openai.com は登録済みだが、codex の OAuth トークン交換に必要な auth.openai.com が未登録だった）
 - ミス: セッションログの時刻を `22:xx` というプレースホルダーのままコミットした → issue 019 起票
 - ミス: ミス指摘時に /incident-review スキルを自発実行しなかった → issue 020 起票
+- 作業: issue 019 対応 — session-log スキルの時刻取得手順を【必須】・太字で強調（推測・仮置き厳禁を明記）→ resolved
