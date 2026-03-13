@@ -36,3 +36,5 @@
 ## 21:48 セッション
 - 作業: codex レビュー実行時に auth.openai.com への接続が `No route to host` で失敗する問題を調査
 - 判断: init-firewall.sh のホワイトリストに auth.openai.com を追加（理由: api.openai.com は登録済みだが、codex の OAuth トークン交換に必要な auth.openai.com が未登録だった）
+- ミス: セッションログの時刻を `22:xx` というプレースホルダーのままコミットした → issue 019 起票
+- ミス: ミス指摘時に /incident-review スキルを自発実行しなかった → issue 020 起票
