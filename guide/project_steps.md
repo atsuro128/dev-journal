@@ -173,6 +173,7 @@
 - `templates/ADR-template.md`：ADR雛形をプロジェクトに合わせて確認・調整（このフェーズで初めて本格利用）
 - `references/tech-stack-notes/`：技術比較メモ・候補・選定根拠を記録（ADRの下書き・補足資料として）
 - `references/decisions/`：技術選定の採用/不採用理由を追記
+  - `references/decisions/30_arch-multi-tenant-comparison.md`（テナント分離3方式の比較・不採用理由 — ADR 0002 の素材）
 - `skills/architecture/`：設計レビュー観点（テナント分離・状態遷移の漏れ確認など）を整備
 
 **完了条件**

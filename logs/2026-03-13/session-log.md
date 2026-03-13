@@ -17,3 +17,8 @@
 - 作業: /commit スキルから git status/diff/log の確認ステップを削除（hook が変更を検知済みのため冗長）
 - 作業: ai-dev-framework の不要な2コミット（フォーマット適用・テスト行削除）を reset で巻き戻し
 - 作業: init-firewall.sh の CRLF 改行コードを LF に変換（CRLF によりシバン行が認識されずファイアウォールが起動していなかった）
+
+## 17:48 セッション
+- 作業: テナント分離方式の3方式比較メモを `references/decisions/30_arch-multi-tenant-comparison.md` に作成（ADR 0002 の素材）
+- 作業: `guide/project_steps.md` の Step 3 セクションに上記メモへの参照導線を追記
+- 判断: 比較メモの配置先を `references/decisions/` とし、Step 3 着手時の導線として `project_steps.md` にも参照を追記（理由: ADR には不採用理由の明記が必要だが、Step 3 着手時に `references/decisions/` を見に行く導線がなかったため）
