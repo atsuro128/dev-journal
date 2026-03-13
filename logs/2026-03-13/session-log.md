@@ -16,3 +16,4 @@
 - 作業: ai-dev-framework リポジトリ内で Markdown テーブルのフォーマット変更をコミット
 - 作業: /commit スキルから git status/diff/log の確認ステップを削除（hook が変更を検知済みのため冗長）
 - 作業: ai-dev-framework の不要な2コミット（フォーマット適用・テスト行削除）を reset で巻き戻し
+- 作業: init-firewall.sh の CRLF 改行コードを LF に変換（CRLF によりシバン行が認識されずファイアウォールが起動していなかった）
