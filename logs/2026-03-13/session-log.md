@@ -14,3 +14,5 @@
 - 作業: ai-dev-framework/prompts/README.md が保存時に自動フォーマットされる問題を調査
 - 判断: devcontainer.json の editor.formatOnSave を false に変更（手動フォーマットのショートカットは維持）
 - 作業: ai-dev-framework リポジトリ内で Markdown テーブルのフォーマット変更をコミット
+- 作業: /commit スキルから git status/diff/log の確認ステップを削除（hook が変更を検知済みのため冗長）
+- 作業: ai-dev-framework の不要な2コミット（フォーマット適用・テスト行削除）を reset で巻き戻し
