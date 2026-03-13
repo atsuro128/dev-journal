@@ -9,3 +9,8 @@
 - 作業: review-procedure.md の改修（上流資料の確認手順追加、ステップ別レビュー観点の詳細化）
 - 判断: レビュー手順に「上流資料を読んでから成果物を評価する」ステップが欠如していたため追加。ステップ別観点もテーブル1行からチェックリスト形式に展開し、「上流チェック」と「成果物チェック」の2軸に構造化
 - 作業: Dockerfile に @openai/codex のインストールを追加、init-firewall.sh に api.openai.com を追加（codex CLI をコンテナ内で利用可能にするため）
+
+## DevContainer フォーマット設定セッション
+- 作業: ai-dev-framework/prompts/README.md が保存時に自動フォーマットされる問題を調査
+- 判断: devcontainer.json の editor.formatOnSave を false に変更（手動フォーマットのショートカットは維持）
+- 作業: ai-dev-framework リポジトリ内で Markdown テーブルのフォーマット変更をコミット
