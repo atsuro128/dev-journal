@@ -41,3 +41,7 @@
 - 作業: issue 019 対応 — session-log スキルの時刻取得手順を【必須】・太字で強調（推測・仮置き厳禁を明記）→ resolved
 - 作業: issue ディレクトリ構造を review-findings と統一（issues/ 直下 → issues/open/, issues/pending-review/, issues/resolved/ の3層構造に変更）
 - 作業: issue スキル・progress.md の参照パスを新構造に合わせて修正
+
+## 22:11 セッション
+- 作業: issue 020 対応 — `.claude/rules/incident-response.md` を新規作成（ミス指摘時に `/incident-review` を修正前に実行する行動規約）
+- 判断: 対策の実装先を commit スキルや hook ではなく rules/ に配置（理由: スキル一覧の `Use when` は埋もれやすいが、rules/ は行動制約として常にロードされるため、「修正しなきゃ」の思考より上流で発火できる）
