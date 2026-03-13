@@ -7,6 +7,10 @@ root-project/
 ├── CLAUDE.md                    # Claude Code プロジェクト方針
 ├── AGENTS.md                    # codex エージェント指示書
 ├── .gitignore
+├── .devcontainer/               # Dev Container 環境
+│   ├── devcontainer.json
+│   ├── Dockerfile
+│   └── init-firewall.sh         # Egress ファイアウォール（Squid プロキシ）
 ├── .claude/                     # Claude Code 設定
 │   ├── commands/                # カスタムコマンド（空）
 │   ├── hooks/                   # Hooks スクリプト
@@ -15,10 +19,12 @@ root-project/
 │   ├── rules/                   # ルール（自動ロード）
 │   │   ├── architecture.md
 │   │   ├── coding-standards.md
+│   │   ├── incident-response.md
 │   │   ├── security-policy.md
 │   │   ├── testing.md
 │   │   └── workflow.md
 │   ├── skills/                  # スキル定義
+│   │   ├── analyze/
 │   │   ├── check-structure/
 │   │   ├── codex-review/
 │   │   ├── commit/

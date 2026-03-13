@@ -4,7 +4,6 @@
 
 ```
 dev-journal/
-├── PROJECT_SUMMARY.md               # プロジェクト概要・仕様サマリ
 ├── ai-operations/                    # AI運用設計
 │   ├── overview.md                   # AI運用方針（全体）
 │   └── hooks-design.md               # Hooks設計資料
@@ -38,8 +37,10 @@ dev-journal/
 │       └── hook-warnings.log         # Hook警告ログ（自動記録）
 ├── progress-management/              # 進捗・課題管理
 │   ├── progress.md
-│   ├── issues/                       # 未解決の課題
-│   ├── resolved/                     # クローズ済み課題
+│   ├── issues/                       # 課題管理
+│   │   ├── open/                     # 未解決
+│   │   ├── pending-review/           # 対応済み・確認待ち
+│   │   └── resolved/                 # 解決済み
 │   └── step-deliverables/            # ステップ別成果物チェック
 ├── references/                       # 参照資料
 │   ├── decisions/                    # ADR（意思決定記録）

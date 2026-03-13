@@ -4,7 +4,6 @@ AI駆動開発フレームワーク。テンプレート・エージェント設
 
 ```
 ai-dev-framework/
-├── AGENTS.md                    # エージェント設計
 ├── agents/                      # エージェント手順書
 │   ├── re-review-procedure.md
 │   └── review-procedure.md
