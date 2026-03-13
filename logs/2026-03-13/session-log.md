@@ -22,3 +22,8 @@
 - 作業: テナント分離方式の3方式比較メモを `references/decisions/30_arch-multi-tenant-comparison.md` に作成（ADR 0002 の素材）
 - 作業: `guide/project_steps.md` の Step 3 セクションに上記メモへの参照導線を追記
 - 判断: 比較メモの配置先を `references/decisions/` とし、Step 3 着手時の導線として `project_steps.md` にも参照を追記（理由: ADR には不採用理由の明記が必要だが、Step 3 着手時に `references/decisions/` を見に行く導線がなかったため）
+
+## 21:16 セッション
+- 作業: AI運用ワークフローの変遷資料を `private-materials/ai-workflow-evolution.md` に作成（2026-03-05〜03-13 の9日間を時系列ナラティブ形式で記録）
+- 作業: `/analyze` スキルを新規作成（開発プロセスの分析を再利用可能なスキルとして定義）
+- 判断: `/analyze` スキルの引数設計として、期間と分析テーマを引数で渡し、出力フォーマット・想定読者・出力先・言語はスキル内で対話的に確認する方式を採用（理由: 前者は毎回指定が必要だが、後者は毎回変わりうるため対話が適切）
