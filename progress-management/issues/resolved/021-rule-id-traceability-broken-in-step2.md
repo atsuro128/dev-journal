@@ -61,3 +61,10 @@ Step 2 の `domain_model.md` / `state_machine.md` が、Step 1 `04_business-rule
    - `domain_model.md` 5.2: 集約責務に「支払完了遷移の実行者制約（WFL-013）」を追加
 2. **RBC-014 のトレーサビリティ復元**:
    - `domain_model.md` 6.3: 所有権・権限の不変条件に RBC-014（Admin の所有権制約）を追加。RBC-010 の一般化だけでは追跡不能だった Admin 固有の制約を明示
+
+### 2026-03-14 Codex Issue 解決再レビュー
+
+- 判定: 解決が妥当
+- 確認1: Step 1 の `WFL-013`（`approved → paid` を Accounting が実行）は、`domain_model.md` の集約責務と `state_machine.md` T4 の実行者検証に反映され、Step 2 で再び追跡可能になった
+- 確認2: Step 1 の `RBC-014`（Admin は自作レポートのみ申請者として操作可能）は、`domain_model.md` の所有権・権限の不変条件に反映され、`RBC-016` と役割分離された
+- 確認3: `WFL-014` / `RBC-016` の新規採番と「既存IDの意味を再利用しない」ルールが Step 1 に明記され、同種の再発防止策も追加された
