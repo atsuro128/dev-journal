@@ -52,3 +52,7 @@
 - 結果: Issue #021 が解決妥当と判定され resolved/ に移動
 - 作業: Step 2 完了条件の確認 — 成果物3件・完了条件3項目・レビュー全件 resolved を確認
 - 作業: progress.md を更新（Step 2: 完了、完了日 2026-03-14）
+
+## 14:56 セッション
+- 作業: レビュー指摘テンプレート `ai-dev-framework/templates/review-finding-template.md` を新規作成（既存指摘ファイルの共通構造を抽出）
+- 作業: `ai-dev-framework/agents/review-procedure.md` の指摘起票手順にテンプレート参照を追加
