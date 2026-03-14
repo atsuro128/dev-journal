@@ -148,13 +148,13 @@ stateDiagram-v2
 |------|------|
 | **操作名** | mark_as_paid（支払完了） |
 | **実行者** | Accounting（同テナント） |
-| **実行者検証の責務** | ハンドラ層: ロール検証（Accounting のみ） |
+| **実行者検証の責務** | ハンドラ層: ロール検証（Accounting のみ）（WFL-013） |
 
 **事前条件（ドメイン層で検証）**:
 
 | # | 条件 | 違反時のエラー | ルールID |
 |---|------|-------------|---------|
-| 1 | status == approved | InvalidStateTransition | WFL-002 |
+| 1 | status == approved | InvalidStateTransition | WFL-002, WFL-013 |
 
 **事後処理**:
 
