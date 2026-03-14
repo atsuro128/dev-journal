@@ -64,7 +64,7 @@ stateDiagram-v2
 |---|------|-------------|---------|
 | 1 | status == draft | InvalidStateTransition | WFL-002 |
 | 2 | items.count ≧ 1 | EmptyReportSubmission | RPT-014 |
-| 3 | 同一テナントに Approver ロールのメンバーが1人以上存在する（※アプリケーションサービス層で検証し結果をドメイン層に渡す） | NoApproverInTenant | WFL-013 |
+| 3 | 同一テナントに Approver ロールのメンバーが1人以上存在する（※アプリケーションサービス層で検証し結果をドメイン層に渡す） | NoApproverInTenant | WFL-014 |
 
 **事後処理**:
 
@@ -90,7 +90,7 @@ stateDiagram-v2
 | # | 条件 | 違反時のエラー | ルールID |
 |---|------|-------------|---------|
 | 1 | status == submitted | InvalidStateTransition | WFL-002 |
-| 2 | report.user_id ≠ current_user.id | SelfApprovalNotAllowed | RBC-014 |
+| 2 | report.user_id ≠ current_user.id | SelfApprovalNotAllowed | RBC-016 |
 
 **入力**:
 
@@ -122,7 +122,7 @@ stateDiagram-v2
 | # | 条件 | 違反時のエラー | ルールID |
 |---|------|-------------|---------|
 | 1 | status == submitted | InvalidStateTransition | WFL-002 |
-| 2 | report.user_id ≠ current_user.id | SelfApprovalNotAllowed | RBC-014 |
+| 2 | report.user_id ≠ current_user.id | SelfApprovalNotAllowed | RBC-016 |
 | 3 | rejection_reason が非空 | MissingRejectionReason | WFL-012 |
 
 **入力**:

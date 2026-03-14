@@ -37,6 +37,11 @@ Step 2 の `domain_model.md` / `state_machine.md` が、Step 1 `04_business-rule
 
 ## 解決内容
 
+1. Step 1 の `04_business-rules.md` に WFL-014（Approver 存在チェック）と RBC-016（自己承認・自己却下禁止）を新規採番
+2. Step 2 の `domain_model.md` / `state_machine.md` で誤って流用していた WFL-013→WFL-014、RBC-014→RBC-016 に置換
+3. review-finding #023 の参照IDも WFL-014 に更新
+4. `04_business-rules.md` に「一度採番されたIDを別の意味で再利用してはならない」採番ルールを明文化
 
 ## 解決日
+2026-03-14
 
