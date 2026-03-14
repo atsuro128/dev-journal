@@ -1,7 +1,7 @@
 ---
 step: 2
 severity: low
-status: pending-review
+status: resolved
 ---
 
 # 023: WFL-014 の検証責務記述が文書間で不整合

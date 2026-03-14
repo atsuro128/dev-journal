@@ -1,7 +1,7 @@
 ---
 step: 2
 severity: medium
-status: pending-review
+status: resolved
 ---
 
 # 025: domain_model.md のドメインエラー一覧が state_machine.md を網羅していない

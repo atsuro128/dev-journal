@@ -1,7 +1,7 @@
 ---
 step: 2
 severity: low
-status: pending-review
+status: resolved
 ---
 
 # 022: TNT-003 不変条件が domain_model.md に未定義
