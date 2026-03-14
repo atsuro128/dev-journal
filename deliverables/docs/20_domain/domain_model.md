@@ -353,6 +353,7 @@ ExpenseReport を Aggregate Root とし、以下を責務とする。
 |----|---------|---------|
 | TNT-001 | テナント境界を持つ業務テーブルに tenant_id が存在する（User は TenantMembership 経由のため例外） | DB スキーマ |
 | TNT-002 | 全クエリに WHERE tenant_id = ? が含まれる | リポジトリ層 |
+| TNT-003 | `tenant_id` の付与・検証はリポジトリ層で強制 | リポジトリ層 |
 | TNT-004 | RLS でアプリ層を二重保証する | DB 層（RLS ポリシー） |
 | TNT-005 | テナント間のデータ参照は一切不可 | 全層 |
 
@@ -437,6 +438,8 @@ ExpenseReport を Aggregate Root とし、以下を責務とする。
 | PermissionDenied | 所有権不足 | 403 Forbidden |
 | InvalidFileType | 許可されていないMIMEタイプ | 422 Unprocessable Entity |
 | FileTooLarge | 5MB 超過 | 413 Payload Too Large |
+| MissingRejectionReason | 却下理由が空での却下 | 422 Unprocessable Entity |
+| ConflictError | 楽観的ロック競合（別ユーザーが先に更新済み） | 409 Conflict |
 
 ---
 

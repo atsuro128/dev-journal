@@ -1,7 +1,7 @@
 ---
 step: 2
 severity: low
-status: open
+status: pending-review
 ---
 
 # 022: TNT-003 不変条件が domain_model.md に未定義
@@ -25,3 +25,7 @@ Section 6.1 の不変条件テーブルには TNT-001, TNT-002, TNT-004, TNT-005
 ## 対応案
 
 Section 6.1 の不変条件テーブルに TNT-003 を追記する、または参照先を明記する。
+
+## 対応内容
+
+domain_model.md Section 6.1 の不変条件テーブルに TNT-003（`tenant_id` の付与・検証はリポジトリ層で強制）を追記した。

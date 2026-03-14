@@ -16,3 +16,10 @@
 - 作業: Squid を SNI 透過プロキシ方式に変更（squid → squid-openssl、https_port intercept ssl-bump peek/splice、iptables NAT REDIRECT）
 - 判断: 透過プロキシにより全アプリケーションが自動的に Squid 経由になるため、プロキシ環境変数が不要に（理由: アプリ側のプロキシ対応有無に依存しない構成にするため）
 - 作業: devcontainer.json から http_proxy/https_proxy/no_proxy 環境変数を削除
+
+## 13:23 セッション
+- 作業: Step 2 レビュー指摘4件（022〜025）の正当性を検証し対応
+- 判断: 022（TNT-003 欠落）・023（WFL-013 層の不整合）・025（エラー一覧不足）は正当と判断し成果物を修正（理由: 上流資料・実ファイルとの照合で指摘内容が事実と一致）
+- 判断: 024（ルールID再利用）は Step 1 と Step 2 の両方に修正が必要なため Issue #021 に昇格（理由: 影響範囲が大きく独立した設計判断が必要）
+- 作業: review-findings スキルに「Issue 昇格時は resolved/ へ移動」のルールを追記
+- 作業: セッションログ推測時刻記載・incident-review 未実行について Issue #022 を起票

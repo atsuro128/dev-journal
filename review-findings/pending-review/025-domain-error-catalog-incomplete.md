@@ -1,7 +1,7 @@
 ---
 step: 2
 severity: medium
-status: open
+status: pending-review
 ---
 
 # 025: domain_model.md のドメインエラー一覧が state_machine.md を網羅していない
@@ -31,3 +31,9 @@ status: open
 
 - `domain_model.md` のドメインエラー一覧に `MissingRejectionReason` と `ConflictError` を追加し、HTTP 変換方針を明記する
 - もし `ConflictError` をドメインエラーではなくアプリケーション/リポジトリエラーとして扱うなら、`state_machine.md` 側でその層責務を明示して一覧との整合を取る
+
+## 対応内容
+
+domain_model.md Section 8 ドメインエラー一覧に以下を追加した:
+- `MissingRejectionReason`（却下理由が空での却下 → 422 Unprocessable Entity）
+- `ConflictError`（楽観的ロック競合 → 409 Conflict）

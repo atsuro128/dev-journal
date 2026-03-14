@@ -1,7 +1,7 @@
 ---
 step: 2
 severity: medium
-status: open
+status: escalated
 ---
 
 # 024: Step 2 で上流と異なる意味のルールIDを再利用している
@@ -38,3 +38,8 @@ status: open
 - 既存の `WFL-013` / `RBC-014` は上流と同じ意味に戻す
 - 「Approver が0人なら提出不可」「自己承認・自己却下禁止」を ID 管理したい場合は、Step 1 側で新しいルールIDを採番してから Step 2 に反映する
 - そうしない場合でも、Step 2 では新規概念に既存IDを流用しない
+
+## Issue 昇格
+
+Issue #021 として起票済み（`dev-journal/progress-management/issues/open/021-rule-id-traceability-broken-in-step2.md`）。
+Step 1 と Step 2 の両方に修正が必要なため、レビュー指摘の直接対応ではなく Issue として管理する。
