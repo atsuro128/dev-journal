@@ -23,5 +23,10 @@
 - 作業: ops-023 対応 — project_steps.md を圧縮（339行→約100行）。Step 0〜7 の詳細を work-breakdown/ に分離し、索引テーブル＋共通ワークフローのみに
 - 作業: work-breakdown に Step 0, 1, 2, 6, 7 のファイルを新規作成（Step 3, 4+5 は前セッションで作成済み）
 - 作業: deliverables/docs 構成セクションを project_steps.md から切り出し、deliverables/docs-structure.md として独立化（全ファイルに説明付き、preliminary/ 含む）
+- 作業: workflow.md の Issue 発掘規約を簡素化（懸念セクション廃止、全件 issue 起票に統一）
+- 作業: ops-033 起票（運用・監視設計が実装フェーズまで先送りされている問題）
+- 作業: コンテキスト査定スキル audit-context を作成
+- 作業: 自動読み込みコンテキスト全体（CLAUDE.md、rules/、progress.md、project_steps.md）を査定し、有用性を評価
 - 判断: deliverables/docs 構成は project_steps.md に残さず deliverables/ 直下に移動（理由: 実体のディレクトリ構成から読み取れる情報であり、毎セッション読み込む地図に含める必要がない）
-- 判断: workflow.md と project_steps.md の重複は、workflow.md 側をルール要約＋参照リンクに簡素化して解消する方向で検討中（未実施）
+- 判断: 懸念セクション（成果物末尾に未解決事項を記載する運用）を廃止し、影響度によらず全件 issue 起票に統一（理由: 成果物に未解決の懸念を混入させるべきでない）
+- 判断: 運用・監視設計は Step 7 実装時ではなく Step 3（方針）・Step 4+5（詳細）で設計すべき（理由: 実装フェーズで初めて決めるのでは場当たり的になる）

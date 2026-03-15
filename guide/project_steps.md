@@ -41,8 +41,7 @@
 
 ```
 1. 成果物作成（Claude）
-   ├─ 作成中: 重大な問題 → 即 issue 起票（発見経緯: proactive）
-   └─ コミット前: 懸念トリアージ → 高影響度は issue 昇格
+   └─ 問題発見時: issue 起票（発見経緯: proactive）
    ↓
 2. レビュー依頼
    ↓
@@ -59,7 +58,7 @@
 
 | # | フェーズ | 担当 | 内容 |
 |---|---------|------|------|
-| 1 | 成果物作成 | Claude | 各ステップの成果物と【root-project 整備】を作成・コミット。Issue 発掘規約に従い、問題の即時起票・懸念の記録とトリアージを実施 |
+| 1 | 成果物作成 | Claude | 各ステップの成果物と【root-project 整備】を作成・コミット。問題発見時は issue 起票（Issue 発掘規約に従う） |
 | 2 | レビュー依頼 | Claude | 成果物コミット後、`ai-dev-framework/rules/codex-review.md` に従い codex を自動実行 |
 | 3 | レビュー実施 | ユーザー + codex | `ai-dev-framework/agents/review-procedure.md` に従いレビュー。指摘は `dev-journal/review-findings/open/` に起票 |
 | 4 | 指摘対応 | Claude | `dev-journal/review-findings/open/` の指摘に対応し、`pending-review/` に移動。再レビューは `agents/re-review-procedure.md` に従う |
@@ -83,10 +82,3 @@
 | 初回レビュー手順 | `ai-dev-framework/agents/review-procedure.md` | レビュー観点・起票ルール |
 | 再レビュー手順 | `ai-dev-framework/agents/re-review-procedure.md` | 指摘対応後の再レビュー |
 | 指摘管理 | `ai-dev-framework/review-findings/` | open → pending-review → resolved |
-
----
-
-## メモ（運用上のコツ）
-- 「迷ったら」**MVPフロー（申請→承認→差戻し→再申請→承認→完了）**に戻ってスコープを守る
-- 図は凝らなくてOK。**"あること"が重要**（Mermaidで十分）
-- 仕様変更が起きても、`scope / workflow / domain` が更新されていれば破綻しにくい
