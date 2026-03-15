@@ -10,38 +10,9 @@ Step 2: ドメイン設計（完了） → Step 3 着手待ち
 | 1 | 要件定義（業務理解 → ユースケース化） | 完了 | - | 2026-03-09 |
 | 2 | ドメイン設計（データとルールの核） | 完了 | - | 2026-03-14 |
 | 3 | アーキテクチャ設計（技術選定・構成決定） | 未着手 | - | - |
-| 4 | 基本設計（画面・画面遷移・UX） | 未着手 | - | - |
-| 5 | 詳細設計（API / DB / 認可 / セキュリティ） | 未着手 | - | - |
+| 4+5 | 基本設計 + 詳細設計（機能単位で統合） | 未着手 | - | - |
 | 6 | テスト設計 | 未着手 | - | - |
 | 7 | 実装・運用 | 未着手 | - | - |
-
-## ステップ別成果物
-| ステップ | パス |
-|---|---|
-| Step 0 | `progress-management/step-deliverables/step0.md` |
-
-## 機能別進捗
-| 機能 | 要件定義 | 設計 | 実装 | テスト | 備考 |
-|------|---------|------|------|--------|------|
-| 認証・ユーザー管理 | 完了 | - | - | - | |
-| RBAC | 完了 | - | - | - | |
-| テナント分離 | 完了 | - | - | - | |
-| 経費レポートCRUD | 完了 | - | - | - | |
-| 承認フロー | 完了 | - | - | - | |
-| 添付ファイル | 完了 | - | - | - | |
-| 招待フロー | - | - | - | - | Phase 3 |
-| 通知 | - | - | - | - | Phase 3 |
-| 監査ログ | - | - | - | - | Phase 3 |
-| CSVエクスポート | - | - | - | - | Phase 3 |
-
-## 直近のタスク
-- [x] Step 1: 業務理解の事前資料作成（4資料完成）
-- [x] Step 1: 要件定義本体の作成（requirements.md, usecases.md, workflow.md, rbac.md）
-- [x] Step 1: root-project整備（rules/security-policy.md 整備完了、prompts/requirement.md は既存）
-- [x] Step 2: ドメイン設計（domain_model.md, state_machine.md 作成完了）
-- [x] Step 2: 判断ログ作成（references/decisions/20_domain-design-decisions.md）
-- [x] Step 2: 完了条件の確認（レビュー全件 resolved、完了条件3項目充足）
-- [ ] Step 3: アーキテクチャ設計の着手
 
 ## 課題・ブロッカー
 未解決の課題は `progress-management/issues/open/` を参照。解決済みは `progress-management/issues/resolved/` に移動。
