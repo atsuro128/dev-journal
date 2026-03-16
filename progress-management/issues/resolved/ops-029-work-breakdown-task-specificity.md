@@ -55,4 +55,7 @@ work-breakdown の目的は「project_steps.md を毎回全文読む必要をな
 
 ## 解決内容
 
+自己完結型タスクファイル（`dev-journal/progress-management/tasks/`）を導入。テンプレートを `ai-dev-framework/templates/task-template.md` に定義。タスクファイルが作業指示書として単体で完結する形式とし、work-breakdown は全体の地図に留める運用とした。各タスクファイルには目的・入力（セクション単位）・具体的作業手順・判断基準・完了条件・出力・引き継ぎメモを含める。Wave 単位で事前作成し、着手前に詳細化する運用。
+
 ## 解決日
+2026-03-16

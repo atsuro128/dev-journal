@@ -64,3 +64,16 @@
   - 030: 全 API URL に `/api` プレフィックスを追加し、SPA ルーティング（/api/* → API, /* → 静的ファイル）と統一
   - 031: CloudWatch メトリクスフィルタを採用し、Logs Insights（ダッシュボード用）と Alarm ソース（メトリクスフィルタ）の使い分けを明記
 - 判断: FORCE ROW LEVEL SECURITY を使わない構成に変更（理由: 認証エンドポイントでテーブルオーナーが tenant_memberships を RLS バイパスで参照する必要があるため）
+
+## 20:27 セッション
+- 作業: Step 4+5 の並列実行運用基盤を構築（ops-027/029/031/032 の一括対応）
+  - `dev-journal/progress-management/tasks/` ディレクトリ作成（タスク管理用）
+  - `ai-dev-framework/rules/branching.md` 新規作成（3 階層ブランチモデル: main → Wave → task）
+  - `ai-dev-framework/templates/task-template.md` 新規作成（自己完結型タスクファイル）
+  - `step4-5-design.md` に 4+5-I（画面一覧・遷移の全体設計）を追加、Wave 構成更新、C〜F に上流 API 突き合わせを追記
+  - ops-027/029/031 をクローズ → resolved/ に移動、ops-032 は部分解決（ブランチ戦略のみ）
+- 判断: タスクファイルは自己完結型（作業指示書）とし、work-breakdown は全体の地図として凍結（理由: 機能単位の縦割り設計では work-breakdown の記述だけでは不足。画面数や機能が具体化すると作業が細分化されるため、タスクファイルが正として詳細を管理する）
+- 判断: 4+5-I（画面一覧・遷移）を Wave 1 に追加（理由: DB スキーマがデータ側の全体像なら、画面一覧は UI 側の全体像。画面を先に定義しないと API の過不足を検証する基準がない）
+- 判断: 各機能タスク（C〜F）に上流 API 一覧との突き合わせを組み込み（理由: Step 1 rbac.md と Step 3 architecture.md §5.1 に API 一覧が既に定義済み。詳細設計はそのまま転写ではなく、画面設計と突き合わせて過不足を検証・調整する作業）
+- 判断: ops-030（チーム構成・ロール定義）は延期（理由: `.claude/agents/` によるエージェントチーム構築を検討中で、設計が未定のためロール定義も未確定）
+- 判断: ops-032 は部分解決（理由: ブランチ戦略は即時必要だが、CI/CD は Step 7、Dev Container 複数対応はエージェント設計と同時に決めるべき）
