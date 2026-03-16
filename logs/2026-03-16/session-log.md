@@ -37,3 +37,18 @@
 - 作業: 009（explanation-only ディレクトリ）をクローズ — リポジトリ再構成で前提のディレクトリ構成が変わり、指摘の大部分が解消済み
 - 作業: ops-024（セッション開始手順の更新）をクローズ — project_steps.md 経由で work-breakdown への導線が既に存在し、指摘が的外れ
 - 判断: ops-024 の指摘は workflow.md 単体の確認に基づいており、project_steps.md → work-breakdown という既存の導線を見落としていた。エージェントによる issue 正当性評価にはプロジェクト開発体制全体の理解が必要だが、現状のエージェントにはそれが不足している
+
+## 17:26 セッション
+- 作業: Step 3（アーキテクチャ設計）全タスクの成果物を作成
+  - ADR-0001: 技術スタック選定（Go / React / PostgreSQL / 主要ライブラリ）
+  - ADR-0002: マルチテナント方式（Shared DB + tenant_id）
+  - ADR-0003: RLS テナント分離（SET app.current_tenant 方式、二重保証）
+  - ADR-0004: インフラ選定（ECS Fargate / RDS / S3 / Terraform）
+  - ADR-0005: 監視・ログ戦略（log/slog + CloudWatch）
+  - architecture.md: レイヤー構成・ミドルウェアチェーン・認証フロー・テナント分離フロー・API URL設計・セキュリティアーキテクチャ
+  - diagrams.md: Mermaid 図7点（システム構成図・リクエスト処理フロー・認証フロー・テナント分離フロー・状態遷移図・デプロイパイプライン・ローカル開発環境）
+- 作業: 自己レビューで3件の不整合を検出・修正
+  - ドメインエラーマッピング表に InvalidAmount / ReportNotDeletable / MissingRejectionReason が欠落 → 追加
+  - TanStack Query のエンドポイント `/reports/pending` を API設計の `/workflow/pending` に統一
+  - ミドルウェアディレクトリに `security_headers.go` を追記
+- 判断: 依存グラフに従い Wave 1（3-1, 3-2, 3-4 並列）→ Wave 2（3-3, 3-7 並列）→ 3-5 → 3-6 の順で作成（理由: step3-architecture.md の並列実行パターンに準拠）
