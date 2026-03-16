@@ -1,7 +1,7 @@
 ---
 step: 3
 severity: medium
-status: open
+status: resolved
 ---
 
 # 028: Single-AZ RDS の採用理由が 99.5% 可用性要件を支えられていない
@@ -46,3 +46,21 @@ status: open
 - ただし `dev-journal/deliverables/docs/30_arch/adr/0004-infra.md:102` の「RDS Single-AZ の AWS SLA は 99.95%」は事実誤認
 - AWS 公式の Amazon RDS SLA では、99.95% は Multi-AZ DB Instance / Cluster の値であり、Single-DB Instance SLA は 99.5%
 - 可用性要件を支える根拠として引用している数値が誤っているため、本指摘は未解消と判定する
+
+---
+
+## 再レビュー結果（2026-03-16 / 2回目）
+
+対応妥当（クローズ）。
+
+### 確認内容
+- `ADR-0004` の可用性リスク受容において、Single-DB Instance は 99.5%、Multi-AZ は 99.95% と修正済み
+  - `dev-journal/deliverables/docs/30_arch/adr/0004-infra.md:102`
+- ALB ヘルスチェックは ECS 層の異常検知であり、DB 層の可用性とは別役割であることを明示済み
+  - `dev-journal/deliverables/docs/30_arch/adr/0004-infra.md:103`
+- 可用性要件 99.5% と、MVP では Single-AZ をリスク受容で採用する判断の関係が ADR 上で説明されている
+  - `dev-journal/deliverables/docs/10_requirements/requirements.md:428`
+  - `dev-journal/deliverables/docs/30_arch/adr/0004-infra.md:102`
+
+### 判定理由
+当初の未解消理由だった SLA 数値の誤記が解消され、可用性要件と Single-AZ 採用判断のトレーサビリティも ADR 上で成立したため。
