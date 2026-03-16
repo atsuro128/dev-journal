@@ -41,6 +41,11 @@ project-management
 
 ## 解決内容
 
+3/8 のリポジトリ再構成（ADR-001）により issue の前提が変更され、指摘の大部分が解消:
+
+- `references/decisions/` — ADR-001, ADR-002, ADR-004 等が作成済み。explanation.md のみの状態は解消
+- `references/tech-stack-notes/` — Step 3 未着手のため explanation.md のみは想定通り。Step 3 で自然に埋まる
+- `project/` 配下 — `expense-saas/` にリネーム済みで旧パス自体が存在しない。実装前フェーズのため想定通り
 
 ## 解決日
-
+2026-03-16

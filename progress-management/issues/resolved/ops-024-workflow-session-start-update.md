@@ -34,4 +34,7 @@ workflow.md のセッション管理セクションを更新:
 
 ## 解決内容
 
+指摘は「workflow.md に work-breakdown への導線がない」というものだが、実際には project_steps.md の冒頭に「各ステップの詳細は `work-breakdown/` 配下のファイルを参照してください」と明記されており、テーブルにも各 Step の work-breakdown へのリンクがある。workflow.md → progress.md → project_steps.md → work-breakdown という導線は既に存在しており、workflow.md に重複記載する必要はない。指摘内容が的外れのためクローズ。
+
 ## 解決日
+2026-03-16
