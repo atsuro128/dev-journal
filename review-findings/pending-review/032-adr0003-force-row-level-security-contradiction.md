@@ -36,3 +36,20 @@ status: open
 - `FORCE ROW LEVEL SECURITY` を採用しないなら、SQL サンプルから該当行を削除し、説明文・リスク表と統一する
 - 逆に `FORCE ROW LEVEL SECURITY` を採用するなら、認証時の `tenant_memberships` 参照方法をオーナーロール以外の別方式へ再設計する
 - 少なくとも ADR-0003 内で、テーブルオーナーが RLS をバイパスできる前提と `FORCE` 設定の関係を一意に読める記述へ修正する
+
+## 再レビュー結果（2026-03-16）
+
+対応不十分（差し戻し）。
+
+### 確認内容
+- `ADR-0003` の SQL サンプルと説明文は、`FORCE ROW LEVEL SECURITY` を使わない方針に更新された
+  - `dev-journal/deliverables/docs/30_arch/adr/0003-rls-tenant-isolation.md:53`
+  - `dev-journal/deliverables/docs/30_arch/adr/0003-rls-tenant-isolation.md:60`
+- 認証エンドポイントでテーブルオーナーロールが RLS をバイパスする前提も維持されている
+  - `dev-journal/deliverables/docs/30_arch/adr/0003-rls-tenant-isolation.md:95`
+  - `dev-journal/deliverables/docs/30_arch/adr/0003-rls-tenant-isolation.md:101`
+- ただしリスク緩和表には依然として「`FORCE ROW LEVEL SECURITY` は業務用ロールにのみ適用」とある
+  - `dev-journal/deliverables/docs/30_arch/adr/0003-rls-tenant-isolation.md:114`
+
+### 判定理由
+`FORCE ROW LEVEL SECURITY` はテーブル単位の設定であり、業務用ロールのみに適用するという記述は成立しない。ADR 内で「FORCE は使わない」と「業務用ロールにのみ適用する」が併存しており、前回指摘の設計矛盾が解消されていないため。

@@ -1,7 +1,7 @@
 ---
 step: 3
 severity: medium
-status: open
+status: resolved
 ---
 
 # 031: Logs Insights 集計だけでは定義済みの p95/5xx アラートを継続監視できない
@@ -61,3 +61,23 @@ status: open
 
 ### 判定理由
 ADR 側の修正は妥当だが、統合設計書である `architecture.md` に同じ内容が反映されていない。Step 3 成果物全体としてはまだ監視設計の読み筋が分岐するため、本指摘は未解消と判定する。
+
+---
+
+## 再レビュー結果（2026-03-16 / 2回目）
+
+対応妥当（クローズ）。
+
+### 確認内容
+- `architecture.md` の監視方針表が `メトリクスフィルタ + Logs Insights` を明示する形に更新された
+  - `dev-journal/deliverables/docs/30_arch/architecture.md:528`
+- `ADR-0005` では引き続き、ダッシュボード用途の `Logs Insights` とアラート用途の `メトリクスフィルタ` を分離している
+  - `dev-journal/deliverables/docs/30_arch/adr/0005-monitoring-logging.md:97`
+  - `dev-journal/deliverables/docs/30_arch/adr/0005-monitoring-logging.md:105`
+  - `dev-journal/deliverables/docs/30_arch/adr/0005-monitoring-logging.md:116`
+  - `dev-journal/deliverables/docs/30_arch/adr/0005-monitoring-logging.md:118`
+- `CloudWatch Alarms` のソースが Step 3 成果物上で整合した
+  - `dev-journal/deliverables/docs/30_arch/architecture.md:530`
+
+### 判定理由
+統合設計書と ADR の双方で、アラーム用メトリクスの生成元が `CloudWatch メトリクスフィルタ` として一致したため。
