@@ -94,15 +94,28 @@
 |------|------|
 | 基盤 | Amazon CloudWatch |
 | 自動収集 | ECS タスクの CPU/メモリ使用率（CloudWatch Container Insights） |
-| カスタムメトリクス | アクセスログの構造化ログから CloudWatch Logs Insights で集計 |
+| カスタムメトリクス（ダッシュボード用） | CloudWatch Logs Insights でアドホック集計 |
+| カスタムメトリクス（アラート用） | CloudWatch メトリクスフィルタで時系列メトリクスを生成 |
+
+### メトリクス生成方式の使い分け
+
+| 用途 | 方式 | 説明 |
+|------|------|------|
+| ダッシュボード | Logs Insights | アドホッククエリで柔軟に集計。アラームのソースにはならない |
+| CloudWatch Alarm | メトリクスフィルタ | 構造化ログからパターンマッチで時系列メトリクスを自動生成。Alarm のソースとして使用 |
+
+**メトリクスフィルタの定義例:**
+- `5xx エラー`: `{ $.status >= 500 }` → メトリクス `API/5xxCount`
+- `リクエスト数`: `{ $.status >= 200 }` → メトリクス `API/RequestCount`
+- `レスポンスタイム`: `{ $.duration_ms >= 0 }` → メトリクス `API/Duration`（統計値で p95/p99 を算出）
 
 ### MVP で計測すべき指標
 
 | カテゴリ | 指標 | 取得方法 | アラート閾値 |
 |----------|------|----------|-------------|
-| パフォーマンス | API レスポンスタイム p95 | 構造化ログの duration_ms を Logs Insights で集計 | > 500ms |
-| パフォーマンス | API レスポンスタイム p99 | 同上 | > 1000ms（参考値） |
-| エラー | 5xx エラーレート | 構造化ログの status >= 500 を集計 | > 1% |
+| パフォーマンス | API レスポンスタイム p95 | メトリクスフィルタ → CloudWatch Alarm（p95 統計） | > 500ms |
+| パフォーマンス | API レスポンスタイム p99 | メトリクスフィルタ → CloudWatch Alarm（p99 統計） | > 1000ms（参考値） |
+| エラー | 5xx エラーレート | メトリクスフィルタ → CloudWatch Alarm（Math: 5xxCount/RequestCount） | > 1% |
 | エラー | 4xx エラーレート | 構造化ログの status >= 400 を集計 | > 10%（参考値） |
 | 可用性 | ヘルスチェック失敗 | ALB のヘルスチェック | 連続2回失敗 |
 | リソース | ECS タスク CPU 使用率 | Container Insights 自動収集 | > 80% |
@@ -149,7 +162,7 @@ MVP ではメール通知。将来的に Slack/PagerDuty 連携を検討。
 ## 理由
 1. **log/slog**: 外部依存ゼロで保守コスト最小。Go 標準としての長期安定性。構造化ログ（JSON）を stdout に出力し、ECS → CloudWatch Logs の自動転送で追加設定不要
 2. **CloudWatch**: ECS/RDS のメトリクスがネイティブに収集され、追加のインフラ管理が不要。Prometheus は MVP フェーズでは運用過剰。Logs Insights でカスタムメトリクスをクエリで取得でき、ダッシュボードも作成可能
-3. **構造化ログベースのメトリクス**: 専用のメトリクスSDKを導入せず、構造化ログに含まれる duration_ms, status 等を Logs Insights で集計する方式はシンプルで、ログとメトリクスの一元管理が可能
+3. **構造化ログベースのメトリクス**: 専用のメトリクス SDK を導入せず、構造化ログに含まれる duration_ms, status 等を活用する。ダッシュボード用途は Logs Insights のアドホッククエリ、アラート用途は CloudWatch メトリクスフィルタで時系列メトリクスを生成し CloudWatch Alarm に接続する。ログとメトリクスの一元管理が可能
 
 ## 影響・結果
 - 全 HTTP ハンドラにログミドルウェアを適用し、request_id, tenant_id, duration_ms 等を自動記録する

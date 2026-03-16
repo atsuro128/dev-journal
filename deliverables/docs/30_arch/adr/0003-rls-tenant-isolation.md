@@ -57,26 +57,48 @@ CREATE POLICY tenant_isolation ON expense_reports
 ```
 
 - `ENABLE ROW LEVEL SECURITY`: テーブルオーナー以外に RLS を有効化
-- `FORCE ROW LEVEL SECURITY`: テーブルオーナーにも RLS を強制（マイグレーション用ユーザーがオーナーの場合の安全策）
+- `FORCE ROW LEVEL SECURITY` は **使用しない**: テーブルオーナーロールは認証処理（ログイン・サインアップ）での `tenant_memberships` 参照に必要なため、RLS をバイパスできる状態を維持する。業務用ロール（アプリケーション接続）には `ENABLE` のみで RLS が適用される
 - ポリシーは `USING` 句のみ（SELECT/UPDATE/DELETE に適用）。INSERT 時は `WITH CHECK` も同一条件で適用
+- **DB ロールの分離**: テーブルオーナーロール（マイグレーション + 認証用）と業務用ロール（通常リクエスト用）の2ロール構成
 
-### コネクション管理フロー
+### コネクション管理フロー（認証済みリクエスト）
 
 ```
 リクエスト受信
   ↓
 JWT claims から tenant_id を取得（ミドルウェア）
   ↓
-コネクションプールからコネクション取得
+pool.Acquire() で専用コネクションを取得 ← ★ リクエスト単位で固定
   ↓
-SET app.current_tenant = '{tenant_id}'  ← ★ JWT claims の値を設定
+BEGIN + SET LOCAL app.current_tenant = '{tenant_id}'
+  ← ★ SET LOCAL はトランザクション内でのみ有効（COMMIT/ROLLBACK で自動リセット）
   ↓
-ビジネスロジック実行（全クエリに RLS が自動適用）
+ビジネスロジック実行（全クエリが同一コネクション・同一トランザクション内で実行）
   ↓
-RESET app.current_tenant  ← ★ リクエスト完了時にリセット
+COMMIT or ROLLBACK  ← ★ SET LOCAL は自動的にリセットされる
   ↓
-コネクションをプールに返却
+conn.Release() でコネクションをプールに返却
 ```
+
+**接続固定の保証方式**: Go の `pgxpool.Pool.Acquire()` でリクエスト単位にコネクションを固定し、`context.Context` 経由で handler → service → repository に伝播する。`SET LOCAL` はトランザクションスコープなので、COMMIT/ROLLBACK 後に自動リセットされ、`RESET` 漏れのリスクを排除する。
+
+### 認証エンドポイントの RLS バイパス
+
+ログイン・サインアップ等の認証エンドポイントでは、JWT が未発行のため `app.current_tenant` を設定できない。`tenant_memberships`（RLS 適用対象）から `role, tenant_id` を取得する必要があるため、以下の方式で RLS をバイパスする。
+
+```
+[ログイン / サインアップ]
+  ↓
+users テーブルから user 取得（RLS 非適用）
+  ↓
+tenant_memberships から role, tenant_id 取得
+  ← ★ RLS バイパス: テーブルオーナーロール（マイグレーション用）で直接参照
+  ← user_id での絞り込みにより、該当ユーザーの所属テナントのみ取得
+  ↓
+JWT 生成（claims に tenant_id, role を含める）
+```
+
+**バイパス方式**: 認証処理専用に、RLS が適用されない DB ロール（テーブルオーナー）の接続を使用する。このロールは認証サービス内でのみ使用し、業務用リポジトリ層には公開しない。`FORCE ROW LEVEL SECURITY` はテーブルオーナーには適用しないことで、認証時の参照を許可する。
 
 ## 理由
 1. **二重保証の実現**: アプリ層（リポジトリの WHERE tenant_id）+ DB層（RLS）で、どちらかに漏れがあっても他方で防止。セキュリティの深層防御の原則に合致
@@ -87,8 +109,10 @@ RESET app.current_tenant  ← ★ リクエスト完了時にリセット
 
 | リスク | 緩和策 |
 |--------|--------|
-| コネクション返却時の RESET 漏れ | Go のミドルウェアで `defer` を使い、リクエスト終了時に必ず RESET を実行。コネクションプールの `BeforeAcquire` フックでも検証 |
-| マイグレーション時の RLS 干渉 | マイグレーション専用ユーザー（テーブルオーナー）を使用。`FORCE ROW LEVEL SECURITY` は業務用ロールにのみ適用するか、マイグレーション時に一時的にバイパス |
+| コネクション返却時のリセット漏れ | `SET LOCAL` + トランザクションスコープにより、COMMIT/ROLLBACK で自動リセット。`RESET` の明示的呼び出しが不要 |
+| 別コネクションでのクエリ実行 | `pgxpool.Acquire()` でリクエスト単位にコネクションを固定し、`context.Context` 経由で全層に伝播。プールからの自動取得は使用しない |
+| マイグレーション時の RLS 干渉 | マイグレーション専用ユーザー（テーブルオーナー）を使用。`FORCE ROW LEVEL SECURITY` は業務用ロールにのみ適用 |
+| 認証エンドポイントでの RLS 循環 | 認証処理はテーブルオーナーロールの専用接続を使用し、RLS をバイパス。業務ロジックには公開しない |
 | テスト時の RLS | テスト用にテナントコンテキストを設定するヘルパーを用意。テナント分離テスト（requirements.md §テスト）で RLS の動作を検証 |
 
 ## 影響・結果

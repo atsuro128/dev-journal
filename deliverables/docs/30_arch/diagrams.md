@@ -68,23 +68,23 @@ sequenceDiagram
     Note over MW: [4] ログ記録開始
     Note over MW: [5] レート制限チェック
     Note over MW: [6] JWT 検証（RS256）
-    Note over MW: [7] JWT claims から tenant_id 取得
-    MW->>DB: SET app.current_tenant = 'tenant-uuid'
+    Note over MW: [7] Acquire conn + BEGIN
+    MW->>DB: SET LOCAL app.current_tenant = 'tenant-uuid'
     Note over MW: [8] RBAC ロール検証
 
-    MW->>H: 認証済みリクエスト
+    MW->>H: 認証済みリクエスト（conn を context 経由で伝播）
     H->>S: ユースケース実行
     S->>D: ドメインロジック実行
     D-->>S: 結果 / ドメインエラー
     S->>R: データアクセス
-    R->>DB: SQL クエリ（WHERE tenant_id + RLS）
+    R->>DB: SQL クエリ（同一 conn、WHERE tenant_id + RLS）
     DB-->>R: 結果セット
     R-->>S: エンティティ
     S-->>H: レスポンスデータ
     H-->>MW: HTTP レスポンス
 
-    MW->>DB: RESET app.current_tenant
-    Note over MW: ログ記録完了（duration_ms）
+    MW->>DB: COMMIT（SET LOCAL 自動リセット）
+    Note over MW: Release conn + ログ記録完了（duration_ms）
 
     MW-->>ALB: HTTP レスポンス
     ALB-->>C: HTTPS レスポンス
@@ -101,25 +101,26 @@ sequenceDiagram
     participant DB as PostgreSQL
 
     rect rgb(240, 248, 255)
-        Note over C,DB: ログイン
-        C->>API: POST /auth/login {email, password}
+        Note over C,DB: ログイン（オーナーロール接続 — RLS バイパス）
+        C->>API: POST /api/auth/login {email, password}
         API->>DB: SELECT * FROM users WHERE email = ?
         DB-->>API: user (password_hash)
         Note over API: Argon2id 検証
         API->>DB: SELECT role, tenant_id FROM tenant_memberships WHERE user_id = ?
+        Note over DB: ※ オーナーロール接続のため RLS 非適用
         DB-->>API: membership
         Note over API: JWT 生成<br/>access_token (15min)<br/>refresh_token (7day)
         API-->>C: {access_token, refresh_token}
     end
 
     rect rgb(255, 248, 240)
-        Note over C,DB: 認証付きリクエスト
-        C->>API: GET /reports<br/>Authorization: Bearer {access_token}
+        Note over C,DB: 認証付きリクエスト（業務ロール接続 — RLS 適用）
+        C->>API: GET /api/reports<br/>Authorization: Bearer {access_token}
         Note over API: JWT RS256 検証
-        Note over API: SET app.current_tenant
-        API->>DB: SELECT ... (RLS 適用)
+        Note over API: Acquire conn + BEGIN<br/>SET LOCAL app.current_tenant
+        API->>DB: SELECT ... (RLS 適用、同一コネクション)
         DB-->>API: テナント内データのみ
-        Note over API: RESET app.current_tenant
+        Note over API: COMMIT（SET LOCAL 自動リセット）
         API-->>C: {data: [...]}
     end
 
