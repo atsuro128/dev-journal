@@ -50,7 +50,7 @@
 ```sql
 -- 基本パターン（全対象テーブルに適用）
 ALTER TABLE expense_reports ENABLE ROW LEVEL SECURITY;
-ALTER TABLE expense_reports FORCE ROW LEVEL SECURITY;
+-- FORCE ROW LEVEL SECURITY は使用しない（テーブルオーナーの RLS バイパスを許可）
 
 CREATE POLICY tenant_isolation ON expense_reports
     USING (tenant_id = current_setting('app.current_tenant')::uuid);

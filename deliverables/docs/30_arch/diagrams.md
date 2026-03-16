@@ -126,7 +126,7 @@ sequenceDiagram
 
     rect rgb(248, 255, 240)
         Note over C,DB: トークンリフレッシュ
-        C->>API: POST /auth/refresh {refresh_token}
+        C->>API: POST /api/auth/refresh {refresh_token}
         Note over API: refresh_token 検証
         Note over API: 新しい access_token 生成
         API-->>C: {access_token}
@@ -140,8 +140,8 @@ sequenceDiagram
 ```mermaid
 graph TD
     subgraph Request["リクエスト処理"]
-        A["JWT から tenant_id 取得"] --> B["SET app.current_tenant"]
-        B --> C{"データアクセス"}
+        A["JWT から tenant_id 取得"] --> B["Acquire conn + BEGIN<br/>SET LOCAL app.current_tenant"]
+        B --> C{"データアクセス（同一 conn）"}
     end
 
     subgraph DoubleGuard["二重保証"]
@@ -158,9 +158,9 @@ graph TD
     end
 
     subgraph Cleanup["クリーンアップ"]
-        H --> J["RESET app.current_tenant"]
+        H --> J["COMMIT<br/>（SET LOCAL 自動リセット）"]
         I --> J
-        J --> K["コネクション返却"]
+        J --> K["Release conn"]
     end
 ```
 
