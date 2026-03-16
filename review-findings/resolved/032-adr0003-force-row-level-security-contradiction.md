@@ -1,7 +1,7 @@
 ---
 step: 3
 severity: high
-status: open
+status: resolved
 ---
 
 # 032: ADR-0003 の FORCE ROW LEVEL SECURITY 記述が認証バイパス方針と矛盾している
@@ -53,3 +53,22 @@ status: open
 
 ### 判定理由
 `FORCE ROW LEVEL SECURITY` はテーブル単位の設定であり、業務用ロールのみに適用するという記述は成立しない。ADR 内で「FORCE は使わない」と「業務用ロールにのみ適用する」が併存しており、前回指摘の設計矛盾が解消されていないため。
+
+---
+
+## 再レビュー結果（2026-03-16 / 2回目）
+
+対応妥当（クローズ）。
+
+### 確認内容
+- `ADR-0003` の SQL サンプルは `FORCE ROW LEVEL SECURITY` を使わない前提で統一されている
+  - `dev-journal/deliverables/docs/30_arch/adr/0003-rls-tenant-isolation.md:52`
+  - `dev-journal/deliverables/docs/30_arch/adr/0003-rls-tenant-isolation.md:53`
+- 説明文でも、`FORCE ROW LEVEL SECURITY` は使用せず、テーブルオーナーロールが認証処理時に RLS をバイパスする方針を明示している
+  - `dev-journal/deliverables/docs/30_arch/adr/0003-rls-tenant-isolation.md:60`
+  - `dev-journal/deliverables/docs/30_arch/adr/0003-rls-tenant-isolation.md:101`
+- 前回差し戻し理由だったリスク緩和表の記述も、「業務用ロールにのみ適用」ではなく「`FORCE ROW LEVEL SECURITY` は使用しないため、オーナーロールは RLS をバイパスできる」に更新された
+  - `dev-journal/deliverables/docs/30_arch/adr/0003-rls-tenant-isolation.md:114`
+
+### 判定理由
+`FORCE ROW LEVEL SECURITY` の扱いが SQL サンプル、説明文、リスク緩和表のすべてで「使用しない」に揃い、テーブルオーナーロールによる認証時の RLS バイパス方針と矛盾しなくなったため。
