@@ -39,3 +39,10 @@ status: open
   - 99.5% を Single-AZ で満たせる根拠と障害時運用を具体化する
   - MVP では可用性目標を緩和し、要件定義側と合意のうえで更新する
 - あわせて、ALB ヘルスチェックが担保する範囲と、DB 障害に対する対策範囲を分けて記述する
+
+## 再レビュー結果（2026-03-16）
+
+- `ADR-0004` に可用性リスク受容の説明と、ALB ヘルスチェックが担う範囲の切り分けは追記された
+- ただし `dev-journal/deliverables/docs/30_arch/adr/0004-infra.md:102` の「RDS Single-AZ の AWS SLA は 99.95%」は事実誤認
+- AWS 公式の Amazon RDS SLA では、99.95% は Multi-AZ DB Instance / Cluster の値であり、Single-DB Instance SLA は 99.5%
+- 可用性要件を支える根拠として引用している数値が誤っているため、本指摘は未解消と判定する
