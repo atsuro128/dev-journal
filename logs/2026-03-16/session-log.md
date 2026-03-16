@@ -52,3 +52,10 @@
   - TanStack Query のエンドポイント `/reports/pending` を API設計の `/workflow/pending` に統一
   - ミドルウェアディレクトリに `security_headers.go` を追記
 - 判断: 依存グラフに従い Wave 1（3-1, 3-2, 3-4 並列）→ Wave 2（3-3, 3-7 並列）→ 3-5 → 3-6 の順で作成（理由: step3-architecture.md の並列実行パターンに準拠）
+- 作業: codex レビュー実施 → 3件の指摘を受領（026: 高, 027: 中, 028: 中）
+- 作業: 指摘3件の正当性評価 → 全件正当と判定し対応実施
+  - 026: TenantContext の tenant_id 取得元を JWT claims に統一（architecture.md §3.2, diagrams.md §2, ADR-0003）
+  - 027: SPA 配信方式を追加 — Go embed で静的ファイルを同一コンテナから配信（architecture.md §4.0, diagrams.md §1/§6, ADR-0004）
+  - 028: Single-AZ RDS をリスク受容として明示、ALB ヘルスチェックの担当範囲を DB 可用性と分離（ADR-0004）
+- 判断: SPA 配信は Go embed 方式を採用（理由: MVP では単一コンテナ・単一デプロイが最もシンプル。将来的に S3+CloudFront へ移行可能）
+- 判断: Single-AZ は RDS SLA 99.95% で数値上 99.5% 目標を充足するが、AZ 障害リスクを受容する旨を明記（理由: Multi-AZ は約2倍のコスト。MVP フェーズではコスト優先）

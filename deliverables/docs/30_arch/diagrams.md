@@ -27,8 +27,11 @@ graph TB
     end
 
     Browser -->|HTTPS| ALB
-    ALB --> Task1
-    ALB --> Task2
+    ALB -->|/api/*, /health| Task1
+    ALB -->|/api/*, /health| Task2
+    ALB -->|/*| Task1
+    ALB -->|/*| Task2
+    Note over Task1,Task2: Go embed で SPA 静的ファイルも配信
     Task1 --> RDS
     Task2 --> RDS
     Task1 -->|署名付きURL発行| S3
@@ -65,10 +68,8 @@ sequenceDiagram
     Note over MW: [4] ログ記録開始
     Note over MW: [5] レート制限チェック
     Note over MW: [6] JWT 検証（RS256）
-    MW->>DB: SELECT tenant_id FROM tenant_memberships
-    DB-->>MW: tenant_id
+    Note over MW: [7] JWT claims から tenant_id 取得
     MW->>DB: SET app.current_tenant = 'tenant-uuid'
-    Note over MW: [7] TenantContext 設定
     Note over MW: [8] RBAC ロール検証
 
     MW->>H: 認証済みリクエスト
@@ -190,7 +191,7 @@ graph LR
     subgraph CI["GitHub Actions"]
         A["Push / PR"] --> B["Lint<br/>golangci-lint<br/>ESLint"]
         B --> C["Test<br/>Go test<br/>Vitest"]
-        C --> D["Build<br/>Go build<br/>Vite build"]
+        C --> D["Build<br/>Vite build → dist/<br/>Go build (embed dist/)"]
         D --> E["Docker Build<br/>& Push to ECR"]
     end
 

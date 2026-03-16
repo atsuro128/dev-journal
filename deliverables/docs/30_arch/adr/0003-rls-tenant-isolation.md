@@ -65,13 +65,11 @@ CREATE POLICY tenant_isolation ON expense_reports
 ```
 リクエスト受信
   ↓
-JWT からユーザー情報取得（ミドルウェア）
-  ↓
-TenantMembership からテナントID取得
+JWT claims から tenant_id を取得（ミドルウェア）
   ↓
 コネクションプールからコネクション取得
   ↓
-SET app.current_tenant = '{tenant_id}'  ← ★ ここで設定
+SET app.current_tenant = '{tenant_id}'  ← ★ JWT claims の値を設定
   ↓
 ビジネスロジック実行（全クエリに RLS が自動適用）
   ↓

@@ -170,8 +170,8 @@ expense-saas/
   │                     認証不要エンドポイント（/health, /auth/login 等）はスキップ
   │
   ▼
-[7] TenantContext       JWT の user_id → TenantMembership → tenant_id を取得
-  │                     SET app.current_tenant を実行（RLS 有効化）
+[7] TenantContext       JWT claims の tenant_id を使用して SET app.current_tenant を実行
+  │                     （tenant_memberships への SELECT は不要 — JWT 発行時に確定済み）
   │                     リクエスト完了時に RESET（defer）
   │
   ▼
@@ -234,7 +234,7 @@ expense-saas/
 
 ```
 [1] ミドルウェア（TenantContext）
-    JWT claims → tenant_id を取得
+    JWT claims から tenant_id を取得（DB問い合わせ不要）
     SET app.current_tenant = 'tenant-uuid'
 
 [2] リポジトリ層
@@ -284,6 +284,27 @@ expense-saas/
 ---
 
 ## 4. フロントエンド詳細
+
+### 4.0 SPA 配信方式
+
+MVP では **Go コンテナに Vite build 成果物を同梱**して配信する。
+
+| 方式 | 採用 | 理由 |
+|------|------|------|
+| Go embed で同一コンテナから配信 | **採用** | コンテナ1つで完結、デプロイが最もシンプル、MVP に最適 |
+| S3 + CloudFront | 不採用 | CDN 設定・CORS・キャッシュ制御の追加コスト。将来的なスケール時に移行 |
+| フロントエンド専用コンテナ | 不採用 | コンテナ管理が2倍。MVP では過剰 |
+
+```
+[ビルド]
+  Vite build → dist/ に静的ファイル生成
+  Go build  → go:embed で dist/ をバイナリに埋め込み
+
+[リクエストルーティング]
+  /api/*     → Go API ハンドラ
+  /health    → ヘルスチェックハンドラ
+  /*         → 埋め込み静的ファイル（SPA fallback: index.html）
+```
 
 ### 4.1 ディレクトリ構成（計画）
 
