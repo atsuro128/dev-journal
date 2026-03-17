@@ -1,0 +1,23 @@
+## 01:09 セッション
+- 作業: ロールベース・カスタムサブエージェント（全15体）の作成
+  - 設計フェーズ6体: design-architect, basic-designer, detail-designer, db-designer, design-unit-reviewer, design-cross-reviewer
+  - 実装フェーズ9体: impl-architect, test-designer, test-implementer, test-reviewer, platform-builder, frontend-developer, backend-developer, impl-unit-reviewer, impl-cross-reviewer
+- 作業: ユーザーレビューに基づく修正
+  - 設計者・単体レビュー者のモデルを sonnet → opus に変更
+  - disallowedTools: NotebookEdit を全エージェントから削除
+  - Wave 2-3 の記載を「機能内直列・機能間並列」に修正
+  - Wave 4 の統合タスク担当を detail-designer → design-architect に変更（Write 権限追加）
+  - detail-designer から authz.md の責務を削除
+  - platform-builder に「初回構築が主務」を明記
+  - /review スキルは将来的に廃止方向と記載
+- 作業: タスク実行計画の永続化設計
+  - architect がタスク実行計画ファイルを task-plans/ に直接作成する方式に決定
+  - task-plan-template.md を作成（実行順序パターン A/B/C、共有ファイル調整テーブル含む）
+  - セッション引き継ぎ・並列指揮役の調整プロトコルをワークフローに追加
+- 作業: ブランチ戦略を worktree ベースに置き換え
+  - branching.md を3階層手動管理から Agent の isolation: worktree に全面移行
+  - 成果物を書くエージェント8体のフロントマターに isolation: worktree を追加
+- 作業: AI運用設計資料の作成
+  - subagent-design.md（エージェント設計資料）
+  - subagent-workflow.md（オーケストレーション・ワークフロー）
+- 確認: カスタムエージェントの subagent_type 呼び出しはセッション中作成のため認識されず。clear 後に再確認が必要
