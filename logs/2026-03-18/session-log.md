@@ -32,3 +32,4 @@
 - 作業: レビュワー3体に PR レビュー投稿手順を追加（gh pr review で直接投稿、指揮役には pass/fail のみ返す）
   - impl-unit-reviewer, impl-cross-reviewer, test-reviewer
 - 判断: 設計レビュワー（design-unit/cross-reviewer）は PR レビュー対象外（設計ドキュメントは別リポジトリ管理のため）
+- 作業: 2026-03-17 日報を作成
