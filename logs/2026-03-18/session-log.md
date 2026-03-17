@@ -21,3 +21,14 @@
   - subagent-design.md（エージェント設計資料）
   - subagent-workflow.md（オーケストレーション・ワークフロー）
 - 確認: カスタムエージェントの subagent_type 呼び出しはセッション中作成のため認識されず。clear 後に再確認が必要
+
+## 01:26 セッション
+- 作業: カスタムエージェント全16体の疎通確認（CLAUDE.md・rules の自動ロードも確認済み）
+- 作業: ブランチ戦略を PR ベースに変更
+  - branching.md: worktree → main 直マージから worktree → push → PR → レビュー → マージに変更
+  - 適用範囲を expense-saas/ の実装フェーズ（Step 6 以降）に限定
+- 作業: 実装者4体に完了手順を追加（品質チェック → コミット → push → PR 作成 → PR URL を返す）
+  - backend-developer, frontend-developer, platform-builder, test-implementer
+- 作業: レビュワー3体に PR レビュー投稿手順を追加（gh pr review で直接投稿、指揮役には pass/fail のみ返す）
+  - impl-unit-reviewer, impl-cross-reviewer, test-reviewer
+- 判断: 設計レビュワー（design-unit/cross-reviewer）は PR レビュー対象外（設計ドキュメントは別リポジトリ管理のため）
