@@ -1,0 +1,13 @@
+## 07:34 セッション
+- 作業: DevContainer 環境構築完了 — ipset/IP解決ベースの firewall から explicit proxy（Squid）+ iptables UID フィルタリング構成へ全面移行
+  - Dockerfile: ipset/aggregate を squid-openssl/openssl に置換、Codex/Squid 用ディレクトリ・権限設定を追加、新規スクリプト群を COPY
+  - devcontainer.json: Codex volume 追加、proxy 環境変数（HTTP_PROXY 等）設定、upstream proxy 環境変数追加、postStartCommand を init-devcontainer.sh に変更、postAttachCommand に announce-egress-status.sh 追加
+  - init-firewall.sh: 全面書き換え — Squid 起動・iptables UID ベースフィルタリング・検証実行の統合スクリプトに
+  - init-devcontainer.sh: 新規 — named volume 所有権回復の入口スクリプト
+  - render-squid-config.sh: 新規 — allowlist から Squid 設定を生成（upstream proxy 対応含む）
+  - verify-egress.sh: 新規 — proxy 経由到達性・ブロック確認・direct outbound 遮断の自動検証
+  - announce-egress-status.sh: 新規 — attach 時に egress 検証結果を表示
+  - proxy-allowlist.txt: 新規 — 許可ホスト一覧（OpenAI/Anthropic/npm/Go/Python/VS Code/Discord）
+  - SECURITY.md: 新規 — 通信制御設計のセキュリティノート
+- 作業: stop-check.py を一時無効化（環境構築作業中の誤発火回避）
+- 作業: codex-review スキルの指摘対応手順を /review-findings スキル参照に修正
