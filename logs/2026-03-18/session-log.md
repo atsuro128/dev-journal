@@ -86,3 +86,16 @@
 - 作業: [プロセス] work-breakdown/step4-5-design.md からタスク管理情報を削除
   - 削除: タスク一覧の「依存」「状態」カラム、依存グラフセクション全体
   - 理由: work-breakdown はガイド（何を作るか）、タスク管理（依存・状態・Wave構成）は task-plans の責務
+- 判断: Step 4+5 を Step 4（基本設計）と Step 5（詳細設計）に分離
+  - 理由: 粒度の違う作業（画面数の確定 vs 機能ごとの詳細設計）が混在し、運用が混乱していた
+  - Step 4 で画面一覧・遷移を確定 → Step 5 で機能別に詳細化、という自然な依存関係に戻す
+- 作業: [プロセス] Step 4+5 分離と Wave 概念の廃止
+  - 新規: step4-basic-design.md（目的・成果物・プロセス・完了条件）
+  - 新規: step5-detail-design.md（目的・成果物・完了条件、タスク分割は architect に委譲）
+  - 削除: step4-5-design.md、task-plans/step4-5.md
+  - 更新: project_steps.md、progress.md（マイルストーン分離）
+  - 更新: subagent-design.md、subagent-workflow.md（Step 4/5 分離、Wave 全削除）
+  - 更新: design-architect.md（Step 5 専任、Wave 参照削除）
+  - 更新: team-structure.md、branching.md（Wave → 汎用表現）
+  - 更新: テンプレート3件（Wave カラム・フロントマター削除）
+  - 更新: ops-032、dashboard.md（Step 4+5 → Step 5）

@@ -15,7 +15,8 @@
 | 1 | 要件定義 | 業務を理解し作るものを言語化 | [step1-requirements.md](work-breakdown/step1-requirements.md) |
 | 2 | ドメイン設計 | データ構造と不変条件を固める | [step2-domain.md](work-breakdown/step2-domain.md) |
 | 3 | アーキテクチャ設計 | 技術選定と全体構成を決定 | [step3-architecture.md](work-breakdown/step3-architecture.md) |
-| 4+5 | 基本設計 + 詳細設計 | 画面・API・DB・認可・セキュリティを機能単位で設計 | [step4-5-design.md](work-breakdown/step4-5-design.md) |
+| 4 | 基本設計 | 画面一覧・画面遷移・共通UIパターンを確定 | [step4-basic-design.md](work-breakdown/step4-basic-design.md) |
+| 5 | 詳細設計 | 機能別画面詳細・API・DB・認可・セキュリティを設計 | [step5-detail-design.md](work-breakdown/step5-detail-design.md) |
 | 6 | テスト設計 | 重要領域のテスト戦略を策定 | [step6-testing.md](work-breakdown/step6-testing.md) |
 | 7 | 実装・運用 | 動くものを出し継続改善可能に | [step7-implementation.md](work-breakdown/step7-implementation.md) |
 
