@@ -42,4 +42,17 @@ Step 4+5 着手前
 
 ## 解決内容
 
+`.claude/rules/team-structure.md` を作成し、以下を定義:
+
+- **ロール定義**: 人間（承認・判断）、指揮役（分配・品質ゲート・進捗管理）、サブエージェント 6体（設計フェーズ）
+- **実行プロセス**: Phase 0（計画）→ Phase 1〜3（Wave 実行: worktree → PR → レビュー → マージ）→ Phase 4（統合 + 横断レビュー）→ Phase 5（指摘対応）
+- **品質ゲート判定基準**: PASS / FIX / ESCALATE / PASS with NOTE
+- **意思決定権限マトリクス**: 指揮役単独可 vs ユーザー承認必須の境界
+
+AI ロールの詳細（15体の責務・モデル選定）は `dev-journal/ai-operations/subagent-design.md` に設計根拠として残置。
+`.claude/rules/team-structure.md` は指揮役が実行時に従うルールとして簡潔に記述。
+
+ops-026（レビュー粒度）もこのルールファイルに統合して解決。
+
 ## 解決日
+2026-03-18
