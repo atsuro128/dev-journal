@@ -99,3 +99,7 @@
   - 更新: team-structure.md、branching.md（Wave → 汎用表現）
   - 更新: テンプレート3件（Wave カラム・フロントマター削除）
   - 更新: ops-032、dashboard.md（Step 4+5 → Step 5）
+- 作業: [プロセス] 設計エージェント3体の責務不整合を修正
+  - basic-designer: Step 4（俯瞰）と Step 5（詳細）で粒度が異なることを明記、出力先に screens/*.md を追加
+  - design-architect: Step 5 のみ担当であることを明記、ui_flow.md 最終更新の説明を具体化
+  - design-unit-reviewer: Step 4 レビューと Step 5 レビューのスコープ差を明記、screens/*.md を参照ファイルに追加
