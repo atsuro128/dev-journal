@@ -48,3 +48,22 @@
 - 判断: ops-030 はルールファイルに必要最小限のみ記載（理由: サブエージェントのロール定義は Agent ツールの description に既存）
 - 判断: 設計ドキュメントの並列作成にも worktree/PR ベースの隔離を適用（理由: 共有ファイルへの並列書き込みで後勝ち上書きリスクがある）
 - 確認: ops-032 の残課題（CI/CD, DevContainer）は Step 6 着手前に対応 → ユーザー合意済み
+
+## 14:10 セッション
+- 問題: work-breakdown が subagent-design.md / subagent-workflow.md の設計を反映していない
+  - エージェント割当なし、Wave 間レビューなし、Phase 0 なし、機能内直列（basic→detail）分割なし
+- 作業: [プロセス] work-breakdown 作成テンプレート `ai-dev-framework/templates/work-breakdown-template.md` を新規作成
+  - 作成規約5項目: タスク粒度=エージェント1起動、エージェント割当必須、Wave間レビュー、Phase 0、自己完結性
+- 作業: [プロセス] `subagent-workflow.md` に work-breakdown 作成規約セクションを追加（テンプレートへのポインタ）
+- 作業: [プロセス] work-breakdown 3ファイルをテンプレートに合わせて改訂
+  - step4-5-design.md: 旧C〜Fを画面(-1)とAPI(-2)に分割、全タスクにエージェント割当、レビューフェーズ追加
+  - step6-testing.md: Phase 0追加、test-designer直列構成、test-reviewerレビュー追加
+  - step7-implementation.md: Phase 1〜4をWave 1〜5に再構成、機能別にフロント/バック/テスト分割
+- 問題: work-breakdown と task-plans の役割が混在（architectの仕事を先取りしてしまった）
+  - 判断: work-breakdown は「何を作るか」の叩き台、architect が Phase 0 で検証・補正して task-plans に落とす
+  - エージェント割当・Wave構成・レビューフェーズは architect が決めるべき
+- 問題: 成果物定義の設計が甘い
+  - screens.md に画面一覧と画面詳細仕様が混在 → 分離すべき
+  - openapi.yaml の機能別作成→統合の作業が未定義
+  - Wave 4（4+5-G）の「最終統合」が具体化されていない
+- 判断: 改訂途中の work-breakdown を一旦コミットし、architect（Phase 0）に成果物設計の検証を任せる

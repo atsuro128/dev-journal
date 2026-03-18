@@ -24,6 +24,14 @@
 
 ---
 
+## work-breakdown 作成規約
+
+`dev-journal/guide/work-breakdown/` 配下の作業分解ファイルは、`ai-dev-framework/templates/work-breakdown-template.md` に従って作成・更新すること。
+
+作業分解ファイルは**指揮役が作業時に参照する唯一のタスク定義**であり、本ドキュメント（subagent-workflow.md）や subagent-design.md を作業時に参照することは想定しない。そのため、エージェント割当・Wave 間レビュー・Phase 0 などの情報は全て作業分解ファイルに焼き込むこと。
+
+---
+
 ## 共通プロトコル
 
 ### セッション開始
