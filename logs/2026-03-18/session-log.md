@@ -67,3 +67,15 @@
   - openapi.yaml の機能別作成→統合の作業が未定義
   - Wave 4（4+5-G）の「最終統合」が具体化されていない
 - 判断: 改訂途中の work-breakdown を一旦コミットし、architect（Phase 0）に成果物設計の検証を任せる
+- 作業: [設計] design-architect で Step 4+5 Phase 0 タスク実行計画を作成
+  - 既知の問題4点（screens.md分離、openapi統合、Wave 4曖昧さ、work-breakdownの位置づけ）を事前情報として提供
+  - 上流成果物の整合性確認: 重大な不整合なし、軽微リスク3件（ダッシュボードAPI仕様、再申請API、メール送信基盤）
+  - work-breakdownからの変更5件: screens.md分離採用、openapi 1ファイル追記方式、Wave 4具体化、ダッシュボードD統合、B→H直列化
+  - 成果物: `task-plans/step4-5.md`
+- 作業: [プロセス] work-breakdown と task-plans の役割分担を確定し、全ファイルを再改訂
+  - work-breakdown: 「何を作るか」（タスク定義・入出力・完了条件・論理依存）のみ
+  - task-plans: 「どう作るか」（エージェント割当・Wave構成・レビューフェーズ）は architect が決定
+  - テンプレート: エージェント割当・Wave構成セクションを削除、作成規約を4項目に整理
+  - subagent-workflow.md: 「work-breakdown作成規約」→「work-breakdownとtask-plansの役割分担」に変更
+  - step4-5: architect分析結果を反映（screens分離、openapi追記方式、D-2のC-2依存、H のB依存）
+  - step6/step7: エージェント割当・Wave構成を削除、論理依存のみに

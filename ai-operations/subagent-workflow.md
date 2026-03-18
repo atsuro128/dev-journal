@@ -24,11 +24,24 @@
 
 ---
 
-## work-breakdown 作成規約
+## work-breakdown と task-plans の役割分担
 
-`dev-journal/guide/work-breakdown/` 配下の作業分解ファイルは、`ai-dev-framework/templates/work-breakdown-template.md` に従って作成・更新すること。
+### work-breakdown（`dev-journal/guide/work-breakdown/`）
 
-作業分解ファイルは**指揮役が作業時に参照する唯一のタスク定義**であり、本ドキュメント（subagent-workflow.md）や subagent-design.md を作業時に参照することは想定しない。そのため、エージェント割当・Wave 間レビュー・Phase 0 などの情報は全て作業分解ファイルに焼き込むこと。
+「**何を作るか**」を定義する。`ai-dev-framework/templates/work-breakdown-template.md` に従って作成する。
+
+含めるもの: タスク定義、入力/出力、完了条件、論理的な依存関係、成果物ファイルの分割方針
+含めないもの: エージェント割当、Wave 構成・実行順序、レビューフェーズ
+
+### task-plans（`dev-journal/progress-management/task-plans/`）
+
+「**どう作るか**」を定義する。architect エージェントが Phase 0 で work-breakdown を検証・補正して作成する。
+
+含めるもの: エージェント割当、Wave 構成、実行順序、レビューフェーズ、共有ファイル調整、受け入れ基準、リスク分析
+
+### 実行時の情報源
+
+指揮役は **task-plans を実行時の情報源** として使う。work-breakdown はタスクの目的・完了条件を確認する際に参照する。
 
 ---
 
