@@ -79,3 +79,10 @@
   - subagent-workflow.md: 「work-breakdown作成規約」→「work-breakdownとtask-plansの役割分担」に変更
   - step4-5: architect分析結果を反映（screens分離、openapi追記方式、D-2のC-2依存、H のB依存）
   - step6/step7: エージェント割当・Wave構成を削除、論理依存のみに
+
+## 19:32 セッション
+- 作業: [プロセス] Step 4+5 着手前の状況確認（progress.md、オープン issue 6件、project_steps.md）
+- 確認: Step 4+5 をブロックする issue なし（ops-032 のブランチ戦略は解決済み、残課題は Step 6 以降）
+- 作業: [プロセス] work-breakdown/step4-5-design.md からタスク管理情報を削除
+  - 削除: タスク一覧の「依存」「状態」カラム、依存グラフセクション全体
+  - 理由: work-breakdown はガイド（何を作るか）、タスク管理（依存・状態・Wave構成）は task-plans の責務
