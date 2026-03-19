@@ -7,7 +7,7 @@
 proactive（草案 PROJECT_SUMMARY.md との突き合わせ）
 
 ## 関連ステップ
-Step 1（requirements.md — DASH-001〜004）、Step 4（screens.md — SCR-DASH-001）
+Step 1（requirements.md — DASH-001〜004）、Step 4（screens.md — SCR-DASH-001、ui_flow.md）
 
 ## カテゴリ
 requirements
@@ -30,6 +30,7 @@ requirements
 
 ## 解決内容
 
+requirements.md に DASH-005（月別支出サマリー）を追加し、DASH-F01 の説明に金額集計を追記。screens.md の SCR-DASH-001 ロール別表示内容と ui_flow.md のロール別遷移パスに月別支出サマリーを反映。
 
 ## 解決日
-
+2026-03-19
