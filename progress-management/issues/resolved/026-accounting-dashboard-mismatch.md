@@ -27,6 +27,7 @@ basic-design
 
 ## 解決内容
 
+issue 024（Accounting 申請権限付与）の修正過程で解消。screens.md の Accounting ダッシュボード行に Member 向け情報（下書きレポート数、提出中レポート数、却下レポート数、直近レポート一覧）を追加し、上流定義（UC-SYS04, DASH-003）と整合させた。ui_flow.md も同様に修正済み。
 
 ## 解決日
-
+2026-03-20

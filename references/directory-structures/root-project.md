@@ -19,7 +19,6 @@ root-project/
 │   │   ├── architecture.md
 │   │   ├── coding-standards.md
 │   │   ├── security-policy.md
-│   │   ├── team-structure.md
 │   │   ├── testing.md
 │   │   └── workflow.md
 │   ├── skills/                  # スキル定義

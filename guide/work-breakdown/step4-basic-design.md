@@ -44,7 +44,7 @@ Lead
     粒度: 画面一覧レベルの俯瞰。入力項目・バリデーション等の詳細は Step 5
  2. design-unit-reviewer を起動: 成果物レビュー
     チェック: 上流成果物との整合性、全UCの画面カバー率、ロール別遷移パスの網羅性
- 3. 品質ゲート判定（.claude/rules/team-structure.md 基準）
+ 3. 品質ゲート判定（.claude/rules/workflow.md 基準）
  4. ユーザーにコミット確認を依頼
 ```
 

@@ -39,3 +39,13 @@ requirements / rbac
 
 ## 解決日
 
+## レビュー結果
+
+### 2026-03-20 Codex Issue 解決再々レビュー
+
+- 判定: 差し戻し
+- 確認1: 前回指摘 `033` は解消済み。`requirements.md` で `WFL-F03` が「自分以外が作成した approved レポート」に更新され、`WFL-013` と MVP スコープ判断にも Accounting の自己処理禁止が追加された。
+- 確認2: 前回指摘 `034` と `035` は解消済み。`usecases.md` で `UC-M08` / `UC-M09` 本文と一覧サマリの両方が `Accounting` を含む表記に統一された。
+- 確認3: 前回指摘 `036` は解消済み。`rbac.md` の `RBC-012` が「自分以外が作成したものに限り支払完了を記録可能」に更新された。
+- 指摘1: `workflow.md` の `T4` だけが自己処理禁止の参照先を存在しない `RBC-017` のまま残しており、今回追加したルールとのトレーサビリティが崩れている。詳細は `review-findings/open/037-workflow-rule-reference-for-accounting-self-payment-is-stale.md` を参照。
+- 再対応方針: `workflow.md` の `approved → paid` 遷移で参照するルールIDを `RBC-012` または `WFL-013` に統一し、Step 1 文書内で自己処理禁止ルールを同じIDで追跡できる状態にそろえること。
