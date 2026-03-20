@@ -18,7 +18,7 @@
 | Admin | `admin` | 全操作 + メンバー管理 + 招待 |
 | Approver | `approver` | 承認・却下 |
 | Member | `member` | 自分の経費の申請・編集 |
-| Accounting | `accounting` | 経費閲覧・エクスポート・支払済み更新 |
+| Accounting | `accounting` | 自分の経費申請・経費閲覧・エクスポート・支払済み更新 |
 
 ## 状態遷移
 

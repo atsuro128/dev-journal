@@ -14,27 +14,27 @@ root-project/
 ├── .claude/                     # Claude Code 設定
 │   ├── commands/                # カスタムコマンド（空）
 │   ├── hooks/                   # Hooks スクリプト
-│   │   ├── edit-scope-check.py
-│   │   └── stop-check.py
+│   │   └── edit-scope-check.py
 │   ├── rules/                   # ルール（自動ロード）
 │   │   ├── architecture.md
 │   │   ├── coding-standards.md
-│   │   ├── incident-response.md
 │   │   ├── security-policy.md
+│   │   ├── team-structure.md
 │   │   ├── testing.md
 │   │   └── workflow.md
 │   ├── skills/                  # スキル定義
 │   │   ├── analyze/
+│   │   ├── audit-context/
 │   │   ├── check-structure/
 │   │   ├── codex-review/
 │   │   ├── commit/
 │   │   ├── daily-report/
-│   │   ├── incident-review/
+│   │   ├── handoff/
 │   │   ├── issue/
-│   │   ├── requirement/
 │   │   ├── review/
 │   │   ├── review-findings/
-│   │   └── session-log/
+│   │   ├── self-review/
+│   │   └── weekly-review/
 │   └── settings.json            # 権限・hooks設定
 ├── ai-dev-framework/            # AI駆動開発フレームワーク（独立Git）
 ├── expense-saas/                # プロダクト本体（独立Git）
