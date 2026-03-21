@@ -55,7 +55,7 @@ stateDiagram-v2
 | 項目 | 内容 |
 |------|------|
 | **操作名** | submit（提出） |
-| **実行者** | 所有者（Member / Approver / Admin） |
+| **実行者** | 所有者（Member / Approver / Admin / Accounting） |
 | **実行者検証の責務** | ハンドラ層: ロール検証 + 所有権検証 |
 
 **事前条件（ドメイン層で検証）**:
@@ -154,7 +154,8 @@ stateDiagram-v2
 
 | # | 条件 | 違反時のエラー | ルールID |
 |---|------|-------------|---------|
-| 1 | status == approved | InvalidStateTransition | WFL-002, WFL-013 |
+| 1 | status == approved | InvalidStateTransition | WFL-002 |
+| 2 | report.user_id ≠ current_user.id | SelfPaymentNotAllowed | RBC-012 |
 
 **事後処理**:
 
@@ -171,7 +172,7 @@ stateDiagram-v2
 | 項目 | 内容 |
 |------|------|
 | **操作名** | delete（削除） |
-| **実行者** | 所有者（Member / Approver / Admin） |
+| **実行者** | 所有者（Member / Approver / Admin / Accounting） |
 | **実行者検証の責務** | ハンドラ層: ロール検証 + 所有権検証 |
 
 **事前条件（ドメイン層で検証）**:

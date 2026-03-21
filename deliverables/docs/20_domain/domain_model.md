@@ -374,6 +374,7 @@ ExpenseReport を Aggregate Root とし、以下を責務とする。
 | RBC-010 | 申請系操作は所有者のレポートに限定 | ハンドラ層 |
 | RBC-014 | Admin は自分が作成したレポートに限り申請者として操作可能。他者のレポートは閲覧のみ（RBC-010 の Admin 固有適用） | ハンドラ層 |
 | RBC-016 | Approver の自己承認・自己却下は禁止 | ドメイン層 |
+| RBC-012 | Accounting の自己処理禁止（自分が作成したレポートの支払完了を記録不可） | ドメイン層 |
 | ATT-011 | 署名付きURL発行前に認可チェック必須（同一テナント + 所有権 or 権限ロール） | ハンドラ層 |
 
 ### 6.4 データ整合性
@@ -403,6 +404,7 @@ ExpenseReport を Aggregate Root とし、以下を責務とする。
 │ ドメイン層（Domain / Business Logic）                     │
 │  - 状態遷移の可否判定・実行（WFL-001）                      │
 │  - 自己承認禁止チェック（RBC-016）                          │
+│  - 自己処理禁止チェック（RBC-012）                          │
 │  - 合計金額の再計算（RPT-006）                              │
 │  - 入力バリデーション（RPT-003, ITM-002 等）                │
 │  - 提出事前条件の検証（RPT-014）                            │
@@ -430,6 +432,7 @@ ExpenseReport を Aggregate Root とし、以下を責務とする。
 |--------|------|----------|
 | InvalidStateTransition | 禁止された状態遷移 | 422 Unprocessable Entity |
 | SelfApprovalNotAllowed | 自己承認の試行 | 403 Forbidden |
+| SelfPaymentNotAllowed | 自己処理（自分のレポートの支払完了記録）の試行 | 403 Forbidden |
 | EmptyReportSubmission | 明細0件での提出 | 422 Unprocessable Entity |
 | InvalidPeriod | period_start > period_end | 422 Unprocessable Entity |
 | InvalidAmount | amount ≦ 0 | 422 Unprocessable Entity |

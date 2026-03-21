@@ -14,3 +14,6 @@ Issue 024 の再修正で `UC-M08` と `UC-M09` 本文のアクター定義は `
 
 ## 修正方針案
 `usecases.md` の一覧サマリでも、`UC-M08` と `UC-M09` が `Approver/Admin/Accounting` の自己申請フローを含むことが読み取れる表記にそろえる。少なくとも本文との齟齬が出ない actor 表現に統一する。
+
+## 対応内容
+usecases.md のサマリ表で UC-M01〜UC-M09, UC-M03a のアクター列を本文と整合させた。

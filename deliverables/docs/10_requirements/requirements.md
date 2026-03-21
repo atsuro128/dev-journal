@@ -79,7 +79,7 @@
 | ID | 機能 | 説明 |
 |----|------|------|
 | RBAC-F01 | ロール検証ミドルウェア | 全APIリクエストでロールを検証し、権限不足なら 403 を返却 |
-| RBAC-F02 | リソース所有者チェック | 申請系操作は所有者のみ可能（Member / Approver / Admin 共通） |
+| RBAC-F02 | リソース所有者チェック | 申請系操作は所有者のみ可能（Member / Approver / Admin / Accounting 共通） |
 
 #### ロール定義
 
@@ -88,7 +88,7 @@
 | Admin | テナント管理者。全データ閲覧・メンバー管理 | テナント作成時に自動付与 / Admin が手動付与 |
 | Approver | 承認者。経費レポートの承認・却下。自分の経費レポートの作成・提出も可能 | Admin が付与 |
 | Member | 一般社員。自分の経費レポートの作成・提出・編集 | Admin が付与（デフォルトロール） |
-| Accounting | 経理担当。経費閲覧・支払完了記録 | Admin が付与 |
+| Accounting | 経理担当。経費の申請・確認・支払処理 | Admin が付与 |
 
 #### ビジネスルール
 
@@ -130,7 +130,7 @@
 
 ### 2.4 経費レポート CRUD
 
-**アクター**: Member/Approver/Admin（作成・編集・削除・提出は自分のレポートのみ）、Accounting（閲覧のみ）
+**アクター**: Member/Approver/Admin/Accounting（作成・編集・削除・提出は自分のレポートのみ）、Accounting はさらに支払管理目的で全レポートの閲覧も可能
 
 #### 機能一覧
 
@@ -217,7 +217,7 @@
 |----|------|------|
 | WFL-F01 | 承認 | Approver が submitted レポートを承認（submitted → approved）。承認コメント任意 |
 | WFL-F02 | 却下 | Approver が submitted レポートを却下（submitted → rejected）。却下理由必須 |
-| WFL-F03 | 支払完了 | Accounting が approved レポートに支払完了を記録（approved → paid） |
+| WFL-F03 | 支払完了 | Accounting が自分以外が作成した approved レポートに支払完了を記録（approved → paid） |
 | WFL-F04 | 承認待ち一覧 | Approver が同テナントの submitted レポート一覧を全件取得（MVP は全件承認型） |
 | WFL-F05 | 支払待ち一覧 | Accounting が同テナントの approved レポート一覧を取得 |
 
@@ -246,6 +246,8 @@
 | WFL-012 | 却下時は理由の入力が必須 |
 | RPT-015 | 却下後の再申請は新規レポートとして作成 |
 | RPT-016 | 再申請レポートは元レポートへの参照を保持 |
+| WFL-013 | approved → paid の実行主体は Accounting |
+| RBC-012 | Accounting の自己処理禁止（自分が作成したレポートの支払完了は記録不可） |
 
 #### MVP スコープ判断
 
@@ -253,6 +255,7 @@
 |------|------|------|
 | 提出取消（submitted → draft） | **対象外** | 状態遷移の複雑化を避ける。承認者の却下で運用カバー。詰み対策として Approver 0人テナントでは提出不可 |
 | Approver の自己承認 | **禁止** | 内部統制の基本原則。自分が提出したレポートを自分で承認できない |
+| Accounting の自己処理 | **禁止** | 内部統制の基本原則。自分が作成したレポートの支払完了を自分で記録できない（自己承認禁止と同パターン） |
 | 多段階承認 | **対象外** | MVP では1段階承認。複数 Approver の承認ルート設計は複雑度が高い |
 
 > 状態遷移の詳細は `workflow.md` を参照。
@@ -322,7 +325,7 @@
 |---------|--------|
 | DASH-001 | Member には自分の draft / submitted / rejected 件数を表示 |
 | DASH-002 | Approver には上記に加え、承認待ち件数を追加表示 |
-| DASH-003 | Accounting には支払待ち件数を追加表示 |
+| DASH-003 | Accounting には Member 向け情報（下書き・提出中・却下・直近レポート一覧）に加え、支払待ち件数を追加表示 |
 | DASH-004 | Admin にはテナント全体の件数（ステータス別）とメンバー数を表示 |
 | DASH-005 | Approver / Accounting / Admin にテナント全体の直近 N ヶ月の月別支出合計金額を表示する（Approver のスコープを部下限定にする対応は Phase 3） |
 

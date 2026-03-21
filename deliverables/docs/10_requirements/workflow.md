@@ -23,7 +23,7 @@
 
 ```mermaid
 stateDiagram-v2
-    [*] --> draft: レポート作成（Member/Approver/Admin）
+    [*] --> draft: レポート作成（Member/Approver/Admin/Accounting）
 
     draft --> submitted: 提出（所有者）
     draft --> [*]: 削除（論理削除・所有者）
@@ -71,11 +71,11 @@ stateDiagram-v2
 
 | # | 遷移元 | 遷移先 | 操作名 | 実行者 | 事前条件 | 事後処理 |
 |---|--------|--------|--------|--------|---------|---------|
-| T1 | `draft` | `submitted` | 提出 (submit) | 所有者（Member/Approver/Admin） | 明細が1件以上存在すること | 通知発行（Phase 3） |
+| T1 | `draft` | `submitted` | 提出 (submit) | 所有者（Member/Approver/Admin/Accounting） | 明細が1件以上存在すること | 通知発行（Phase 3） |
 | T2 | `submitted` | `approved` | 承認 (approve) | Approver（同テナント） | 自己承認でないこと。承認コメント任意 | 通知発行（Phase 3） |
 | T3 | `submitted` | `rejected` | 却下 (reject) | Approver（同テナント） | 自己操作でないこと・却下理由の入力（必須） | 通知発行（Phase 3） |
-| T4 | `approved` | `paid` | 支払完了 (mark_as_paid) | Accounting（同テナント） | なし | 通知発行（Phase 3） |
-| T5 | `draft` | (削除) | 削除 (delete) | 所有者（Member/Approver/Admin） | draft 状態であること | 論理削除（明細・添付も連動） |
+| T4 | `approved` | `paid` | 支払完了 (mark_as_paid) | Accounting（同テナント） | 自分が作成したレポートの支払完了は記録不可（自己処理禁止、RBC-012） | 通知発行（Phase 3） |
+| T5 | `draft` | (削除) | 削除 (delete) | 所有者（Member/Approver/Admin/Accounting） | draft 状態であること | 論理削除（明細・添付も連動） |
 
 ---
 

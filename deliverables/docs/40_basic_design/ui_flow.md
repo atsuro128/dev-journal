@@ -176,24 +176,49 @@ graph TD
 
 ### 3.3 Accounting の遷移パス
 
-Accounting はレポートの閲覧と支払完了の記録を行う。レポート作成は不可。
+Accounting は Member としての経費申請と、支払完了の記録を行う。
 
 ```mermaid
 graph TD
-    AUTH002[ログイン] --> DASH001[ダッシュボード<br/>支払待ち数<br/>月別支出サマリー]
+    AUTH002[ログイン] --> DASH001[ダッシュボード<br/>Member情報 + 支払待ち数<br/>月別支出サマリー]
 
+    %% Member としての操作（経費申請）
+    DASH001 --> RPT001[レポート一覧 - 自分]
+    DASH001 --> RPT002[レポート作成]
+    RPT001 --> RPT004[レポート詳細]
+    RPT002 -->|作成完了| RPT004
+
+    RPT004 -->|編集| RPT003[レポート編集]
+    RPT003 -->|保存| RPT004
+
+    RPT004 -->|明細追加/編集/削除| RPT004
+    RPT004 -->|領収書添付/削除| RPT004
+    RPT004 -->|提出| RPT004
+    RPT004 -->|削除| RPT001
+    RPT004 -->|再申請<br/>rejected時| RPT002
+
+    %% 経理担当としての操作（支払処理）
     DASH001 -->|支払待ちバッジ| WFL002[支払待ち一覧]
     DASH001 --> ADM001[テナント全レポート一覧]
 
-    WFL002 --> RPT004[レポート詳細]
+    WFL002 --> RPT004
     ADM001 --> RPT004
 
-    RPT004 -->|支払完了| RPT004
+    RPT004 -->|支払完了<br/>自分のレポート以外| RPT004
 
     style DASH001 fill:#fce4ec
     style WFL002 fill:#fce4ec
     style ADM001 fill:#fce4ec
-    style RPT004 fill:#fce4ec
+    style RPT001 fill:#e3f2fd
+    style RPT002 fill:#e3f2fd
+    style RPT003 fill:#e3f2fd
+    style RPT004 fill:#e3f2fd
+```
+
+**主要フロー: 経費申請（Member 操作）**
+
+```
+ダッシュボード → レポート作成 → レポート詳細（明細追加・領収書添付） → 提出
 ```
 
 **主要フロー: 支払完了**
@@ -202,7 +227,8 @@ graph TD
 ダッシュボード → 支払待ち一覧 → レポート詳細（明細・金額確認） → 支払完了
 ```
 
-> Accounting はレポート作成不可のため、サイドナビゲーションに「マイレポート」「レポート作成」は表示されない。
+> Accounting は Member としての経費申請も行うため、サイドナビゲーションに「マイレポート」「レポート作成」を表示する。
+> 自分が作成したレポートの支払完了は記録できない（自己処理禁止）。レポート詳細画面で該当レポートの支払完了ボタンは非表示になる。
 
 ### 3.4 Admin の遷移パス
 
@@ -325,7 +351,6 @@ graph LR
 | Member が /payments にアクセス | ダッシュボードにリダイレクト |
 | Member が /reports/all にアクセス | ダッシュボードにリダイレクト |
 | Member が /settings/tenant にアクセス | ダッシュボードにリダイレクト |
-| Accounting が /reports/new にアクセス | ダッシュボードにリダイレクト |
 | Accounting が /approvals にアクセス | ダッシュボードにリダイレクト |
 | Approver が /payments にアクセス | ダッシュボードにリダイレクト |
 

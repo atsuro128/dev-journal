@@ -14,3 +14,6 @@ Issue 024 の修正で Accounting の自己処理禁止ルール自体は `requi
 
 ## 修正方針案
 `workflow.md` の `T4` 事前条件にある `RBC-017` を、実際に存在する参照先へ更新する。RBAC 制約を参照したいなら `RBC-012`、ワークフロー要件を参照したいなら `WFL-013` に統一し、Step 1 文書間で同じ禁止ルールを同じIDで追跡できるようにする。
+
+## 対応内容
+自己処理禁止を RBC-012 に統一。WFL-013 は元の遷移ルール定義（approved → paid の実行主体は Accounting）に復元。workflow.md, requirements.md, domain_model.md, state_machine.md の全参照を RBC-012 に変更済み。
