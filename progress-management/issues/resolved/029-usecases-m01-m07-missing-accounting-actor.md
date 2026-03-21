@@ -37,5 +37,7 @@ UC-M08/M09 は Issue 024 の review-findings 034/035 で修正されたが、UC-
 ---
 
 ## 解決内容
+issue 024 の修正で対応済み。UC-M01〜M09 + UC-M03a の全アクター欄に「Approver/Admin/Accounting も自分のレポートで実行可能」を追加。ユースケース一覧サマリも同様に更新済み。codex レビュー PASS。
 
 ## 解決日
+2026-03-21
