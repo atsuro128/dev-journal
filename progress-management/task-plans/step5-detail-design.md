@@ -47,9 +47,9 @@
 
 | タスク | 成果物 | 入力（主要） | エージェント | 状態 |
 |--------|--------|-------------|------------|------|
-| T2-1 | `openapi.yaml` — OpenAPI 定義 | Phase 1 全成果物 + architecture.md, screens.md, rbac.md, domain_model.md | api-designer | 未着手 |
-| T2-R1 | 内部レビュー | — | design-cross-reviewer | 未着手 |
-| T2-R2 | codex レビュー | — | codex | 未着手 |
+| T2-1 | `openapi.yaml` — OpenAPI 定義 | Phase 1 全成果物 + architecture.md, screens.md, rbac.md, domain_model.md | api-designer | 完了 |
+| T2-R1 | 内部レビュー | — | design-cross-reviewer | 完了 |
+| T2-R2 | codex レビュー | — | codex | 完了 |
 
 成果物配置先: `dev-journal/deliverables/docs/50_detail_design/`
 
