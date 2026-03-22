@@ -17,38 +17,49 @@
 
 画面詳細仕様（basic-designer x5）:
 
-| タスク | 成果物 | 入力（主要） | エージェント |
-|--------|--------|-------------|------------|
-| T1-1 | `screens/auth.md` — 認証系4画面 | screens.md, usecases.md (UC-SYS01/02/05), requirements.md (AUTH-*, SEC-*) | basic-designer |
-| T1-2 | `screens/dashboard.md` — ダッシュボード | screens.md, usecases.md (UC-SYS04), requirements.md (DASH-*) | basic-designer |
-| T1-3 | `screens/report.md` — 経費レポート系4画面（最大・最重要） | screens.md, usecases.md (UC-M01〜09), workflow.md, state_machine.md, domain_model.md | basic-designer |
-| T1-4 | `screens/workflow.md` — ワークフロー系2画面 | screens.md, usecases.md (UC-A01〜03, UC-AC01〜02), workflow.md | basic-designer |
-| T1-5 | `screens/admin.md` — 管理系2画面 | screens.md, usecases.md (UC-AD01/02, UC-AC03) | basic-designer |
+| タスク | 成果物 | 入力（主要） | エージェント | 状態 |
+|--------|--------|-------------|------------|------|
+| T1-1 | `screens/auth.md` — 認証系4画面 | screens.md, usecases.md (UC-SYS01/02/05), requirements.md (AUTH-*, SEC-*) | basic-designer | 完了 |
+| T1-2 | `screens/dashboard.md` — ダッシュボード | screens.md, usecases.md (UC-SYS04), requirements.md (DASH-*) | basic-designer | 完了 |
+| T1-3 | `screens/report.md` — 経費レポート系4画面（最大・最重要） | screens.md, usecases.md (UC-M01〜09), workflow.md, state_machine.md, domain_model.md | basic-designer | 完了 |
+| T1-4 | `screens/workflow.md` — ワークフロー系2画面 | screens.md, usecases.md (UC-A01〜03, UC-AC01〜02), workflow.md | basic-designer | 完了 |
+| T1-5 | `screens/admin.md` — 管理系2画面 | screens.md, usecases.md (UC-AD01/02, UC-AC03) | basic-designer | 完了 |
 
 横断設計（db-designer x1, detail-designer x3）:
 
-| タスク | 成果物 | 入力（主要） | エージェント |
-|--------|--------|-------------|------------|
-| T1-6 | `db_schema.md` — DB スキーマ設計 | domain_model.md, state_machine.md, ADR-0002/0003 | db-designer |
-| T1-7 | `files.md` — 添付ファイル設計 | requirements.md (ATT-*), domain_model.md, security-policy.md | detail-designer |
-| T1-8 | `security.md` — セキュリティ設計 | requirements.md (SEC-*), architecture.md, ADR-0001 | detail-designer |
-| T1-9 | `monitoring.md` — 監視・ログ設計 | ADR-0005, architecture.md | detail-designer |
+| タスク | 成果物 | 入力（主要） | エージェント | 状態 |
+|--------|--------|-------------|------------|------|
+| T1-6 | `db_schema.md` — DB スキーマ設計 | domain_model.md, state_machine.md, ADR-0002/0003 | db-designer | 完了 |
+| T1-7 | `files.md` — 添付ファイル設計 | requirements.md (ATT-*), domain_model.md, security-policy.md | detail-designer | 完了 |
+| T1-8 | `security.md` — セキュリティ設計 | requirements.md (SEC-*), architecture.md, ADR-0001 | detail-designer | 完了 |
+| T1-9 | `monitoring.md` — 監視・ログ設計 | ADR-0005, architecture.md | detail-designer | 完了 |
+
+レビュー:
+
+| タスク | 内容 | エージェント | 状態 |
+|--------|------|------------|------|
+| T1-R1 | 内部レビュー | design-cross-reviewer | 完了 |
+| T1-R2 | codex レビュー | codex | 未着手 |
 
 成果物配置先: `dev-journal/deliverables/docs/`（画面詳細は `40_basic_design/screens/`、横断設計は `50_detail_design/`）
 
 ### Phase 2（Phase 1 完了後）
 
-| タスク | 成果物 | 入力（主要） | エージェント |
-|--------|--------|-------------|------------|
-| T2-1 | `openapi.yaml` — OpenAPI 定義 | Phase 1 全成果物 + architecture.md, screens.md, rbac.md, domain_model.md | api-designer |
+| タスク | 成果物 | 入力（主要） | エージェント | 状態 |
+|--------|--------|-------------|------------|------|
+| T2-1 | `openapi.yaml` — OpenAPI 定義 | Phase 1 全成果物 + architecture.md, screens.md, rbac.md, domain_model.md | api-designer | 未着手 |
+| T2-R1 | 内部レビュー | — | design-cross-reviewer | 未着手 |
+| T2-R2 | codex レビュー | — | codex | 未着手 |
 
 成果物配置先: `dev-journal/deliverables/docs/50_detail_design/`
 
 ### Phase 3（Phase 2 完了後）
 
-| タスク | 成果物 | 入力（主要） | エージェント |
-|--------|--------|-------------|------------|
-| T3-1 | `authz.md` — 認可設計 + `ui_flow.md` 最終版 | 全成果物 + rbac.md | detail-designer |
+| タスク | 成果物 | 入力（主要） | エージェント | 状態 |
+|--------|--------|-------------|------------|------|
+| T3-1 | `authz.md` — 認可設計 + `ui_flow.md` 最終版 | 全成果物 + rbac.md | detail-designer | 未着手 |
+| T3-R1 | 内部レビュー | — | design-cross-reviewer | 未着手 |
+| T3-R2 | codex レビュー | — | codex | 未着手 |
 
 成果物配置先: `dev-journal/deliverables/docs/50_detail_design/`
 
@@ -70,10 +81,11 @@
 
 全成果物が揃った後に実施:
 
-| タスク | エージェント | 対象 |
-|--------|------------|------|
-| T4-1 | design-unit-reviewer x5（並列） | 機能単位（認証/ダッシュボード/経費レポート/ワークフロー/管理） |
-| T4-2 | design-cross-reviewer x1 | 全成果物横断 |
+| タスク | エージェント | 対象 | 状態 |
+|--------|------------|------|------|
+| T4-1 | design-unit-reviewer x5（並列） | 機能単位（認証/ダッシュボード/経費レポート/ワークフロー/管理） | 未着手 |
+| T4-2 | design-cross-reviewer x1 | 全成果物横断 | 未着手 |
+| T4-R1 | codex レビュー | 全成果物 | 未着手 |
 
 ## 依存グラフ
 
