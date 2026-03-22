@@ -13,26 +13,34 @@
 
 ## Phase 構成
 
-### Phase 1（9タスク並列）
+### Phase 1（17タスク並列）
 
-画面詳細仕様（basic-designer x5）:
+画面詳細仕様（basic-designer x13）:
 
 | タスク | 成果物 | 入力（主要） | エージェント | 状態 |
 |--------|--------|-------------|------------|------|
-| T1-1 | `screens/auth-signup.md, auth-login.md, auth-password-reset-request.md, auth-password-reset.md` — 認証系4画面 | screens.md, usecases.md (UC-SYS01/02/05), requirements.md (AUTH-*, SEC-*) | basic-designer | 完了 |
-| T1-2 | `screens/dashboard.md` — ダッシュボード | screens.md, usecases.md (UC-SYS04), requirements.md (DASH-*) | basic-designer | 完了 |
-| T1-3 | `screens/report-list.md, report-create.md, report-edit.md, report-detail.md` — 経費レポート系4画面（最大・最重要） | screens.md, usecases.md (UC-M01〜09), workflow.md, state_machine.md, domain_model.md | basic-designer | 完了 |
-| T1-4 | `screens/workflow-pending.md, workflow-payable.md` — ワークフロー系2画面 | screens.md, usecases.md (UC-A01〜03, UC-AC01〜02), workflow.md | basic-designer | 完了 |
-| T1-5 | `screens/admin-all-reports.md, admin-tenant.md` — 管理系2画面 | screens.md, usecases.md (UC-AD01/02, UC-AC03) | basic-designer | 完了 |
+| T1-01 | `screens/auth-signup.md` — サインアップ (SCR-AUTH-001) | screens.md, usecases.md (UC-SYS01), requirements.md (AUTH-*, SEC-*) | basic-designer | 完了 |
+| T1-02 | `screens/auth-login.md` — ログイン (SCR-AUTH-002) | screens.md, usecases.md (UC-SYS02), requirements.md (AUTH-*, SEC-*) | basic-designer | 完了 |
+| T1-03 | `screens/auth-password-reset-request.md` — パスワードリセット要求 (SCR-AUTH-003) | screens.md, usecases.md (UC-SYS05), requirements.md (SEC-*) | basic-designer | 完了 |
+| T1-04 | `screens/auth-password-reset.md` — パスワードリセット実行 (SCR-AUTH-004) | screens.md, usecases.md (UC-SYS05), requirements.md (SEC-*) | basic-designer | 完了 |
+| T1-05 | `screens/dashboard.md` — ダッシュボード (SCR-DASH-001) | screens.md, usecases.md (UC-SYS04), requirements.md (DASH-*) | basic-designer | 完了 |
+| T1-06 | `screens/report-list.md` — レポート一覧 (SCR-RPT-001) | screens.md, usecases.md (UC-M01), requirements.md (RPT-*) | basic-designer | 完了 |
+| T1-07 | `screens/report-create.md` — レポート作成 (SCR-RPT-002) | screens.md, usecases.md (UC-M02, UC-M09), workflow.md, state_machine.md | basic-designer | 完了 |
+| T1-08 | `screens/report-edit.md` — レポート編集 (SCR-RPT-003) | screens.md, usecases.md (UC-M03), domain_model.md | basic-designer | 完了 |
+| T1-09 | `screens/report-detail.md` — レポート詳細 (SCR-RPT-004) | screens.md, usecases.md (UC-M01〜09), workflow.md, state_machine.md, domain_model.md | basic-designer | 完了 |
+| T1-10 | `screens/workflow-pending.md` — 承認待ち一覧 (SCR-WFL-001) | screens.md, usecases.md (UC-A01〜03), workflow.md | basic-designer | 完了 |
+| T1-11 | `screens/workflow-payable.md` — 支払待ち一覧 (SCR-WFL-002) | screens.md, usecases.md (UC-AC01〜02), workflow.md | basic-designer | 完了 |
+| T1-12 | `screens/admin-all-reports.md` — テナント全レポート一覧 (SCR-ADM-001) | screens.md, usecases.md (UC-AD01, UC-AC03) | basic-designer | 完了 |
+| T1-13 | `screens/admin-tenant.md` — テナント情報 (SCR-ADM-002) | screens.md, usecases.md (UC-AD02) | basic-designer | 完了 |
 
 横断設計（db-designer x1, detail-designer x3）:
 
 | タスク | 成果物 | 入力（主要） | エージェント | 状態 |
 |--------|--------|-------------|------------|------|
-| T1-6 | `db_schema.md` — DB スキーマ設計 | domain_model.md, state_machine.md, ADR-0002/0003 | db-designer | 完了 |
-| T1-7 | `files.md` — 添付ファイル設計 | requirements.md (ATT-*), domain_model.md, security-policy.md | detail-designer | 完了 |
-| T1-8 | `security.md` — セキュリティ設計 | requirements.md (SEC-*), architecture.md, ADR-0001 | detail-designer | 完了 |
-| T1-9 | `monitoring.md` — 監視・ログ設計 | ADR-0005, architecture.md | detail-designer | 完了 |
+| T1-14 | `db_schema.md` — DB スキーマ設計 | domain_model.md, state_machine.md, ADR-0002/0003 | db-designer | 完了 |
+| T1-15 | `files.md` — 添付ファイル設計 | requirements.md (ATT-*), domain_model.md, security-policy.md | detail-designer | 完了 |
+| T1-16 | `security.md` — セキュリティ設計 | requirements.md (SEC-*), architecture.md, ADR-0001 | detail-designer | 完了 |
+| T1-17 | `monitoring.md` — 監視・ログ設計 | ADR-0005, architecture.md | detail-designer | 完了 |
 
 レビュー:
 
@@ -90,12 +98,12 @@
 ## 依存グラフ
 
 ```
-Phase 1（並列）            レビュー   Phase 2    レビュー   Phase 3     Phase 4
-T1-1〜5: screens/*.md ─┐    ──→  T2-1:    ──→  T3-1:    ──→ T4-1: unit x5
-T1-6: db_schema.md ────┤  コミット openapi  コミット authz +      ↓
-T1-7: files.md ────────┤           .yaml            ui_flow   T4-2: cross x1
-T1-8: security.md ─────┤                                      コミット
-T1-9: monitoring.md ───┘
+Phase 1（並列）               レビュー   Phase 2    レビュー   Phase 3     Phase 4
+T1-01〜13: screens/*.md ─┐    ──→  T2-1:    ──→  T3-1:    ──→ T4-1: unit x5
+T1-14: db_schema.md ─────┤  コミット openapi  コミット authz +      ↓
+T1-15: files.md ──────────┤           .yaml            ui_flow   T4-2: cross x1
+T1-16: security.md ───────┤                                      コミット
+T1-17: monitoring.md ─────┘
 ```
 
 ## 品質基準
