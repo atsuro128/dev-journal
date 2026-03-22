@@ -91,7 +91,7 @@
 
 | タスク | エージェント | 対象 | 状態 |
 |--------|------------|------|------|
-| T4-1 | design-unit-reviewer x5（並列） | 機能単位（認証/ダッシュボード/経費レポート/ワークフロー/管理） | 未着手 |
+| T4-1 | design-unit-reviewer x13（並列） | 画面単位（auth-signup/login/password-reset-request/password-reset, dashboard, report-list/create/edit/detail, workflow-pending/payable, admin-all-reports/tenant） | 未着手 |
 | T4-2 | design-cross-reviewer x1 | 全成果物横断 | 未着手 |
 | T4-R1 | codex レビュー | 全成果物 | 未着手 |
 
