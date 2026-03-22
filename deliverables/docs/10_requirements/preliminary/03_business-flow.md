@@ -318,16 +318,24 @@ stateDiagram-v2
 
 経費精算は月次の業務サイクルの中で運用される。
 
-```
-月初 ──────────── 月中 ──────────── 月末 ──────── 翌月初
-  │                  │                  │              │
-  │  前月経費の       │  日々の経費発生   │  今月分の     │  経理が
-  │  支払処理        │  領収書保管       │  申請締切     │  支払処理
-  │  (Accounting)    │  (Member)        │  (Member)    │  (Accounting)
-  │                  │                  │              │
-  │                  │                  │  承認処理     │  月次レポート
-  │                  │                  │  (Approver)  │  作成
-  │                  │                  │              │  (Accounting)
+```mermaid
+graph LR
+    subgraph T1["月初"]
+        T1A["前月経費の支払処理\n（Accounting）"]
+    end
+    subgraph T2["月中"]
+        T2A["日々の経費発生\n領収書保管\n（Member）"]
+    end
+    subgraph T3["月末"]
+        T3A["今月分の申請締切\n（Member）"]
+        T3B["承認処理\n（Approver）"]
+    end
+    subgraph T4["翌月初"]
+        T4A["経理が支払処理\n（Accounting）"]
+        T4B["月次レポート作成\n（Accounting）"]
+    end
+
+    T1 --> T2 --> T3 --> T4
 ```
 
 ### 典型的なタイムライン例

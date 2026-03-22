@@ -281,45 +281,25 @@ enum MimeType {
 
 ### 5.1 集約の構成
 
-```
-┌─────────────────────────────────────────────┐
-│ ExpenseReport Aggregate                      │
-│                                              │
-│  ┌──────────────┐                            │
-│  │ExpenseReport │ ← Aggregate Root           │
-│  │  (状態遷移)   │                            │
-│  └──────┬───────┘                            │
-│         │ 1:N                                │
-│  ┌──────┴───────┐                            │
-│  │ ExpenseItem  │                            │
-│  │  (明細)      │                            │
-│  └──────┬───────┘                            │
-│         │ 1:N                                │
-│  ┌──────┴───────┐                            │
-│  │ Attachment   │                            │
-│  │  (添付)      │                            │
-│  └──────────────┘                            │
-└─────────────────────────────────────────────┘
+```mermaid
+graph TB
+    subgraph AG1["ExpenseReport Aggregate"]
+        ER["ExpenseReport ← Aggregate Root\n(状態遷移)"]
+        EI["ExpenseItem\n(明細)"]
+        AT["Attachment\n(添付)"]
+        ER -- "1:N" --> EI
+        EI -- "1:N" --> AT
+    end
 
-┌─────────────────────────────────────────────┐
-│ Tenant Aggregate                             │
-│                                              │
-│  ┌──────────────┐                            │
-│  │   Tenant     │ ← Aggregate Root           │
-│  └──────────────┘                            │
-└─────────────────────────────────────────────┘
+    subgraph AG2["Tenant Aggregate"]
+        T["Tenant ← Aggregate Root"]
+    end
 
-┌─────────────────────────────────────────────┐
-│ User Aggregate                               │
-│                                              │
-│  ┌──────────────┐                            │
-│  │    User      │ ← Aggregate Root           │
-│  └──────┬───────┘                            │
-│         │ 1:N (MVP では 1:1)                 │
-│  ┌──────┴────────────┐                       │
-│  │TenantMembership   │                       │
-│  └───────────────────┘                       │
-└─────────────────────────────────────────────┘
+    subgraph AG3["User Aggregate"]
+        U["User ← Aggregate Root"]
+        TM["TenantMembership"]
+        U -- "1:N（MVP では 1:1）" --> TM
+    end
 ```
 
 ### 5.2 ExpenseReport 集約の責務
@@ -392,34 +372,14 @@ ExpenseReport を Aggregate Root とし、以下を責務とする。
 
 ## 7. 実装責務の層別マッピング
 
-```
-┌────────────────────────────────────────────────────────┐
-│ ハンドラ層（HTTP Handler）                               │
-│  - リクエスト/レスポンスの変換                              │
-│  - 認証情報からのユーザー・テナント特定                       │
-│  - ロール検証（ミドルウェア経由）                            │
-│  - 所有権チェック（report.user_id == current_user.id）     │
-│  - 署名付きURL発行前の認可チェック（ATT-011）              │
-├────────────────────────────────────────────────────────┤
-│ ドメイン層（Domain / Business Logic）                     │
-│  - 状態遷移の可否判定・実行（WFL-001）                      │
-│  - 自己承認禁止チェック（RBC-016）                          │
-│  - 自己処理禁止チェック（RBC-012）                          │
-│  - 合計金額の再計算（RPT-006）                              │
-│  - 入力バリデーション（RPT-003, ITM-002 等）                │
-│  - 提出事前条件の検証（RPT-014）                            │
-├────────────────────────────────────────────────────────┤
-│ リポジトリ層（Repository / Data Access）                   │
-│  - tenant_id フィルタの強制（TNT-002, TNT-003）            │
-│  - tenant_id の自動付与                                    │
-│  - 論理削除の適用（DAT-002）                                │
-│  - 提出済みレポートの物理削除防止（DAT-001）                  │
-├────────────────────────────────────────────────────────┤
-│ DB 層（PostgreSQL）                                       │
-│  - RLS ポリシー（TNT-004）                                 │
-│  - テーブル制約（NOT NULL, CHECK, UNIQUE）                  │
-│  - インデックス                                             │
-└────────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    H["ハンドラ層（HTTP Handler）\nリクエスト/レスポンスの変換\n認証情報からのユーザー・テナント特定\nロール検証（ミドルウェア経由）\n所有権チェック（report.user_id == current_user.id）\n署名付きURL発行前の認可チェック（ATT-011）"]
+    D["ドメイン層（Domain / Business Logic）\n状態遷移の可否判定・実行（WFL-001）\n自己承認禁止チェック（RBC-016）\n自己処理禁止チェック（RBC-012）\n合計金額の再計算（RPT-006）\n入力バリデーション（RPT-003, ITM-002 等）\n提出事前条件の検証（RPT-014）"]
+    R["リポジトリ層（Repository / Data Access）\ntenant_id フィルタの強制（TNT-002, TNT-003）\ntenant_id の自動付与\n論理削除の適用（DAT-002）\n提出済みレポートの物理削除防止（DAT-001）"]
+    DB["DB 層（PostgreSQL）\nRLS ポリシー（TNT-004）\nテーブル制約（NOT NULL, CHECK, UNIQUE）\nインデックス"]
+
+    H --> D --> R --> DB
 ```
 
 ---

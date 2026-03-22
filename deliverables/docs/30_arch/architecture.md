@@ -22,61 +22,33 @@
 
 ### レイヤー構成
 
-```
-┌──────────────────────────────────────────────────────┐
-│                    クライアント                        │
-│            React (TypeScript) + Vite                  │
-│    ページ / コンポーネント / TanStack Query / Router    │
-└──────────────────────┬───────────────────────────────┘
-                       │ HTTPS (JSON)
-┌──────────────────────▼───────────────────────────────┐
-│                      ALB                              │
-│          ヘルスチェック / TLS 終端 / ルーティング         │
-└──────────────────────┬───────────────────────────────┘
-                       │
-┌──────────────────────▼───────────────────────────────┐
-│               ECS Fargate（Go）                       │
-│                                                       │
-│  ┌─────────────────────────────────────────────────┐ │
-│  │ ミドルウェアチェーン                               │ │
-│  │  CORS → RequestID → Logger → RateLimit           │ │
-│  │  → Auth(JWT検証) → TenantContext(RLS設定)         │ │
-│  │  → RBAC(ロール検証)                               │ │
-│  └────────────────────┬────────────────────────────┘ │
-│  ┌────────────────────▼────────────────────────────┐ │
-│  │ ハンドラ層（HTTP Handler）                        │ │
-│  │  - リクエスト/レスポンスの変換                      │ │
-│  │  - 入力バリデーション                              │ │
-│  │  - 所有権チェック                                 │ │
-│  └────────────────────┬────────────────────────────┘ │
-│  ┌────────────────────▼────────────────────────────┐ │
-│  │ サービス層（Application Service）                  │ │
-│  │  - ユースケースの実行                              │ │
-│  │  - トランザクション管理                             │ │
-│  │  - 集約間の調整                                   │ │
-│  └────────────────────┬────────────────────────────┘ │
-│  ┌────────────────────▼────────────────────────────┐ │
-│  │ ドメイン層（Domain）                               │ │
-│  │  - エンティティ・値オブジェクト                      │ │
-│  │  - 状態遷移の制御（WFL-001）                       │ │
-│  │  - 不変条件の検証                                  │ │
-│  │  - ドメインエラーの生成                             │ │
-│  └────────────────────┬────────────────────────────┘ │
-│  ┌────────────────────▼────────────────────────────┐ │
-│  │ リポジトリ層（Repository）                         │ │
-│  │  - sqlc 生成コードの利用                           │ │
-│  │  - tenant_id フィルタの強制（TNT-002, TNT-003）    │ │
-│  │  - 論理削除の適用（DAT-002）                       │ │
-│  └────────────────────┬────────────────────────────┘ │
-└───────────────────────┼──────────────────────────────┘
-                        │
-          ┌─────────────┼──────────────┐
-          ▼             ▼              ▼
-┌─────────────┐ ┌────────────┐ ┌──────────┐
-│ RDS         │ │ S3         │ │CloudWatch│
-│ PostgreSQL  │ │ 領収書     │ │ Logs     │
-│ + RLS       │ │ ストレージ  │ │ Metrics  │
-└─────────────┘ └────────────┘ └──────────┘
+```mermaid
+graph TD
+    subgraph Client["クライアント"]
+        FE["React TypeScript + Vite\nページ / コンポーネント / TanStack Query / Router"]
+    end
+
+    Client -- "HTTPS（JSON）" --> LB
+
+    subgraph LB["ALB"]
+        ALB["ヘルスチェック / TLS 終端 / ルーティング"]
+    end
+
+    LB --> ECS
+
+    subgraph ECS["ECS Fargate（Go）"]
+        MW["ミドルウェアチェーン\nCORS → RequestID → Logger → RateLimit\n→ Auth（JWT検証） → TenantContext（RLS設定）\n→ RBAC（ロール検証）"]
+        Handler["ハンドラ層（HTTP Handler）\nリクエスト/レスポンスの変換\n入力バリデーション / 所有権チェック"]
+        Service["サービス層（Application Service）\nユースケースの実行\nトランザクション管理 / 集約間の調整"]
+        Domain["ドメイン層（Domain）\nエンティティ・値オブジェクト\n状態遷移の制御（WFL-001） / 不変条件の検証\nドメインエラーの生成"]
+        Repo["リポジトリ層（Repository）\nsqlc 生成コードの利用\ntenant_id フィルタの強制（TNT-002, TNT-003）\n論理削除の適用（DAT-002）"]
+
+        MW --> Handler --> Service --> Domain --> Repo
+    end
+
+    Repo --> RDS["RDS\nPostgreSQL + RLS"]
+    Repo --> S3["S3\n領収書ストレージ"]
+    MW --> CW["CloudWatch\nLogs / Metrics"]
 ```
 
 ---
@@ -147,89 +119,59 @@ expense-saas/
 
 リクエスト処理の順序。各ミドルウェアは Chi のミドルウェアパターンで実装する。
 
-```
-リクエスト受信
-  │
-  ▼
-[1] CORS               SEC-013: 許可オリジンを環境変数で指定
-  │
-  ▼
-[2] SecurityHeaders     SEC-014: HSTS, X-Content-Type-Options, X-Frame-Options
-  │
-  ▼
-[3] RequestID           UUID を生成し context + レスポンスヘッダー(X-Request-ID)に設定
-  │
-  ▼
-[4] Logger              構造化ログ出力（request_id, method, path, status, duration_ms）
-  │
-  ▼
-[5] RateLimit           SEC-012: 認証済み 100 req/min/user, 未認証 20 req/min/IP
-  │
-  ▼
-[6] Auth (JWT検証)      SEC-003, SEC-004: RS256 で署名検証、有効期限確認
-  │                     認証不要エンドポイント（/health, /api/auth/login 等）はスキップ
-  │
-  ▼
-[7] TenantContext       pool.Acquire() でコネクション固定
-  │                     BEGIN + SET LOCAL app.current_tenant（JWT claims の tenant_id）
-  │                     コネクションを context 経由で全層に伝播
-  │                     リクエスト完了時に COMMIT/ROLLBACK（SET LOCAL は自動リセット）
-  │
-  ▼
-[8] RBAC                RBC-001: ルートごとに必要ロールを検証。権限不足は 403
-  │
-  ▼
-[ハンドラ]              ビジネスロジック実行
+```mermaid
+graph TD
+    REQ["リクエスト受信"] --> C1
+    C1["[1] CORS\nSEC-013: 許可オリジンを環境変数で指定"] --> C2
+    C2["[2] SecurityHeaders\nSEC-014: HSTS, X-Content-Type-Options, X-Frame-Options"] --> C3
+    C3["[3] RequestID\nUUID を生成し context + レスポンスヘッダー（X-Request-ID）に設定"] --> C4
+    C4["[4] Logger\n構造化ログ出力（request_id, method, path, status, duration_ms）"] --> C5
+    C5["[5] RateLimit\nSEC-012: 認証済み 100 req/min/user, 未認証 20 req/min/IP"] --> C6
+    C6["[6] Auth（JWT検証）\nSEC-003, SEC-004: RS256 で署名検証、有効期限確認\n認証不要エンドポイントはスキップ"] --> C7
+    C7["[7] TenantContext\npool.Acquire でコネクション固定\nBEGIN + SET LOCAL app.current_tenant\nリクエスト完了時に COMMIT/ROLLBACK"] --> C8
+    C8["[8] RBAC\nRBC-001: ルートごとに必要ロールを検証。権限不足は 403"] --> HANDLER
+    HANDLER["ハンドラ\nビジネスロジック実行"]
 ```
 
 ### 3.3 認証フロー
 
 #### ログイン → JWT 発行
 
-```
-クライアント                    サーバー                        DB
-    │                            │                            │
-    │── POST /api/auth/login ──→│                            │
-    │   {email, password}        │                            │
-    │                            │（オーナーロール接続 — RLS バイパス）│
-    │                            │── SELECT user ────────────→│
-    │                            │←── user record ────────────│
-    │                            │                            │
-    │                            │ Argon2id 検証               │
-    │                            │                            │
-    │                            │── SELECT membership ──────→│
-    │                            │←── role, tenant_id ────────│
-    │                            │                            │
-    │                            │ JWT 生成:                   │
-    │                            │  access_token (15min)       │
-    │                            │    claims: user_id,         │
-    │                            │            tenant_id, role  │
-    │                            │  refresh_token (7day)       │
-    │                            │                            │
-    │←── {access_token,  ────────│                            │
-    │     refresh_token}         │                            │
+```mermaid
+sequenceDiagram
+    participant C as クライアント
+    participant S as サーバー
+    participant DB as DB
+
+    C->>S: POST /api/auth/login<br/>{email, password}
+    Note right of S: オーナーロール接続 — RLS バイパス
+    S->>DB: SELECT user
+    DB-->>S: user record
+    Note right of S: Argon2id 検証
+    S->>DB: SELECT membership
+    DB-->>S: role, tenant_id
+    Note right of S: JWT 生成:<br/>access_token [15min]<br/>  claims: user_id, tenant_id, role<br/>refresh_token [7day]
+    S-->>C: {access_token, refresh_token}
 ```
 
 #### 認証付きリクエスト
 
-```
-クライアント                    サーバー                        DB
-    │                            │                            │
-    │── GET /api/reports ────────→│                            │
-    │   Authorization: Bearer     │                            │
-    │                             │ [Auth] JWT RS256 検証       │
-    │                             │ [TenantContext]             │
-    │                             │ Acquire conn + BEGIN        │
-    │                             │── SET LOCAL app.current_tenant →│
-    │                             │ [RBAC] ロール検証           │
-    │                             │                             │
-    │                             │── SELECT (同一conn, RLS適用) →│
-    │                             │←── filtered rows ───────────│
-    │                             │                             │
-    │                             │── COMMIT ───────────────────→│
-    │                             │  (SET LOCAL 自動リセット)    │
-    │                             │                             │
-    │←── {reports: [...]} ────────│                             │
+```mermaid
+sequenceDiagram
+    participant C as クライアント
+    participant S as サーバー
+    participant DB as DB
+
+    C->>S: GET /api/reports<br/>Authorization: Bearer
+    Note right of S: [Auth] JWT RS256 検証
+    Note right of S: [TenantContext]<br/>Acquire conn + BEGIN
+    S->>DB: SET LOCAL app.current_tenant
+    Note right of S: [RBAC] ロール検証
+    S->>DB: SELECT [同一conn, RLS適用]
+    DB-->>S: filtered rows
+    S->>DB: COMMIT
+    Note right of S: SET LOCAL 自動リセット
+    S-->>C: {reports: [...]}
 ```
 
 ### 3.4 テナント分離の実行フロー
@@ -327,7 +269,7 @@ expense-saas/frontend/
 │   │   ├── ApprovalListPage.tsx
 │   │   └── PaymentListPage.tsx
 │   ├── components/               # 共有UIコンポーネント
-│   │   ├── ui/                   # shadcn/ui コンポーネント
+│   │   ├── ui/                   # MUI カスタムコンポーネント
 │   │   ├── layout/               # レイアウト（Header, Sidebar, etc.）
 │   │   └── report/               # 経費レポート関連コンポーネント
 │   ├── hooks/                    # カスタムフック
@@ -346,7 +288,7 @@ expense-saas/frontend/
 ├── index.html
 ├── vite.config.ts
 ├── tsconfig.json
-├── tailwind.config.ts
+├── theme.ts                    # MUI テーマ設定
 └── package.json
 ```
 
