@@ -483,6 +483,34 @@ DELETE /api/reports/:id/items/:itemId/attachments/:attId
 
 サイズ超過時は 413 FILE_TOO_LARGE を返却する。
 
+### 7.4 アップロードバリデーションフロー
+
+以下のフローチャートは、ファイルアップロード時のバリデーション処理の全体像を示す。各分岐のルールIDは対応する要件を示す。
+
+```mermaid
+graph TD
+    A[ファイル受信] --> B{ファイルサイズ <= 5MB か?<br/>ATT-003}
+    B -->|No| E1[413 FileTooLarge]
+    B -->|Yes| C{Content-Type が許可 MIME か?<br/>ATT-002: image/jpeg,<br/>image/png, application/pdf}
+    C -->|No| E2[422 InvalidFileType]
+    C -->|Yes| D{マジックバイト検証:<br/>実際のファイル内容が<br/>Content-Type と一致するか?<br/>ATT-013}
+    D -->|No| E3[422 InvalidFileType]
+    D -->|Yes| F{レポートの status が<br/>draft か?<br/>ATT-020}
+    F -->|No| E4[422 ReportNotEditable]
+    F -->|Yes| G{所有権チェック:<br/>report.user_id ==<br/>current_user か?}
+    G -->|No| E5[403 PermissionDenied]
+    G -->|Yes| H[S3 アップロード実行]
+    H --> I[DB INSERT]
+    I --> S[201 Created]
+
+    style E1 fill:#fee,stroke:#c00
+    style E2 fill:#fee,stroke:#c00
+    style E3 fill:#fee,stroke:#c00
+    style E4 fill:#fee,stroke:#c00
+    style E5 fill:#fee,stroke:#c00
+    style S fill:#efe,stroke:#0a0
+```
+
 ---
 
 ## 8. attachments テーブルとの連携

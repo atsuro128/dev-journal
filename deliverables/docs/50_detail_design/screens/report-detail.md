@@ -710,7 +710,93 @@ sequenceDiagram
 
 ---
 
-## 15. 品質チェック
+## 15. バリデーション・権限チェックフロー
+
+### 15.1 レポート提出バリデーションフロー
+
+```mermaid
+graph TD
+    Start([開始: レポート提出リクエスト]) --> ChkStatus{status = draft か?}
+    ChkStatus -->|No| ErrNotEditable[422 InvalidStateTransition]
+    ChkStatus -->|Yes| ChkItems{明細が1件以上か?<br/>RPT-014}
+    ChkItems -->|No| ErrEmpty[422 EmptyReportSubmission]
+    ChkItems -->|Yes| ChkApprover{テナント内に<br/>Approver が1人以上か?<br/>WFL-014}
+    ChkApprover -->|No| ErrNoApprover[422 NoApproverInTenant]
+    ChkApprover -->|Yes| ChkLock{楽観的ロック:<br/>updated_at 一致か?}
+    ChkLock -->|No| ErrConflict[409 ConflictError]
+    ChkLock -->|Yes| ExecSubmit([状態遷移<br/>draft → submitted 実行])
+
+    style ErrNotEditable fill:#fee,stroke:#c00
+    style ErrEmpty fill:#fee,stroke:#c00
+    style ErrNoApprover fill:#fee,stroke:#c00
+    style ErrConflict fill:#fee,stroke:#c00
+```
+
+### 15.2 状態遷移操作の権限チェックフロー（承認・却下・支払完了 統合）
+
+```mermaid
+graph TD
+    Start([開始: 状態遷移操作リクエスト]) --> OpType{操作種別の判定}
+    OpType -->|承認| A_Role
+    OpType -->|却下| R_Role
+    OpType -->|支払完了| P_Role
+
+    subgraph 承認フロー
+        A_Role{ロール = Approver か?<br/>RBC-001}
+        A_Role -->|No| A_ErrPerm[403 PermissionDenied]
+        A_Role -->|Yes| A_ChkStatus{status = submitted か?<br/>WFL-002}
+        A_ChkStatus -->|No| A_ErrState[422 InvalidStateTransition]
+        A_ChkStatus -->|Yes| A_ChkSelf{自己承認でないか?<br/>RBC-016:<br/>report.user_id ≠ current_user.id}
+        A_ChkSelf -->|No| A_ErrSelf[403 SelfApprovalNotAllowed]
+        A_ChkSelf -->|Yes| A_Lock{楽観的ロック:<br/>updated_at 一致か?}
+        A_Lock -->|No| A_ErrConflict[409 ConflictError]
+        A_Lock -->|Yes| A_Exec([承認実行])
+    end
+
+    subgraph 却下フロー
+        R_Role{ロール = Approver か?<br/>RBC-001}
+        R_Role -->|No| R_ErrPerm[403 PermissionDenied]
+        R_Role -->|Yes| R_ChkStatus{status = submitted か?<br/>WFL-002}
+        R_ChkStatus -->|No| R_ErrState[422 InvalidStateTransition]
+        R_ChkStatus -->|Yes| R_ChkSelf{自己却下でないか?<br/>RBC-016:<br/>report.user_id ≠ current_user.id}
+        R_ChkSelf -->|No| R_ErrSelf[403 SelfApprovalNotAllowed]
+        R_ChkSelf -->|Yes| R_ChkReason{却下理由が<br/>入力されているか?<br/>WFL-012}
+        R_ChkReason -->|No| R_ErrReason[422 MissingRejectionReason]
+        R_ChkReason -->|Yes| R_Lock{楽観的ロック:<br/>updated_at 一致か?}
+        R_Lock -->|No| R_ErrConflict[409 ConflictError]
+        R_Lock -->|Yes| R_Exec([却下実行])
+    end
+
+    subgraph 支払完了フロー
+        P_Role{ロール = Accounting か?<br/>WFL-013}
+        P_Role -->|No| P_ErrPerm[403 PermissionDenied]
+        P_Role -->|Yes| P_ChkStatus{status = approved か?<br/>WFL-013}
+        P_ChkStatus -->|No| P_ErrState[422 InvalidStateTransition]
+        P_ChkStatus -->|Yes| P_ChkSelf{自己処理でないか?<br/>RBC-012:<br/>user_id ≠ 作成者}
+        P_ChkSelf -->|No| P_ErrSelf[403 SelfPaymentNotAllowed]
+        P_ChkSelf -->|Yes| P_Lock{楽観的ロック:<br/>updated_at 一致か?}
+        P_Lock -->|No| P_ErrConflict[409 ConflictError]
+        P_Lock -->|Yes| P_Exec([支払完了実行])
+    end
+
+    style A_ErrPerm fill:#fee,stroke:#c00
+    style A_ErrState fill:#fee,stroke:#c00
+    style A_ErrSelf fill:#fee,stroke:#c00
+    style A_ErrConflict fill:#fee,stroke:#c00
+    style R_ErrPerm fill:#fee,stroke:#c00
+    style R_ErrState fill:#fee,stroke:#c00
+    style R_ErrSelf fill:#fee,stroke:#c00
+    style R_ErrReason fill:#fee,stroke:#c00
+    style R_ErrConflict fill:#fee,stroke:#c00
+    style P_ErrPerm fill:#fee,stroke:#c00
+    style P_ErrState fill:#fee,stroke:#c00
+    style P_ErrSelf fill:#fee,stroke:#c00
+    style P_ErrConflict fill:#fee,stroke:#c00
+```
+
+---
+
+## 16. 品質チェック
 
 - [x] UC-M02, UC-M03, UC-M03a, UC-M05, UC-M06, UC-M07, UC-M09, UC-A02, UC-A03, UC-AC02 の全ユースケースが画面仕様でカバーされているか
 - [x] 状態遷移に基づくアクションボタンの出し分けが state_machine.md の操作マトリクスと整合しているか
