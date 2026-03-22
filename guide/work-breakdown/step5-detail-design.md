@@ -44,8 +44,8 @@ Step 4 の完了が前提。画面一覧（screens.md）で機能数・画面数
 
 Step 着手時にまず作業計画を立案し、以下に保存する:
 
+- テンプレート: `guide/templates/task-plan.md`
 - 配置先: `progress-management/task-plans/step5-detail-design.md`
-- 内容: 判断ポイント、タスク分解、依存関係、Phase 構成、レビュー戦略
 - 計画が確定してから成果物作成に入ること
 
 ## 完了条件

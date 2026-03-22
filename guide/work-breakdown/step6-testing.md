@@ -24,8 +24,8 @@
 
 Step 着手時にまず作業計画を立案し、以下に保存する:
 
+- テンプレート: `guide/templates/task-plan.md`
 - 配置先: `progress-management/task-plans/step6-testing.md`
-- 内容: 判断ポイント、タスク分解、依存関係、レビュー戦略
 - 計画が確定してから成果物作成に入ること
 
 ### 完了条件（Step 全体）
