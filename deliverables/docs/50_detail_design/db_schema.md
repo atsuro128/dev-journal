@@ -238,9 +238,16 @@ CREATE TABLE categories (
     created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
 
-    -- グローバルカテゴリは code でユニーク、テナントカテゴリは tenant_id + code でユニーク
-    CONSTRAINT categories_code_unique UNIQUE (tenant_id, code)
+    -- 一意性は部分ユニークインデックスで保証（テーブル外に定義）
 );
+
+-- グローバルカテゴリの一意性（tenant_id IS NULL）
+CREATE UNIQUE INDEX categories_global_code_unique
+    ON categories (code) WHERE tenant_id IS NULL;
+
+-- テナント固有カテゴリの一意性（Phase 3）
+CREATE UNIQUE INDEX categories_tenant_code_unique
+    ON categories (tenant_id, code) WHERE tenant_id IS NOT NULL;
 ```
 
 **判断ポイント**: カテゴリは PostgreSQL ENUM ではなくマスタテーブルとして実装する。Phase 3 でテナント固有のカスタムカテゴリに対応するため、`tenant_id` を nullable として設計する。
@@ -548,7 +555,11 @@ CREATE POLICY tenant_isolation_delete ON attachments
     FOR DELETE
     USING (tenant_id = current_setting('app.current_tenant')::uuid);
 
--- UPDATE ポリシーは不要（attachments は更新不可、deleted_at の設定はオーナーロールで実行）
+-- 論理削除（deleted_at の設定）用。データ更新ではなく削除フラグの設定に限定
+CREATE POLICY tenant_isolation_update ON attachments
+    FOR UPDATE
+    USING (tenant_id = current_setting('app.current_tenant')::uuid)
+    WITH CHECK (tenant_id = current_setting('app.current_tenant')::uuid);
 ```
 
 #### categories
@@ -610,7 +621,6 @@ conn.Release() でプールに返却
 | マイグレーション実行 | `expense_owner` ロールで実行 | DDL 操作にはオーナー権限が必要 |
 | ログイン | `expense_owner` ロールの専用接続 | JWT 未発行のため `app.current_tenant` を設定できない |
 | サインアップ | `expense_owner` ロールの専用接続 | テナント + ユーザー + メンバーシップを同時作成 |
-| 添付ファイル論理削除 | `expense_owner` ロールの専用接続 | `attachments` に UPDATE ポリシーがないため |
 | トークンリフレッシュ | `expense_owner` ロールの専用接続 | `refresh_tokens` は RLS 非適用テーブル |
 | パスワードリセット | `expense_owner` ロールの専用接続 | `password_reset_tokens` は RLS 非適用テーブル |
 
@@ -657,7 +667,7 @@ CREATE INDEX idx_tenant_memberships_role
 
 ```sql
 -- PK (category_id) は自動
--- UNIQUE (tenant_id, code) は自動でインデックス作成
+-- categories_global_code_unique, categories_tenant_code_unique は部分ユニークインデックスとして定義済み
 
 -- カテゴリ一覧取得（テナント固有 + グローバル）
 CREATE INDEX idx_categories_tenant_active
@@ -912,3 +922,5 @@ Phase 3 でテナント固有のカスタムカテゴリに対応する際の拡
 - [x] `password_reset_tokens` テーブルが security.md 2.3 の仕様と一致しているか
 - [x] トークンテーブルが RLS 非適用として明記されているか
 - [x] 上流成果物との差分が記録されているか
+- [x] categories の一意性が部分ユニークインデックスで保証されているか（NULL 安全）
+- [x] attachments の論理削除が RLS 適用下の UPDATE ポリシーで実行される設計か（オーナーロール不要）
