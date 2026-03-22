@@ -41,6 +41,7 @@
 | T1-15 | `files.md` — 添付ファイル設計 | requirements.md (ATT-*), domain_model.md, security-policy.md | detail-designer | 完了 |
 | T1-16 | `security.md` — セキュリティ設計 | requirements.md (SEC-*), architecture.md, ADR-0001 | detail-designer | 完了 |
 | T1-17 | `monitoring.md` — 監視・ログ設計 | ADR-0005, architecture.md | detail-designer | 完了 |
+| T1-18 | `ui-guidelines.md` — UI デザインガイドライン | ADR-0001, screens.md, architecture.md | detail-designer | 完了 |
 
 レビュー:
 
