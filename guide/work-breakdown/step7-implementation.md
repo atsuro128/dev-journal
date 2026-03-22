@@ -115,14 +115,14 @@ Step 6 完了
 
 ### 7-C-1: 認証フロントエンド
 
-- **入力**: screens/auth.md, openapi.yaml §認証
+- **入力**: screens/auth-signup.md, auth-login.md, auth-password-reset-request.md, auth-password-reset.md, openapi.yaml §認証
 - **出力**: `apps/web/src/features/auth/`
 - **作業内容**:
   - ログイン画面、サインアップ画面、パスワードリセット画面
   - JWT 管理（アクセストークン・リフレッシュトークン）
   - 認証状態に基づくルーティングガード
 - **完了条件**:
-  - 認証画面が screens/auth.md の仕様通りに実装されている
+  - 認証画面が screens/auth-signup.md, auth-login.md, auth-password-reset-request.md, auth-password-reset.md の仕様通りに実装されている
   - トークンリフレッシュが自動実行される
 
 ### 7-C-2: 認証バックエンド

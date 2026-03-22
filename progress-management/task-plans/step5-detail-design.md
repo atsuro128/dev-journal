@@ -19,11 +19,11 @@
 
 | タスク | 成果物 | 入力（主要） | エージェント | 状態 |
 |--------|--------|-------------|------------|------|
-| T1-1 | `screens/auth.md` — 認証系4画面 | screens.md, usecases.md (UC-SYS01/02/05), requirements.md (AUTH-*, SEC-*) | basic-designer | 完了 |
+| T1-1 | `screens/auth-signup.md, auth-login.md, auth-password-reset-request.md, auth-password-reset.md` — 認証系4画面 | screens.md, usecases.md (UC-SYS01/02/05), requirements.md (AUTH-*, SEC-*) | basic-designer | 完了 |
 | T1-2 | `screens/dashboard.md` — ダッシュボード | screens.md, usecases.md (UC-SYS04), requirements.md (DASH-*) | basic-designer | 完了 |
-| T1-3 | `screens/report.md` — 経費レポート系4画面（最大・最重要） | screens.md, usecases.md (UC-M01〜09), workflow.md, state_machine.md, domain_model.md | basic-designer | 完了 |
-| T1-4 | `screens/workflow.md` — ワークフロー系2画面 | screens.md, usecases.md (UC-A01〜03, UC-AC01〜02), workflow.md | basic-designer | 完了 |
-| T1-5 | `screens/admin.md` — 管理系2画面 | screens.md, usecases.md (UC-AD01/02, UC-AC03) | basic-designer | 完了 |
+| T1-3 | `screens/report-list.md, report-create.md, report-edit.md, report-detail.md` — 経費レポート系4画面（最大・最重要） | screens.md, usecases.md (UC-M01〜09), workflow.md, state_machine.md, domain_model.md | basic-designer | 完了 |
+| T1-4 | `screens/workflow-pending.md, workflow-payable.md` — ワークフロー系2画面 | screens.md, usecases.md (UC-A01〜03, UC-AC01〜02), workflow.md | basic-designer | 完了 |
+| T1-5 | `screens/admin-all-reports.md, admin-tenant.md` — 管理系2画面 | screens.md, usecases.md (UC-AD01/02, UC-AC03) | basic-designer | 完了 |
 
 横断設計（db-designer x1, detail-designer x3）:
 

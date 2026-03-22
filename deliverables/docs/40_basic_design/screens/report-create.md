@@ -67,7 +67,7 @@ UC-M09 の再申請フローで SCR-RPT-004（report-detail.md）の「再申請
 | 対象期間（終了日） | 元レポートの period_end |
 
 - 再申請時、遷移パラメータとして元レポートの `reference_report_id` をクエリパラメータ `?ref=:id` で渡す
-- API 側で `reference_report_id` を設定し、元レポートの明細をコピーする
+- ユーザーが作成画面で内容を確認・修正した後、「作成する」ボタンで POST /api/reports（`reference_report_id` 付き）を実行すると、ドメイン層が元レポートの明細をコピーした新規 draft を生成する（state_machine.md 6節準拠）
 - **添付ファイルはコピーしない**（再アップロードが必要）
 
 ---

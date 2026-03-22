@@ -602,7 +602,7 @@ DELETE /api/reports/:id/items/:itemId/attachments/:attId
 |--------|------|----------------|
 | T1-6（db_schema.md） | `attachments` テーブルのスキーマ定義 | 8 節で S3 連携に関連するカラムの概要を記載。DDL は db_schema.md で確定 |
 | T1-8（security.md） | バケットポリシー、ファイルアップロードのセキュリティ | 10 節でファイル固有のセキュリティ考慮事項を記載。全体のセキュリティ設計は security.md で統括 |
-| T1-3（screens/report.md） | レポート詳細画面の添付 UI（アップロード・ダウンロード・削除） | 本設計書は API・バックエンド・インフラの設計。UI 仕様は screens/report.md で定義 |
+| T1-3（screens/report-detail.md） | レポート詳細画面の添付 UI（アップロード・ダウンロード・削除） | 本設計書は API・バックエンド・インフラの設計。UI 仕様は screens/report-detail.md で定義 |
 
 ---
 
