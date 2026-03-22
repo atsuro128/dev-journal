@@ -1,0 +1,2068 @@
+openapi: 3.0.3
+info:
+  title: Expense SaaS API
+  description: |
+    経費精算SaaS MVP の API 仕様。
+    全 API レスポンス（`/api/*`）は `{"data": ...}` ラッパーで返却する。
+    `/health` はインフラ用エンドポイントであり、data ラッパーを使用しない。
+    エラーレスポンスは `{"error": {"code": "...", "message": "...", "details": [...]}}` 形式。
+    ページネーションはカーソルベース。一覧系は `{"data": [...], "pagination": {"next_cursor": "...", "has_more": true}}` 形式。
+  version: 1.0.0
+  contact:
+    name: Expense SaaS Team
+
+servers:
+  - url: http://localhost:8080
+    description: Local development
+  - url: https://expense-saas.example.com
+    description: Production
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: health
+    description: ヘルスチェック
+  - name: auth
+    description: 認証
+  - name: dashboard
+    description: ダッシュボード
+  - name: categories
+    description: 経費カテゴリ
+  - name: reports
+    description: 経費レポート
+  - name: items
+    description: 経費明細
+  - name: attachments
+    description: 添付ファイル
+  - name: workflow
+    description: ワークフロー（承認・却下・支払完了）
+  - name: tenant
+    description: テナント管理
+
+paths:
+  # ---------------------------------------------------------------------------
+  # Health
+  # ---------------------------------------------------------------------------
+  /health:
+    get:
+      tags: [health]
+      summary: ヘルスチェック
+      description: DB 接続を含むサーバーの稼働状態を確認する。認証不要。
+      operationId: getHealth
+      security: []
+      responses:
+        "200":
+          description: 正常
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthCheckResponse"
+        "503":
+          description: サービス異常
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthCheckResponse"
+
+  # ---------------------------------------------------------------------------
+  # Auth
+  # ---------------------------------------------------------------------------
+  /api/auth/signup:
+    post:
+      tags: [auth]
+      summary: サインアップ
+      description: テナントと Admin ユーザーを同時に新規作成する。
+      operationId: signup
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [company_name, user_name, email, password]
+              properties:
+                company_name:
+                  type: string
+                  minLength: 1
+                  maxLength: 200
+                  description: 会社名
+                user_name:
+                  type: string
+                  minLength: 1
+                  maxLength: 100
+                  description: ユーザー名
+                email:
+                  type: string
+                  format: email
+                  maxLength: 254
+                  description: メールアドレス
+                password:
+                  type: string
+                  format: password
+                  minLength: 8
+                  maxLength: 128
+                  description: パスワード（8文字以上）
+      responses:
+        "201":
+          description: サインアップ成功
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: "#/components/schemas/AuthTokens"
+        "409":
+          description: メールアドレス重複
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error:
+                  code: EMAIL_ALREADY_EXISTS
+                  message: "このメールアドレスは既に登録されています"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+
+  /api/auth/login:
+    post:
+      tags: [auth]
+      summary: ログイン
+      description: メールアドレスとパスワードで認証し、JWT を発行する。
+      operationId: login
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                  maxLength: 254
+                  description: メールアドレス
+                password:
+                  type: string
+                  format: password
+                  minLength: 8
+                  maxLength: 128
+                  description: パスワード
+      responses:
+        "200":
+          description: ログイン成功
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: "#/components/schemas/AuthTokens"
+        "401":
+          description: 認証失敗
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error:
+                  code: INVALID_CREDENTIALS
+                  message: "メールアドレスまたはパスワードが正しくありません"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+
+  /api/auth/refresh:
+    post:
+      tags: [auth]
+      summary: トークンリフレッシュ
+      description: |
+        リフレッシュトークンを使用して新しいアクセストークンとリフレッシュトークンを発行する。
+        リフレッシュトークンローテーション: 旧リフレッシュトークンは無効化される。
+        レスポンスには最新の user/tenant 情報を含む（ロール変更等の即時反映のため）。
+      operationId: refreshToken
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refresh_token]
+              properties:
+                refresh_token:
+                  type: string
+                  description: リフレッシュトークン
+      responses:
+        "200":
+          description: リフレッシュ成功
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: "#/components/schemas/AuthTokens"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /api/auth/logout:
+    post:
+      tags: [auth]
+      summary: ログアウト
+      description: |
+        リフレッシュトークンを無効化する。
+        アクセストークンが期限切れでもログアウト可能。リクエストボディの refresh_token で認証する。
+      operationId: logout
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refresh_token]
+              properties:
+                refresh_token:
+                  type: string
+                  description: 無効化するリフレッシュトークン
+      responses:
+        "200":
+          description: ログアウト成功
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: object
+                    required: [message]
+                    properties:
+                      message:
+                        type: string
+                        example: "ログアウトしました"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /api/auth/me:
+    get:
+      tags: [auth]
+      summary: 認証情報取得
+      description: 現在のログインユーザーの情報を取得する。
+      operationId: getMe
+      responses:
+        "200":
+          description: ユーザー情報
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: "#/components/schemas/UserProfile"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /api/auth/password-reset:
+    post:
+      tags: [auth]
+      summary: パスワードリセット要求
+      description: |
+        パスワードリセット用のメールを送信する。
+        ユーザーの存在に関わらず同一の成功レスポンスを返却する（SEC-011）。
+      operationId: requestPasswordReset
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email:
+                  type: string
+                  format: email
+                  maxLength: 254
+                  description: 登録済みメールアドレス
+      responses:
+        "200":
+          description: リクエスト受付（メールアドレスの登録有無に関わらず同一レスポンス）
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: object
+                    required: [message]
+                    properties:
+                      message:
+                        type: string
+                        example: "パスワードリセットメールを送信しました"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+
+  /api/auth/password-reset/{token}:
+    put:
+      tags: [auth]
+      summary: パスワードリセット実行
+      description: リセットトークンを使用して新しいパスワードを設定する。トークンは1回使用で無効化される（SEC-006）。
+      operationId: executePasswordReset
+      security: []
+      parameters:
+        - name: token
+          in: path
+          required: true
+          description: パスワードリセットトークン
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [new_password]
+              properties:
+                new_password:
+                  type: string
+                  format: password
+                  minLength: 8
+                  maxLength: 128
+                  description: 新しいパスワード（8文字以上）
+      responses:
+        "200":
+          description: パスワード変更成功
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: object
+                    required: [message]
+                    properties:
+                      message:
+                        type: string
+                        example: "パスワードを変更しました"
+        "422":
+          description: トークン無効またはバリデーションエラー
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  # ---------------------------------------------------------------------------
+  # Dashboard
+  # ---------------------------------------------------------------------------
+  /api/dashboard:
+    get:
+      tags: [dashboard]
+      summary: ダッシュボード
+      description: |
+        ロール別にフィールドが異なるダッシュボードデータを返却する。
+        - Member: 自分のレポートカウント + 直近レポート
+        - Approver: Member の情報 + 承認待ち件数 + 月別支出サマリー
+        - Accounting: Member の情報 + 支払待ち件数 + 月別支出サマリー
+        - Admin: テナント全体のステータス別件数 + メンバー数 + 月別支出サマリー
+      operationId: getDashboard
+      responses:
+        "200":
+          description: ダッシュボードデータ
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: "#/components/schemas/DashboardResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  # ---------------------------------------------------------------------------
+  # Categories
+  # ---------------------------------------------------------------------------
+  /api/categories:
+    get:
+      tags: [categories]
+      summary: カテゴリ一覧
+      description: 利用可能な経費カテゴリの一覧を取得する（グローバル + テナント固有）。
+      operationId: listCategories
+      responses:
+        "200":
+          description: カテゴリ一覧
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Category"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  # ---------------------------------------------------------------------------
+  # Reports
+  # ---------------------------------------------------------------------------
+  /api/reports:
+    get:
+      tags: [reports]
+      summary: 自分のレポート一覧
+      description: 現在のユーザーが作成した経費レポートの一覧を取得する。カーソルベースページネーション対応。
+      operationId: listMyReports
+      parameters:
+        - $ref: "#/components/parameters/cursor"
+        - $ref: "#/components/parameters/limit"
+        - name: status
+          in: query
+          description: ステータスフィルタ
+          schema:
+            $ref: "#/components/schemas/ReportStatus"
+        - name: from
+          in: query
+          description: 対象期間の開始日（YYYY-MM-DD）
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          description: 対象期間の終了日（YYYY-MM-DD）
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: レポート一覧
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, pagination]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ExpenseReportSummary"
+                  pagination:
+                    $ref: "#/components/schemas/Pagination"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+    post:
+      tags: [reports]
+      summary: レポート作成
+      description: |
+        新規経費レポートを draft 状態で作成する。
+        再申請の場合は `reference_report_id` を指定すると、元レポートの明細がコピーされる（添付はコピーされない）。
+      operationId: createReport
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExpenseReportCreateRequest"
+      responses:
+        "201":
+          description: レポート作成成功
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: "#/components/schemas/ExpenseReportDetail"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+
+  /api/reports/all:
+    get:
+      tags: [reports]
+      summary: 全レポート一覧
+      description: テナント内の全経費レポートを取得する（Admin, Accounting 用）。
+      operationId: listAllReports
+      parameters:
+        - $ref: "#/components/parameters/cursor"
+        - $ref: "#/components/parameters/limit"
+        - name: status
+          in: query
+          description: ステータスフィルタ
+          schema:
+            $ref: "#/components/schemas/ReportStatus"
+        - name: from
+          in: query
+          description: 対象期間の開始日（YYYY-MM-DD）
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          description: 対象期間の終了日（YYYY-MM-DD）
+          schema:
+            type: string
+            format: date
+        - name: submitter_id
+          in: query
+          description: 申請者 ID でフィルタ
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: 全レポート一覧
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, pagination]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      allOf:
+                        - $ref: "#/components/schemas/ExpenseReportSummary"
+                        - type: object
+                          required: [submitter]
+                          properties:
+                            submitter:
+                              description: 申請者情報
+                              $ref: "#/components/schemas/UserSummary"
+                  pagination:
+                    $ref: "#/components/schemas/Pagination"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /api/reports/{id}:
+    get:
+      tags: [reports]
+      summary: レポート詳細
+      description: |
+        経費レポートの詳細を取得する。
+        レスポンスには明細（items）配列がネストされ、各明細には添付（attachments）配列がネストされる。
+      operationId: getReport
+      parameters:
+        - $ref: "#/components/parameters/reportId"
+      responses:
+        "200":
+          description: レポート詳細
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: "#/components/schemas/ExpenseReportDetail"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    put:
+      tags: [reports]
+      summary: レポート更新
+      description: 下書き状態のレポートのタイトル・対象期間を更新する。楽観的ロックのため `updated_at` が必須。
+      operationId: updateReport
+      parameters:
+        - $ref: "#/components/parameters/reportId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExpenseReportUpdateRequest"
+      responses:
+        "200":
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: "#/components/schemas/ExpenseReportDetail"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+
+    delete:
+      tags: [reports]
+      summary: レポート削除
+      description: 下書き状態のレポートを論理削除する。関連する明細・添付も連動して論理削除される。
+      operationId: deleteReport
+      parameters:
+        - $ref: "#/components/parameters/reportId"
+      responses:
+        "204":
+          description: 削除成功
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          description: draft 以外のレポートは削除不可
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error:
+                  code: REPORT_NOT_DELETABLE
+                  message: "Report can only be deleted in draft status"
+
+  /api/reports/{id}/submit:
+    post:
+      tags: [reports]
+      summary: レポート提出
+      description: |
+        下書きレポートを承認者に提出する。
+        事前条件: status == draft、明細1件以上、テナント内に Approver が1人以上存在。
+        楽観的ロックのため `updated_at` が必須。
+      operationId: submitReport
+      parameters:
+        - $ref: "#/components/parameters/reportId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [updated_at]
+              properties:
+                updated_at:
+                  type: string
+                  format: date-time
+                  description: 楽観的ロック用の最終更新日時
+      responses:
+        "200":
+          description: 提出成功
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: "#/components/schemas/ExpenseReportDetail"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          description: 状態遷移エラー・明細なし・Approver 不在
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  # ---------------------------------------------------------------------------
+  # Items
+  # ---------------------------------------------------------------------------
+  /api/reports/{id}/items:
+    post:
+      tags: [items]
+      summary: 明細追加
+      description: 下書きレポートに経費明細を追加する。追加後、レポートの合計金額が再計算される。
+      operationId: createItem
+      parameters:
+        - $ref: "#/components/parameters/reportId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExpenseItemCreateRequest"
+      responses:
+        "201":
+          description: 明細追加成功
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: "#/components/schemas/ExpenseItem"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+
+  /api/reports/{id}/items/{itemId}:
+    put:
+      tags: [items]
+      summary: 明細更新
+      description: 下書きレポートの経費明細を更新する。更新後、レポートの合計金額が再計算される。
+      operationId: updateItem
+      parameters:
+        - $ref: "#/components/parameters/reportId"
+        - $ref: "#/components/parameters/itemId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExpenseItemUpdateRequest"
+      responses:
+        "200":
+          description: 明細更新成功
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: "#/components/schemas/ExpenseItem"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+
+    delete:
+      tags: [items]
+      summary: 明細削除
+      description: 下書きレポートの経費明細を論理削除する。紐づく添付ファイルも連動して論理削除される。削除後、レポートの合計金額が再計算される。
+      operationId: deleteItem
+      parameters:
+        - $ref: "#/components/parameters/reportId"
+        - $ref: "#/components/parameters/itemId"
+      responses:
+        "204":
+          description: 削除成功
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          description: draft 以外のレポートの明細は削除不可
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  # ---------------------------------------------------------------------------
+  # Attachments
+  # ---------------------------------------------------------------------------
+  /api/reports/{id}/items/{itemId}/attachments:
+    post:
+      tags: [attachments]
+      summary: 添付ファイルアップロード
+      description: |
+        下書きレポートの明細に添付ファイル（領収書）をアップロードする。
+        API 経由プロキシ方式: サーバーがバリデーション後に S3 にアップロードする。
+        許可 MIME タイプ: image/jpeg, image/png, application/pdf。サイズ上限: 5MB。
+      operationId: uploadAttachment
+      parameters:
+        - $ref: "#/components/parameters/reportId"
+        - $ref: "#/components/parameters/itemId"
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: アップロードするファイル（JPEG, PNG, PDF。5MB以下）
+      responses:
+        "201":
+          description: アップロード成功
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Attachment"
+        "400":
+          description: ファイルパートが存在しない
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error:
+                  code: BAD_REQUEST
+                  message: "Invalid request body"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "413":
+          description: ファイルサイズ超過
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error:
+                  code: FILE_TOO_LARGE
+                  message: "File size exceeds the 5MB limit"
+        "422":
+          description: ファイル形式不正または draft 以外のレポート
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+
+    get:
+      tags: [attachments]
+      summary: 添付ファイル一覧
+      description: 明細に紐づく添付ファイルの一覧を取得する。署名付き URL は含まない。
+      operationId: listAttachments
+      parameters:
+        - $ref: "#/components/parameters/reportId"
+        - $ref: "#/components/parameters/itemId"
+      responses:
+        "200":
+          description: 添付ファイル一覧
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Attachment"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/reports/{id}/items/{itemId}/attachments/{attId}:
+    get:
+      tags: [attachments]
+      summary: ダウンロード URL 取得
+      description: |
+        添付ファイルの署名付きダウンロード URL を取得する。
+        有効期限: 15分。発行前に認可チェック（ATT-011）を実施する。
+      operationId: getAttachmentDownload
+      parameters:
+        - $ref: "#/components/parameters/reportId"
+        - $ref: "#/components/parameters/itemId"
+        - $ref: "#/components/parameters/attachmentId"
+      responses:
+        "200":
+          description: ダウンロード情報
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: "#/components/schemas/AttachmentDownload"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    delete:
+      tags: [attachments]
+      summary: 添付ファイル削除
+      description: 下書きレポートの添付ファイルを論理削除する。S3 物理削除は日次バッチで実行される。
+      operationId: deleteAttachment
+      parameters:
+        - $ref: "#/components/parameters/reportId"
+        - $ref: "#/components/parameters/itemId"
+        - $ref: "#/components/parameters/attachmentId"
+      responses:
+        "204":
+          description: 削除成功
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          description: draft 以外のレポートの添付は削除不可
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  # ---------------------------------------------------------------------------
+  # Workflow
+  # ---------------------------------------------------------------------------
+  /api/workflow/pending:
+    get:
+      tags: [workflow]
+      summary: 承認待ち一覧
+      description: |
+        Approver 用。同一テナント内の submitted 状態レポート一覧を取得する。
+        自分のレポートも含まれる（is_own_report フラグで識別）。
+      operationId: listPendingReports
+      parameters:
+        - $ref: "#/components/parameters/cursor"
+        - $ref: "#/components/parameters/limit"
+        - name: applicant_name
+          in: query
+          description: 申請者名部分一致フィルタ
+          schema:
+            type: string
+      responses:
+        "200":
+          description: 承認待ちレポート一覧
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, pagination]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/PendingReport"
+                  pagination:
+                    $ref: "#/components/schemas/Pagination"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /api/workflow/{id}/approve:
+    post:
+      tags: [workflow]
+      summary: 承認
+      description: |
+        submitted 状態のレポートを承認する（T2: submitted -> approved）。
+        自己承認は禁止（RBC-016）。楽観的ロックのため `updated_at` が必須。
+      operationId: approveReport
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: レポート ID
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [updated_at]
+              properties:
+                comment:
+                  type: string
+                  maxLength: 1000
+                  description: 承認コメント（任意）
+                updated_at:
+                  type: string
+                  format: date-time
+                  description: 楽観的ロック用の最終更新日時
+      responses:
+        "200":
+          description: 承認成功
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: "#/components/schemas/ExpenseReportDetail"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: 権限不足または自己承認
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          description: 不正な状態遷移
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /api/workflow/{id}/reject:
+    post:
+      tags: [workflow]
+      summary: 却下
+      description: |
+        submitted 状態のレポートを却下する（T3: submitted -> rejected）。
+        却下理由は必須（WFL-012）。自己却下は禁止（RBC-016）。楽観的ロックのため `updated_at` が必須。
+      operationId: rejectReport
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: レポート ID
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RejectRequest"
+      responses:
+        "200":
+          description: 却下成功
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: "#/components/schemas/ExpenseReportDetail"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: 権限不足または自己却下
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          description: 不正な状態遷移または却下理由なし
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /api/workflow/payable:
+    get:
+      tags: [workflow]
+      summary: 支払待ち一覧
+      description: |
+        Accounting 用。同一テナント内の approved 状態レポート一覧を取得する。
+        自分のレポートも含まれる（is_own_report フラグで識別）。
+      operationId: listPayableReports
+      parameters:
+        - $ref: "#/components/parameters/cursor"
+        - $ref: "#/components/parameters/limit"
+        - name: applicant_name
+          in: query
+          description: 申請者名部分一致フィルタ
+          schema:
+            type: string
+      responses:
+        "200":
+          description: 支払待ちレポート一覧
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, pagination]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/PayableReport"
+                  pagination:
+                    $ref: "#/components/schemas/Pagination"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /api/workflow/{id}/pay:
+    post:
+      tags: [workflow]
+      summary: 支払処理済み
+      description: |
+        approved 状態のレポートの支払完了を記録する（T4: approved -> paid）。
+        自己支払処理は禁止（RBC-012）。楽観的ロックのため `updated_at` が必須。
+      operationId: markReportAsPaid
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: レポート ID
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [updated_at]
+              properties:
+                updated_at:
+                  type: string
+                  format: date-time
+                  description: 楽観的ロック用の最終更新日時
+      responses:
+        "200":
+          description: 支払完了記録成功
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: "#/components/schemas/ExpenseReportDetail"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: 権限不足または自己支払処理
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          description: 不正な状態遷移
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  # ---------------------------------------------------------------------------
+  # Tenant
+  # ---------------------------------------------------------------------------
+  /api/tenant:
+    get:
+      tags: [tenant]
+      summary: テナント情報取得
+      description: JWT の tenant_id からテナントの基本情報を取得する。Admin のみアクセス可能。
+      operationId: getTenant
+      responses:
+        "200":
+          description: テナント情報
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: "#/components/schemas/TenantInfo"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /api/tenant/members:
+    get:
+      tags: [tenant]
+      summary: テナント内メンバー一覧
+      description: |
+        テナント内の全メンバー一覧を取得する。管理画面のフィルタドロップダウン等で使用する。
+        アクセス可能ロール: Admin, Accounting（SCR-ADM-001 準拠）。
+      operationId: listTenantMembers
+      responses:
+        "200":
+          description: メンバー一覧
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/UserSummary"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+# =============================================================================
+# Components
+# =============================================================================
+components:
+  # ---------------------------------------------------------------------------
+  # Security Schemes
+  # ---------------------------------------------------------------------------
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: RS256 で署名された JWT アクセストークン（有効期限 15分）
+
+  # ---------------------------------------------------------------------------
+  # Schemas
+  # ---------------------------------------------------------------------------
+  schemas:
+    # --- Error ---
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+              description: 機械可読なエラーコード
+              example: RESOURCE_NOT_FOUND
+            message:
+              type: string
+              description: 人間可読なエラーメッセージ
+              example: "Resource not found"
+            details:
+              type: array
+              description: バリデーションエラー時のフィールド別詳細
+              items:
+                $ref: "#/components/schemas/ValidationError"
+
+    ValidationError:
+      type: object
+      required: [field, message]
+      properties:
+        field:
+          type: string
+          description: エラーが発生したフィールド名
+          example: title
+        message:
+          type: string
+          description: フィールドレベルのエラーメッセージ
+          example: "Title is required"
+
+    # --- Auth ---
+    AuthTokens:
+      type: object
+      required: [user, tenant, access_token, refresh_token]
+      properties:
+        user:
+          type: object
+          required: [id, name, email, role]
+          properties:
+            id:
+              type: string
+              format: uuid
+              description: ユーザー ID
+            name:
+              type: string
+              description: ユーザー名
+            email:
+              type: string
+              format: email
+              description: メールアドレス
+            role:
+              type: string
+              enum: [admin, approver, member, accounting]
+              description: テナント内ロール
+        tenant:
+          type: object
+          required: [id, name]
+          properties:
+            id:
+              type: string
+              format: uuid
+              description: テナント ID
+            name:
+              type: string
+              description: 会社名
+        access_token:
+          type: string
+          description: JWT アクセストークン（15分有効）
+        refresh_token:
+          type: string
+          description: JWT リフレッシュトークン（7日有効）
+
+    UserProfile:
+      type: object
+      required: [id, name, email, role, tenant]
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: ユーザー ID
+        name:
+          type: string
+          description: ユーザー名
+        email:
+          type: string
+          format: email
+          description: メールアドレス
+        role:
+          type: string
+          enum: [admin, approver, member, accounting]
+          description: テナント内ロール
+        tenant:
+          type: object
+          required: [id, name]
+          properties:
+            id:
+              type: string
+              format: uuid
+              description: テナント ID
+            name:
+              type: string
+              description: 会社名
+
+    TenantInfo:
+      type: object
+      required: [id, name, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: テナント ID
+        name:
+          type: string
+          description: 会社名
+        created_at:
+          type: string
+          format: date-time
+          description: テナント作成日時
+
+    # --- Expense Report ---
+    ExpenseReportSummary:
+      type: object
+      required: [id, title, period_start, period_end, status, total_amount, created_at, updated_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: レポート ID
+        title:
+          type: string
+          description: タイトル
+        period_start:
+          type: string
+          format: date
+          description: 対象期間開始日（YYYY-MM-DD）
+        period_end:
+          type: string
+          format: date
+          description: 対象期間終了日（YYYY-MM-DD）
+        status:
+          $ref: "#/components/schemas/ReportStatus"
+        total_amount:
+          type: integer
+          description: 合計金額（円単位）
+        submitted_at:
+          type: string
+          format: date-time
+          description: 提出日時（submitted 以降の場合）
+        created_at:
+          type: string
+          format: date-time
+          description: 作成日時
+        updated_at:
+          type: string
+          format: date-time
+          description: 最終更新日時
+
+    ExpenseReportDetail:
+      type: object
+      required: [id, title, period_start, period_end, status, total_amount, submitter, items, created_at, updated_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: レポート ID
+        title:
+          type: string
+          description: タイトル
+        period_start:
+          type: string
+          format: date
+          description: 対象期間開始日
+        period_end:
+          type: string
+          format: date
+          description: 対象期間終了日
+        status:
+          $ref: "#/components/schemas/ReportStatus"
+        total_amount:
+          type: integer
+          description: 合計金額（円単位）
+        submitter:
+          description: 申請者情報
+          $ref: "#/components/schemas/UserSummary"
+        reference_report_id:
+          type: string
+          format: uuid
+          description: 再申請元レポート ID
+        submitted_at:
+          type: string
+          format: date-time
+          description: 提出日時
+        submitted_by:
+          $ref: "#/components/schemas/UserSummary"
+        approved_at:
+          type: string
+          format: date-time
+          description: 承認日時
+        approved_by:
+          $ref: "#/components/schemas/UserSummary"
+        approval_comment:
+          type: string
+          description: 承認コメント
+        rejected_at:
+          type: string
+          format: date-time
+          description: 却下日時
+        rejected_by:
+          $ref: "#/components/schemas/UserSummary"
+        rejection_reason:
+          type: string
+          description: 却下理由
+        paid_at:
+          type: string
+          format: date-time
+          description: 支払完了日時
+        paid_by:
+          $ref: "#/components/schemas/UserSummary"
+        items:
+          type: array
+          description: 経費明細一覧
+          items:
+            allOf:
+              - $ref: "#/components/schemas/ExpenseItem"
+              - type: object
+                required: [attachments]
+                properties:
+                  attachments:
+                    type: array
+                    description: 添付ファイル一覧
+                    items:
+                      $ref: "#/components/schemas/Attachment"
+        created_at:
+          type: string
+          format: date-time
+          description: 作成日時
+        updated_at:
+          type: string
+          format: date-time
+          description: 最終更新日時
+
+    ExpenseReportCreateRequest:
+      type: object
+      required: [title, period_start, period_end]
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+          description: タイトル
+        period_start:
+          type: string
+          format: date
+          description: 対象期間開始日（YYYY-MM-DD）
+        period_end:
+          type: string
+          format: date
+          description: 対象期間終了日（YYYY-MM-DD。開始日以降）
+        reference_report_id:
+          type: string
+          format: uuid
+          description: 再申請元レポート ID（再申請時のみ指定。明細がコピーされる）
+
+    ExpenseReportUpdateRequest:
+      type: object
+      required: [title, period_start, period_end, updated_at]
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+          description: タイトル
+        period_start:
+          type: string
+          format: date
+          description: 対象期間開始日（YYYY-MM-DD）
+        period_end:
+          type: string
+          format: date
+          description: 対象期間終了日（YYYY-MM-DD。開始日以降）
+        updated_at:
+          type: string
+          format: date-time
+          description: 楽観的ロック用の最終更新日時
+
+    # --- Expense Item ---
+    ExpenseItem:
+      type: object
+      required: [id, report_id, expense_date, amount, category, description, created_at, updated_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: 明細 ID
+        report_id:
+          type: string
+          format: uuid
+          description: 所属レポート ID
+        expense_date:
+          type: string
+          format: date
+          description: 支出日（YYYY-MM-DD）
+        amount:
+          type: integer
+          minimum: 1
+          description: 金額（円単位、正の整数）
+        category:
+          $ref: "#/components/schemas/Category"
+        description:
+          type: string
+          description: 摘要
+        created_at:
+          type: string
+          format: date-time
+          description: 作成日時
+        updated_at:
+          type: string
+          format: date-time
+          description: 最終更新日時
+
+    ExpenseItemCreateRequest:
+      type: object
+      required: [expense_date, amount, category_id, description]
+      properties:
+        expense_date:
+          type: string
+          format: date
+          description: 支出日（YYYY-MM-DD）
+        amount:
+          type: integer
+          minimum: 1
+          description: 金額（円単位、正の整数）
+        category_id:
+          type: string
+          format: uuid
+          description: カテゴリ ID
+        description:
+          type: string
+          minLength: 1
+          maxLength: 500
+          description: 摘要
+
+    ExpenseItemUpdateRequest:
+      type: object
+      required: [expense_date, amount, category_id, description, updated_at]
+      properties:
+        expense_date:
+          type: string
+          format: date
+          description: 支出日（YYYY-MM-DD）
+        amount:
+          type: integer
+          minimum: 1
+          description: 金額（円単位、正の整数）
+        category_id:
+          type: string
+          format: uuid
+          description: カテゴリ ID
+        description:
+          type: string
+          minLength: 1
+          maxLength: 500
+          description: 摘要
+        updated_at:
+          type: string
+          format: date-time
+          description: 楽観的ロック用の最終更新日時
+
+    # --- Attachment ---
+    Attachment:
+      type: object
+      required: [id, item_id, file_name, file_size, mime_type, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: 添付ファイル ID
+        item_id:
+          type: string
+          format: uuid
+          description: 所属明細 ID
+        file_name:
+          type: string
+          description: 元ファイル名
+        file_size:
+          type: integer
+          description: ファイルサイズ（バイト）
+        mime_type:
+          type: string
+          enum: [image/jpeg, image/png, application/pdf]
+          description: MIME タイプ
+        created_at:
+          type: string
+          format: date-time
+          description: アップロード日時
+
+    AttachmentDownload:
+      type: object
+      required: [download_url, file_name, mime_type, file_size, expires_at]
+      properties:
+        download_url:
+          type: string
+          format: uri
+          description: 署名付きダウンロード URL
+        file_name:
+          type: string
+          description: 元ファイル名
+        mime_type:
+          type: string
+          enum: [image/jpeg, image/png, application/pdf]
+          description: MIME タイプ
+        file_size:
+          type: integer
+          description: ファイルサイズ（バイト）
+        expires_at:
+          type: string
+          format: date-time
+          description: 署名付き URL の有効期限（発行から15分後）
+
+    # --- Workflow ---
+    PendingReport:
+      type: object
+      required: [id, title, total_amount, submitted_at, submitter, is_own_report]
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: レポート ID
+        title:
+          type: string
+          description: タイトル
+        total_amount:
+          type: integer
+          description: 合計金額（円単位）
+        submitted_at:
+          type: string
+          format: date-time
+          description: 提出日時
+        submitter:
+          $ref: "#/components/schemas/UserSummary"
+        is_own_report:
+          type: boolean
+          description: 自分が作成したレポートか（自己承認禁止の表示制御に使用）
+
+    PayableReport:
+      type: object
+      required: [id, title, total_amount, approved_at, submitter, is_own_report]
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: レポート ID
+        title:
+          type: string
+          description: タイトル
+        total_amount:
+          type: integer
+          description: 合計金額（円単位）
+        approved_at:
+          type: string
+          format: date-time
+          description: 承認日時
+        submitter:
+          $ref: "#/components/schemas/UserSummary"
+        is_own_report:
+          type: boolean
+          description: 自分が作成したレポートか（自己支払処理禁止の表示制御に使用）
+
+    RejectRequest:
+      type: object
+      required: [reason, updated_at]
+      properties:
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 1000
+          description: 却下理由（必須）
+        updated_at:
+          type: string
+          format: date-time
+          description: 楽観的ロック用の最終更新日時
+
+    # --- Dashboard ---
+    DashboardResponse:
+      type: object
+      description: |
+        ロール別にフィールドの有無が異なる。
+        - Member: my_draft_count, my_submitted_count, my_rejected_count, recent_reports
+        - Approver: Member の全フィールド + pending_approval_count, monthly_summary
+        - Accounting: Member の全フィールド + pending_payment_count, monthly_summary
+        - Admin: tenant_* カウント, tenant_member_count, monthly_summary
+      properties:
+        my_draft_count:
+          type: integer
+          description: 自分の下書きレポート件数（Member, Approver, Accounting）
+        my_submitted_count:
+          type: integer
+          description: 自分の提出中レポート件数（Member, Approver, Accounting）
+        my_rejected_count:
+          type: integer
+          description: 自分の却下レポート件数（Member, Approver, Accounting）
+        recent_reports:
+          type: array
+          description: 自分の直近レポート（最大5件、Member, Approver, Accounting）
+          items:
+            $ref: "#/components/schemas/RecentReport"
+        pending_approval_count:
+          type: integer
+          description: 承認待ちレポート件数（Approver のみ）
+        pending_payment_count:
+          type: integer
+          description: 支払待ちレポート件数（Accounting のみ）
+        monthly_summary:
+          type: array
+          description: 月別支出サマリー（直近3ヶ月、Approver, Accounting, Admin）
+          items:
+            $ref: "#/components/schemas/MonthlySummary"
+        tenant_draft_count:
+          type: integer
+          description: テナント全体の下書き件数（Admin のみ）
+        tenant_submitted_count:
+          type: integer
+          description: テナント全体の提出済み件数（Admin のみ）
+        tenant_approved_count:
+          type: integer
+          description: テナント全体の承認済み件数（Admin のみ）
+        tenant_rejected_count:
+          type: integer
+          description: テナント全体の却下件数（Admin のみ）
+        tenant_paid_count:
+          type: integer
+          description: テナント全体の支払済み件数（Admin のみ）
+        tenant_member_count:
+          type: integer
+          description: テナントのメンバー数（Admin のみ）
+
+    MonthlySummary:
+      type: object
+      required: [year_month, total_amount]
+      properties:
+        year_month:
+          type: string
+          description: 年月（YYYY-MM 形式）
+          example: "2026-03"
+        total_amount:
+          type: integer
+          description: 月別合計金額（円単位）
+
+    RecentReport:
+      type: object
+      required: [id, title, period_start, period_end, total_amount, status, updated_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: レポート ID
+        title:
+          type: string
+          description: タイトル
+        period_start:
+          type: string
+          format: date
+          description: 対象期間開始日
+        period_end:
+          type: string
+          format: date
+          description: 対象期間終了日
+        total_amount:
+          type: integer
+          description: 合計金額（円単位）
+        status:
+          $ref: "#/components/schemas/ReportStatus"
+        updated_at:
+          type: string
+          format: date-time
+          description: 最終更新日時
+
+    # --- Common ---
+    Pagination:
+      type: object
+      required: [has_more]
+      properties:
+        next_cursor:
+          type: string
+          description: 次ページのカーソル値（has_more が true の場合に存在）
+        has_more:
+          type: boolean
+          description: 次ページの存在有無
+
+    UserSummary:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: ユーザー ID
+        name:
+          type: string
+          description: ユーザー名
+
+    Category:
+      type: object
+      required: [id, code, name_ja, sort_order]
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: カテゴリ ID
+        code:
+          type: string
+          description: カテゴリコード
+          example: transportation
+        name_ja:
+          type: string
+          description: 日本語名
+          example: 交通費
+        sort_order:
+          type: integer
+          description: 表示順
+
+    HealthCheckResponse:
+      type: object
+      required: [status, checks]
+      properties:
+        status:
+          type: string
+          enum: [ok, degraded]
+          description: 全体ステータス
+        checks:
+          type: object
+          required: [database]
+          properties:
+            database:
+              type: string
+              enum: [ok, error]
+              description: DB 接続状態
+
+    ReportStatus:
+      type: string
+      enum: [draft, submitted, approved, rejected, paid]
+      description: |
+        経費レポートの状態。
+        - draft: 下書き
+        - submitted: 提出済み
+        - approved: 承認済み
+        - rejected: 却下
+        - paid: 支払済み
+
+  # ---------------------------------------------------------------------------
+  # Parameters
+  # ---------------------------------------------------------------------------
+  parameters:
+    reportId:
+      name: id
+      in: path
+      required: true
+      description: レポート ID
+      schema:
+        type: string
+        format: uuid
+
+    itemId:
+      name: itemId
+      in: path
+      required: true
+      description: 明細 ID
+      schema:
+        type: string
+        format: uuid
+
+    attachmentId:
+      name: attId
+      in: path
+      required: true
+      description: 添付ファイル ID
+      schema:
+        type: string
+        format: uuid
+
+    cursor:
+      name: cursor
+      in: query
+      description: ページネーションカーソル（前回レスポンスの next_cursor）
+      schema:
+        type: string
+
+    limit:
+      name: limit
+      in: query
+      description: 取得件数（デフォルト 20、最大 100）
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+
+  # ---------------------------------------------------------------------------
+  # Responses
+  # ---------------------------------------------------------------------------
+  responses:
+    Unauthorized:
+      description: 認証エラー
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            error:
+              code: UNAUTHORIZED
+              message: "Authentication required"
+
+    Forbidden:
+      description: 権限不足
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            error:
+              code: FORBIDDEN
+              message: "Insufficient permissions"
+
+    NotFound:
+      description: リソース未発見（テナント境界越えを含む）
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            error:
+              code: RESOURCE_NOT_FOUND
+              message: "Resource not found"
+
+    Conflict:
+      description: 楽観的ロック競合
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            error:
+              code: CONFLICT
+              message: "Resource has been modified by another user"
+
+    ValidationFailed:
+      description: バリデーションエラー
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            error:
+              code: VALIDATION_ERROR
+              message: "Input validation failed"
+              details:
+                - field: title
+                  message: "Title is required"
+
+    TooManyRequests:
+      description: レート制限超過
+      headers:
+        Retry-After:
+          description: 再試行可能になるまでの秒数
+          schema:
+            type: integer
+        X-RateLimit-Limit:
+          description: ウィンドウあたりの制限値
+          schema:
+            type: integer
+        X-RateLimit-Remaining:
+          description: ウィンドウ内の残りリクエスト数
+          schema:
+            type: integer
+        X-RateLimit-Reset:
+          description: ウィンドウリセットの Unix タイムスタンプ
+          schema:
+            type: integer
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            error:
+              code: RATE_LIMIT_EXCEEDED
+              message: "Too many requests. Please try again later."
+
+    InternalServerError:
+      description: サーバー内部エラー
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            error:
+              code: INTERNAL_ERROR
+              message: "Internal server error"
