@@ -479,9 +479,9 @@ graph TD
 | 11 | SCR-DASH-001（dashboard.md） | 直近レポート選択 | SCR-RPT-004 |
 | 12 | SCR-DASH-001（dashboard.md） | マイレポート | SCR-RPT-001（report-list.md） |
 | 13 | SCR-DASH-001（dashboard.md） | レポート作成 | SCR-RPT-002（report-create.md） |
-| 14 | SCR-WFL-001（workflow.md） | レポート選択 | SCR-RPT-004 |
-| 15 | SCR-WFL-002（workflow.md） | レポート選択 | SCR-RPT-004 |
-| 16 | SCR-ADM-001（admin.md） | レポート選択 | SCR-RPT-004 |
+| 14 | SCR-WFL-001（workflow-pending.md） | レポート選択 | SCR-RPT-004 |
+| 15 | SCR-WFL-002（workflow-payable.md） | レポート選択 | SCR-RPT-004 |
+| 16 | SCR-ADM-001（admin-all-reports.md） | レポート選択 | SCR-RPT-004 |
 
 ---
 
@@ -491,8 +491,8 @@ graph TD
 |--------|------|
 | T1-6: db_schema.md | expense_reports, expense_items, attachments, categories テーブルの構造。カテゴリマスタテーブルのシードデータ（6固定カテゴリ） |
 | T1-7: files.md | 添付ファイルのアップロード（API経由プロキシ）、ダウンロード（署名付きURL、15分有効）、S3キー `{tenant_id}/{report_id}/{attachment_id}` |
-| T1-4: screens/workflow.md | 承認待ち一覧（SCR-WFL-001）、支払待ち一覧（SCR-WFL-002）からのレポート詳細遷移。承認/却下/支払完了の操作は SCR-RPT-004 で行う |
-| T1-5: screens/admin.md | テナント全レポート一覧（SCR-ADM-001）からのレポート詳細遷移。Admin は閲覧のみ |
+| T1-4: screens/workflow-pending.md, screens/workflow-payable.md | 承認待ち一覧（SCR-WFL-001）、支払待ち一覧（SCR-WFL-002）からのレポート詳細遷移。承認/却下/支払完了の操作は SCR-RPT-004 で行う |
+| T1-5: screens/admin-all-reports.md, screens/admin-tenant.md | テナント全レポート一覧（SCR-ADM-001）からのレポート詳細遷移。Admin は閲覧のみ |
 
 ---
 

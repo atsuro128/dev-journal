@@ -122,7 +122,63 @@ UC-M09 の再申請フローで SCR-RPT-004（report-detail.md）の「再申請
 
 ---
 
-## 9. 品質チェック
+## 9. API リクエスト/レスポンス
+
+### POST /api/reports
+
+新規経費レポートを draft 状態で作成する。再申請の場合は `reference_report_id` を指定すると、元レポートの明細がコピーされる（添付はコピーされない）。
+
+#### リクエストボディ
+
+```json
+{
+  "title": "2026年3月 営業経費",
+  "period_start": "2026-03-01",
+  "period_end": "2026-03-31",
+  "reference_report_id": "uuid"
+}
+```
+
+| フィールド | 型 | 必須 | 説明 |
+|-----------|-----|------|------|
+| title | String | 必須 | タイトル（1〜200文字） |
+| period_start | String (date) | 必須 | 対象期間開始日（`YYYY-MM-DD`） |
+| period_end | String (date) | 必須 | 対象期間終了日（`YYYY-MM-DD`、開始日以降） |
+| reference_report_id | String (UUID) | 任意 | 再申請元レポート ID（再申請時のみ指定） |
+
+#### レスポンス（201 Created）
+
+```json
+{
+  "data": {
+    "id": "uuid",
+    "title": "2026年3月 営業経費",
+    "period_start": "2026-03-01",
+    "period_end": "2026-03-31",
+    "status": "draft",
+    "total_amount": 0,
+    "submitter": {
+      "id": "uuid",
+      "name": "一般 次郎"
+    },
+    "reference_report_id": "uuid",
+    "items": [],
+    "created_at": "2026-03-10T09:00:00Z",
+    "updated_at": "2026-03-10T09:00:00Z"
+  }
+}
+```
+
+#### エラーレスポンス
+
+| HTTP ステータス | エラーコード | 説明 |
+|---------------|------------|------|
+| 401 | UNAUTHORIZED | 認証エラー。ログイン画面にリダイレクト |
+| 422 | VALIDATION_FAILED | バリデーションエラー。フィールドレベルのエラーメッセージを表示 |
+
+---
+
+## 10. 品質チェック
 
 - [x] UC-M01 の全入力項目・バリデーション・エラー表示が定義されているか
 - [x] UC-M09 の再申請フローでプリフィル（タイトル・期間・明細コピー、添付は非コピー）が明記されているか
