@@ -27,7 +27,7 @@ Step 4 の完了が前提。画面一覧（screens.md）で機能数・画面数
 
 | 成果物 | パス |
 |--------|------|
-| 機能別画面詳細仕様 | `deliverables/docs/40_basic_design/screens/*.md` |
+| 機能別画面詳細仕様 | `deliverables/docs/50_detail_design/screens/*.md` |
 | OpenAPI 定義 | `deliverables/docs/50_detail_design/openapi.yaml` |
 | DB スキーマ設計 | `deliverables/docs/50_detail_design/db_schema.md` |
 | 認可設計 | `deliverables/docs/50_detail_design/authz.md` |

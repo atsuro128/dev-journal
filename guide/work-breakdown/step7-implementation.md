@@ -12,7 +12,7 @@
 |--------|------|
 | 画面一覧 | `deliverables/docs/40_basic_design/screens.md` |
 | 画面遷移図 | `deliverables/docs/40_basic_design/ui_flow.md` |
-| 画面仕様（機能別） | `deliverables/docs/40_basic_design/screens/*.md` |
+| 画面仕様（機能別） | `deliverables/docs/50_detail_design/screens/*.md` |
 | DB スキーマ | `deliverables/docs/50_detail_design/db_schema.md` |
 | OpenAPI | `deliverables/docs/50_detail_design/openapi.yaml` |
 | 認可設計 | `deliverables/docs/50_detail_design/authz.md` |

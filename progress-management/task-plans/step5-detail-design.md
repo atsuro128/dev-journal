@@ -49,7 +49,7 @@
 | T1-R1 | 内部レビュー | design-cross-reviewer | 完了 |
 | T1-R2 | codex レビュー | codex | 完了 |
 
-成果物配置先: `dev-journal/deliverables/docs/`（画面詳細は `40_basic_design/screens/`、横断設計は `50_detail_design/`）
+成果物配置先: `dev-journal/deliverables/docs/`（画面詳細は `50_detail_design/screens/`、横断設計は `50_detail_design/`）
 
 ### Phase 2（Phase 1 完了後）
 
