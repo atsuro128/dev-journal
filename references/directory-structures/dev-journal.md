@@ -31,14 +31,14 @@ dev-journal/
 │   ├── implementation-guide.md
 │   └── project_steps.md
 ├── logs/                             # ログ
+│   ├── session-log-archive.md        # セッションログアーカイブ
 │   ├── YYYY-MM-DD/                   # 過去セッションログ（アーカイブ）
 │   │   └── session-log.md
 │   └── hooks/
 │       └── hook-warnings.log         # Hook警告ログ（自動記録）
 ├── progress-management/              # 進捗・課題管理
 │   ├── progress.md
-│   ├── handoff.md                    # 引き継ぎメモ（直近2セッション）
-│   ├── handoff-archive.md            # 引き継ぎアーカイブ
+│   ├── session-log.md                 # セッションログ（直近2セッション）
 │   ├── issues/                       # 課題管理
 │   │   ├── open/                     # 未解決
 │   │   ├── pending-review/           # 対応済み・確認待ち

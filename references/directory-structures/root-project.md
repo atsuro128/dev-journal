@@ -28,7 +28,7 @@ root-project/
 │   │   ├── codex-review/
 │   │   ├── commit/
 │   │   ├── daily-report/
-│   │   ├── handoff/
+│   │   ├── session-log/
 │   │   ├── issue/
 │   │   ├── review/
 │   │   ├── review-findings/
