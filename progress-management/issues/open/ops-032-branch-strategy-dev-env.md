@@ -28,7 +28,7 @@ Step 5 以降（並列実行の技術的前提条件）
 
 ## 対応内容
 
-以下を定義する成果物 `ai-dev-framework/rules/branching.md` を作成（project_steps.md Step 7 Phase 1 から前倒し）:
+以下を定義する成果物 `ai-dev-framework/rules/branching.md` を作成（Step 7 Phase 1 から前倒し）:
 
 - ブランチモデル（main / develop / feature、タスク ID ベース命名）
 - git worktree 運用方針（並列セッションの分離）

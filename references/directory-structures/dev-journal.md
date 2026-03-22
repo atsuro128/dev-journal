@@ -29,7 +29,15 @@ dev-journal/
 │           └── state_machine.md
 ├── guide/                            # プロジェクト進行ガイド
 │   ├── implementation-guide.md
-│   └── project_steps.md
+│   └── work-breakdown/          # Step 別作業分解（成果物・完了条件・レビュー観点）
+│       ├── step0-preparation.md
+│       ├── step1-requirements.md
+│       ├── step2-domain.md
+│       ├── step3-architecture.md
+│       ├── step4-basic-design.md
+│       ├── step5-detail-design.md
+│       ├── step6-testing.md
+│       └── step7-implementation.md
 ├── logs/                             # ログ
 │   ├── session-log-archive.md        # セッションログアーカイブ
 │   ├── YYYY-MM-DD/                   # 過去セッションログ（アーカイブ）
