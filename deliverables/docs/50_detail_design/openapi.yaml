@@ -258,7 +258,14 @@ paths:
     get:
       tags: [auth]
       summary: 認証情報取得
-      description: 現在のログインユーザーの情報を取得する。
+      description: |
+        現在のログインユーザーの情報を取得する。
+
+        認可条件:
+        - 許可ロール: Member, Approver, Admin, Accounting
+        - 所有者条件: なし（自分自身の情報のみ返却）
+        - 状態条件: なし
+        - テナント境界越え: 該当なし（JWT の情報を返却するのみ）
       operationId: getMe
       responses:
         "200":
@@ -379,6 +386,12 @@ paths:
         - Approver: Member の情報 + 承認待ち件数 + 月別支出サマリー
         - Accounting: Member の情報 + 支払待ち件数 + 月別支出サマリー
         - Admin: テナント全体のステータス別件数 + メンバー数 + 月別支出サマリー
+
+        認可条件:
+        - 許可ロール: Member, Approver, Admin, Accounting
+        - 所有者条件: なし（ロールに応じて返却フィールドが異なる）
+        - 状態条件: なし
+        - テナント境界越え: 該当なし（JWT の tenant_id スコープで自動フィルタ）
       operationId: getDashboard
       responses:
         "200":
@@ -401,7 +414,14 @@ paths:
     get:
       tags: [categories]
       summary: カテゴリ一覧
-      description: 利用可能な経費カテゴリの一覧を取得する（グローバル + テナント固有）。
+      description: |
+        利用可能な経費カテゴリの一覧を取得する（グローバル + テナント固有）。
+
+        認可条件:
+        - 許可ロール: Member, Approver, Admin, Accounting
+        - 所有者条件: なし
+        - 状態条件: なし
+        - テナント境界越え: 該当なし（カテゴリはグローバルマスタ）
       operationId: listCategories
       responses:
         "200":
@@ -426,7 +446,14 @@ paths:
     get:
       tags: [reports]
       summary: 自分のレポート一覧
-      description: 現在のユーザーが作成した経費レポートの一覧を取得する。カーソルベースページネーション対応。
+      description: |
+        現在のユーザーが作成した経費レポートの一覧を取得する。カーソルベースページネーション対応。
+
+        認可条件:
+        - 許可ロール: Member, Approver, Admin, Accounting
+        - 所有者条件: 自分が作成したレポートのみ返却（user_id フィルタ）
+        - 状態条件: なし（全状態のレポートを返却）
+        - テナント境界越え: 該当なし（JWT の tenant_id + user_id スコープで自動フィルタ）
       operationId: listMyReports
       parameters:
         - $ref: "#/components/parameters/cursor"
@@ -472,6 +499,12 @@ paths:
       description: |
         新規経費レポートを draft 状態で作成する。
         再申請の場合は `reference_report_id` を指定すると、元レポートの明細がコピーされる（添付はコピーされない）。
+
+        認可条件:
+        - 許可ロール: Member, Approver, Admin, Accounting
+        - 所有者条件: なし（作成者が自動的に所有者になる）
+        - 状態条件: なし（新規作成は常に draft）
+        - テナント境界越え: 該当なし（JWT の tenant_id がレポートに設定される）
       operationId: createReport
       requestBody:
         required: true
@@ -499,7 +532,15 @@ paths:
     get:
       tags: [reports]
       summary: 全レポート一覧
-      description: テナント内の全経費レポートを取得する（Admin, Accounting 用）。
+      description: |
+        テナント内の全経費レポートを取得する（Admin, Accounting 用）。
+
+        認可条件:
+        - 許可ロール: Admin, Accounting
+        - 所有者条件: なし（テナント内の全レポートを閲覧可能）
+        - 状態条件: なし（全状態のレポートを返却）
+        - テナント境界越え: 該当なし（JWT の tenant_id スコープで自動フィルタ）
+        - 権限不足（Member, Approver）: 403 FORBIDDEN
       operationId: listAllReports
       parameters:
         - $ref: "#/components/parameters/cursor"
@@ -561,6 +602,17 @@ paths:
       description: |
         経費レポートの詳細を取得する。
         レスポンスには明細（items）配列がネストされ、各明細には添付（attachments）配列がネストされる。
+
+        認可条件:
+        - 許可ロール: Member, Approver, Admin, Accounting
+        - 所有者条件: ロールと状態による閲覧範囲制限あり
+          - Member: 自分が作成したレポートのみ
+          - Approver: 自分のレポート + 同一テナントの submitted 状態レポート
+          - Accounting: 自分のレポート + 同一テナントの全レポート
+          - Admin: 同一テナントの全レポート
+        - 状態条件: なし（閲覧可能範囲内であれば全状態を閲覧可能）
+        - テナント境界越え: 404 RESOURCE_NOT_FOUND
+        - 同一テナント内の権限不足: 403 FORBIDDEN
       operationId: getReport
       parameters:
         - $ref: "#/components/parameters/reportId"
@@ -585,7 +637,15 @@ paths:
     put:
       tags: [reports]
       summary: レポート更新
-      description: 下書き状態のレポートのタイトル・対象期間を更新する。楽観的ロックのため `updated_at` が必須。
+      description: |
+        下書き状態のレポートのタイトル・対象期間を更新する。楽観的ロックのため `updated_at` が必須。
+
+        認可条件:
+        - 許可ロール: Member, Approver, Admin, Accounting（RBC-010）
+        - 所有者条件: 所有者のみ（自分が作成したレポートに限定）
+        - 状態条件: draft のみ
+        - テナント境界越え: 404 RESOURCE_NOT_FOUND
+        - 同一テナント内の権限不足（所有者でない）: 403 FORBIDDEN
       operationId: updateReport
       parameters:
         - $ref: "#/components/parameters/reportId"
@@ -620,7 +680,15 @@ paths:
     delete:
       tags: [reports]
       summary: レポート削除
-      description: 下書き状態のレポートを論理削除する。関連する明細・添付も連動して論理削除される。
+      description: |
+        下書き状態のレポートを論理削除する。関連する明細・添付も連動して論理削除される。
+
+        認可条件:
+        - 許可ロール: Member, Approver, Admin, Accounting（RBC-010）
+        - 所有者条件: 所有者のみ（自分が作成したレポートに限定）
+        - 状態条件: draft のみ（draft 以外は 422 REPORT_NOT_DELETABLE）
+        - テナント境界越え: 404 RESOURCE_NOT_FOUND
+        - 同一テナント内の権限不足（所有者でない）: 403 FORBIDDEN
       operationId: deleteReport
       parameters:
         - $ref: "#/components/parameters/reportId"
@@ -652,6 +720,14 @@ paths:
         下書きレポートを承認者に提出する。
         事前条件: status == draft、明細1件以上、テナント内に Approver が1人以上存在。
         楽観的ロックのため `updated_at` が必須。
+
+        認可条件:
+        - 許可ロール: Member, Approver, Admin, Accounting（RBC-010）
+        - 所有者条件: 所有者のみ（自分が作成したレポートに限定）
+        - 状態条件: draft のみ（draft 以外は 422 INVALID_STATE_TRANSITION）
+        - 追加条件: 明細1件以上（422 EMPTY_REPORT）、テナント内に Approver が1人以上存在（422 NO_APPROVER）
+        - テナント境界越え: 404 RESOURCE_NOT_FOUND
+        - 同一テナント内の権限不足（所有者でない）: 403 FORBIDDEN
       operationId: submitReport
       parameters:
         - $ref: "#/components/parameters/reportId"
@@ -700,7 +776,15 @@ paths:
     post:
       tags: [items]
       summary: 明細追加
-      description: 下書きレポートに経費明細を追加する。追加後、レポートの合計金額が再計算される。
+      description: |
+        下書きレポートに経費明細を追加する。追加後、レポートの合計金額が再計算される。
+
+        認可条件:
+        - 許可ロール: Member, Approver, Admin, Accounting（RBC-010）
+        - 所有者条件: 所有者のみ（自分が作成したレポートに限定）
+        - 状態条件: draft のみ（draft 以外は 422 REPORT_NOT_EDITABLE）
+        - テナント境界越え: 404 RESOURCE_NOT_FOUND
+        - 同一テナント内の権限不足（所有者でない）: 403 FORBIDDEN
       operationId: createItem
       parameters:
         - $ref: "#/components/parameters/reportId"
@@ -734,7 +818,15 @@ paths:
     put:
       tags: [items]
       summary: 明細更新
-      description: 下書きレポートの経費明細を更新する。更新後、レポートの合計金額が再計算される。
+      description: |
+        下書きレポートの経費明細を更新する。更新後、レポートの合計金額が再計算される。
+
+        認可条件:
+        - 許可ロール: Member, Approver, Admin, Accounting（RBC-010）
+        - 所有者条件: 所有者のみ（自分が作成したレポートに限定）
+        - 状態条件: draft のみ（draft 以外は 422 REPORT_NOT_EDITABLE）
+        - テナント境界越え: 404 RESOURCE_NOT_FOUND
+        - 同一テナント内の権限不足（所有者でない）: 403 FORBIDDEN
       operationId: updateItem
       parameters:
         - $ref: "#/components/parameters/reportId"
@@ -770,7 +862,15 @@ paths:
     delete:
       tags: [items]
       summary: 明細削除
-      description: 下書きレポートの経費明細を論理削除する。紐づく添付ファイルも連動して論理削除される。削除後、レポートの合計金額が再計算される。
+      description: |
+        下書きレポートの経費明細を論理削除する。紐づく添付ファイルも連動して論理削除される。削除後、レポートの合計金額が再計算される。
+
+        認可条件:
+        - 許可ロール: Member, Approver, Admin, Accounting（RBC-010）
+        - 所有者条件: 所有者のみ（自分が作成したレポートに限定）
+        - 状態条件: draft のみ（draft 以外は 422 REPORT_NOT_EDITABLE）
+        - テナント境界越え: 404 RESOURCE_NOT_FOUND
+        - 同一テナント内の権限不足（所有者でない）: 403 FORBIDDEN
       operationId: deleteItem
       parameters:
         - $ref: "#/components/parameters/reportId"
@@ -802,6 +902,14 @@ paths:
         下書きレポートの明細に添付ファイル（領収書）をアップロードする。
         API 経由プロキシ方式: サーバーがバリデーション後に S3 にアップロードする。
         許可 MIME タイプ: image/jpeg, image/png, application/pdf。サイズ上限: 5MB。
+
+        認可条件:
+        - 許可ロール: Member, Approver, Admin, Accounting（RBC-010）
+        - 所有者条件: 所有者のみ（自分が作成したレポートに限定）
+        - 状態条件: draft のみ（draft 以外は 422 REPORT_NOT_EDITABLE）
+        - テナント境界越え: 404 RESOURCE_NOT_FOUND
+        - 同一テナント内の権限不足（所有者でない）: 403 PERMISSION_DENIED
+        - レート制限: 10 req/min/user（429 RATE_LIMIT_EXCEEDED）
       operationId: uploadAttachment
       parameters:
         - $ref: "#/components/parameters/reportId"
@@ -867,7 +975,19 @@ paths:
     get:
       tags: [attachments]
       summary: 添付ファイル一覧
-      description: 明細に紐づく添付ファイルの一覧を取得する。署名付き URL は含まない。
+      description: |
+        明細に紐づく添付ファイルの一覧を取得する。署名付き URL は含まない。
+
+        認可条件:
+        - 許可ロール: Member, Approver, Admin, Accounting
+        - 所有者条件: レポート閲覧権限に準ずる
+          - Member: 自分が作成したレポートの添付のみ
+          - Approver: 自分のレポート + 同一テナントの submitted 状態レポートの添付
+          - Accounting: 自分のレポート + 同一テナントの全レポートの添付
+          - Admin: 同一テナントの全レポートの添付
+        - 状態条件: なし（閲覧可能範囲内であれば全状態）
+        - テナント境界越え: 404 RESOURCE_NOT_FOUND
+        - 同一テナント内の権限不足: 403 FORBIDDEN
       operationId: listAttachments
       parameters:
         - $ref: "#/components/parameters/reportId"
@@ -899,6 +1019,17 @@ paths:
       description: |
         添付ファイルの署名付きダウンロード URL を取得する。
         有効期限: 15分。発行前に認可チェック（ATT-011）を実施する。
+
+        認可条件:
+        - 許可ロール: Member, Approver, Admin, Accounting
+        - 所有者条件: レポート閲覧権限に準ずる（ATT-011）
+          - Member: 自分が作成したレポートの添付のみ
+          - Approver: 自分のレポート + 同一テナントの submitted 状態レポートの添付
+          - Accounting: 自分のレポート + 同一テナントの全レポートの添付
+          - Admin: 同一テナントの全レポートの添付
+        - 状態条件: なし（閲覧可能範囲内であれば全状態）
+        - テナント境界越え: 404 RESOURCE_NOT_FOUND
+        - 同一テナント内の権限不足: 403 PERMISSION_DENIED
       operationId: getAttachmentDownload
       parameters:
         - $ref: "#/components/parameters/reportId"
@@ -925,7 +1056,15 @@ paths:
     delete:
       tags: [attachments]
       summary: 添付ファイル削除
-      description: 下書きレポートの添付ファイルを論理削除する。S3 物理削除は日次バッチで実行される。
+      description: |
+        下書きレポートの添付ファイルを論理削除する。S3 物理削除は日次バッチで実行される。
+
+        認可条件:
+        - 許可ロール: Member, Approver, Admin, Accounting（RBC-010）
+        - 所有者条件: 所有者のみ（自分が作成したレポートに限定）
+        - 状態条件: draft のみ（draft 以外は 422 REPORT_NOT_EDITABLE、ATT-020）
+        - テナント境界越え: 404 RESOURCE_NOT_FOUND
+        - 同一テナント内の権限不足（所有者でない）: 403 PERMISSION_DENIED
       operationId: deleteAttachment
       parameters:
         - $ref: "#/components/parameters/reportId"
@@ -957,6 +1096,13 @@ paths:
       description: |
         Approver 用。同一テナント内の submitted 状態レポート一覧を取得する。
         自分のレポートも含まれる（is_own_report フラグで識別）。
+
+        認可条件:
+        - 許可ロール: Approver（RBC-011）
+        - 所有者条件: なし（同一テナントの submitted レポート全件を返却。自分のレポートも含む）
+        - 状態条件: submitted のみ（API 側で固定フィルタ）
+        - テナント境界越え: 該当なし（JWT の tenant_id スコープで自動フィルタ）
+        - 権限不足（Member, Admin, Accounting）: 403 FORBIDDEN
       operationId: listPendingReports
       parameters:
         - $ref: "#/components/parameters/cursor"
@@ -993,6 +1139,14 @@ paths:
       description: |
         submitted 状態のレポートを承認する（T2: submitted -> approved）。
         自己承認は禁止（RBC-016）。楽観的ロックのため `updated_at` が必須。
+
+        認可条件:
+        - 許可ロール: Approver（RBC-011）
+        - 所有者条件: 非所有者のみ（自己承認禁止: RBC-016。自分が作成したレポートは承認不可）
+        - 状態条件: submitted のみ（submitted 以外は 422 INVALID_STATE_TRANSITION）
+        - テナント境界越え: 404 RESOURCE_NOT_FOUND
+        - 権限不足（Member, Admin, Accounting）: 403 FORBIDDEN
+        - 自己承認: 403 SELF_APPROVAL_NOT_ALLOWED
       operationId: approveReport
       parameters:
         - name: id
@@ -1055,6 +1209,14 @@ paths:
       description: |
         submitted 状態のレポートを却下する（T3: submitted -> rejected）。
         却下理由は必須（WFL-012）。自己却下は禁止（RBC-016）。楽観的ロックのため `updated_at` が必須。
+
+        認可条件:
+        - 許可ロール: Approver（RBC-011）
+        - 所有者条件: 非所有者のみ（自己却下禁止: RBC-016。自分が作成したレポートは却下不可）
+        - 状態条件: submitted のみ（submitted 以外は 422 INVALID_STATE_TRANSITION）
+        - テナント境界越え: 404 RESOURCE_NOT_FOUND
+        - 権限不足（Member, Admin, Accounting）: 403 FORBIDDEN
+        - 自己却下: 403 SELF_APPROVAL_NOT_ALLOWED
       operationId: rejectReport
       parameters:
         - name: id
@@ -1107,6 +1269,13 @@ paths:
       description: |
         Accounting 用。同一テナント内の approved 状態レポート一覧を取得する。
         自分のレポートも含まれる（is_own_report フラグで識別）。
+
+        認可条件:
+        - 許可ロール: Accounting
+        - 所有者条件: なし（同一テナントの approved レポート全件を返却。自分のレポートも含む）
+        - 状態条件: approved のみ（API 側で固定フィルタ）
+        - テナント境界越え: 該当なし（JWT の tenant_id スコープで自動フィルタ）
+        - 権限不足（Member, Approver, Admin）: 403 FORBIDDEN
       operationId: listPayableReports
       parameters:
         - $ref: "#/components/parameters/cursor"
@@ -1143,6 +1312,14 @@ paths:
       description: |
         approved 状態のレポートの支払完了を記録する（T4: approved -> paid）。
         自己支払処理は禁止（RBC-012）。楽観的ロックのため `updated_at` が必須。
+
+        認可条件:
+        - 許可ロール: Accounting（RBC-012）
+        - 所有者条件: 非所有者のみ（自己支払処理禁止: RBC-012。自分が作成したレポートの支払完了は記録不可）
+        - 状態条件: approved のみ（approved 以外は 422 INVALID_STATE_TRANSITION）
+        - テナント境界越え: 404 RESOURCE_NOT_FOUND
+        - 権限不足（Member, Approver, Admin）: 403 FORBIDDEN
+        - 自己支払処理: 403 SELF_PAYMENT_NOT_ALLOWED
       operationId: markReportAsPaid
       parameters:
         - name: id
@@ -1201,7 +1378,15 @@ paths:
     get:
       tags: [tenant]
       summary: テナント情報取得
-      description: JWT の tenant_id からテナントの基本情報を取得する。Admin のみアクセス可能。
+      description: |
+        JWT の tenant_id からテナントの基本情報を取得する。Admin のみアクセス可能。
+
+        認可条件:
+        - 許可ロール: Admin
+        - 所有者条件: なし（JWT の tenant_id で自テナント情報を返却）
+        - 状態条件: なし
+        - テナント境界越え: 該当なし（JWT の tenant_id で自動特定）
+        - 権限不足（Member, Approver, Accounting）: 403 FORBIDDEN
       operationId: getTenant
       responses:
         "200":
@@ -1226,6 +1411,13 @@ paths:
       description: |
         テナント内の全メンバー一覧を取得する。管理画面のフィルタドロップダウン等で使用する。
         アクセス可能ロール: Admin, Accounting（SCR-ADM-001 準拠）。
+
+        認可条件:
+        - 許可ロール: Admin, Accounting
+        - 所有者条件: なし（テナント内の全メンバー名一覧を返却）
+        - 状態条件: なし
+        - テナント境界越え: 該当なし（JWT の tenant_id スコープで自動フィルタ）
+        - 権限不足（Member, Approver）: 403 FORBIDDEN
       operationId: listTenantMembers
       responses:
         "200":
