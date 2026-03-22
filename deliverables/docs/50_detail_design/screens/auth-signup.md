@@ -264,9 +264,9 @@ sequenceDiagram
     D-->>S: password_hash
 
     S->>R: テナント・ユーザー・メンバーシップ作成
-    R->>DB: INSERT INTO tenants (name=company_name)
+    R->>DB: INSERT INTO tenants (company_name=?)
     R->>DB: INSERT INTO users (name, email, password_hash)
-    R->>DB: INSERT INTO tenant_memberships (role=Admin)
+    R->>DB: INSERT INTO tenant_memberships (role='admin')
     DB-->>R: 作成完了
 
     S->>DB: トランザクションコミット

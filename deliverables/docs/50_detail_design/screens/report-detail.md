@@ -567,7 +567,7 @@ sequenceDiagram
     participant DB as DB
 
     F->>F: 「承認する」ボタン押下 → 確認ダイアログ（コメント任意入力）
-    F->>H: POST /api/workflow/:id/approve<br/>{approval_comment?, updated_at}
+    F->>H: POST /api/workflow/:id/approve<br/>{comment?, updated_at}
     Note over H: JWT検証・ロール検証（Approverのみ）
     H->>S: Approve(reportId, userId, comment, updatedAt)
     S->>R: FindById(reportId)
@@ -606,7 +606,7 @@ sequenceDiagram
     participant DB as DB
 
     F->>F: 「却下する」ボタン押下 → 却下理由入力ダイアログ
-    F->>H: POST /api/workflow/:id/reject<br/>{rejection_reason, updated_at}
+    F->>H: POST /api/workflow/:id/reject<br/>{reason, updated_at}
     Note over H: JWT検証・ロール検証（Approverのみ）
     H->>S: Reject(reportId, userId, reason, updatedAt)
     S->>R: FindById(reportId)

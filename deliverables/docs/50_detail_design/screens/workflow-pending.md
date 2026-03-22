@@ -282,7 +282,7 @@ sequenceDiagram
     H->>H: クエリパラメータのバリデーション<br/>limit: 1-100 / applicant_name: string
     H->>S: ListPendingReports(tenantID, approverUserID, filters)
     S->>R: FindPendingReports(tenantID, approverUserID, filters, cursor, limit+1)
-    R->>DB: SELECT er.id, er.title, er.total_amount,<br/>er.submitted_at, u.id, u.name<br/>FROM expense_reports er JOIN users u ON er.user_id = u.user_id<br/>WHERE er.tenant_id=? AND er.status='submitted'<br/>AND er.deleted_at IS NULL<br/>[AND u.name LIKE ?]<br/>ORDER BY er.submitted_at DESC<br/>LIMIT 21
+    R->>DB: SELECT er.id, er.title, er.total_amount,<br/>er.submitted_at, u.id, u.name<br/>FROM expense_reports er JOIN users u ON er.user_id = u.user_id<br/>WHERE er.tenant_id=? AND er.status='submitted'<br/>AND er.deleted_at IS NULL<br/>[AND u.name LIKE ?]<br/>[AND (er.submitted_at, er.id) < (?, ?)]<br/>ORDER BY er.submitted_at DESC, er.id DESC<br/>LIMIT 21
     Note right of DB: RBC-016: 自己レポートは is_own_report フラグで表示、<br/>承認ボタンを非活性化<br/>LIMIT N+1 で has_more を判定
     DB-->>R: rows（最大21件）
     R->>R: len(rows) > limit の場合<br/>has_more=true, 末尾行を除外<br/>最終行の (submitted_at, id) を next_cursor に設定
