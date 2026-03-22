@@ -770,7 +770,7 @@ graph TD
     subgraph 支払完了フロー
         P_Role{ロール = Accounting か?<br/>WFL-013}
         P_Role -->|No| P_ErrPerm[403 PermissionDenied]
-        P_Role -->|Yes| P_ChkStatus{status = approved か?<br/>WFL-013}
+        P_Role -->|Yes| P_ChkStatus{status = approved か?<br/>WFL-002}
         P_ChkStatus -->|No| P_ErrState[422 InvalidStateTransition]
         P_ChkStatus -->|Yes| P_ChkSelf{自己処理でないか?<br/>RBC-012:<br/>user_id ≠ 作成者}
         P_ChkSelf -->|No| P_ErrSelf[403 SelfPaymentNotAllowed]
