@@ -1,3 +1,9 @@
+---
+step: 5
+severity: medium
+status: resolved
+---
+
 # 040: パスワードリセットトークンの使用後処理が文書間で矛盾している
 
 ## 指摘概要
@@ -16,3 +22,20 @@
 トークンの終端処理をどちらかに統一する。
 - 監査性や再利用検知を優先するなら `used_at` 管理に統一し、`security.md` の「削除」を修正する
 - 物理削除に統一するなら `used_at` と関連インデックスを削除し、削除時点・検索条件・運用上の監査方針を再定義する
+
+## 再レビュー結果（2026-03-22）
+
+対応妥当（クローズ）。
+
+### 確認内容
+- `security.md` のパスワードリセット仕様が「使用後に `used_at` を記録して再利用を防止」に更新され、物理削除方針が除去された
+  - [security.md](/root-project/dev-journal/deliverables/docs/50_detail_design/security.md#L233)
+- `db_schema.md` の `password_reset_tokens` は引き続き `used_at` カラムを保持し、設計判断でも同じ終端処理を明記している
+  - [db_schema.md](/root-project/dev-journal/deliverables/docs/50_detail_design/db_schema.md#L364)
+  - [db_schema.md](/root-project/dev-journal/deliverables/docs/50_detail_design/db_schema.md#L377)
+- 有効トークン向け部分インデックスも `used_at IS NULL` 前提で残っており、本文仕様とインデックス設計が一致している
+  - [db_schema.md](/root-project/dev-journal/deliverables/docs/50_detail_design/db_schema.md#L762)
+  - [db_schema.md](/root-project/dev-journal/deliverables/docs/50_detail_design/db_schema.md#L784)
+
+### 判定理由
+パスワードリセットトークンの使用後処理が `used_at` 管理に統一され、仕様・スキーマ・インデックスの解釈が分岐しない状態になったため。
