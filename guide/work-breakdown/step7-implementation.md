@@ -22,6 +22,14 @@
 | テスト戦略 | `deliverables/docs/60_test/test_strategy.md` |
 | テストケース | `deliverables/docs/60_test/test_cases.md` |
 
+### 作業計画
+
+Step 着手時にまず作業計画を立案し、以下に保存する:
+
+- 配置先: `progress-management/task-plans/step7-implementation.md`
+- 内容: 判断ポイント、タスク分解、依存関係、Phase 構成、レビュー戦略
+- 計画が確定してから成果物作成に入ること
+
 ### 完了条件（Step 全体）
 
 - デプロイ済みで第三者が触れる

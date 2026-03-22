@@ -1,4 +1,4 @@
-# rules/ の空ファイルが複数ある
+# 開発ルール文書の整備
 
 ## 発見日
 2026-03-04
@@ -10,24 +10,45 @@
 project-management
 
 ## 問題
-以下のファイルはヘッダーのみで本文なし:
-- `rules/branching.md`
-- `rules/review-checklist.md`
-- `rules/security-policy.md`
-- `rules/data-handling.md`
 
-## 影響
-肉付けタイミングが管理されていないと、必要な時に規約が未整備のまま作業が進むリスク。
+開発ルール文書の一部が未整備。実装フェーズに入る前に、各ルール文書の概要を定義し、必要なタイミングで肉付けする必要がある。
 
-## 提案
-project_steps.md の【root-project整備】に従い、対応するステップで肉付けする:
-- `branching.md` → Step 7 Phase 1 着手前
-- `review-checklist.md` → Step 6
-- `security-policy.md` → Step 1
-- `data-handling.md` → Step 5
+## ルール文書一覧
+
+ルール配置先: `.claude/rules/`
+
+### 整備済み
+
+| ファイル | 概要 | 整備時期 |
+|---------|------|---------|
+| `workflow.md` | プロジェクト運用ルール。セッション管理、成果物作成フロー、品質ゲート判定基準、意思決定権限 | Step 0 〜 |
+| `architecture.md` | アーキテクチャ制約。マルチテナント（tenant_id 必須）、ドメイン層の状態遷移一元管理、JWT RS256 認証、4ロール RBAC | Step 3 |
+| `coding-standards.md` | コーディング規約。Go（gofmt/vet/lint、panic禁止、構造化エラー）、TypeScript（strict mode、any禁止） | Step 3 |
+| `security-policy.md` | セキュリティポリシー。認証認可、テナント分離、レート制限、ファイルアップロード、ヘッダー、入力バリデーション、依存関係管理、ログ。実装時チェックリスト付き | Step 3 |
+| `testing.md` | テスト方針。ドメイン層は単体テスト必須、リポジトリ層はテスト用DB、フロントは Vitest + Playwright、カバレッジ目標 | Step 3 |
+
+### 未整備
+
+| ファイル | 概要 | 対応タイミング |
+|---------|------|--------------|
+| `review-checklist.md` | コードレビュー規約。PR のサイズ基準、レビュー観点（機能・セキュリティ・テスト・パフォーマンス）、承認条件 | Step 6 前 |
+| `data-handling.md` | データ管理規約。DB マイグレーションの命名規則・ロールバック手順・レビュー必須化、seed データ管理方針、論理削除の運用ルール（復元手順等） | Step 7 Phase 1 前 |
+| `error-handling.md` | エラーハンドリング規約。アプリケーションエラーコード体系、エラーレスポンスの構造規約、ログレベルの使い分け基準（INFO/WARN/ERROR）、ユーザー向けメッセージ vs 内部メッセージの分離 | Step 7 Phase 1 前 |
+| `api-conventions.md` | API 規約。REST エンドポイントの命名規則、リクエスト/レスポンスの共通パターン、バージョニング方針、ページネーション規約 | Step 7 Phase 1 前 |
+
+### 廃止
+
+| 旧ファイル | 理由 |
+|-----------|------|
+| `ai-dev-framework/rules/branching.md` | `.claude/rules/` 体系に移行前の旧配置。ブランチ戦略は ops-032 で解決済み |
 
 ## 解決内容
 
+### 2026-03-22: ルール文書一覧の整理
+
+- 整備済み5ファイルの概要を記録
+- 未整備4ファイルの概要と対応タイミングを定義
+- 旧 `ai-dev-framework/rules/` 体系からの移行を反映
 
 ## 解決日
 
