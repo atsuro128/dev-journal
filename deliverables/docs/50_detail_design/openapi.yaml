@@ -607,7 +607,7 @@ paths:
         - 許可ロール: Member, Approver, Admin, Accounting
         - 所有者条件: ロールと状態による閲覧範囲制限あり
           - Member: 自分が作成したレポートのみ
-          - Approver: 自分のレポート + 同一テナントの submitted 状態レポート
+          - Approver: 自分のレポート + 同一テナントの submitted 状態レポート + 自分が承認/却下したレポート
           - Accounting: 自分のレポート + 同一テナントの全レポート
           - Admin: 同一テナントの全レポート
         - 状態条件: なし（閲覧可能範囲内であれば全状態を閲覧可能）
@@ -982,7 +982,7 @@ paths:
         - 許可ロール: Member, Approver, Admin, Accounting
         - 所有者条件: レポート閲覧権限に準ずる
           - Member: 自分が作成したレポートの添付のみ
-          - Approver: 自分のレポート + 同一テナントの submitted 状態レポートの添付
+          - Approver: 自分のレポート + 同一テナントの submitted 状態レポートの添付 + 自分が承認/却下したレポートの添付
           - Accounting: 自分のレポート + 同一テナントの全レポートの添付
           - Admin: 同一テナントの全レポートの添付
         - 状態条件: なし（閲覧可能範囲内であれば全状態）
@@ -1024,7 +1024,7 @@ paths:
         - 許可ロール: Member, Approver, Admin, Accounting
         - 所有者条件: レポート閲覧権限に準ずる（ATT-011）
           - Member: 自分が作成したレポートの添付のみ
-          - Approver: 自分のレポート + 同一テナントの submitted 状態レポートの添付
+          - Approver: 自分のレポート + 同一テナントの submitted 状態レポートの添付 + 自分が承認/却下したレポートの添付
           - Accounting: 自分のレポート + 同一テナントの全レポートの添付
           - Admin: 同一テナントの全レポートの添付
         - 状態条件: なし（閲覧可能範囲内であれば全状態）

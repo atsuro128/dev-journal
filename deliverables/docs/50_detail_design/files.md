@@ -342,7 +342,7 @@ GET /api/reports/:id/items/:itemId/attachments/:attId
 | ロール | 閲覧可能範囲 |
 |--------|------------|
 | Member | 自分が作成したレポートの添付のみ |
-| Approver | 自分のレポート + 同一テナントの submitted レポートの添付 |
+| Approver | 自分のレポート + 同一テナントの submitted レポートの添付 + 自分が承認/却下したレポートの添付 |
 | Accounting | 自分のレポート + 同一テナントの全レポートの添付 |
 | Admin | 同一テナントの全レポートの添付 |
 
