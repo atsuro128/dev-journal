@@ -274,7 +274,54 @@ graph TD
 
 ---
 
-## 11. 品質チェック
+## 11. 処理シーケンス
+
+```mermaid
+sequenceDiagram
+    participant F as フロント
+    participant H as ハンドラ
+    participant S as サービス
+    participant D as ドメイン
+    participant R as リポジトリ
+    participant DB as DB
+
+    F->>H: PUT /api/auth/password-reset/:token {new_password}
+    H->>H: 入力バリデーション（パスワード 8文字以上）
+    H->>S: パスワードリセット実行
+
+    Note over S: SEC: トークンはSHA-256ハッシュ化して保存・検索
+    S->>S: 入力トークンをSHA-256ハッシュ化
+    S->>R: トークン検索（ハッシュ値）
+    R->>DB: SELECT FROM password_reset_tokens WHERE token_hash=?
+    DB-->>R: トークンレコード or 空
+
+    alt トークン無効または期限切れ
+        Note over S: SEC-006: 存在確認 + 有効期限チェック
+        S-->>H: トークンエラー
+        H-->>F: 422 {code: "INVALID_TOKEN"}
+    end
+
+    Note over D: SEC-002: Argon2id ハッシュ生成
+    S->>D: 新パスワードのハッシュ生成
+    D-->>S: password_hash
+
+    S->>R: パスワード更新 + トークン無効化
+    R->>DB: UPDATE users SET password_hash=? WHERE user_id=?
+    R->>DB: UPDATE password_reset_tokens SET used_at=NOW()
+    DB-->>R: 更新完了
+
+    Note over S: security.md 2.3節準拠: セッション強制終了
+    S->>R: 対象ユーザーの全リフレッシュトークンを無効化
+    R->>DB: DELETE FROM refresh_tokens WHERE user_id=?
+    DB-->>R: 削除完了
+
+    S-->>H: リセット成功
+    H-->>F: 200 {message: "パスワードを変更しました"}
+```
+
+---
+
+## 12. 品質チェック
 
 - [x] 入力項目・型・必須/任意が定義されているか
 - [x] バリデーションルール（クライアントサイド・サーバーサイド）が定義されているか

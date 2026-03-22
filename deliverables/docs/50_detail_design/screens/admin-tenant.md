@@ -120,7 +120,30 @@
 
 ---
 
-## 10. 品質チェック
+## 10. 処理シーケンス
+
+### テナント情報取得
+
+```mermaid
+sequenceDiagram
+    participant F as フロント
+    participant H as ハンドラ
+    participant R as リポジトリ
+    participant DB as DB
+
+    F->>H: GET /api/tenant
+    Note right of H: JWT検証（Authミドルウェア）<br/>Adminロール検証（RBACミドルウェア）<br/>TenantContext設定（RLS）
+    H->>R: FindTenant(tenantID)
+    R->>DB: SELECT tenant_id, company_name, created_at<br/>FROM tenants<br/>WHERE tenant_id=?
+    Note right of DB: JWTのclaims.tenant_idで特定<br/>シンプルな読み取り専用フロー
+    DB-->>R: tenant
+    R-->>H: Tenant
+    H-->>F: 200 OK { data: { id, name, created_at } }
+```
+
+---
+
+## 11. 品質チェック
 
 - [x] screens.md §3.5 の画面定義と整合しているか
 - [x] UC-AD01 の正常系・例外系がカバーされているか

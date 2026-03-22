@@ -240,7 +240,43 @@ graph TD
 
 ---
 
-## 10. 品質チェック
+## 10. 処理シーケンス
+
+```mermaid
+sequenceDiagram
+    participant F as フロント
+    participant H as ハンドラ
+    participant S as サービス
+    participant R as リポジトリ
+    participant DB as DB
+
+    F->>H: POST /api/auth/password-reset {email}
+    H->>H: 入力バリデーション（メール形式）
+    H->>S: パスワードリセット要求
+
+    S->>R: ユーザー検索（email）
+    R->>DB: SELECT FROM users WHERE email=?
+    DB-->>R: ユーザーレコード or 空
+
+    Note over S: SEC-011: 存在しなくても成功レスポンス
+
+    opt ユーザーが存在する場合
+        Note over S: SEC-006: トークン有効期限 1時間
+        S->>S: リセットトークン生成
+        S->>R: トークン保存
+        R->>DB: INSERT INTO password_reset_tokens
+        DB-->>R: 保存完了
+        S->>S: リセットメール送信
+    end
+
+    S-->>H: 成功（ユーザー有無に関わらず同一レスポンス）
+    H-->>F: 200 {message: "パスワードリセットメールを送信しました"}
+    Note over F: 常に送信完了状態に遷移（ユーザー存在の推測を防止）
+```
+
+---
+
+## 11. 品質チェック
 
 - [x] 入力項目・型・必須/任意が定義されているか
 - [x] バリデーションルール（クライアントサイド・サーバーサイド）が定義されているか

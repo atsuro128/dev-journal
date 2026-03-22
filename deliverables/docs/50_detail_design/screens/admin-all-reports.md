@@ -220,7 +220,44 @@
 
 ---
 
-## 13. 品質チェック
+## 13. 処理シーケンス
+
+### テナント全レポート一覧取得
+
+```mermaid
+sequenceDiagram
+    participant F as フロント
+    participant H as ハンドラ
+    participant S as サービス
+    participant R as リポジトリ
+    participant DB as DB
+
+    F->>H: GET /api/reports/all?status=...&from=...&to=...&submitter_id=...&cursor=...&limit=20
+    Note right of H: JWT検証（Authミドルウェア）<br/>Admin or Accountingロール検証（RBACミドルウェア）<br/>TenantContext設定（RLS）
+    H->>H: クエリパラメータのバリデーション<br/>status: enum / from,to: date / limit: 1-100
+    H->>S: ListAllReports(tenantID, filters)
+    S->>R: FindAllReports(tenantID, filters, cursor, limit+1)
+    R->>DB: SELECT er.id, er.title, er.total_amount,<br/>er.status, er.submitted_at, er.created_at,<br/>u.id, u.name<br/>FROM expense_reports er JOIN users u ON er.user_id = u.user_id<br/>WHERE er.tenant_id=? AND er.deleted_at IS NULL<br/>[AND er.status=?]<br/>[AND er.user_id=?]<br/>[AND er.period_start >= ?]<br/>[AND er.period_end <= ?]<br/>ORDER BY er.updated_at DESC, er.id DESC<br/>LIMIT 21
+    Note right of DB: report-list.md との違い:<br/>user_idフィルタなし（テナント全体）<br/>submitter_idフィルタあり<br/>LIMIT N+1 で has_more を判定
+    DB-->>R: rows（最大21件）
+    R->>R: len(rows) > limit の場合<br/>has_more=true, 末尾行を除外<br/>最終行の (updated_at, id) を next_cursor に設定
+    R-->>S: reports + pagination
+    S-->>H: ListAllReportsResponse
+    H-->>F: 200 OK
+
+    opt 申請者フィルタ用メンバー一覧取得
+        F->>H: GET /api/tenant/members
+        H->>R: FindTenantMembers(tenantID)
+        R->>DB: SELECT u.user_id, u.name<br/>FROM tenant_memberships tm<br/>JOIN users u ON tm.user_id = u.user_id<br/>WHERE tm.tenant_id=?
+        DB-->>R: members
+        R-->>H: Members
+        H-->>F: 200 OK { data: [{ id, name }] }
+    end
+```
+
+---
+
+## 14. 品質チェック
 
 - [x] screens.md §3.5 の画面定義と整合しているか
 - [x] UC-AD02, UC-AC03 の正常系・例外系がカバーされているか

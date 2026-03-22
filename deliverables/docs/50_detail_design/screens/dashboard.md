@@ -470,7 +470,68 @@ LIMIT 5;
 
 ---
 
-## 10. 品質チェック
+## 10. 処理シーケンス
+
+### ダッシュボード表示
+
+```mermaid
+sequenceDiagram
+    participant F as フロント
+    participant H as ハンドラ
+    participant S as サービス
+    participant R as リポジトリ
+    participant DB as DB
+
+    F->>H: GET /api/dashboard（ページ遷移時）
+    Note right of H: JWT検証（Authミドルウェア）<br/>TenantContext設定（RLS）
+    H->>S: GetDashboard(tenantID, userID, role)
+    alt Member / Approver / Accounting
+        S->>R: GetMyReportCounts(tenantID, userID)
+        R->>DB: SELECT status, COUNT(*)<br/>FROM expense_reports<br/>WHERE tenant_id=? AND user_id=?<br/>AND deleted_at IS NULL<br/>GROUP BY status
+        DB-->>R: ステータス別件数
+        R-->>S: my_draft/submitted/rejected_count
+
+        S->>R: GetRecentReports(tenantID, userID, limit=5)
+        R->>DB: SELECT id, title, period_start, period_end,<br/>total_amount, status, updated_at<br/>FROM expense_reports<br/>WHERE tenant_id=? AND user_id=?<br/>AND deleted_at IS NULL<br/>ORDER BY updated_at DESC LIMIT 5
+        DB-->>R: 直近レポート
+        R-->>S: recent_reports
+    end
+    opt Approver
+        S->>R: GetPendingApprovalCount(tenantID, userID)
+        R->>DB: SELECT COUNT(*)<br/>FROM expense_reports<br/>WHERE tenant_id=? AND status='submitted'<br/>AND user_id != ? AND deleted_at IS NULL
+        DB-->>R: 承認待ち件数
+        R-->>S: pending_approval_count
+    end
+    opt Accounting
+        S->>R: GetPendingPaymentCount(tenantID)
+        R->>DB: SELECT COUNT(*)<br/>FROM expense_reports<br/>WHERE tenant_id=? AND status='approved'<br/>AND deleted_at IS NULL
+        DB-->>R: 支払待ち件数
+        R-->>S: pending_payment_count
+    end
+    alt Admin
+        S->>R: GetTenantReportCounts(tenantID)
+        R->>DB: SELECT status, COUNT(*)<br/>FROM expense_reports<br/>WHERE tenant_id=? AND deleted_at IS NULL<br/>GROUP BY status
+        DB-->>R: テナント全体ステータス別件数
+        R-->>S: tenant_*_count
+
+        S->>R: GetTenantMemberCount(tenantID)
+        R->>DB: SELECT COUNT(*)<br/>FROM tenant_memberships<br/>WHERE tenant_id=?
+        DB-->>R: メンバー数
+        R-->>S: tenant_member_count
+    end
+    opt Approver / Accounting / Admin
+        S->>R: GetMonthlySummary(tenantID)
+        R->>DB: SELECT TO_CHAR(DATE_TRUNC('month', period_start), 'YYYY-MM'),<br/>SUM(total_amount)<br/>FROM expense_reports<br/>WHERE tenant_id=? AND status='paid'<br/>AND deleted_at IS NULL<br/>AND period_start >= DATE_TRUNC('month', CURRENT_DATE) - INTERVAL '2 months'<br/>GROUP BY DATE_TRUNC('month', period_start)<br/>ORDER BY year_month DESC
+        DB-->>R: 月別サマリー
+        R-->>S: monthly_summary
+    end
+    S-->>H: DashboardResponse（ロール別フィールド）
+    H-->>F: 200 OK（JSON）
+```
+
+---
+
+## 11. 品質チェック
 
 - [x] DASH-001: Member に draft / submitted / rejected 件数を表示 -- 4.1 で定義
 - [x] DASH-002: Approver に承認待ち件数を追加表示 -- 4.2 で定義

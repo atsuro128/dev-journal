@@ -233,7 +233,59 @@ graph TD
 
 ---
 
-## 10. 品質チェック
+## 10. 処理シーケンス
+
+```mermaid
+sequenceDiagram
+    participant F as フロント
+    participant H as ハンドラ
+    participant S as サービス
+    participant D as ドメイン
+    participant R as リポジトリ
+    participant DB as DB
+
+    F->>H: POST /api/auth/signup {company_name, user_name, email, password}
+    H->>H: 入力バリデーション（各フィールド必須・形式・文字数）
+    H->>S: サインアップ処理依頼
+
+    S->>DB: トランザクション開始
+
+    S->>R: メール重複チェック
+    R->>DB: SELECT FROM users WHERE email=?
+    DB-->>R: 結果
+
+    alt メール重複
+        S-->>H: 重複エラー
+        H-->>F: 409 {code: "EMAIL_ALREADY_EXISTS"}
+    end
+
+    Note over D: SEC-002: Argon2id ハッシュ生成
+    S->>D: パスワードハッシュ生成
+    D-->>S: password_hash
+
+    S->>R: テナント・ユーザー・メンバーシップ作成
+    R->>DB: INSERT INTO tenants (name=company_name)
+    R->>DB: INSERT INTO users (name, email, password_hash)
+    R->>DB: INSERT INTO tenant_memberships (role=Admin)
+    DB-->>R: 作成完了
+
+    S->>DB: トランザクションコミット
+
+    Note over S: JWT生成（access_token 15min, refresh_token 7day）
+    S->>S: JWT トークン生成（SEC-003）
+
+    Note over S,DB: refresh_token はハッシュ化して保存
+    S->>R: リフレッシュトークン保存
+    R->>DB: INSERT INTO refresh_tokens (jti, token_hash, user_id, expires_at)
+    DB-->>R: 保存完了
+
+    S-->>H: サインアップ成功 + トークン
+    H-->>F: 201 {user, tenant, access_token, refresh_token}
+```
+
+---
+
+## 11. 品質チェック
 
 - [x] 入力項目・型・必須/任意が定義されているか
 - [x] バリデーションルール（クライアントサイド・サーバーサイド）が定義されているか

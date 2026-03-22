@@ -496,7 +496,221 @@ graph TD
 
 ---
 
-## 14. 品質チェック
+## 14. 処理シーケンス
+
+本セクションでは、レポート詳細画面で実行される主要な操作について、フロントからDB層までの処理シーケンスを定義する。
+
+### 参加者
+
+| 略称 | レイヤー | 責務 |
+|------|---------|------|
+| F | フロント | ユーザー操作の受付、API呼び出し、結果表示 |
+| H | ハンドラ | JWT検証・ロール検証・所有権チェック（ミドルウェア経由） |
+| S | サービス | ユースケース実行、トランザクション管理 |
+| D | ドメイン | ビジネスルール検証、状態遷移制御 |
+| R | リポジトリ | SQL操作、tenant_idフィルタの強制 |
+| DB | DB | RLS適用、データ永続化 |
+
+### 14.1 レポート提出（T1: draft -> submitted）
+
+```mermaid
+sequenceDiagram
+    participant F as フロント
+    participant H as ハンドラ
+    participant S as サービス
+    participant D as ドメイン
+    participant R as リポジトリ
+    participant DB as DB
+
+    F->>F: 「提出する」ボタン押下 → 確認ダイアログ表示
+    F->>H: POST /api/reports/:id/submit<br/>{updated_at}
+    Note over H: JWT検証・ロール検証（全ロール可）<br/>所有権チェック（report.user_id == current_user.id）
+    H->>S: Submit(reportId, userId, updatedAt)
+    S->>R: FindById(reportId)
+    R->>DB: SELECT ... WHERE report_id=? AND tenant_id=?
+    DB-->>R: report + items
+    R-->>S: report
+    S->>R: FindApproverCount(tenantID)
+    R->>DB: SELECT COUNT(*) FROM tenant_memberships<br/>WHERE tenant_id=? AND role='approver'
+    DB-->>R: count
+    R-->>S: hasApprover = (count > 0)
+    S->>D: report.Submit(userId, hasApprover)
+    Note over D: RPT-014: items.count >= 1<br/>WFL-014: テナント内Approver存在<br/>WFL-002: status == draft
+    alt バリデーション失敗
+        D-->>S: EmptyReportSubmission / NoApproverInTenant / InvalidStateTransition
+        S-->>H: エラー返却
+        H-->>F: 422 {error}
+    end
+    D-->>S: OK（status=submitted, submitted_at, submitted_by 設定）
+    S->>R: Update(report)
+    R->>DB: UPDATE expense_reports SET status='submitted'<br/>WHERE report_id=? AND tenant_id=? AND updated_at=?
+    alt 楽観的ロック競合（更新行数 0）
+        R-->>H: ConflictError
+        H-->>F: 409 Conflict
+    end
+    DB-->>R: updated
+    R-->>S: OK
+    S-->>H: OK
+    H-->>F: 200 {data: report}
+    F->>F: トーストで「レポートを提出しました」
+```
+
+### 14.2 承認（T2: submitted -> approved）
+
+```mermaid
+sequenceDiagram
+    participant F as フロント
+    participant H as ハンドラ
+    participant S as サービス
+    participant D as ドメイン
+    participant R as リポジトリ
+    participant DB as DB
+
+    F->>F: 「承認する」ボタン押下 → 確認ダイアログ（コメント任意入力）
+    F->>H: POST /api/workflow/:id/approve<br/>{approval_comment?, updated_at}
+    Note over H: JWT検証・ロール検証（Approverのみ）
+    H->>S: Approve(reportId, userId, comment, updatedAt)
+    S->>R: FindById(reportId)
+    R->>DB: SELECT ... WHERE report_id=? AND tenant_id=?
+    DB-->>R: report
+    R-->>S: report
+    S->>D: report.Approve(userId, comment)
+    Note over D: WFL-002: status == submitted<br/>RBC-016: user_id != report.user_id（自己承認禁止）
+    alt 自己承認
+        D-->>S: SelfApprovalNotAllowed
+        S-->>H: エラー返却
+        H-->>F: 403 {error}
+    end
+    D-->>S: OK（status=approved, approved_at, approved_by, approval_comment 設定）
+    S->>R: Update(report)
+    R->>DB: UPDATE expense_reports SET status='approved'<br/>WHERE report_id=? AND tenant_id=? AND updated_at=?
+    alt 楽観的ロック競合
+        R-->>H: ConflictError
+        H-->>F: 409 Conflict
+    end
+    DB-->>R: updated
+    S-->>H: OK
+    H-->>F: 200 {data: report}
+    F->>F: トーストで「レポートを承認しました」
+```
+
+### 14.3 却下（T3: submitted -> rejected）
+
+```mermaid
+sequenceDiagram
+    participant F as フロント
+    participant H as ハンドラ
+    participant S as サービス
+    participant D as ドメイン
+    participant R as リポジトリ
+    participant DB as DB
+
+    F->>F: 「却下する」ボタン押下 → 却下理由入力ダイアログ
+    F->>H: POST /api/workflow/:id/reject<br/>{rejection_reason, updated_at}
+    Note over H: JWT検証・ロール検証（Approverのみ）
+    H->>S: Reject(reportId, userId, reason, updatedAt)
+    S->>R: FindById(reportId)
+    R->>DB: SELECT ... WHERE report_id=? AND tenant_id=?
+    DB-->>R: report
+    R-->>S: report
+    S->>D: report.Reject(userId, reason)
+    Note over D: WFL-002: status == submitted<br/>RBC-016: user_id != report.user_id（自己却下禁止）<br/>WFL-012: rejection_reason が非空
+    alt 自己却下 or 理由未入力
+        D-->>S: SelfApprovalNotAllowed / MissingRejectionReason
+        S-->>H: エラー返却
+        H-->>F: 403 or 422 {error}
+    end
+    D-->>S: OK（status=rejected, rejected_at, rejected_by, rejection_reason 設定）
+    S->>R: Update(report)
+    R->>DB: UPDATE expense_reports SET status='rejected'<br/>WHERE report_id=? AND tenant_id=? AND updated_at=?
+    alt 楽観的ロック競合
+        R-->>H: ConflictError
+        H-->>F: 409 Conflict
+    end
+    DB-->>R: updated
+    S-->>H: OK
+    H-->>F: 200 {data: report}
+    F->>F: トーストで「レポートを却下しました」
+```
+
+### 14.4 支払完了（T4: approved -> paid）
+
+```mermaid
+sequenceDiagram
+    participant F as フロント
+    participant H as ハンドラ
+    participant S as サービス
+    participant D as ドメイン
+    participant R as リポジトリ
+    participant DB as DB
+
+    F->>F: 「支払完了にする」ボタン押下 → 確認ダイアログ
+    F->>H: POST /api/workflow/:id/pay<br/>{updated_at}
+    Note over H: JWT検証・ロール検証（Accountingのみ）<br/>WFL-013
+    H->>S: MarkAsPaid(reportId, userId, updatedAt)
+    S->>R: FindById(reportId)
+    R->>DB: SELECT ... WHERE report_id=? AND tenant_id=?
+    DB-->>R: report
+    R-->>S: report
+    S->>D: report.MarkAsPaid(userId)
+    Note over D: WFL-002: status == approved<br/>RBC-012: user_id != report.user_id（自己処理禁止）
+    alt 自己処理
+        D-->>S: SelfPaymentNotAllowed
+        S-->>H: エラー返却
+        H-->>F: 403 {error}
+    end
+    D-->>S: OK（status=paid, paid_at, paid_by 設定）
+    S->>R: Update(report)
+    R->>DB: UPDATE expense_reports SET status='paid'<br/>WHERE report_id=? AND tenant_id=? AND updated_at=?
+    alt 楽観的ロック競合
+        R-->>H: ConflictError
+        H-->>F: 409 Conflict
+    end
+    DB-->>R: updated
+    S-->>H: OK
+    H-->>F: 200 {data: report}
+    F->>F: トーストで「支払完了を記録しました」
+```
+
+### 14.5 明細追加
+
+```mermaid
+sequenceDiagram
+    participant F as フロント
+    participant H as ハンドラ
+    participant S as サービス
+    participant D as ドメイン
+    participant R as リポジトリ
+    participant DB as DB
+
+    F->>F: スライドパネルで明細入力 → 「保存する」ボタン押下
+    F->>H: POST /api/reports/:id/items<br/>{expense_date, amount, category_id, description}
+    Note over H: JWT検証・ロール検証（全ロール可）<br/>所有権チェック（report.user_id == current_user.id）
+    H->>S: AddItem(reportId, userId, itemInput)
+    S->>R: FindById(reportId)
+    R->>DB: SELECT ... WHERE report_id=? AND tenant_id=?
+    DB-->>R: report
+    R-->>S: report
+    S->>D: report.AddItem(item) / item.Validate()
+    Note over D: ITM-010: status == draft<br/>ITM-002: amount > 0
+    alt バリデーション失敗
+        D-->>S: ReportNotEditable / InvalidAmount
+        S-->>H: エラー返却
+        H-->>F: 422 {error}
+    end
+    D-->>S: OK
+    S->>R: InsertItem(item) + UpdateReportTotal(report)
+    R->>DB: INSERT INTO expense_items ...<br/>UPDATE expense_reports SET total_amount=? WHERE report_id=?
+    Note over R: RPT-006: total_amount を再計算して更新
+    DB-->>R: inserted + updated
+    S-->>H: OK
+    H-->>F: 201 {data: item}
+    F->>F: パネルを閉じ、明細一覧を再読み込み<br/>トーストで「明細を追加しました」
+```
+
+---
+
+## 15. 品質チェック
 
 - [x] UC-M02, UC-M03, UC-M03a, UC-M05, UC-M06, UC-M07, UC-M09, UC-A02, UC-A03, UC-AC02 の全ユースケースが画面仕様でカバーされているか
 - [x] 状態遷移に基づくアクションボタンの出し分けが state_machine.md の操作マトリクスと整合しているか
@@ -507,5 +721,7 @@ graph TD
 - [x] 再申請時にタイトル・期間・明細がコピーされ、添付はコピーされないことが明記されているか
 - [x] 全確認ダイアログ（提出/削除/明細削除/添付削除/承認/却下/支払完了）が screens.md 4.6 と整合しているか
 - [x] 楽観的ロック（updated_at チェック）が定義されているか
+- [x] 処理シーケンス図が主要操作（提出/承認/却下/支払完了/明細追加）をカバーしているか
+- [x] 各シーケンス図にルールID（RPT-014, WFL-014, RBC-016, RBC-012, WFL-012, ITM-010, ITM-002, RPT-006 等）が記載されているか
 - [x] 用語が glossary.md に準拠しているか（提出/却下/再申請/支払完了）
 - [x] MVP スコープ外の機能を含めていないか

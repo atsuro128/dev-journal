@@ -232,7 +232,54 @@ graph TD
 
 ---
 
-## 10. 品質チェック
+## 10. 処理シーケンス
+
+```mermaid
+sequenceDiagram
+    participant F as フロント
+    participant H as ハンドラ
+    participant S as サービス
+    participant R as リポジトリ
+    participant DB as DB
+
+    F->>H: POST /api/auth/login {email, password}
+    H->>H: 入力バリデーション（メール形式、パスワード空チェック）
+    H->>S: ログイン処理依頼
+
+    Note over S,DB: オーナーロール接続（RLS バイパス）
+    S->>R: ユーザー検索（email）
+    R->>DB: SELECT FROM users WHERE email=?
+    DB-->>R: ユーザーレコード or 空
+
+    alt 認証失敗（メール不一致 or パスワード不一致）
+        Note over S: SEC-011: 存在しなくても同じエラーメッセージ
+        S-->>H: 認証エラー
+        H-->>F: 401 {code: "INVALID_CREDENTIALS"}
+    end
+
+    Note over S: SEC-002: Argon2id パスワード検証
+    S->>S: パスワードハッシュ照合
+
+    S->>R: テナントメンバーシップ取得
+    R->>DB: SELECT FROM tenant_memberships WHERE user_id=?
+    DB-->>R: role, tenant_id
+
+    Note over S: JWT生成（access_token 15min, refresh_token 7day）
+    Note over S: claims: user_id, tenant_id, role
+    S->>S: JWT トークン生成（SEC-003）
+
+    Note over S,DB: refresh_token はハッシュ化して保存
+    S->>R: リフレッシュトークン保存
+    R->>DB: INSERT INTO refresh_tokens (jti, token_hash, user_id, expires_at)
+    DB-->>R: 保存完了
+
+    S-->>H: 認証成功 + トークン
+    H-->>F: 200 {user, tenant, access_token, refresh_token}
+```
+
+---
+
+## 11. 品質チェック
 
 - [x] 入力項目・型・必須/任意が定義されているか
 - [x] バリデーションルール（クライアントサイド・サーバーサイド）が定義されているか

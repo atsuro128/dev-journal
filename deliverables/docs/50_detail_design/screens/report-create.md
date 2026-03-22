@@ -178,7 +178,165 @@ UC-M09 の再申請フローで SCR-RPT-004（report-detail.md）の「再申請
 
 ---
 
-## 10. 品質チェック
+## 10. 処理シーケンス
+
+### 10.1 レポート新規作成
+
+「作成する」ボタン押下から DB に INSERT されてレスポンスが返るまでのフロー。
+
+```mermaid
+sequenceDiagram
+    participant F as フロント
+    participant H as ハンドラ
+    participant S as サービス
+    participant D as ドメイン
+    participant R as リポジトリ
+    participant DB as DB
+
+    F->>H: POST /api/reports<br/>Authorization: Bearer JWT<br/>Body: {title, period_start, period_end}
+
+    Note over H: ミドルウェアチェーン実行<br/>CORS → SecurityHeaders → RequestID → Logger<br/>→ RateLimit → Auth → TenantContext → RBAC
+
+    alt JWT検証失敗
+        H-->>F: 401 {code: "UNAUTHORIZED"}
+    end
+
+    Note over H: context から user_id, tenant_id, role を取得
+    H->>H: 入力バリデーション<br/>title: 必須, 1-200文字<br/>period_start: 必須, 日付形式<br/>period_end: 必須, 日付形式
+
+    alt バリデーションエラー
+        H-->>F: 422 {code: "VALIDATION_FAILED", details: [...]}
+    end
+
+    H->>S: CreateReport(ctx, input)
+    Note over S: トランザクション開始<br/>TenantContext ミドルウェアで<br/>BEGIN + SET LOCAL 済み
+
+    S->>D: NewExpenseReport(title, period_start, period_end, user_id)
+
+    D->>D: ビジネスルール検証<br/>period_start <= period_end (RPT-003)
+    alt period_start > period_end
+        D-->>S: InvalidPeriod エラー
+        S-->>H: InvalidPeriod エラー
+        H-->>F: 422 {code: "INVALID_PERIOD"}
+    end
+
+    D->>D: report_id = UUID生成<br/>status = "draft"<br/>total_amount = 0
+
+    D-->>S: ExpenseReport エンティティ
+
+    S->>R: Save(ctx, report)
+    R->>R: tenant_id を context から自動付与 (TNT-003)
+    R->>DB: INSERT INTO expense_reports<br/>(report_id, tenant_id, user_id,<br/>title, period_start, period_end,<br/>status, total_amount,<br/>created_at, updated_at)<br/>VALUES ($1,...,$10)
+    DB-->>R: 挿入結果
+    R-->>S: 保存済み ExpenseReport
+
+    Note over S: トランザクション COMMIT
+
+    S-->>H: ExpenseReport
+    H->>H: レスポンス構築<br/>submitter 情報を付与
+    H-->>F: 201 Created<br/>{data: {id, title, period_start,<br/>period_end, status: "draft",<br/>total_amount: 0, submitter: {...},<br/>items: [], created_at, updated_at}}
+
+    F->>F: /reports/:id に遷移
+```
+
+### 10.2 再申請によるレポート作成
+
+却下されたレポートから「再申請」で新規レポートを作成するフロー。元レポートの明細をコピーし、添付ファイルは除外する。
+
+```mermaid
+sequenceDiagram
+    participant F as フロント
+    participant H as ハンドラ
+    participant S as サービス
+    participant D as ドメイン
+    participant R as リポジトリ
+    participant DB as DB
+
+    Note over F: SCR-RPT-004 の「再申請」ボタン押下<br/>→ /reports/new?ref=:id に遷移<br/>→ 元レポートの title, period をプリフィル<br/>→ ユーザーが内容を確認・修正
+
+    F->>H: POST /api/reports<br/>Authorization: Bearer JWT<br/>Body: {title, period_start, period_end,<br/>reference_report_id: "元レポートUUID"}
+
+    Note over H: ミドルウェアチェーン実行<br/>CORS → SecurityHeaders → RequestID → Logger<br/>→ RateLimit → Auth → TenantContext → RBAC
+
+    alt JWT検証失敗
+        H-->>F: 401 {code: "UNAUTHORIZED"}
+    end
+
+    Note over H: context から user_id, tenant_id, role を取得
+    H->>H: 入力バリデーション<br/>title, period_start, period_end の検証<br/>reference_report_id: UUID形式
+
+    alt バリデーションエラー
+        H-->>F: 422 {code: "VALIDATION_FAILED", details: [...]}
+    end
+
+    H->>S: CreateReport(ctx, input)
+    Note over S: トランザクション開始<br/>TenantContext ミドルウェアで<br/>BEGIN + SET LOCAL 済み
+
+    S->>R: FindByID(ctx, reference_report_id)
+    R->>DB: SELECT * FROM expense_reports<br/>WHERE report_id = $1<br/>AND tenant_id = $2<br/>AND deleted_at IS NULL
+    DB-->>R: 元レポート
+
+    alt 元レポートが存在しない
+        R-->>S: ResourceNotFound エラー
+        S-->>H: ResourceNotFound エラー
+        H-->>F: 404 {code: "RESOURCE_NOT_FOUND"}
+    end
+
+    S->>S: 元レポートの所有権確認<br/>元レポート.user_id == current_user_id
+    alt 所有者でない
+        S-->>H: PermissionDenied エラー
+        H-->>F: 403 {code: "PERMISSION_DENIED"}
+    end
+
+    S->>S: 元レポートの状態確認<br/>status == "rejected"
+    alt rejected でない
+        S-->>H: InvalidStateTransition エラー
+        H-->>F: 422 {code: "INVALID_STATE_TRANSITION"}
+    end
+
+    S->>R: FindItemsByReportID(ctx, reference_report_id)
+    R->>DB: SELECT * FROM expense_items<br/>WHERE report_id = $1<br/>AND tenant_id = $2<br/>AND deleted_at IS NULL
+    DB-->>R: 元レポートの明細一覧
+
+    S->>D: NewExpenseReport(title, period_start, period_end, user_id)
+    D->>D: ビジネスルール検証<br/>period_start <= period_end (RPT-003)
+    alt period_start > period_end
+        D-->>S: InvalidPeriod エラー
+        S-->>H: InvalidPeriod エラー
+        H-->>F: 422 {code: "INVALID_PERIOD"}
+    end
+
+    D->>D: report_id = UUID生成<br/>status = "draft"<br/>reference_report_id = 元レポートID (RPT-016)
+
+    D->>D: 元レポートの明細をコピー<br/>各明細に新規 item_id を生成<br/>report_id = 新レポートID<br/>添付ファイルはコピーしない
+
+    D->>D: total_amount = 明細の amount 合計 (RPT-006)
+    D-->>S: ExpenseReport + コピー済み明細一覧
+
+    S->>R: Save(ctx, report)
+    R->>R: tenant_id を context から自動付与 (TNT-003)
+    R->>DB: INSERT INTO expense_reports<br/>(report_id, tenant_id, user_id,<br/>title, period_start, period_end,<br/>status, total_amount,<br/>reference_report_id,<br/>created_at, updated_at)<br/>VALUES ($1,...,$11)
+    DB-->>R: 挿入結果
+
+    loop 明細ごとにINSERT
+        S->>R: SaveItem(ctx, item)
+        R->>R: tenant_id を context から自動付与
+        R->>DB: INSERT INTO expense_items<br/>(item_id, report_id, tenant_id,<br/>expense_date, amount,<br/>category_id, description,<br/>created_at, updated_at)<br/>VALUES ($1,...,$9)
+        DB-->>R: 挿入結果
+    end
+
+    Note over S: トランザクション COMMIT<br/>元レポートは rejected のまま変更しない (RPT-015)
+
+    S-->>H: ExpenseReport + 明細一覧
+    H->>H: レスポンス構築<br/>submitter 情報を付与
+    H-->>F: 201 Created<br/>{data: {id, title, period_start,<br/>period_end, status: "draft",<br/>total_amount, submitter: {...},<br/>reference_report_id,<br/>items: [コピーされた明細],<br/>created_at, updated_at}}
+
+    F->>F: /reports/:id に遷移
+```
+
+---
+
+## 11. 品質チェック
 
 - [x] UC-M01 の全入力項目・バリデーション・エラー表示が定義されているか
 - [x] UC-M09 の再申請フローでプリフィル（タイトル・期間・明細コピー、添付は非コピー）が明記されているか

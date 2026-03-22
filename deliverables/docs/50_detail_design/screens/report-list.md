@@ -208,7 +208,37 @@
 
 ---
 
-## 13. 品質チェック
+## 13. 処理シーケンス
+
+### レポート一覧取得
+
+```mermaid
+sequenceDiagram
+    participant F as フロント
+    participant H as ハンドラ
+    participant S as サービス
+    participant R as リポジトリ
+    participant DB as DB
+
+    F->>H: GET /api/reports?status=...&from=...&to=...&cursor=...&limit=20
+    Note right of F: ページ表示時 / フィルタ変更時に呼び出し
+    Note right of H: JWT検証（Authミドルウェア）<br/>TenantContext設定（RLS）
+    H->>H: クエリパラメータのバリデーション<br/>status: enum / from,to: date / limit: 1-100
+    H->>S: ListReports(tenantID, userID, filters)
+    S->>R: FindReports(tenantID, userID, filters, cursor, limit+1)
+    R->>DB: SELECT id, title, period_start, period_end,<br/>status, total_amount, submitted_at,<br/>created_at, updated_at<br/>FROM expense_reports<br/>WHERE tenant_id=? AND user_id=?<br/>AND deleted_at IS NULL<br/>[AND status=?]<br/>[AND period_start >= ?]<br/>[AND period_end <= ?]<br/>[AND (updated_at, id) < (cursor_ts, cursor_id)]<br/>ORDER BY updated_at DESC, id DESC<br/>LIMIT 21
+    Note right of DB: LIMIT N+1 で取得し<br/>N+1件目の有無で<br/>has_more を判定
+    DB-->>R: rows（最大21件）
+    R->>R: len(rows) > limit の場合<br/>has_more=true, 末尾行を除外<br/>最終行の (updated_at, id) を next_cursor に設定
+    R-->>S: reports + pagination
+    S-->>H: ListReportsResponse
+    H-->>F: 200 OK
+    Note left of F: has_more=true の場合<br/>「さらに読み込む」ボタンを表示<br/>押下時に next_cursor を付与して再リクエスト
+```
+
+---
+
+## 14. 品質チェック
 
 - [x] UC-M08 の全表示項目が定義されているか
 - [x] フィルタ・ページネーション・空状態・ローディングが定義されているか

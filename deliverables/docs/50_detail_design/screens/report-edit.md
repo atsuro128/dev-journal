@@ -194,10 +194,103 @@ SCR-RPT-002（report-create.md）と同一方針。
 
 ---
 
-## 12. 品質チェック
+## 12. 処理シーケンス
+
+### レポート編集保存
+
+「保存する」ボタン押下から DB の UPDATE が完了してレスポンスが返るまでのフロー。
+
+```mermaid
+sequenceDiagram
+    participant F as フロント
+    participant H as ハンドラ
+    participant S as サービス
+    participant D as ドメイン
+    participant R as リポジトリ
+    participant DB as DB
+
+    F->>H: PUT /api/reports/:id<br/>Authorization: Bearer JWT<br/>Body: {title, period_start, period_end, updated_at}
+
+    Note over H: ミドルウェアチェーン実行<br/>CORS → SecurityHeaders → RequestID → Logger<br/>→ RateLimit → Auth → TenantContext → RBAC
+
+    alt JWT検証失敗
+        H-->>F: 401 {code: "UNAUTHORIZED"}
+    end
+
+    Note over H: context から user_id, tenant_id を取得
+    H->>H: 入力バリデーション<br/>title: 必須, 1-200文字<br/>period_start: 必須, 日付形式<br/>period_end: 必須, 日付形式<br/>updated_at: 必須, 日時形式
+
+    alt バリデーションエラー
+        H-->>F: 422 {code: "VALIDATION_FAILED", details: [...]}
+    end
+
+    H->>S: UpdateReport(ctx, id, input)
+    Note over S: トランザクション開始<br/>TenantContext ミドルウェアで<br/>BEGIN + SET LOCAL 済み
+
+    S->>R: FindByID(ctx, id)
+    R->>DB: SELECT * FROM expense_reports<br/>WHERE report_id = ? AND tenant_id = ?<br/>AND deleted_at IS NULL
+    DB-->>R: ExpenseReport or NotFound
+    R-->>S: ExpenseReport
+
+    alt レポートが存在しない
+        S-->>H: ResourceNotFound エラー
+        H-->>F: 404 {code: "RESOURCE_NOT_FOUND"}
+    end
+
+    S->>S: 所有権チェック<br/>report.user_id == current_user_id
+
+    alt 所有権不一致
+        S-->>H: PermissionDenied エラー
+        H-->>F: 403 {code: "FORBIDDEN"}
+    end
+
+    S->>D: report.Update(title, period_start, period_end)
+
+    Note over D: RPT-011: status == draft 検証
+    alt draft 以外での編集
+        D-->>S: ReportNotEditable エラー
+        S-->>H: ReportNotEditable エラー
+        H-->>F: 422 {code: "REPORT_NOT_EDITABLE"}
+    end
+
+    Note over D: RPT-003: period_start <= period_end 検証
+    alt period_start > period_end
+        D-->>S: InvalidPeriod エラー
+        S-->>H: InvalidPeriod エラー
+        H-->>F: 422 {code: "INVALID_PERIOD"}
+    end
+
+    D-->>S: 更新済み ExpenseReport
+
+    S->>R: Save(ctx, report, updated_at)
+    R->>DB: UPDATE expense_reports<br/>SET title=?, period_start=?,<br/>period_end=?, updated_at=NOW()<br/>WHERE report_id=? AND tenant_id=?<br/>AND updated_at=?
+    DB-->>R: rows_affected
+
+    alt rows_affected == 0（楽観的ロック競合）
+        R-->>S: ConflictError エラー
+        S-->>H: ConflictError エラー
+        H-->>F: 409 {code: "CONFLICT"}
+    end
+
+    R-->>S: 保存済み ExpenseReport
+
+    Note over S: トランザクション COMMIT
+
+    S-->>H: ExpenseReport
+    H->>H: レスポンス構築<br/>submitter 情報を付与
+    H-->>F: 200 OK<br/>{data: {id, title, period_start,<br/>period_end, status: "draft",<br/>total_amount, submitter: {...},<br/>items: [...], created_at, updated_at}}
+
+    F->>F: /reports/:id に遷移
+```
+
+---
+
+## 13. 品質チェック
 
 - [x] UC-M04 の全入力項目・バリデーション・エラー表示が定義されているか
 - [x] アクセス制御（所有者チェック、draft 状態チェック）が定義されているか
 - [x] 楽観的ロック（updated_at チェック）が定義されているか
+- [x] 処理シーケンス図がレポート編集保存の全フローをカバーしているか
+- [x] シーケンス図にルールID（RPT-011, RPT-003）および楽観的ロック競合が記載されているか
 - [x] 用語が glossary.md に準拠しているか
 - [x] MVP スコープ外の機能を含めていないか
