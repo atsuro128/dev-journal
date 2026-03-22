@@ -207,7 +207,7 @@ POST /api/reports/:id/items/:itemId/attachments
 ```json
 {
   "data": {
-    "attachment_id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+    "id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
     "item_id": "6ba7b810-9dad-11d1-80b4-00c04fd430c8",
     "file_name": "receipt_20260315.jpg",
     "file_size": 245760,
@@ -364,7 +364,7 @@ GET /api/reports/:id/items/:itemId/attachments
 {
   "data": [
     {
-      "attachment_id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+      "id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
       "item_id": "6ba7b810-9dad-11d1-80b4-00c04fd430c8",
       "file_name": "receipt_20260315.jpg",
       "file_size": 245760,

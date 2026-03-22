@@ -1969,7 +1969,7 @@ components:
             $ref: "#/components/schemas/RecentReport"
         pending_approval_count:
           type: integer
-          description: 承認待ちレポート件数（Approver のみ）
+          description: 承認待ちレポート件数（Approver のみ）。同テナントの submitted レポートのうち、自分が作成したレポートを除いた件数
         pending_payment_count:
           type: integer
           description: 支払待ちレポート件数（Accounting のみ）
