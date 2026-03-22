@@ -17,10 +17,6 @@
 | `.claude/rules/security-policy.md` | ファイルセキュリティポリシー（3, 5） |
 | `references/glossary.md` | 用語集 |
 
-### 用語統一（issue 036）
-
-`security-policy.md` 3、5 における `file_id` は、本設計書では全て `attachment_id` に読み替える。S3 キー命名規則を `{tenant_id}/{report_id}/{attachment_id}` に統一する。
-
 ---
 
 ## 2. S3 バケット構成
@@ -610,8 +606,7 @@ DELETE /api/reports/:id/items/:itemId/attachments/:attId
 
 | 項目 | 上流の記載 | 本設計書での対応 | 理由 |
 |------|-----------|----------------|------|
-| S3 キー内の ID 名 | security-policy.md: `file_id` / domain_model.md: `attachment_id` | `attachment_id` に統一 | issue 036。用語集に `attachment_id` で統一 |
-| S3 キーの `item_id` 有無 | requirements.md ATT-014: `{tenant_id}/{report_id}/{file_id}` | `item_id` を含めない（`{tenant_id}/{report_id}/{attachment_id}`）| attachment_id は UUID でユニーク。item_id 階層は不要 |
+| S3 キーの `item_id` 有無 | requirements.md ATT-014: `{tenant_id}/{report_id}/{attachment_id}` | `item_id` を含めない（`{tenant_id}/{report_id}/{attachment_id}`）| attachment_id は UUID でユニーク。item_id 階層は不要 |
 | DB カラム名 | domain_model.md: `s3_path` | 本設計書では `s3_key` を推奨 | S3 のオブジェクトキーを格納することを明示。最終確定は db_schema.md |
 
 ---

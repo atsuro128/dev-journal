@@ -304,7 +304,7 @@
 | ATT-011 | 署名付きURL発行前に認可チェック必須 |
 | ATT-012 | 署名付きURLの有効期限: 15分 |
 | ATT-013 | アップロード時にMIMEタイプを検証 |
-| ATT-014 | S3パスにテナントIDを含む（`{tenant_id}/{report_id}/{file_id}`） |
+| ATT-014 | S3パスにテナントIDを含む（`{tenant_id}/{report_id}/{attachment_id}`） |
 | ATT-020 | 添付の追加・削除はレポートが draft 状態の時のみ |
 
 ---
