@@ -314,3 +314,64 @@
 - UIデザイン方針: MUI デフォルトテーマをそのまま使用。カラー変更は theme.ts 1ファイルで後から可能
 - 上流シーケンス図は残す: 詳細設計に縦断フローを追加しても、上流（要件定義・アーキテクチャ）の図は別視点のため削除しない
 - work-breakdown 改善: 「完了条件」と「レビュー観点」に図の有無を追加することで、次回以降は Planner が自動的にスコープに含める
+
+---
+
+## セッション: 2026-03-23 14:10
+
+### ゴール
+- Step 5 完了を目指す（Issue 037 → Phase 3 → Phase 4 → 完了宣言）
+
+### 作業ログ
+- **Issue 037 対応**（auth-login フローチャートの API 契約不整合）
+  - フローチャートを API 契約（200/400/401/429）に統一
+  - E1(422), E3(独立401) を削除、全認証失敗を E2(401 INVALID_CREDENTIALS) に合流
+  - openapi.yaml: login の format:email / minLength:8 削除、400 レスポンス追加、SEC-011 意図を description に明記
+  - security.md §8.4: login エンドポイントの SEC-011 例外注記を追加
+  - codex レビュー: 4回のイテレーション（400 未定義、schema 制約、logout 認証方式、INVALID_TOKEN スコープ）→ LGTM
+  - review-finding 046（schema 制約削除の妥当性）を pending-review に記録
+  - issue 037 を resolved に移動
+- **Issue 038 起票・対応**（rbac.md に RBC-014〜016 の正式定義がない）
+  - codex に方針確認: 「上流で正式採番して下流参照を追認する」が妥当
+  - rbac.md SS4.2 に RBC-014, RBC-015, RBC-016 を追加
+  - SS4.3 を「補足・解釈」に縮退
+  - codex レビュー: P3 1件（RBC-010+RBC-011 の誤記）→ 修正 → LGTM
+  - issue 038 を resolved に移動
+- **Phase 3: authz.md 作成**（認可設計・13セクション・756行）
+  - codex に計画レビュー依頼: セクション構成・設計判断・リスクについて意見取得
+  - 設計判断確定: 所有権チェック=サービス層 Authorizer、Approver 閲覧=ハイブリッド方式、ロール変更遅延=MVP 許容
+  - 内部レビュー: blocker 1件（FORBIDDEN vs PERMISSION_DENIED）+ warning 4件 → 修正 → 再レビュー PASS
+  - codex レビュー（/codex-review 正式手順）: 3ラウンド
+    - 初回: 047（Approver 閲覧範囲の上流超過）+ 048（ui_flow.md 遷移欠落）
+    - 047: rbac.md に追跡閲覧を追記して正式化 → resolved
+    - 2回目: 049（report-detail.md の閲覧範囲記述が古い）→ 修正 → resolved
+    - 3回目: 050（openapi.yaml の PERMISSION_DENIED 未反映）→ 修正 → resolved
+  - 048 は Phase 4 で対応
+- **ワークフロールール改善**
+  - codex レビューの指摘対応フローに「LGTM まで繰り返す」を明記
+  - Auto Memory ルール変更: `.claude/memory/` に保存
+
+### 未完了
+- Phase 4（最終レビュー）未着手
+- review-finding 048 未対応
+
+### ブロッカー
+- なし
+
+### 次にやること
+1. review-finding 048 対応
+2. Phase 4（最終レビュー・横断）の実施
+3. progress.md 更新
+4. Step 5 完了宣言
+
+### 学び・気づき
+- 内部レビューで LGTM を得る前に codex レビューに持っていった。正しい順序: 内部レビュー → LGTM → コミット → codex レビュー
+- codex レビューは review-findings を起票する前提で動く
+- ルールに書いてあることに従えなかった場合、仕組み（ルールの明文化）で担保するしかない
+
+### 意思決定ログ
+- Issue 037: フローチャートを API 契約に合わせる方針
+- Issue 038: 上流（rbac.md）に RBC-014〜016 を正式採番
+- authz.md 設計判断: 所有権チェックはサービス層 Authorizer パターン
+- FORBIDDEN vs PERMISSION_DENIED: 区別して openapi.yaml にも反映
+- codex レビュー手順: `/codex-review` スキルを使い、コミット後に正式手順で実行する
