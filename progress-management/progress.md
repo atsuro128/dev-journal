@@ -10,7 +10,7 @@
 | 3 | アーキテクチャ設計（技術選定・構成決定） | 完了 | 2026-03-16 | `guide/work-breakdown/step3-architecture.md` |
 | 4 | 基本設計（画面一覧・画面遷移） | 完了 | 2026-03-22 | `guide/work-breakdown/step4-basic-design.md` |
 | 5 | 詳細設計（API・DB・認可・セキュリティ） | 完了 | 2026-03-23 | `guide/work-breakdown/step5-detail-design.md` |
-| 6 | テスト設計 | 未着手 | - | `guide/work-breakdown/step6-testing.md` |
+| 6 | テスト設計 | 完了 | 2026-03-23 | `guide/work-breakdown/step6-testing.md` |
 | 7 | 実装・運用 | 未着手 | - | `guide/work-breakdown/step7-implementation.md` |
 
 ## 課題・ブロッカー

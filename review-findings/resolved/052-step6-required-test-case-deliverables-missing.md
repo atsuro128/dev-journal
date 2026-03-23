@@ -59,3 +59,16 @@ Step 6 は Phase 1 完了の段階であり、Step 全体の完了条件は Phas
 
 ### 判定理由
 Step 6 の完了条件である「重要領域のテストケースが網羅されている」を満たすには、横断成果物 `cross-cutting.md` に少なくともテナント分離、RBAC マトリクス、E2E シナリオを集約して下流実装者が参照できる状態が必要である。現状は 7 本の機能別ファイルのみで、`CRS-` 系テストケースも 1 件も定義されていないため、本指摘は引き続きクローズ不可。
+
+## 再レビュー結果（2026-03-23, 3回目）
+
+対応完了（クローズ）。
+
+### 確認内容
+- [step6-testing.md](/root-project/dev-journal/progress-management/task-plans/step6-testing.md) が存在し、Step 着手時の作業計画作成要件を満たしている。
+- Step 6 の必須成果物である機能別テストケース 7 本と横断テストケース [cross-cutting.md](/root-project/dev-journal/deliverables/docs/60_test/test_cases/cross-cutting.md) の計 8 本が揃っている。
+- [cross-cutting.md](/root-project/dev-journal/deliverables/docs/60_test/test_cases/cross-cutting.md#L64) にテナント分離マトリクス、[cross-cutting.md](/root-project/dev-journal/deliverables/docs/60_test/test_cases/cross-cutting.md#L166) に RBAC マトリクス、[cross-cutting.md](/root-project/dev-journal/deliverables/docs/60_test/test_cases/cross-cutting.md#L286) に E2E シナリオが定義され、6-B-8 の責務が文書化されている。
+- 前回懸念だったダッシュボードのテナント分離観点は、[cross-cutting.md](/root-project/dev-journal/deliverables/docs/60_test/test_cases/cross-cutting.md#L158) で CRS-016 を正本として集約しつつ、[dashboard.md](/root-project/dev-journal/deliverables/docs/60_test/test_cases/dashboard.md#L104) の DSH-018 をダッシュボード固有の集計正確性テストとして位置づけ直しており、責務境界の説明が追加されている。
+
+### 判定理由
+前回指摘した欠落成果物は解消され、Step 6 の完了条件で求められる「重要領域のテストケースが網羅されている」状態に到達したため。本指摘の論点だった `cross-cutting.md` 欠落と横断観点の不在は解消済みであり、追加の差し戻し理由は確認できなかった。
