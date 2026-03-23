@@ -20,7 +20,14 @@
 | セキュリティ設計 | `deliverables/docs/50_detail_design/security.md` |
 | 監視・ログ設計 | `deliverables/docs/50_detail_design/monitoring.md` |
 | テスト戦略 | `deliverables/docs/60_test/test_strategy.md` |
-| テストケース | `deliverables/docs/60_test/test_cases.md` |
+| テストケース（認証） | `deliverables/docs/60_test/test_cases/auth.md` |
+| テストケース（レポート） | `deliverables/docs/60_test/test_cases/reports.md` |
+| テストケース（明細） | `deliverables/docs/60_test/test_cases/items.md` |
+| テストケース（添付） | `deliverables/docs/60_test/test_cases/attachments.md` |
+| テストケース（ワークフロー） | `deliverables/docs/60_test/test_cases/workflow.md` |
+| テストケース（ダッシュボード） | `deliverables/docs/60_test/test_cases/dashboard.md` |
+| テストケース（テナント管理） | `deliverables/docs/60_test/test_cases/tenant.md` |
+| テストケース（横断） | `deliverables/docs/60_test/test_cases/cross-cutting.md` |
 
 ### 作業計画
 
@@ -60,7 +67,7 @@ Step 着手時にまず作業計画を立案し、以下に保存する:
 - RLS のコンテキスト設定（`SET LOCAL app.current_tenant`）が同一コネクション・同一トランザクションで実行されているか
 
 #### 3. テスト品質
-- `test_cases.md` の全テストケースがコードとして実装されているか
+- `test_cases/*.md` の全テストケースがコードとして実装されているか
 - テスト結果が CI で自動検証されているか
 
 ### 基盤構築固有
@@ -87,7 +94,7 @@ Step 着手時にまず作業計画を立案し、以下に保存する:
 - 機能間で共通基盤（ミドルウェア・エラーハンドリング・API クライアント）が正しく使用されているか
 - コード重複が適切に排除されているか
 - 全機能横断で申請→承認→支払完了のフローが通るか
-- テスト網羅性（test_cases.md との対応）が確認されているか
+- テスト網羅性（test_cases/*.md との対応）が確認されているか
 
 ---
 
@@ -191,13 +198,13 @@ Step 6 完了
 
 ### 7-C-3: 認証テスト実装
 
-- **入力**: test_cases.md §認証, 7-C-1/7-C-2 の実装コード
+- **入力**: test_cases/auth.md + test_cases/cross-cutting.md, 7-C-1/7-C-2 の実装コード
 - **出力**: テストコード
 - **作業内容**:
   - 単体テスト: Argon2id ハッシュ/検証、JWT 生成/検証
   - 統合テスト: 各認証エンドポイント、無効トークンで 401
 - **完了条件**:
-  - test_cases.md の認証関連テストケースが全て実装されている
+  - test_cases/auth.md および test_cases/cross-cutting.md の認証関連テストケースが全て実装されている
 
 ### 7-D-1: 経費フロントエンド
 
@@ -225,12 +232,12 @@ Step 6 完了
 
 ### 7-D-3: 経費テスト実装
 
-- **入力**: test_cases.md §経費, 7-D-1/7-D-2 の実装コード
+- **入力**: test_cases/reports.md + test_cases/items.md + test_cases/dashboard.md + test_cases/cross-cutting.md, 7-D-1/7-D-2 の実装コード
 - **出力**: テストコード
 - **作業内容**:
   - 状態遷移テスト（全パターン）、テナント分離テスト、RBAC テスト
 - **完了条件**:
-  - test_cases.md の経費関連テストケースが全て実装されている
+  - test_cases/reports.md, test_cases/items.md, test_cases/dashboard.md および test_cases/cross-cutting.md の経費関連テストケースが全て実装されている
 
 ### 7-E-1: 添付フロントエンド
 
@@ -255,12 +262,12 @@ Step 6 完了
 
 ### 7-E-3: 添付テスト実装
 
-- **入力**: test_cases.md §添付, 7-E-1/7-E-2 の実装コード
+- **入力**: test_cases/attachments.md + test_cases/cross-cutting.md, 7-E-1/7-E-2 の実装コード
 - **出力**: テストコード
 - **作業内容**:
   - MIME/サイズ制限テスト、認可テスト
 - **完了条件**:
-  - test_cases.md の添付関連テストケースが全て実装されている
+  - test_cases/attachments.md および test_cases/cross-cutting.md の添付関連テストケースが全て実装されている
 
 ### 7-F-1: 承認フロントエンド
 
@@ -285,19 +292,19 @@ Step 6 完了
 
 ### 7-F-3: 承認テスト実装
 
-- **入力**: test_cases.md §承認, 7-F-1/7-F-2 の実装コード
+- **入力**: test_cases/workflow.md + test_cases/tenant.md + test_cases/cross-cutting.md, 7-F-1/7-F-2 の実装コード
 - **出力**: テストコード
 - **作業内容**:
   - 承認フロー全パターンテスト、RBAC テスト
 - **完了条件**:
-  - test_cases.md の承認関連テストケースが全て実装されている
+  - test_cases/workflow.md, test_cases/tenant.md および test_cases/cross-cutting.md の承認関連テストケースが全て実装されている
 
 ### 7-R: 横断レビュー
 
 - **入力**: 全機能の実装コード・テストコード、設計成果物全体
 - **出力**: レビューレポート
 - **作業内容**:
-  - テスト品質・網羅性チェック（test_cases.md との対応）
+  - テスト品質・網羅性チェック（test_cases/*.md との対応）
   - 全機能横断レビュー（セキュリティ・設計整合性・共通基盤の正しい使用）
 - **完了条件**:
   - テスト網羅性が確認されている
