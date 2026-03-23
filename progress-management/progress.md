@@ -11,7 +11,9 @@
 | 4 | 基本設計（画面一覧・画面遷移） | 完了 | 2026-03-22 | `guide/work-breakdown/step4-basic-design.md` |
 | 5 | 詳細設計（API・DB・認可・セキュリティ） | 完了 | 2026-03-23 | `guide/work-breakdown/step5-detail-design.md` |
 | 6 | テスト設計 | 完了 | 2026-03-23 | `guide/work-breakdown/step6-testing.md` |
-| 7 | 実装・運用 | 未着手 | - | `guide/work-breakdown/step7-implementation.md` |
+| 7 | 基盤構築 | 未着手 | - | `guide/work-breakdown/step7-foundation.md` |
+| 8 | 機能実装（TDD） | 未着手 | - | `guide/work-breakdown/step8-feature-implementation.md` |
+| 9 | システムテスト・UAT | 未着手 | - | `guide/work-breakdown/step9-system-test.md` |
 
 ## 課題・ブロッカー
 `issues/open/` を参照。
