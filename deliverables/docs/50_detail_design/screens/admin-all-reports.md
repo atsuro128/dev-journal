@@ -72,8 +72,8 @@
 | フィルタ項目 | 型 | 初期値 | 選択肢 | 備考 |
 |------------|-----|--------|-------|------|
 | ステータス | セレクトボックス | 全て | 全て / 下書き / 提出済み / 承認済み / 却下 / 支払済み | 複数選択不可 |
-| 期間（開始日） | 日付ピッカー | 空（未指定） | - | 対象期間の開始日でフィルタ |
-| 期間（終了日） | 日付ピッカー | 空（未指定） | - | 対象期間の終了日でフィルタ |
+| 期間（開始日） | 日付ピッカー | 空（未指定） | - | レポートの対象期間（period_start〜period_end）が指定範囲に収まるものを抽出する。開始日を指定すると `period_start >= 開始日` で絞り込む |
+| 期間（終了日） | 日付ピッカー | 空（未指定） | - | 終了日を指定すると `period_end <= 終了日` で絞り込む |
 | 申請者 | セレクトボックス | 全て | 全て / テナント内メンバー一覧 | `GET /api/tenant/members` で取得 |
 
 - フィルタを変更するとリストが即座に再取得される（サーバーサイドフィルタリング）
@@ -237,10 +237,10 @@ sequenceDiagram
     H->>H: クエリパラメータのバリデーション<br/>status: enum / from,to: date / limit: 1-100
     H->>S: ListAllReports(tenantID, filters)
     S->>R: FindAllReports(tenantID, filters, cursor, limit+1)
-    R->>DB: SELECT er.id, er.title, er.total_amount,<br/>er.status, er.submitted_at, er.created_at,<br/>u.id, u.name<br/>FROM expense_reports er JOIN users u ON er.user_id = u.user_id<br/>WHERE er.tenant_id=? AND er.deleted_at IS NULL<br/>[AND er.status=?]<br/>[AND er.user_id=?]<br/>[AND er.period_start >= ?]<br/>[AND er.period_end <= ?]<br/>ORDER BY er.updated_at DESC, er.id DESC<br/>LIMIT 21
+    R->>DB: SELECT er.id, er.title, er.total_amount,<br/>er.status, er.submitted_at, er.created_at,<br/>u.id, u.name<br/>FROM expense_reports er JOIN users u ON er.user_id = u.user_id<br/>WHERE er.tenant_id=? AND er.deleted_at IS NULL<br/>[AND er.status=?]<br/>[AND er.user_id=?]<br/>[AND er.period_start >= ?]<br/>[AND er.period_end <= ?]<br/>ORDER BY er.submitted_at DESC NULLS LAST, er.created_at DESC, er.id DESC<br/>LIMIT 21
     Note right of DB: report-list.md との違い:<br/>user_idフィルタなし（テナント全体）<br/>submitter_idフィルタあり<br/>LIMIT N+1 で has_more を判定
     DB-->>R: rows（最大21件）
-    R->>R: len(rows) > limit の場合<br/>has_more=true, 末尾行を除外<br/>最終行の (updated_at, id) を next_cursor に設定
+    R->>R: len(rows) > limit の場合<br/>has_more=true, 末尾行を除外<br/>最終行の (submitted_at, id) を next_cursor に設定
     R-->>S: reports + pagination
     S-->>H: ListAllReportsResponse
     H-->>F: 200 OK
