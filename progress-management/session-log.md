@@ -1,6 +1,66 @@
 # 引き継ぎメモ
 
-## セッション: 2026-03-23 18:15
+## セッション: 2026-03-23 22:51
+
+### ゴール
+- Step 7 着手前のブロッカー解消（open issues 3件）
+- Step 7〜の work-breakdown 再構成
+
+### 作業ログ
+- **ブロッカー確認**
+  - open issues 3件（005, 008, ops-032）を確認。全て Step 7 着手前に解消が必要
+- **issue 005（ルール文書の整備）**
+  - data-handling.md / error-handling.md / api-conventions.md の必要性を検討
+  - 上流成果物（openapi.yaml, security.md, monitoring.md, db_schema.md）を3エージェント並列で調査
+  - ユーザー指摘: 「上流成果物が既にルールの役割を果たしているなら不要では？」→ 設計書だけ見て実装すれば結果的にルールが守られるかを codex に検証依頼
+  - codex 指摘 4件（054〜057）→ 再検証で 2件 resolved（055, 057）、2件 open（054, 056）
+  - 054: security.md にエラーコード一覧を集約（INVALID_CREDENTIALS 追加、details フィールド整合）
+  - 055（旧056）: openapi.yaml に日時 UTC Z 形式を明記 + フロントのローカル TZ 変換を追記
+  - codex 再レビュー → 054, 055 とも resolved
+  - issue 005 を「上流成果物で代替済み」としてクローズ
+- **issue 008（packages/ ディレクトリ）**
+  - Rust 廃止に伴い packages/ は不要。Phase 1 で削除予定としてクローズ
+- **issue ops-032（CI/CD 設計）**
+  - CI/CD 設計と Dev Container 対応を step7 の 7-B に格上げしてクローズ
+- **Step 7 work-breakdown の再構成**
+  - タスク粒度: FE/BE/テスト分割 → テストケースファイル単位（TDD フロー）に変更
+  - 依存グラフ: 認証後 3並列（レポート・ダッシュボード・テナント）、レポート後 2並列（明細・ワークフロー）
+  - 7-B に FE-BE 連携基盤（API クライアント、プロキシ、ヘルスチェック）を追加
+- **Step 分割**（Step 7 → Step 7/8/9/10）
+  - Step 7: 基盤構築（+ openapi.yaml からスケルトン生成）
+  - Step 8: テストコード実装（test_cases/*.md → 失敗するテストコード）
+  - Step 9: 機能実装（テストを通す BE/FE 実装）
+  - Step 10: システムテスト・UAT（横断テスト + ユーザー受入確認）
+  - progress.md, workflow.md を更新
+
+### 未完了
+- なし
+
+### ブロッカー
+- なし（open issues 全てクローズ済み）
+
+### 次にやること
+1. Step 7（基盤構築）の作業計画を立案（Plan エージェント）
+   - `dev-journal/guide/work-breakdown/step7-foundation.md` を入力に計画
+   - CI/CD 設計・Dev Container 対応の判断ポイントを決定
+2. 7-B の実装に着手
+
+### 学び・気づき
+- 「ルール文書を別途作るべきか」→ 設計書が十分ならルール文書は不要。設計書にギャップがあれば設計書自体を修正すべき。重複管理を避ける原則
+- codex の指摘を鵜呑みにしない。「指摘自体が正しいか」を再検証させる手順が有効（054〜057 のうち2件は過剰指摘だった）
+- architecture.md は上流の設計判断記録であり、実装者向け仕様書ではない。修正対象は Step 5 詳細設計書のみ
+- 「Dev Container 不要」と勝手に判断してユーザーに指摘された。スコープ外の判断はユーザー確認が必須
+- 日時フォーマット（UTC Z 形式）を API で決めても、フロントのローカル TZ 変換が設計書に書かれていなければ実装者が困る。API 契約とフロント実装指示はセットで考える
+
+### 意思決定ログ
+- ルール文書（data-handling / error-handling / api-conventions / review-checklist）: 全て「上流成果物で代替済み」として作成不要。設計書のギャップは設計書自体を修正して対応
+- タスク粒度: テストケースファイル単位 = 1タスク（テスト + BE + FE 統合）。理由: TDD の流れが1タスク内で完結、FE/BE 分割の並列効果は機能間並列で十分
+- Step 分割: 旧 Step 7（実装・運用）→ Step 7（基盤構築）/ 8（テストコード実装）/ 9（機能実装）/ 10（システムテスト・UAT）。理由: 1 Step が重すぎる、TDD のテスト先行を明示的な Step として分離
+- 日時フォーマット: API は ISO 8601 UTC Z 形式で統一。フロントはローカル TZ に変換して表示（openapi.yaml info.description に明記）
+
+---
+
+## セッション: 2026-03-23 18:15（前回）
 
 ### ゴール
 - Step 6（テスト設計）を完了させる（成果物構成確定 → 作業計画 → Phase 1〜3 → 完了宣言）
@@ -20,20 +80,13 @@
   - task-plan 書き出し、test-designer/test-reviewer エージェント定義更新
 - **Phase 1: テスト戦略策定**（6-A）
   - test_strategy.md 作成（621行、13セクション）
-  - 内部レビュー: blocker 5件（遷移振り分け曖昧、listTenantMembers 欠落、listAttachments 欠落、NoApproverInTenant 欠落）→ 修正 → 再レビュー PASS
-  - codex レビュー: 052（成果物未完成 — Phase 段階のため想定通り）、053（非機能テスト方針欠落）
-  - 053 対応: §2.3 を書き換え、レート制限・レスポンスタイムのテスト方針を上流具体値引用で定義
-  - codex 再レビュー: 053 resolved、052 は Phase 3 完了まで open 維持
+  - 内部レビュー: blocker 5件 → 修正 → 再レビュー PASS
+  - codex レビュー: 052（成果物未完成）、053（非機能テスト方針欠落）→ 053 対応 → resolved
 - **Phase 2: 機能別テストケース**（6-B-1〜7、7並列）
-  - auth.md(80件), reports.md(90件), items.md(75件), attachments.md(54件), workflow.md(62件), dashboard.md(25件), tenant.md(11件) = 計397件
-  - 内部レビュー: blocker 2件（WFL-013 不完全、attachments rejected 欠落）+ warning 5件 → 修正 → 再レビュー PASS
-  - codex レビュー: 052 差戻し継続（cross-cutting.md 未作成のため想定通り）
+  - 計397件 → 内部レビュー → codex レビュー
 - **Phase 3: 横断テストケース**（6-B-8）
-  - cross-cutting.md(84件): テナント分離(16件), RBAC(34件), E2E(21件), 非機能(13件)
-  - 内部レビュー: blocker 2件（テナントBフィクスチャ不足、RBAC Approver添付閲覧不正確）+ warning 2件 → 修正 → 再レビュー PASS
-  - codex 最終レビュー: 052 resolved、新規指摘なし
+  - cross-cutting.md(84件) → 内部レビュー → codex 最終レビュー LGTM
 - **Step 6 完了宣言**
-  - progress.md を完了（2026-03-23）に更新
 
 ### 未完了
 - なし（Step 6 完了）
@@ -43,63 +96,11 @@
 
 ### 次にやること
 1. Step 7（実装・運用）に着手
-   - まず `dev-journal/guide/work-breakdown/step7-implementation.md` を確認
-   - open issues を確認（005, 008, ops-032）
-2. Step 7 の作業計画を立案（Plan エージェント）
-   - Phase 1: 基盤構築（7-B）から開始
 
 ### 学び・気づき
-- 成果物構成の前提を疑うユーザーの視点が、TDD に基づく正しい粒度（ハンドラ単位）の発見につながった。「そのファイル数で本当にいいのか」は常に問うべき
-- 複数エージェントに同じ問いを投げて意見を突き合わせる手法が有効。全員一致の点は信頼でき、意見が割れた点に判断を集中できる
-- codex は Phase 段階のコミットでも「Step 完了条件未達」として差し戻す。Phase 分割で作業している場合、052 のような「想定通りの差戻し」は open のまま進めて最終 Phase で解消する運用が正しい
-- 内部レビューの「再レビュー省略」を提案したらユーザーに指摘された。ワークフローの「PASS まで繰り返す」は省略不可。手間の考慮は判断基準にならない
+- 成果物構成の前提を疑うユーザーの視点が、TDD に基づく正しい粒度（ハンドラ単位）の発見につながった
+- 内部レビューの「再レビュー省略」を提案したらユーザーに指摘された。ワークフローの「PASS まで繰り返す」は省略不可
 
 ### 意思決定ログ
-- 成果物粒度: test_cases を Goハンドラファイル単位（8ファイル）に分割。理由: TDD ではテストコードの構造（*_handler_test.go）と設計書が1:1対応すべき
-- dashboard/categories/tenant: dashboard+categories で1ファイル、tenant で1ファイル。理由: 認可境界（全ロール参照 vs Admin専用）で分ける
-- DSH-018（ダッシュボードテナント分離テスト）: dashboard.md に残す。cross-cutting.md の CRS-016 が正本、DSH-018 は集計値正確性テスト。理由: 「テナント越境=404」と「集計値汚染チェック」は性質が異なる
-- 非機能テスト方針: MVP対象外ではなく、上流に具体値があるため方針を定義。レート制限は統合テスト（PR時）、レスポンスタイムは軽量スモーク（mainマージ後）
-- CRS-015 vs TNT-008: 両方実装する。CRS-015=テナント越境テスト正本、TNT-008=フィルタリング正確性テスト
-
----
-
-## セッション: 2026-03-23 15:25（前回）
-
-### ゴール
-- Step 5 完了を目指す（review-finding 048 対応 → Phase 4 最終レビュー → 完了宣言）
-
-### 作業ログ
-- **review-finding 048 対応**（ui_flow.md 全体図の遷移欠落）
-  - ui_flow.md の全体画面遷移図に `DASH001 -> ADM001`, `DASH001 -> ADM002` エッジ追加
-  - review-finding 048 を resolved に移動
-- **Phase 4 最終レビュー実施**（unit x4 + cross x1 = 5エージェント並列）
-  - Auth 4画面: LGTM
-  - Dashboard + Workflow 3画面: LGTM（info 1件 — Phase 3 対応で十分）
-  - Admin 2画面: warning 2件（ソートキー不一致、期間フィルタ曖昧）
-  - Report 4画面: blocker 1件（ソートキー updated_at vs created_at）
-  - 横断レビュー: LGTM（warning 2件 — エラーコード略記、submitter 用語 → PASS）
-- **Phase 4 指摘修正**
-  - RPT-001: シーケンス図 `ORDER BY updated_at` → `created_at` に修正
-  - ADM-001: ソートキー `updated_at` → `submitted_at DESC NULLS LAST` に修正 + 期間フィルタのセマンティクス明確化
-  - 再レビュー: LGTM
-- **codex レビュー → review-finding 051 対応**（PERMISSION_DENIED → FORBIDDEN 統一）
-  - 方針 C 採用: MVP では FORBIDDEN に統一
-  - 9ファイル修正 → codex レビュー LGTM
-- **Step 5 完了宣言**
-
-### 未完了
-- なし（Step 5 完了）
-
-### ブロッカー
-- なし
-
-### 次にやること
-1. Step 6（テスト設計）に着手
-
-### 学び・気づき
-- review-finding 048 のレビューを内部レビューに回してしまったが、codex からの指摘は codex に再レビューを委譲すべき
-- PERMISSION_DENIED の導入は上流に定義がない概念の独断導入だった
-
-### 意思決定ログ
-- PERMISSION_DENIED 廃止: 方針 C。MVP の外部契約は上流 RBC-004 準拠で FORBIDDEN に統一
-- ソートキー統一: RPT-001 は created_at、ADM-001 は submitted_at DESC NULLS LAST
+- 成果物粒度: test_cases を Goハンドラファイル単位（8ファイル）に分割
+- 非機能テスト方針: MVP対象外ではなく、上流に具体値があるため方針を定義

@@ -375,3 +375,46 @@
 - authz.md 設計判断: 所有権チェックはサービス層 Authorizer パターン
 - FORBIDDEN vs PERMISSION_DENIED: 区別して openapi.yaml にも反映
 - codex レビュー手順: `/codex-review` スキルを使い、コミット後に正式手順で実行する
+
+---
+
+## セッション: 2026-03-23 15:25
+
+### ゴール
+- Step 5 完了を目指す（review-finding 048 対応 → Phase 4 最終レビュー → 完了宣言）
+
+### 作業ログ
+- **review-finding 048 対応**（ui_flow.md 全体図の遷移欠落）
+  - ui_flow.md の全体画面遷移図に `DASH001 -> ADM001`, `DASH001 -> ADM002` エッジ追加
+  - review-finding 048 を resolved に移動
+- **Phase 4 最終レビュー実施**（unit x4 + cross x1 = 5エージェント並列）
+  - Auth 4画面: LGTM
+  - Dashboard + Workflow 3画面: LGTM（info 1件 — Phase 3 対応で十分）
+  - Admin 2画面: warning 2件（ソートキー不一致、期間フィルタ曖昧）
+  - Report 4画面: blocker 1件（ソートキー updated_at vs created_at）
+  - 横断レビュー: LGTM（warning 2件 — エラーコード略記、submitter 用語 → PASS）
+- **Phase 4 指摘修正**
+  - RPT-001: シーケンス図 `ORDER BY updated_at` → `created_at` に修正
+  - ADM-001: ソートキー `updated_at` → `submitted_at DESC NULLS LAST` に修正 + 期間フィルタのセマンティクス明確化
+  - 再レビュー: LGTM
+- **codex レビュー → review-finding 051 対応**（PERMISSION_DENIED → FORBIDDEN 統一）
+  - 方針 C 採用: MVP では FORBIDDEN に統一
+  - 9ファイル修正 → codex レビュー LGTM
+- **Step 5 完了宣言**
+
+### 未完了
+- なし（Step 5 完了）
+
+### ブロッカー
+- なし
+
+### 次にやること
+1. Step 6（テスト設計）に着手
+
+### 学び・気づき
+- review-finding 048 のレビューを内部レビューに回してしまったが、codex からの指摘は codex に再レビューを委譲すべき
+- PERMISSION_DENIED の導入は上流に定義がない概念の独断導入だった
+
+### 意思決定ログ
+- PERMISSION_DENIED 廃止: 方針 C。MVP の外部契約は上流 RBC-004 準拠で FORBIDDEN に統一
+- ソートキー統一: RPT-001 は created_at、ADM-001 は submitted_at DESC NULLS LAST
