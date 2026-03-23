@@ -37,7 +37,10 @@ dev-journal/
 │       ├── step4-basic-design.md
 │       ├── step5-detail-design.md
 │       ├── step6-testing.md
-│       └── step7-implementation.md
+│       ├── step7-foundation.md
+│       ├── step8-test-implementation.md
+│       ├── step9-feature-implementation.md
+│       └── step10-system-test.md
 ├── logs/                             # ログ
 │   ├── session-log-archive.md        # セッションログアーカイブ
 │   ├── YYYY-MM-DD/                   # 過去セッションログ（アーカイブ）
