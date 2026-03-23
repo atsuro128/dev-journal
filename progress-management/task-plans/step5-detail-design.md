@@ -66,9 +66,9 @@
 
 | タスク | 成果物 | 入力（主要） | エージェント | 状態 |
 |--------|--------|-------------|------------|------|
-| T3-1 | `authz.md` — 認可設計 + `ui_flow.md` 最終版 | 全成果物 + rbac.md | detail-designer | 未着手 |
-| T3-R1 | 内部レビュー | — | design-cross-reviewer | 未着手 |
-| T3-R2 | codex レビュー | — | codex | 未着手 |
+| T3-1 | `authz.md` — 認可設計 + `ui_flow.md` 最終版 | 全成果物 + rbac.md | detail-designer | 完了 |
+| T3-R1 | 内部レビュー | — | design-cross-reviewer | 完了 |
+| T3-R2 | codex レビュー | — | codex | 完了 |
 
 成果物配置先: `dev-journal/deliverables/docs/50_detail_design/`
 
@@ -92,9 +92,9 @@
 
 | タスク | エージェント | 対象 | 状態 |
 |--------|------------|------|------|
-| T4-1 | design-unit-reviewer x13（並列） | 画面単位（auth-signup/login/password-reset-request/password-reset, dashboard, report-list/create/edit/detail, workflow-pending/payable, admin-all-reports/tenant） | 未着手 |
-| T4-2 | design-cross-reviewer x1 | 全成果物横断 | 未着手 |
-| T4-R1 | codex レビュー | 全成果物 | 未着手 |
+| T4-1 | design-unit-reviewer x13（並列） | 画面単位（auth-signup/login/password-reset-request/password-reset, dashboard, report-list/create/edit/detail, workflow-pending/payable, admin-all-reports/tenant） | 完了 |
+| T4-2 | design-cross-reviewer x1 | 全成果物横断 | 完了 |
+| T4-R1 | codex レビュー | 全成果物 | 完了 |
 
 ## 依存グラフ
 
