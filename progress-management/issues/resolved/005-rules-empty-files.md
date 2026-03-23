@@ -27,14 +27,14 @@ project-management
 | `security-policy.md` | セキュリティポリシー。認証認可、テナント分離、レート制限、ファイルアップロード、ヘッダー、入力バリデーション、依存関係管理、ログ。実装時チェックリスト付き | Step 3 |
 | `testing.md` | テスト方針。ドメイン層は単体テスト必須、リポジトリ層はテスト用DB、フロントは Vitest + Playwright、カバレッジ目標 | Step 3 |
 
-### 未整備
+### 対応不要（上流成果物で代替済み）
 
-| ファイル | 概要 | 対応タイミング |
-|---------|------|--------------|
-| `review-checklist.md` | コードレビュー規約。PR のサイズ基準、レビュー観点（機能・セキュリティ・テスト・パフォーマンス）、承認条件 | Step 6 前 |
-| `data-handling.md` | データ管理規約。DB マイグレーションの命名規則・ロールバック手順・レビュー必須化、seed データ管理方針、論理削除の運用ルール（復元手順等） | Step 7 Phase 1 前 |
-| `error-handling.md` | エラーハンドリング規約。アプリケーションエラーコード体系、エラーレスポンスの構造規約、ログレベルの使い分け基準（INFO/WARN/ERROR）、ユーザー向けメッセージ vs 内部メッセージの分離 | Step 7 Phase 1 前 |
-| `api-conventions.md` | API 規約。REST エンドポイントの命名規則、リクエスト/レスポンスの共通パターン、バージョニング方針、ページネーション規約 | Step 7 Phase 1 前 |
+| ファイル | 代替先 |
+|---------|--------|
+| `review-checklist.md` | Step 7 work-breakdown のレビュー観点で定義済み |
+| `data-handling.md` | db_schema.md §2.3, §9 で定義済み |
+| `error-handling.md` | security.md §8, monitoring.md §2-4 で定義済み |
+| `api-conventions.md` | openapi.yaml info.description + security.md で定義済み |
 
 ### 廃止
 
@@ -50,5 +50,11 @@ project-management
 - 未整備4ファイルの概要と対応タイミングを定義
 - 旧 `ai-dev-framework/rules/` 体系からの移行を反映
 
-## 解決日
+### 2026-03-23: 未整備4ファイルの対応不要判断
 
+- Step 3〜6 で作成された設計成果物（openapi.yaml, security.md, monitoring.md, db_schema.md）が実質的にルール文書の役割を果たしていることを確認
+- codex レビュー（054〜057）で検証した結果、設計書にギャップがあった箇所（エラーコード一覧の不整合、日時フォーマット未明記）は設計書自体を修正して対応
+- 独立したルール文書の作成は不要と判断。review-checklist.md は Step 7 work-breakdown のレビュー観点で代替
+
+## 解決日
+2026-03-23
