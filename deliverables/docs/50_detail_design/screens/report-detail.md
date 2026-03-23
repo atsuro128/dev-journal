@@ -743,7 +743,7 @@ graph TD
 
     subgraph 承認フロー
         A_Role{ロール = Approver か?<br/>RBC-001}
-        A_Role -->|No| A_ErrPerm[403 PermissionDenied]
+        A_Role -->|No| A_ErrPerm[403 Forbidden]
         A_Role -->|Yes| A_ChkStatus{status = submitted か?<br/>WFL-002}
         A_ChkStatus -->|No| A_ErrState[422 InvalidStateTransition]
         A_ChkStatus -->|Yes| A_ChkSelf{自己承認でないか?<br/>RBC-016:<br/>report.user_id ≠ current_user.id}
@@ -755,7 +755,7 @@ graph TD
 
     subgraph 却下フロー
         R_Role{ロール = Approver か?<br/>RBC-001}
-        R_Role -->|No| R_ErrPerm[403 PermissionDenied]
+        R_Role -->|No| R_ErrPerm[403 Forbidden]
         R_Role -->|Yes| R_ChkStatus{status = submitted か?<br/>WFL-002}
         R_ChkStatus -->|No| R_ErrState[422 InvalidStateTransition]
         R_ChkStatus -->|Yes| R_ChkSelf{自己却下でないか?<br/>RBC-016:<br/>report.user_id ≠ current_user.id}
@@ -769,7 +769,7 @@ graph TD
 
     subgraph 支払完了フロー
         P_Role{ロール = Accounting か?<br/>WFL-013}
-        P_Role -->|No| P_ErrPerm[403 PermissionDenied]
+        P_Role -->|No| P_ErrPerm[403 Forbidden]
         P_Role -->|Yes| P_ChkStatus{status = approved か?<br/>WFL-002}
         P_ChkStatus -->|No| P_ErrState[422 InvalidStateTransition]
         P_ChkStatus -->|Yes| P_ChkSelf{自己処理でないか?<br/>RBC-012:<br/>user_id ≠ 作成者}

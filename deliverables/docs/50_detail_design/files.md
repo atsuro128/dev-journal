@@ -222,7 +222,7 @@ POST /api/reports/:id/items/:itemId/attachments
 | 413 | FILE_TOO_LARGE | ファイルサイズが 5MB を超過（ATT-003） |
 | 422 | INVALID_FILE_TYPE | 許可されていない MIME タイプ（ATT-002） |
 | 422 | REPORT_NOT_EDITABLE | レポートが draft 状態でない（ATT-020） |
-| 403 | PERMISSION_DENIED | 所有者でない |
+| 403 | FORBIDDEN | 所有者でない |
 | 429 | RATE_LIMIT_EXCEEDED | ファイルアップロードレート制限超過（10 req/min/user） |
 
 ### 3.4 リクエストサイズ制限
@@ -313,7 +313,7 @@ GET /api/reports/:id/items/:itemId/attachments/:attId
 | HTTP ステータス | エラーコード | 条件 |
 |----------------|-------------|------|
 | 404 | RESOURCE_NOT_FOUND | 添付ファイルが見つからない（テナント境界越え含む） |
-| 403 | PERMISSION_DENIED | 閲覧権限がない |
+| 403 | FORBIDDEN | 閲覧権限がない |
 
 ### 4.4 署名付き URL の生成パラメータ
 
@@ -388,7 +388,7 @@ DELETE /api/reports/:id/items/:itemId/attachments/:attId
 | # | 条件 | 失敗時 | ルールID |
 |---|------|--------|---------|
 | 1 | レポートが draft 状態 | 422 REPORT_NOT_EDITABLE | ATT-020 |
-| 2 | 所有者である | 403 PERMISSION_DENIED | RBC-010 |
+| 2 | 所有者である | 403 FORBIDDEN | RBC-010 |
 | 3 | 同一テナント | 404 RESOURCE_NOT_FOUND | TNT-006 |
 
 **処理**:
@@ -498,7 +498,7 @@ graph TD
     D -->|Yes| F{レポートの status が<br/>draft か?<br/>ATT-020}
     F -->|No| E4[422 ReportNotEditable]
     F -->|Yes| G{所有権チェック:<br/>report.user_id ==<br/>current_user か?}
-    G -->|No| E5[403 PermissionDenied]
+    G -->|No| E5[403 Forbidden]
     G -->|Yes| H[S3 アップロード実行]
     H --> I[DB INSERT]
     I --> S[201 Created]
@@ -611,7 +611,7 @@ graph TD
 |----------------|-------------|---------|---------|
 | 400 | INVALID_REQUEST | ファイルパートが存在しない / リクエスト形式不正 | - |
 | 401 | UNAUTHORIZED | JWT が無効または期限切れ | SEC-003 |
-| 403 | PERMISSION_DENIED | 所有権不足または閲覧権限なし | RBC-003, RBC-010 |
+| 403 | FORBIDDEN | 所有権不足または閲覧権限なし | RBC-003, RBC-010 |
 | 404 | RESOURCE_NOT_FOUND | リソースが見つからない（テナント境界越え含む） | TNT-006 |
 | 413 | FILE_TOO_LARGE | ファイルサイズが 5MB を超過 | ATT-003 |
 | 422 | INVALID_FILE_TYPE | 許可されていない MIME タイプ | ATT-002, ATT-013 |

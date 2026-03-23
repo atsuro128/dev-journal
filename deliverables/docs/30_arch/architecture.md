@@ -219,7 +219,7 @@ sequenceDiagram
 | ReportNotEditable | 422 | REPORT_NOT_EDITABLE |
 | NoApproverInTenant | 422 | NO_APPROVER_IN_TENANT |
 | ResourceNotFound | 404 | RESOURCE_NOT_FOUND |
-| PermissionDenied | 403 | PERMISSION_DENIED |
+| Forbidden | 403 | FORBIDDEN |
 | InvalidFileType | 422 | INVALID_FILE_TYPE |
 | InvalidAmount | 422 | INVALID_AMOUNT |
 | ReportNotDeletable | 422 | REPORT_NOT_DELETABLE |

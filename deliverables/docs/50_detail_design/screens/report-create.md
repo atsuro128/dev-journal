@@ -284,8 +284,8 @@ sequenceDiagram
 
     S->>S: 元レポートの所有権確認<br/>元レポート.user_id == current_user_id
     alt 所有者でない
-        S-->>H: PermissionDenied エラー
-        H-->>F: 403 {code: "PERMISSION_DENIED"}
+        S-->>H: Forbidden エラー
+        H-->>F: 403 {code: "FORBIDDEN"}
     end
 
     S->>S: 元レポートの状態確認<br/>status == "rejected"

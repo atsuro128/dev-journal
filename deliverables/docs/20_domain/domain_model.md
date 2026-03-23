@@ -400,7 +400,7 @@ graph TD
 | NoApproverInTenant | テナントに Approver が0人の状態での提出 | 422 Unprocessable Entity |
 | ReportNotDeletable | draft 以外での削除 | 422 Unprocessable Entity |
 | ResourceNotFound | リソースが見つからない（テナント境界越え含む） | 404 Not Found |
-| PermissionDenied | 所有権不足 | 403 Forbidden |
+| Forbidden | ロール不足・所有権不足 | 403 Forbidden |
 | InvalidFileType | 許可されていないMIMEタイプ | 422 Unprocessable Entity |
 | FileTooLarge | 5MB 超過 | 413 Payload Too Large |
 | MissingRejectionReason | 却下理由が空での却下 | 422 Unprocessable Entity |

@@ -622,7 +622,7 @@ paths:
           - Admin: 同一テナントの全レポート
         - 状態条件: なし（閲覧可能範囲内であれば全状態を閲覧可能）
         - テナント境界越え: 404 RESOURCE_NOT_FOUND
-        - 同一テナント内の権限不足: 403 PERMISSION_DENIED
+        - 同一テナント内の権限不足: 403 FORBIDDEN
       operationId: getReport
       parameters:
         - $ref: "#/components/parameters/reportId"
@@ -640,7 +640,7 @@ paths:
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
-          description: ロール不足（FORBIDDEN）または所有権不足（PERMISSION_DENIED）
+          description: ロール不足または所有権不足（FORBIDDEN）
           content:
             application/json:
               schema:
@@ -659,7 +659,7 @@ paths:
         - 所有者条件: 所有者のみ（自分が作成したレポートに限定）
         - 状態条件: draft のみ
         - テナント境界越え: 404 RESOURCE_NOT_FOUND
-        - 同一テナント内の権限不足（所有者でない）: 403 PERMISSION_DENIED
+        - 同一テナント内の権限不足（所有者でない）: 403 FORBIDDEN
       operationId: updateReport
       parameters:
         - $ref: "#/components/parameters/reportId"
@@ -683,7 +683,7 @@ paths:
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
-          description: ロール不足（FORBIDDEN）または所有権不足（PERMISSION_DENIED）
+          description: ロール不足または所有権不足（FORBIDDEN）
           content:
             application/json:
               schema:
@@ -706,7 +706,7 @@ paths:
         - 所有者条件: 所有者のみ（自分が作成したレポートに限定）
         - 状態条件: draft のみ（draft 以外は 422 REPORT_NOT_DELETABLE）
         - テナント境界越え: 404 RESOURCE_NOT_FOUND
-        - 同一テナント内の権限不足（所有者でない）: 403 PERMISSION_DENIED
+        - 同一テナント内の権限不足（所有者でない）: 403 FORBIDDEN
       operationId: deleteReport
       parameters:
         - $ref: "#/components/parameters/reportId"
@@ -716,7 +716,7 @@ paths:
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
-          description: ロール不足（FORBIDDEN）または所有権不足（PERMISSION_DENIED）
+          description: ロール不足または所有権不足（FORBIDDEN）
           content:
             application/json:
               schema:
@@ -749,7 +749,7 @@ paths:
         - 状態条件: draft のみ（draft 以外は 422 INVALID_STATE_TRANSITION）
         - 追加条件: 明細1件以上（422 EMPTY_REPORT）、テナント内に Approver が1人以上存在（422 NO_APPROVER）
         - テナント境界越え: 404 RESOURCE_NOT_FOUND
-        - 同一テナント内の権限不足（所有者でない）: 403 PERMISSION_DENIED
+        - 同一テナント内の権限不足（所有者でない）: 403 FORBIDDEN
       operationId: submitReport
       parameters:
         - $ref: "#/components/parameters/reportId"
@@ -779,7 +779,7 @@ paths:
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
-          description: ロール不足（FORBIDDEN）または所有権不足（PERMISSION_DENIED）
+          description: ロール不足または所有権不足（FORBIDDEN）
           content:
             application/json:
               schema:
@@ -810,7 +810,7 @@ paths:
         - 所有者条件: 所有者のみ（自分が作成したレポートに限定）
         - 状態条件: draft のみ（draft 以外は 422 REPORT_NOT_EDITABLE）
         - テナント境界越え: 404 RESOURCE_NOT_FOUND
-        - 同一テナント内の権限不足（所有者でない）: 403 PERMISSION_DENIED
+        - 同一テナント内の権限不足（所有者でない）: 403 FORBIDDEN
       operationId: createItem
       parameters:
         - $ref: "#/components/parameters/reportId"
@@ -834,7 +834,7 @@ paths:
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
-          description: ロール不足（FORBIDDEN）または所有権不足（PERMISSION_DENIED）
+          description: ロール不足または所有権不足（FORBIDDEN）
           content:
             application/json:
               schema:
@@ -856,7 +856,7 @@ paths:
         - 所有者条件: 所有者のみ（自分が作成したレポートに限定）
         - 状態条件: draft のみ（draft 以外は 422 REPORT_NOT_EDITABLE）
         - テナント境界越え: 404 RESOURCE_NOT_FOUND
-        - 同一テナント内の権限不足（所有者でない）: 403 PERMISSION_DENIED
+        - 同一テナント内の権限不足（所有者でない）: 403 FORBIDDEN
       operationId: updateItem
       parameters:
         - $ref: "#/components/parameters/reportId"
@@ -881,7 +881,7 @@ paths:
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
-          description: ロール不足（FORBIDDEN）または所有権不足（PERMISSION_DENIED）
+          description: ロール不足または所有権不足（FORBIDDEN）
           content:
             application/json:
               schema:
@@ -904,7 +904,7 @@ paths:
         - 所有者条件: 所有者のみ（自分が作成したレポートに限定）
         - 状態条件: draft のみ（draft 以外は 422 REPORT_NOT_EDITABLE）
         - テナント境界越え: 404 RESOURCE_NOT_FOUND
-        - 同一テナント内の権限不足（所有者でない）: 403 PERMISSION_DENIED
+        - 同一テナント内の権限不足（所有者でない）: 403 FORBIDDEN
       operationId: deleteItem
       parameters:
         - $ref: "#/components/parameters/reportId"
@@ -915,7 +915,7 @@ paths:
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
-          description: ロール不足（FORBIDDEN）または所有権不足（PERMISSION_DENIED）
+          description: ロール不足または所有権不足（FORBIDDEN）
           content:
             application/json:
               schema:
@@ -946,7 +946,7 @@ paths:
         - 所有者条件: 所有者のみ（自分が作成したレポートに限定）
         - 状態条件: draft のみ（draft 以外は 422 REPORT_NOT_EDITABLE）
         - テナント境界越え: 404 RESOURCE_NOT_FOUND
-        - 同一テナント内の権限不足（所有者でない）: 403 PERMISSION_DENIED
+        - 同一テナント内の権限不足（所有者でない）: 403 FORBIDDEN
         - レート制限: 10 req/min/user（429 RATE_LIMIT_EXCEEDED）
       operationId: uploadAttachment
       parameters:
@@ -988,7 +988,7 @@ paths:
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
-          description: ロール不足（FORBIDDEN）または所有権不足（PERMISSION_DENIED）
+          description: ロール不足または所有権不足（FORBIDDEN）
           content:
             application/json:
               schema:
@@ -1029,7 +1029,7 @@ paths:
           - Admin: 同一テナントの全レポートの添付
         - 状態条件: なし（閲覧可能範囲内であれば全状態）
         - テナント境界越え: 404 RESOURCE_NOT_FOUND
-        - 同一テナント内の権限不足: 403 PERMISSION_DENIED
+        - 同一テナント内の権限不足: 403 FORBIDDEN
       operationId: listAttachments
       parameters:
         - $ref: "#/components/parameters/reportId"
@@ -1050,7 +1050,7 @@ paths:
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
-          description: ロール不足（FORBIDDEN）または所有権不足（PERMISSION_DENIED）
+          description: ロール不足または所有権不足（FORBIDDEN）
           content:
             application/json:
               schema:
@@ -1075,7 +1075,7 @@ paths:
           - Admin: 同一テナントの全レポートの添付
         - 状態条件: なし（閲覧可能範囲内であれば全状態）
         - テナント境界越え: 404 RESOURCE_NOT_FOUND
-        - 同一テナント内の権限不足: 403 PERMISSION_DENIED
+        - 同一テナント内の権限不足: 403 FORBIDDEN
       operationId: getAttachmentDownload
       parameters:
         - $ref: "#/components/parameters/reportId"
@@ -1095,7 +1095,7 @@ paths:
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
-          description: ロール不足（FORBIDDEN）または所有権不足（PERMISSION_DENIED）
+          description: ロール不足または所有権不足（FORBIDDEN）
           content:
             application/json:
               schema:
@@ -1114,7 +1114,7 @@ paths:
         - 所有者条件: 所有者のみ（自分が作成したレポートに限定）
         - 状態条件: draft のみ（draft 以外は 422 REPORT_NOT_EDITABLE、ATT-020）
         - テナント境界越え: 404 RESOURCE_NOT_FOUND
-        - 同一テナント内の権限不足（所有者でない）: 403 PERMISSION_DENIED
+        - 同一テナント内の権限不足（所有者でない）: 403 FORBIDDEN
       operationId: deleteAttachment
       parameters:
         - $ref: "#/components/parameters/reportId"
@@ -1126,7 +1126,7 @@ paths:
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
-          description: ロール不足（FORBIDDEN）または所有権不足（PERMISSION_DENIED）
+          description: ロール不足または所有権不足（FORBIDDEN）
           content:
             application/json:
               schema:
@@ -2237,17 +2237,6 @@ components:
             error:
               code: FORBIDDEN
               message: "Insufficient permissions"
-
-    PermissionDenied:
-      description: 所有権不足・リソースアクセス権なし
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/Error"
-          example:
-            error:
-              code: PERMISSION_DENIED
-              message: "You do not have permission to access this resource"
 
     NotFound:
       description: リソース未発見（テナント境界越えを含む）

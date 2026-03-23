@@ -240,7 +240,7 @@ sequenceDiagram
     S->>S: 所有権チェック<br/>report.user_id == current_user_id
 
     alt 所有権不一致
-        S-->>H: PermissionDenied エラー
+        S-->>H: Forbidden エラー
         H-->>F: 403 {code: "FORBIDDEN"}
     end
 
