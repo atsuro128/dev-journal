@@ -32,3 +32,19 @@
 
 - rbac.md SS2.3 に「Approver は自分が承認/却下したレポートを状態変更後も追跡閲覧可能」を追記
 - rbac.md SS4.2 RBC-015 に追跡閲覧の記述を追加
+
+## 再レビュー結果
+対応は妥当。上流の `rbac.md` に追跡閲覧の根拠が追加され、`authz.md` / `openapi.yaml` が参照する閲覧範囲と整合した。
+
+### 確認内容
+- `dev-journal/deliverables/docs/10_requirements/rbac.md:58`
+  - Approver の追跡閲覧を SS2.3 のロール関係で明文化
+- `dev-journal/deliverables/docs/10_requirements/rbac.md:149`
+  - `RBC-015` に追跡閲覧を正式ルールとして追加
+- `dev-journal/deliverables/docs/50_detail_design/authz.md:565`
+  - Approver の閲覧範囲が `RBC-015` と一致
+- `dev-journal/deliverables/docs/50_detail_design/authz.md:579`
+  - `GET /api/reports/{id}` の詳細閲覧条件が上流根拠を持つ状態になった
+
+### 判定
+resolved
