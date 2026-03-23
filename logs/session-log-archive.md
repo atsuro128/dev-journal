@@ -205,3 +205,52 @@
 - 成果物粒度原則: 1画面 = 1ファイル = 1タスク = 1エージェント
 - 再申請フロー: パターン B（作成画面経由）に統一
 - Approver 閲覧権限: 「自分のレポート + submitted + 自分が承認/却下したレポート」
+
+---
+
+## セッション: 2026-03-22 18:40
+
+### ゴール
+- Issue 036 解消 → Phase 3 着手（時間次第で Phase 4 は見送り）
+
+### 作業ログ
+- Issue 036（S3 キー命名規則 `file_id` → `attachment_id`）の修正
+  - security-policy.md, requirements.md, business-rules.md の上流修正
+  - security.md, files.md の「読み替え」注記を削除（上流修正済みのため不要）
+  - codex レビュー: 2件指摘（ATT-014 文言「ファイル名→S3パス」、implementation-guide.md 旧パス残存）→ 修正 → 再レビュー LGTM
+  - issue 036 を resolved に移動
+- **画面詳細仕様を `40_basic_design/screens/` → `50_detail_design/screens/` に移動**
+  - ユーザー指摘: Step 5 で作成した詳細設計成果物が `40_basic_design` にあるのは不整合
+  - 13ファイル移動 + 参照パス6箇所更新
+- **ui_flow.md を Step 5 の成果物・完了条件から除外**
+  - ユーザー指摘: ui_flow.md の「最終版」は成果物ではなく、レビュー観点の話
+  - Phase 4 レビュー観点に「ui_flow.md と screens/*.md の整合性」として移動
+- **全 Step（0〜7）の work-breakdown にレビュー観点を追加**
+  - planner エージェントで過去 review-findings 43件を分析し、具体的チェック項目を逆引き
+  - 8 Step 並列で書き込み
+  - 品質チェック（作成者セルフチェック）とレビュー観点（reviewer 検証用）の役割分担を明確化
+- **reviewer エージェント5つに work-breakdown への参照を追加**
+- **codex review-procedure.md のステップ別観点を work-breakdown に一本化**
+- **廃止済み `project_steps.md` への参照を cleanup**
+
+### 未完了
+- Phase 3（authz.md）未着手
+
+### ブロッカー
+- なし
+
+### 次にやること
+1. Phase 3（authz.md）に着手
+2. Phase 4（最終レビュー）
+3. Step 5 完了宣言
+
+### 学び・気づき
+- codex レビューで LGTM を得る前にコミット提案してしまった。ルールにある手順を飛ばした
+- reviewer エージェントに work-breakdown への参照がなかった。観点の定義と参照導線はセットで整備すべき
+- codex にも独自のレビュー観点があり二重管理になっていた。観点の正規化先を1箇所（work-breakdown）に決め、他は参照にする
+
+### 意思決定ログ
+- 画面詳細仕様の配置: `50_detail_design/screens/` に移動。ステップと配置先を一致させる原則
+- ui_flow.md: Step 5 の成果物ではなくレビュー観点。Phase 4 cross-reviewer が整合性を検証
+- レビュー観点の管理: work-breakdown ファイルが正規化先（Single Source of Truth）
+- 品質チェック vs レビュー観点: 品質チェック=作成者セルフチェック、レビュー観点=reviewer 検証用。別物として維持

@@ -1,6 +1,73 @@
 # 引き継ぎメモ
 
-## セッション: 2026-03-22 20:37
+## セッション: 2026-03-23 14:10
+
+### ゴール
+- Step 5 完了を目指す（Issue 037 → Phase 3 → Phase 4 → 完了宣言）
+
+### 作業ログ
+- **Issue 037 対応**（auth-login フローチャートの API 契約不整合）
+  - フローチャートを API 契約（200/400/401/429）に統一
+  - E1(422), E3(独立401) を削除、全認証失敗を E2(401 INVALID_CREDENTIALS) に合流
+  - openapi.yaml: login の format:email / minLength:8 削除、400 レスポンス追加、SEC-011 意図を description に明記
+  - security.md §8.4: login エンドポイントの SEC-011 例外注記を追加
+  - codex レビュー: 4回のイテレーション（400 未定義、schema 制約、logout 認証方式、INVALID_TOKEN スコープ）→ LGTM
+  - review-finding 046（schema 制約削除の妥当性）を pending-review に記録
+  - issue 037 を resolved に移動
+- **Issue 038 起票・対応**（rbac.md に RBC-014〜016 の正式定義がない）
+  - codex に方針確認: 「上流で正式採番して下流参照を追認する」が妥当
+  - rbac.md SS4.2 に RBC-014, RBC-015, RBC-016 を追加
+  - SS4.3 を「補足・解釈」に縮退
+  - codex レビュー: P3 1件（RBC-010+RBC-011 の誤記）→ 修正 → LGTM
+  - issue 038 を resolved に移動
+- **Phase 3: authz.md 作成**（認可設計・13セクション・756行）
+  - codex に計画レビュー依頼: セクション構成・設計判断・リスクについて意見取得
+  - 設計判断確定: 所有権チェック=サービス層 Authorizer、Approver 閲覧=ハイブリッド方式、ロール変更遅延=MVP 許容
+  - 内部レビュー: blocker 1件（FORBIDDEN vs PERMISSION_DENIED）+ warning 4件 → 修正 → 再レビュー PASS
+  - codex レビュー（/codex-review 正式手順）: 3ラウンド
+    - 初回: 047（Approver 閲覧範囲の上流超過）+ 048（ui_flow.md 遷移欠落）
+    - 047: rbac.md に追跡閲覧を追記して正式化（コミット 1f4aa58 で既に下流修正済み、上流反映漏れ）→ resolved
+    - 2回目: 049（report-detail.md の閲覧範囲記述が古い）→ 修正 → resolved
+    - 3回目: 050（openapi.yaml の PERMISSION_DENIED 未反映）→ openapi.yaml に PermissionDenied 追加・11エンドポイント修正 → resolved
+  - 048（ui_flow.md 全体図に Admin 遷移欠落）は Phase 4 で対応
+- **ワークフロールール改善**
+  - codex レビューの指摘対応フローに「LGTM まで繰り返す」を明記
+  - Auto Memory ルール変更: 禁止 → `.claude/memory/` に保存（.gitignore 対象、次セッションで自動読み込みされない）
+  - `.claude/memory/` ディレクトリ作成
+
+### 未完了
+- Phase 4（最終レビュー）未着手
+- review-finding 048（ui_flow.md 全体図の Admin/Accounting 遷移欠落）未対応
+- progress.md 未更新（Phase 3 完了の反映）
+
+### ブロッカー
+- なし
+
+### 次にやること
+1. review-finding 048 対応（ui_flow.md 全体図に `DASH001 -> ADM001`, `DASH001 -> ADM002` 追加）
+2. Phase 4（最終レビュー・横断）の実施
+3. progress.md 更新
+4. Step 5 完了宣言
+
+### 学び・気づき
+- 内部レビューで LGTM を得る前に codex レビューに持っていった。正しい順序: 内部レビュー → LGTM → コミット → codex レビュー
+- codex レビューは `codex exec review --uncommitted` ではなく `/codex-review` スキルの正式手順（コミット後に `codex exec "Step N の初回レビューを実施してください" --full-auto`）で行うべき
+- codex レビューは review-findings を起票する前提で動く。内部レビューの指摘は issue 不要だが、codex の指摘はレビュー指摘資料として管理される
+- ルールに書いてあることに従えなかった場合、「以後気をつけます」は空約束（セッション間の記憶がない）。仕組み（ルールの明文化）で担保するしかない
+- Auto Memory を使うなとルールにあるのにシステムプロンプトに引きずられて書いてしまった。対策: `.claude/memory/` への書き込み先変更で、衝動を制御可能にする
+
+### 意思決定ログ
+- Issue 037: フローチャートを API 契約に合わせる方針（SEC-011 に基づき全認証失敗を 401 に統一、リクエストボディ不正は 400）
+- Issue 038: 上流（rbac.md）に RBC-014〜016 を正式採番。下流が使っている ID を追認する形。codex の助言「正式ルールと補足説明の境界を整理する」に従い SS4.3 を縮退
+- authz.md 設計判断: 所有権チェックはサービス層 Authorizer パターン（architecture.md のハンドラ層から変更、理由を注記）
+- FORBIDDEN vs PERMISSION_DENIED: FORBIDDEN=ロール不足（MW層）、PERMISSION_DENIED=所有権不足（Authorizer層）に区別。openapi.yaml にも PermissionDenied レスポンスを追加
+- Approver 追跡閲覧: rbac.md に正式化。コミット 1f4aa58 で下流は修正済みだったが上流反映が漏れていた
+- Auto Memory 運用: 禁止ではなく `.claude/memory/` に書かせる。次セッションで自動読み込みされないが、git 追跡外で蓄積可能。将来ルール化の種になりうる
+- codex レビュー手順: `/codex-review` スキルを使い、コミット後に正式手順で実行する
+
+---
+
+## セッション: 2026-03-22 20:37（前回）
 
 ### ゴール
 - 成果物の図を Mermaid 形式に統一する
@@ -57,52 +124,3 @@
 - UIデザイン方針: MUI デフォルトテーマをそのまま使用。カラー変更は theme.ts 1ファイルで後から可能
 - 上流シーケンス図は残す: 詳細設計に縦断フローを追加しても、上流（要件定義・アーキテクチャ）の図は別視点のため削除しない
 - work-breakdown 改善: 「完了条件」と「レビュー観点」に図の有無を追加することで、次回以降は Planner が自動的にスコープに含める
-
----
-
-## セッション: 2026-03-22 18:40（前回）
-
-### ゴール
-- Issue 036 解消 → Phase 3 着手（時間次第で Phase 4 は見送り）
-
-### 作業ログ
-- Issue 036（S3 キー命名規則 `file_id` → `attachment_id`）の修正
-  - security-policy.md, requirements.md, business-rules.md の上流修正
-  - security.md, files.md の「読み替え」注記を削除（上流修正済みのため不要）
-  - codex レビュー: 2件指摘（ATT-014 文言「ファイル名→S3パス」、implementation-guide.md 旧パス残存）→ 修正 → 再レビュー LGTM
-  - issue 036 を resolved に移動
-- **画面詳細仕様を `40_basic_design/screens/` → `50_detail_design/screens/` に移動**
-  - ユーザー指摘: Step 5 で作成した詳細設計成果物が `40_basic_design` にあるのは不整合
-  - 13ファイル移動 + 参照パス6箇所更新
-- **ui_flow.md を Step 5 の成果物・完了条件から除外**
-  - ユーザー指摘: ui_flow.md の「最終版」は成果物ではなく、レビュー観点の話
-  - Phase 4 レビュー観点に「ui_flow.md と screens/*.md の整合性」として移動
-- **全 Step（0〜7）の work-breakdown にレビュー観点を追加**
-  - planner エージェントで過去 review-findings 43件を分析し、具体的チェック項目を逆引き
-  - 8 Step 並列で書き込み
-  - 品質チェック（作成者セルフチェック）とレビュー観点（reviewer 検証用）の役割分担を明確化
-- **reviewer エージェント5つに work-breakdown への参照を追加**
-- **codex review-procedure.md のステップ別観点を work-breakdown に一本化**
-- **廃止済み `project_steps.md` への参照を cleanup**
-
-### 未完了
-- Phase 3（authz.md）未着手
-
-### ブロッカー
-- なし
-
-### 次にやること
-1. Phase 3（authz.md）に着手
-2. Phase 4（最終レビュー）
-3. Step 5 完了宣言
-
-### 学び・気づき
-- codex レビューで LGTM を得る前にコミット提案してしまった。ルールにある手順を飛ばした
-- reviewer エージェントに work-breakdown への参照がなかった。観点の定義と参照導線はセットで整備すべき
-- codex にも独自のレビュー観点があり二重管理になっていた。観点の正規化先を1箇所（work-breakdown）に決め、他は参照にする
-
-### 意思決定ログ
-- 画面詳細仕様の配置: `50_detail_design/screens/` に移動。ステップと配置先を一致させる原則
-- ui_flow.md: Step 5 の成果物ではなくレビュー観点。Phase 4 cross-reviewer が整合性を検証
-- レビュー観点の管理: work-breakdown ファイルが正規化先（Single Source of Truth）
-- 品質チェック vs レビュー観点: 品質チェック=作成者セルフチェック、レビュー観点=reviewer 検証用。別物として維持
