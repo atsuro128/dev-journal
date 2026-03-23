@@ -6,7 +6,9 @@ info:
     全 API レスポンス（`/api/*`）は `{"data": ...}` ラッパーで返却する。
     `/health` はインフラ用エンドポイントであり、data ラッパーを使用しない。
     エラーレスポンスは `{"error": {"code": "...", "message": "...", "details": [...]}}` 形式。
+    エラーコード一覧の正本は security.md §8.4 を参照。
     ページネーションはカーソルベース。一覧系は `{"data": [...], "pagination": {"next_cursor": "...", "has_more": true}}` 形式。
+    全ての日時フィールドは ISO 8601 UTC 形式（末尾 `Z`）で返却・受理する（例: `2026-03-22T10:30:00Z`）。タイムゾーンオフセット付き表記は使用しない。フロントエンドはユーザーのローカルタイムゾーンに変換して表示すること。
   version: 1.0.0
   contact:
     name: Expense SaaS Team
@@ -764,7 +766,7 @@ paths:
                 updated_at:
                   type: string
                   format: date-time
-                  description: 楽観的ロック用の最終更新日時
+                  description: 楽観的ロック用の最終更新日時（ISO 8601 UTC、例: 2026-03-22T10:30:00Z）
       responses:
         "200":
           description: 提出成功
@@ -1225,7 +1227,7 @@ paths:
                 updated_at:
                   type: string
                   format: date-time
-                  description: 楽観的ロック用の最終更新日時
+                  description: 楽観的ロック用の最終更新日時（ISO 8601 UTC、例: 2026-03-22T10:30:00Z）
       responses:
         "200":
           description: 承認成功
@@ -1394,7 +1396,7 @@ paths:
                 updated_at:
                   type: string
                   format: date-time
-                  description: 楽観的ロック用の最終更新日時
+                  description: 楽観的ロック用の最終更新日時（ISO 8601 UTC、例: 2026-03-22T10:30:00Z）
       responses:
         "200":
           description: 支払完了記録成功
@@ -1528,7 +1530,7 @@ components:
               example: "Resource not found"
             details:
               type: array
-              description: バリデーションエラー時のフィールド別詳細
+              description: 400/422 のバリデーションエラー時のみ付与。フィールド単位のエラー情報を配列で返却する
               items:
                 $ref: "#/components/schemas/ValidationError"
 
@@ -1632,7 +1634,7 @@ components:
         created_at:
           type: string
           format: date-time
-          description: テナント作成日時
+          description: テナント作成日時（ISO 8601 UTC、例: 2026-03-22T10:30:00Z）
 
     # --- Expense Report ---
     ExpenseReportSummary:
@@ -1662,15 +1664,15 @@ components:
         submitted_at:
           type: string
           format: date-time
-          description: 提出日時（submitted 以降の場合）
+          description: 提出日時（submitted 以降の場合、ISO 8601 UTC、例: 2026-03-22T10:30:00Z）
         created_at:
           type: string
           format: date-time
-          description: 作成日時
+          description: 作成日時（ISO 8601 UTC、例: 2026-03-22T10:30:00Z）
         updated_at:
           type: string
           format: date-time
-          description: 最終更新日時
+          description: 最終更新日時（ISO 8601 UTC、例: 2026-03-22T10:30:00Z）
 
     ExpenseReportDetail:
       type: object
@@ -1706,13 +1708,13 @@ components:
         submitted_at:
           type: string
           format: date-time
-          description: 提出日時
+          description: 提出日時（ISO 8601 UTC、例: 2026-03-22T10:30:00Z）
         submitted_by:
           $ref: "#/components/schemas/UserSummary"
         approved_at:
           type: string
           format: date-time
-          description: 承認日時
+          description: 承認日時（ISO 8601 UTC、例: 2026-03-22T10:30:00Z）
         approved_by:
           $ref: "#/components/schemas/UserSummary"
         approval_comment:
@@ -1721,7 +1723,7 @@ components:
         rejected_at:
           type: string
           format: date-time
-          description: 却下日時
+          description: 却下日時（ISO 8601 UTC、例: 2026-03-22T10:30:00Z）
         rejected_by:
           $ref: "#/components/schemas/UserSummary"
         rejection_reason:
@@ -1730,7 +1732,7 @@ components:
         paid_at:
           type: string
           format: date-time
-          description: 支払完了日時
+          description: 支払完了日時（ISO 8601 UTC、例: 2026-03-22T10:30:00Z）
         paid_by:
           $ref: "#/components/schemas/UserSummary"
         items:
@@ -1750,11 +1752,11 @@ components:
         created_at:
           type: string
           format: date-time
-          description: 作成日時
+          description: 作成日時（ISO 8601 UTC、例: 2026-03-22T10:30:00Z）
         updated_at:
           type: string
           format: date-time
-          description: 最終更新日時
+          description: 最終更新日時（ISO 8601 UTC、例: 2026-03-22T10:30:00Z）
 
     ExpenseReportCreateRequest:
       type: object
@@ -1798,7 +1800,7 @@ components:
         updated_at:
           type: string
           format: date-time
-          description: 楽観的ロック用の最終更新日時
+          description: 楽観的ロック用の最終更新日時（ISO 8601 UTC、例: 2026-03-22T10:30:00Z）
 
     # --- Expense Item ---
     ExpenseItem:
@@ -1829,11 +1831,11 @@ components:
         created_at:
           type: string
           format: date-time
-          description: 作成日時
+          description: 作成日時（ISO 8601 UTC、例: 2026-03-22T10:30:00Z）
         updated_at:
           type: string
           format: date-time
-          description: 最終更新日時
+          description: 最終更新日時（ISO 8601 UTC、例: 2026-03-22T10:30:00Z）
 
     ExpenseItemCreateRequest:
       type: object
@@ -1881,7 +1883,7 @@ components:
         updated_at:
           type: string
           format: date-time
-          description: 楽観的ロック用の最終更新日時
+          description: 楽観的ロック用の最終更新日時（ISO 8601 UTC、例: 2026-03-22T10:30:00Z）
 
     # --- Attachment ---
     Attachment:
@@ -1909,7 +1911,7 @@ components:
         created_at:
           type: string
           format: date-time
-          description: アップロード日時
+          description: アップロード日時（ISO 8601 UTC、例: 2026-03-22T10:30:00Z）
 
     AttachmentDownload:
       type: object
@@ -1932,7 +1934,7 @@ components:
         expires_at:
           type: string
           format: date-time
-          description: 署名付き URL の有効期限（発行から15分後）
+          description: 署名付き URL の有効期限（発行から15分後、ISO 8601 UTC、例: 2026-03-22T10:45:00Z）
 
     # --- Workflow ---
     PendingReport:
@@ -1952,7 +1954,7 @@ components:
         submitted_at:
           type: string
           format: date-time
-          description: 提出日時
+          description: 提出日時（ISO 8601 UTC、例: 2026-03-22T10:30:00Z）
         submitter:
           $ref: "#/components/schemas/UserSummary"
         is_own_report:
@@ -1976,7 +1978,7 @@ components:
         approved_at:
           type: string
           format: date-time
-          description: 承認日時
+          description: 承認日時（ISO 8601 UTC、例: 2026-03-22T10:30:00Z）
         submitter:
           $ref: "#/components/schemas/UserSummary"
         is_own_report:
@@ -1995,7 +1997,7 @@ components:
         updated_at:
           type: string
           format: date-time
-          description: 楽観的ロック用の最終更新日時
+          description: 楽観的ロック用の最終更新日時（ISO 8601 UTC、例: 2026-03-22T10:30:00Z）
 
     # --- Dashboard ---
     DashboardResponse:
@@ -2090,7 +2092,7 @@ components:
         updated_at:
           type: string
           format: date-time
-          description: 最終更新日時
+          description: 最終更新日時（ISO 8601 UTC、例: 2026-03-22T10:30:00Z）
 
     # --- Common ---
     Pagination:
