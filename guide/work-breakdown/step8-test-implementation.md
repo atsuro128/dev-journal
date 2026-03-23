@@ -1,0 +1,164 @@
+# Step 8: テストコード実装 — 作業分解
+
+## 概要
+
+Step 6 で設計したテストケース（test_cases/*.md）を実際のテストコードに変換する。全テストが「失敗する」状態で CI に組み込む。Step 7 で生成したスケルトン（interface + スタブ）があるためコンパイルは通る。
+
+## 前提
+
+### 上流成果物（入力）
+
+| 成果物 | パス |
+|--------|------|
+| テスト戦略 | `deliverables/docs/60_test/test_strategy.md` |
+| テストケース（認証） | `deliverables/docs/60_test/test_cases/auth.md` |
+| テストケース（レポート） | `deliverables/docs/60_test/test_cases/reports.md` |
+| テストケース（明細） | `deliverables/docs/60_test/test_cases/items.md` |
+| テストケース（添付） | `deliverables/docs/60_test/test_cases/attachments.md` |
+| テストケース（ワークフロー） | `deliverables/docs/60_test/test_cases/workflow.md` |
+| テストケース（ダッシュボード） | `deliverables/docs/60_test/test_cases/dashboard.md` |
+| テストケース（テナント管理） | `deliverables/docs/60_test/test_cases/tenant.md` |
+| OpenAPI | `deliverables/docs/50_detail_design/openapi.yaml` |
+| DB スキーマ | `deliverables/docs/50_detail_design/db_schema.md` |
+| 認可設計 | `deliverables/docs/50_detail_design/authz.md` |
+| Step 7 のスケルトン | `expense-saas/apps/` |
+
+### 作業計画
+
+Step 着手時にまず作業計画を立案し、以下に保存する:
+
+- テンプレート: `guide/templates/task-plan.md`
+- 配置先: `progress-management/task-plans/step8-test-implementation.md`
+- 計画が確定してから成果物作成に入ること
+
+### 完了条件（Step 全体）
+
+- test_cases/*.md の全テストケースが実際のテストコードとして実装されている
+- 全テストがコンパイルされ、実行可能な状態（ただし全て失敗する）
+- CI でテスト実行が組み込まれている（失敗は許容）
+
+---
+
+## レビュー観点
+
+### テストコード品質
+
+- test_cases/*.md の全テストケースがコードとして実装されているか
+- テストケース ID とテストコードの対応が追跡可能か
+- テストデータ・フィクスチャが適切に定義されているか
+- テストの独立性が確保されているか（テスト間の順序依存がないか）
+
+---
+
+## 成果物ファイルの扱い
+
+| 成果物 | 出力先 | 作成タスク |
+|--------|--------|-----------|
+| Go テストコード | `expense-saas/apps/api/` 内各所 | 8-A〜8-G |
+| フロントエンドテストコード | `expense-saas/apps/web/` 内各所 | 8-A〜8-G |
+
+---
+
+## タスク一覧
+
+各タスクはテストケースファイル単位。テストコードの実装のみ（機能実装は Step 9）。
+
+| ID | タスク | テストケース | 依存 | 状態 |
+|----|--------|-------------|------|------|
+| 8-A | 認証テスト | auth.md（80件） | Step 7 完了 | 未着手 |
+| 8-B | レポートテスト | reports.md（90件） | 8-A | 未着手 |
+| 8-C | ダッシュボードテスト | dashboard.md（25件） | 8-A | 未着手 |
+| 8-D | テナント管理テスト | tenant.md（11件） | 8-A | 未着手 |
+| 8-E | 明細テスト | items.md（75件） | 8-B | 未着手 |
+| 8-F | ワークフローテスト | workflow.md（62件） | 8-B | 未着手 |
+| 8-G | 添付ファイルテスト | attachments.md（54件） | 8-E | 未着手 |
+
+### 依存グラフ
+
+（依存はテスト間の共通フィクスチャ・ヘルパーの関係に基づく）
+
+```
+Step 7 完了
+  └→ 8-A (認証テスト) ─┬→ 8-B (レポートテスト) ─┬→ 8-E (明細テスト) → 8-G (添付テスト)
+                        ├→ 8-C (ダッシュボードテスト) └→ 8-F (ワークフローテスト)
+                        └→ 8-D (テナント管理テスト)
+```
+
+**最大並列数**: 認証テスト完了後に3並列、レポートテスト完了後に2並列
+
+---
+
+## タスク詳細
+
+### 8-A: 認証テスト
+
+- **テストケース**: test_cases/auth.md（80件）
+- **入力**: auth.md, openapi.yaml §認証, security.md
+- **出力**: Go テストコード（`apps/api/internal/` §認証）、フロントエンドテストコード
+- **作業内容**:
+  - 単体テスト: Argon2id ハッシュ/検証、JWT 生成/検証
+  - 統合テスト: 各認証エンドポイント、無効トークンで 401
+  - 共通テストヘルパー・フィクスチャの作成（他タスクでも使用）
+- **完了条件**:
+  - auth.md の全テストケースがテストコードとして実装されている
+  - コンパイルが通る（テスト自体は失敗する）
+
+### 8-B: レポートテスト
+
+- **テストケース**: test_cases/reports.md（90件）
+- **入力**: reports.md, openapi.yaml §レポート, state_machine.md, authz.md
+- **出力**: Go テストコード、フロントエンドテストコード
+- **作業内容**:
+  - レポート CRUD テスト、状態遷移テスト（全パターン）、テナント分離テスト、RBAC テスト
+- **完了条件**:
+  - reports.md の全テストケースがテストコードとして実装されている
+
+### 8-C: ダッシュボードテスト
+
+- **テストケース**: test_cases/dashboard.md（25件）
+- **入力**: dashboard.md, openapi.yaml §ダッシュボード
+- **出力**: Go テストコード、フロントエンドテストコード
+- **作業内容**:
+  - 集計値テスト、ロール別表示テスト、テナント分離テスト
+- **完了条件**:
+  - dashboard.md の全テストケースがテストコードとして実装されている
+
+### 8-D: テナント管理テスト
+
+- **テストケース**: test_cases/tenant.md（11件）
+- **入力**: tenant.md, openapi.yaml §テナント, authz.md
+- **出力**: Go テストコード、フロントエンドテストコード
+- **作業内容**:
+  - メンバー一覧テスト、Admin 専用アクセステスト、テナント分離テスト
+- **完了条件**:
+  - tenant.md の全テストケースがテストコードとして実装されている
+
+### 8-E: 明細テスト
+
+- **テストケース**: test_cases/items.md（75件）
+- **入力**: items.md, openapi.yaml §明細, db_schema.md
+- **出力**: Go テストコード、フロントエンドテストコード
+- **作業内容**:
+  - 明細 CRUD テスト、カテゴリ選択テスト、金額バリデーションテスト、レポート連動削除テスト
+- **完了条件**:
+  - items.md の全テストケースがテストコードとして実装されている
+
+### 8-F: ワークフローテスト
+
+- **テストケース**: test_cases/workflow.md（62件）
+- **入力**: workflow.md, openapi.yaml §ワークフロー, authz.md, state_machine.md
+- **出力**: Go テストコード、フロントエンドテストコード
+- **作業内容**:
+  - 承認/却下/差戻し/支払完了テスト、自己承認禁止テスト、RBAC テスト
+- **完了条件**:
+  - workflow.md の全テストケースがテストコードとして実装されている
+
+### 8-G: 添付ファイルテスト
+
+- **テストケース**: test_cases/attachments.md（54件）
+- **入力**: attachments.md, openapi.yaml §添付, files.md, authz.md
+- **出力**: Go テストコード、フロントエンドテストコード
+- **作業内容**:
+  - MIME/サイズ制限テスト、署名付き URL テスト、認可テスト、テナント分離テスト
+- **完了条件**:
+  - attachments.md の全テストケースがテストコードとして実装されている
