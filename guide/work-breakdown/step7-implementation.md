@@ -2,7 +2,7 @@
 
 ## 概要
 
-動くものを出し、継続的に改善できる形にする。基盤構築 → 機能実装（認証 → 経費CRUD → 添付 → 承認）→ 横断検証の順に進める。
+動くものを出し、継続的に改善できる形にする。基盤構築 → TDD による機能実装（テストケースファイル単位） → 横断検証の順に進める。各機能タスクはテスト → BE 実装 → FE 実装を1タスク内で完結させる。
 
 ## 前提
 
@@ -102,9 +102,9 @@ Step 着手時にまず作業計画を立案し、以下に保存する:
 
 | 成果物 | 出力先 | 作成タスク | 追記タスク |
 |--------|--------|-----------|-----------|
-| バックエンドコード | `expense-saas/apps/api/` | 7-B（基盤） | 7-C-2, D-2, E-2, F-2（機能別） |
-| フロントエンドコード | `expense-saas/apps/web/` | 7-B（基盤） | 7-C-1, D-1, E-1, F-1（機能別） |
-| テストコード | `expense-saas/` 内各所 | 7-C-3（認証） | D-3, E-3, F-3（機能別） |
+| バックエンドコード | `expense-saas/apps/api/` | 7-B（基盤） | 各機能タスク |
+| フロントエンドコード | `expense-saas/apps/web/` | 7-B（基盤） | 各機能タスク |
+| テストコード | `expense-saas/` 内各所 | 各機能タスク（TDD: テスト先行） | — |
 | DB マイグレーション | `expense-saas/database/migrations/` | 7-B | — |
 | Docker Compose | `expense-saas/docker/` | 7-B | — |
 | CI 設定 | `expense-saas/.github/workflows/` | 7-B | — |
@@ -113,42 +113,34 @@ Step 着手時にまず作業計画を立案し、以下に保存する:
 
 ## タスク一覧
 
-| ID | タスク | 種別 | 依存 | 状態 |
-|----|--------|------|------|------|
-| 7-B | 基盤構築 | 基盤 | Step 6 完了 | 未着手 |
-| 7-C-1 | 認証フロントエンド | 機能 | 7-B | 未着手 |
-| 7-C-2 | 認証バックエンド | 機能 | 7-B | 未着手 |
-| 7-C-3 | 認証テスト実装 | 機能 | 7-C-1, 7-C-2 | 未着手 |
-| 7-D-1 | 経費フロントエンド | 機能 | 7-C-1, 7-C-2 | 未着手 |
-| 7-D-2 | 経費バックエンド | 機能 | 7-C-1, 7-C-2 | 未着手 |
-| 7-D-3 | 経費テスト実装 | 機能 | 7-D-1, 7-D-2 | 未着手 |
-| 7-E-1 | 添付フロントエンド | 機能 | 7-D-1, 7-D-2 | 未着手 |
-| 7-E-2 | 添付バックエンド | 機能 | 7-D-1, 7-D-2 | 未着手 |
-| 7-E-3 | 添付テスト実装 | 機能 | 7-E-1, 7-E-2 | 未着手 |
-| 7-F-1 | 承認フロントエンド | 機能 | 7-D-1, 7-D-2 | 未着手 |
-| 7-F-2 | 承認バックエンド | 機能 | 7-D-1, 7-D-2 | 未着手 |
-| 7-F-3 | 承認テスト実装 | 機能 | 7-F-1, 7-F-2 | 未着手 |
-| 7-R | 横断レビュー | 統合 | 7-C-3, 7-D-3, 7-E-3, 7-F-3 | 未着手 |
+各機能タスクはテストケースファイル単位。TDD でテスト → BE 実装 → FE 実装を1タスク内で完結させる。
+
+| ID | タスク | テストケース | 依存 | 状態 |
+|----|--------|-------------|------|------|
+| 7-B | 基盤構築 | — | Step 6 完了 | 未着手 |
+| 7-C | 認証 | auth.md | 7-B | 未着手 |
+| 7-D | レポート | reports.md | 7-C | 未着手 |
+| 7-E | ダッシュボード | dashboard.md | 7-C | 未着手 |
+| 7-F | テナント管理 | tenant.md | 7-C | 未着手 |
+| 7-G | 明細 | items.md | 7-D | 未着手 |
+| 7-H | ワークフロー | workflow.md | 7-D | 未着手 |
+| 7-I | 添付ファイル | attachments.md | 7-G | 未着手 |
+| 7-J | 横断テスト | cross-cutting.md | 7-C〜7-I 全完了 | 未着手 |
+| 7-R | 横断レビュー | — | 7-J | 未着手 |
 
 ### 依存グラフ
 
 ```
 Step 6 完了
-  └→ 7-B (基盤) ─┬→ 7-C-1 (認証FE) ─┐
-                  └→ 7-C-2 (認証BE) ──┤
-                                      └→ 7-C-3 (認証テスト) ──┐
-                  ┌→ 7-D-1 (経費FE) ─┐                       │
-  7-C-1,C-2 完了 ─┤                  └→ 7-D-3 (経費テスト)    │
-                  └→ 7-D-2 (経費BE) ─┘                       │
-                  ┌→ 7-E-1 (添付FE) ─┐                       │
-  7-D-1,D-2 完了 ─┤                  └→ 7-E-3 (添付テスト) ──┤
-                  └→ 7-E-2 (添付BE) ─┘                       │
-                  ┌→ 7-F-1 (承認FE) ─┐                       │
-  7-D-1,D-2 完了 ─┤                  └→ 7-F-3 (承認テスト) ──┤
-                  └→ 7-F-2 (承認BE) ─┘                       │
-                                                              ↓
-                                                      7-R (横断レビュー)
+  └→ 7-B (基盤)
+       └→ 7-C (認証) ─┬→ 7-D (レポート) ─┬→ 7-G (明細) → 7-I (添付)
+                       ├→ 7-E (ダッシュボード)  └→ 7-H (ワークフロー)
+                       └→ 7-F (テナント管理)
+                                                         ↓
+                                               7-J (横断テスト) → 7-R (横断レビュー)
 ```
+
+**最大並列数**: 認証完了後に3並列（レポート・ダッシュボード・テナント管理）、レポート完了後に2並列（明細・ワークフロー）
 
 ---
 
@@ -156,148 +148,137 @@ Step 6 完了
 
 ### 7-B: 基盤構築
 
-- **入力**: architecture.md, db_schema.md, security.md, monitoring.md
+- **入力**: architecture.md, db_schema.md, security.md, monitoring.md, branching.md
 - **出力**: `expense-saas/` 配下のディレクトリ構造・共通基盤
+- **ゴール**: 7-B 完了後、各機能タスク（7-C〜7-I）が依存関係に従って並列開発できる状態にする
 - **作業内容**:
   - Go バックエンド初期化（go.mod, cmd/api/main.go, internal/ 構造）
   - React フロントエンド初期化（Vite + TypeScript）
   - DB マイグレーション（db_schema.md に基づく全テーブル作成 + RLS 設定）
   - 共通ミドルウェア（JWT 検証、テナント抽出、RBAC チェック、エラーハンドリング）
+  - フロントエンド API クライアント基盤（fetch ラッパー、共通エラーハンドリング、認証トークン管理）
+  - Vite dev server → Go API へのプロキシ設定
+  - ヘルスチェックエンドポイント（`GET /health`）
   - Docker Compose（PostgreSQL, API, Web）
-  - CI パイプライン（lint / test / build）
+  - CI/CD パイプライン設計・実装（下記の判断ポイントを計画時に決定する）
   - 環境変数・設定管理
+  - 不要ディレクトリの整理（`packages/` 削除 — issue 008）
+- **CI/CD パイプライン設計（計画時の判断ポイント）**:
+  - ステージ構成: lint → test → build の各ステージで何を実行するか
+  - トリガー条件: PR 作成時・main マージ時・手動実行のどれで何を走らせるか
+  - ブランチ保護ルール: main への直接プッシュ禁止、CI 通過必須とするか
+  - マージ前チェック: テスト通過・ビルド成功・lint エラーゼロを必須とするか
+  - デプロイ: main マージ時に自動デプロイするか、手動承認を挟むか
+  - 参照: `ai-dev-framework/rules/branching.md`（ブランチモデル定義済み）
+- **Dev Container 複数インスタンス対応（計画時の判断ポイント）**:
+  - ポート競合回避: 複数インスタンスが同時起動した場合の API / Web / DB ポートの分離方式
+  - DB 分離: インスタンスごとに独立した PostgreSQL を使うか、同一 DB で別スキーマとするか
+  - 環境変数: インスタンス固有の設定（ポート番号、DB 名等）をどう管理するか
 - **完了条件**:
   - `docker compose up` で全サービスが起動する
   - マイグレーションが正常終了し RLS が設定されている
   - `go build ./...` と `npm run build` が通る
-  - CI パイプラインが動作する
+  - フロントエンドから `GET /health` を呼び出してバックエンドと疎通できる
+  - CI パイプラインが動作する（PR 時に lint / test / build が自動実行される）
+  - 認証タスク（7-C）が即座に開発開始できる状態になっている
 
-### 7-C-1: 認証フロントエンド
+### 7-C: 認証
 
-- **入力**: screens/auth-signup.md, auth-login.md, auth-password-reset-request.md, auth-password-reset.md, openapi.yaml §認証
-- **出力**: `apps/web/src/features/auth/`
-- **作業内容**:
-  - ログイン画面、サインアップ画面、パスワードリセット画面
-  - JWT 管理（アクセストークン・リフレッシュトークン）
-  - 認証状態に基づくルーティングガード
+- **テストケース**: test_cases/auth.md（80件）
+- **入力**: openapi.yaml §認証, db_schema.md, authz.md, security.md, screens/auth-*.md
+- **出力**: `apps/api/internal/` §認証, `apps/web/src/features/auth/`, テストコード
+- **TDD フロー**:
+  1. テスト: Argon2id ハッシュ/検証、JWT 生成/検証、各認証エンドポイント、無効トークンで 401
+  2. BE 実装: POST /auth/signup, login, refresh, logout, GET /auth/me、パスワードハッシュ（Argon2id）、JWT 発行（RS256）
+  3. FE 実装: ログイン・サインアップ・パスワードリセット画面、JWT 管理、ルーティングガード
 - **完了条件**:
-  - 認証画面が screens/auth-signup.md, auth-login.md, auth-password-reset-request.md, auth-password-reset.md の仕様通りに実装されている
-  - トークンリフレッシュが自動実行される
+  - test_cases/auth.md の全テストケースが実装され通過している
+  - signup → login → refresh → logout の一連フローが API + UI で通る
 
-### 7-C-2: 認証バックエンド
+### 7-D: レポート
 
-- **入力**: openapi.yaml §認証, db_schema.md, authz.md, security.md
-- **出力**: `apps/api/internal/` §認証
-- **作業内容**:
-  - POST /auth/signup, login, refresh, logout, GET /auth/me
-  - パスワードハッシュ（Argon2id）、JWT 発行（RS256）
-  - リフレッシュトークンの DB 保存（token_hash）
+- **テストケース**: test_cases/reports.md（90件）
+- **入力**: openapi.yaml §レポート, db_schema.md, authz.md, state_machine.md, screens/expenses.md §レポート
+- **出力**: `apps/api/internal/` §レポート, `apps/web/src/features/expenses/` §レポート, テストコード
+- **TDD フロー**:
+  1. テスト: レポート CRUD、状態遷移（全パターン）、テナント分離、RBAC
+  2. BE 実装: GET/POST/PUT/DELETE /reports、状態遷移ロジック
+  3. FE 実装: レポート一覧・作成/編集・詳細画面
 - **完了条件**:
-  - OpenAPI 定義通りの API が実装されている
-  - signup → login → refresh → logout の一連フローが通る
-
-### 7-C-3: 認証テスト実装
-
-- **入力**: test_cases/auth.md + test_cases/cross-cutting.md, 7-C-1/7-C-2 の実装コード
-- **出力**: テストコード
-- **作業内容**:
-  - 単体テスト: Argon2id ハッシュ/検証、JWT 生成/検証
-  - 統合テスト: 各認証エンドポイント、無効トークンで 401
-- **完了条件**:
-  - test_cases/auth.md および test_cases/cross-cutting.md の認証関連テストケースが全て実装されている
-
-### 7-D-1: 経費フロントエンド
-
-- **入力**: screens/expenses.md, openapi.yaml §経費
-- **出力**: `apps/web/src/features/expenses/`
-- **作業内容**:
-  - レポート一覧、作成/編集、明細追加/編集、詳細画面
-  - ダッシュボード画面
-  - ロール別の表示差異、ページネーション・フィルタリング・ソート
-- **完了条件**:
-  - CRUD 全操作の画面が screens/expenses.md の仕様通りに実装されている
-
-### 7-D-2: 経費バックエンド
-
-- **入力**: openapi.yaml §経費, db_schema.md, authz.md, state_machine.md
-- **出力**: `apps/api/internal/` §経費
-- **作業内容**:
-  - GET/POST/PUT/DELETE /reports, GET/POST/PUT/DELETE /reports/:id/items
-  - GET /dashboard, GET /tenant
-  - 状態遷移ロジック（state_machine.md 準拠）
-  - テナント分離（全クエリに tenant_id 条件）
-- **完了条件**:
-  - OpenAPI 定義通りの API が実装されている
+  - test_cases/reports.md の全テストケースが実装され通過している
   - 不正な状態遷移で 422 を返す
 
-### 7-D-3: 経費テスト実装
+### 7-E: ダッシュボード
 
-- **入力**: test_cases/reports.md + test_cases/items.md + test_cases/dashboard.md + test_cases/cross-cutting.md, 7-D-1/7-D-2 の実装コード
-- **出力**: テストコード
-- **作業内容**:
-  - 状態遷移テスト（全パターン）、テナント分離テスト、RBAC テスト
+- **テストケース**: test_cases/dashboard.md（25件）
+- **入力**: openapi.yaml §ダッシュボード, screens/expenses.md §ダッシュボード
+- **出力**: `apps/api/internal/` §ダッシュボード, `apps/web/src/features/expenses/` §ダッシュボード, テストコード
+- **TDD フロー**:
+  1. テスト: 集計値の正確性、ロール別表示、テナント分離
+  2. BE 実装: GET /dashboard
+  3. FE 実装: ダッシュボード画面
 - **完了条件**:
-  - test_cases/reports.md, test_cases/items.md, test_cases/dashboard.md および test_cases/cross-cutting.md の経費関連テストケースが全て実装されている
+  - test_cases/dashboard.md の全テストケースが実装され通過している
 
-### 7-E-1: 添付フロントエンド
+### 7-F: テナント管理
 
-- **入力**: screens/attachments.md, openapi.yaml §添付, files.md
-- **出力**: `apps/web/src/features/expenses/` §添付
-- **作業内容**:
-  - 明細内の添付エリア（アップロード・プレビュー・削除）
-  - 署名付き URL を使ったアップロード/ダウンロード
+- **テストケース**: test_cases/tenant.md（11件）
+- **入力**: openapi.yaml §テナント, authz.md, screens/expenses.md §テナント管理
+- **出力**: `apps/api/internal/` §テナント, `apps/web/src/features/admin/`, テストコード
+- **TDD フロー**:
+  1. テスト: メンバー一覧、Admin 専用アクセス、テナント分離
+  2. BE 実装: GET /tenant, GET /tenant/members
+  3. FE 実装: テナント管理画面（Admin 専用）
 - **完了条件**:
-  - 添付ファイルの画面操作が screens/attachments.md の仕様通りに実装されている
+  - test_cases/tenant.md の全テストケースが実装され通過している
 
-### 7-E-2: 添付バックエンド
+### 7-G: 明細
 
-- **入力**: openapi.yaml §添付, files.md, db_schema.md, authz.md
-- **出力**: `apps/api/internal/` §添付
-- **作業内容**:
-  - 署名付き URL 発行 API（アップロード用・ダウンロード用）
-  - S3 クライアント設定、MIME バリデーション、サイズ制限
-  - 発行前認可チェック
+- **テストケース**: test_cases/items.md（75件）
+- **入力**: openapi.yaml §明細, db_schema.md, screens/expenses.md §明細
+- **出力**: `apps/api/internal/` §明細, `apps/web/src/features/expenses/` §明細, テストコード
+- **TDD フロー**:
+  1. テスト: 明細 CRUD、カテゴリ選択、金額バリデーション、レポート連動削除
+  2. BE 実装: GET/POST/PUT/DELETE /reports/:id/items
+  3. FE 実装: 明細追加/編集画面
 - **完了条件**:
-  - files.md の設計通りに実装されている
+  - test_cases/items.md の全テストケースが実装され通過している
 
-### 7-E-3: 添付テスト実装
+### 7-H: ワークフロー
 
-- **入力**: test_cases/attachments.md + test_cases/cross-cutting.md, 7-E-1/7-E-2 の実装コード
-- **出力**: テストコード
-- **作業内容**:
-  - MIME/サイズ制限テスト、認可テスト
+- **テストケース**: test_cases/workflow.md（62件）
+- **入力**: openapi.yaml §ワークフロー, authz.md, state_machine.md, screens/approvals.md
+- **出力**: `apps/api/internal/` §ワークフロー, `apps/web/src/features/approvals/`, テストコード
+- **TDD フロー**:
+  1. テスト: 承認/却下/差戻し/支払完了の全パターン、自己承認禁止、RBAC
+  2. BE 実装: POST /reports/:id/submit, approve, reject, mark-paid、GET /workflow/pending, /workflow/payable
+  3. FE 実装: 承認キュー画面、承認/却下アクション、却下理由入力
 - **完了条件**:
-  - test_cases/attachments.md および test_cases/cross-cutting.md の添付関連テストケースが全て実装されている
-
-### 7-F-1: 承認フロントエンド
-
-- **入力**: screens/approvals.md, openapi.yaml §承認
-- **出力**: `apps/web/src/features/approvals/`
-- **作業内容**:
-  - 承認キュー画面、承認/却下アクション
-  - 却下理由の入力、差戻し後の再編集フロー
-- **完了条件**:
-  - 承認フロー画面が screens/approvals.md の仕様通りに実装されている
-
-### 7-F-2: 承認バックエンド
-
-- **入力**: openapi.yaml §承認, db_schema.md, authz.md, state_machine.md, workflow.md
-- **出力**: `apps/api/internal/` §承認
-- **作業内容**:
-  - POST /reports/:id/submit, approve, reject, mark-paid
-  - 状態遷移の強制
-- **完了条件**:
-  - 承認フローの全アクションが実装されている
+  - test_cases/workflow.md の全テストケースが実装され通過している
   - 権限外ロールで 403、不正遷移で 422 を返す
 
-### 7-F-3: 承認テスト実装
+### 7-I: 添付ファイル
 
-- **入力**: test_cases/workflow.md + test_cases/tenant.md + test_cases/cross-cutting.md, 7-F-1/7-F-2 の実装コード
+- **テストケース**: test_cases/attachments.md（54件）
+- **入力**: openapi.yaml §添付, files.md, db_schema.md, authz.md, screens/attachments.md
+- **出力**: `apps/api/internal/` §添付, `apps/web/src/features/expenses/` §添付, テストコード
+- **TDD フロー**:
+  1. テスト: MIME/サイズ制限、署名付き URL、認可、テナント分離
+  2. BE 実装: 署名付き URL 発行 API、S3 クライアント、バリデーション
+  3. FE 実装: 添付エリア（アップロード・プレビュー・削除）
+- **完了条件**:
+  - test_cases/attachments.md の全テストケースが実装され通過している
+
+### 7-J: 横断テスト
+
+- **テストケース**: test_cases/cross-cutting.md（84件）
+- **入力**: cross-cutting.md, 全機能の実装コード
 - **出力**: テストコード
 - **作業内容**:
-  - 承認フロー全パターンテスト、RBAC テスト
+  - テナント分離テスト（16件）、RBAC テスト（34件）、E2E テスト（21件）、非機能テスト（13件）
+  - 申請 → 承認 → 支払の一連フローが API + UI で通ることを検証
 - **完了条件**:
-  - test_cases/workflow.md, test_cases/tenant.md および test_cases/cross-cutting.md の承認関連テストケースが全て実装されている
+  - test_cases/cross-cutting.md の全テストケースが実装され通過している
 
 ### 7-R: 横断レビュー
 

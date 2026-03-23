@@ -56,10 +56,10 @@ Step 5 着手前
 
 `branching.md` の適用範囲を「Step 6 以降」から「Step 5 以降」に拡大。設計ドキュメントの並列作成にも worktree/PR ベースの隔離を適用する。`subagent-workflow.md` の並列実行ルール・共有ファイル調整・コミットタイミングを PR ベースに更新。
 
-### 残課題
+### 2026-03-23: 残課題を work-breakdown に格上げしてクローズ
 
-- **CI/CD パイプライン設計**: Step 6 着手前に対応
-- **Dev Container 複数インスタンス対応**: エージェントチーム設計時（ops-030）に合わせて対応
+- CI/CD パイプライン設計: step7-implementation.md の 7-B に「CI/CD パイプライン設計（計画時の判断ポイント）」として統合。7-B の作業計画立案時に設計・実装を一括で行う
+- Dev Container 複数インスタンス対応: step7-implementation.md の 7-B に「Dev Container 複数インスタンス対応（計画時の判断ポイント）」として統合
 
-## 部分解決日
-2026-03-16, 2026-03-18
+## 解決日
+2026-03-23
