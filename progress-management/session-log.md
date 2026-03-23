@@ -1,6 +1,64 @@
 # 引き継ぎメモ
 
-## セッション: 2026-03-23 14:10
+## セッション: 2026-03-23 15:25
+
+### ゴール
+- Step 5 完了を目指す（review-finding 048 対応 → Phase 4 最終レビュー → 完了宣言）
+
+### 作業ログ
+- **review-finding 048 対応**（ui_flow.md 全体図の遷移欠落）
+  - ui_flow.md の全体画面遷移図に `DASH001 -> ADM001`, `DASH001 -> ADM002` エッジ追加
+  - review-finding 048 を resolved に移動
+- **Phase 4 最終レビュー実施**（unit x4 + cross x1 = 5エージェント並列）
+  - Auth 4画面: LGTM
+  - Dashboard + Workflow 3画面: LGTM（info 1件 — Phase 3 対応で十分）
+  - Admin 2画面: warning 2件（ソートキー不一致、期間フィルタ曖昧）
+  - Report 4画面: blocker 1件（ソートキー updated_at vs created_at）
+  - 横断レビュー: LGTM（warning 2件 — エラーコード略記、submitter 用語 → PASS）
+- **Phase 4 指摘修正**
+  - RPT-001: シーケンス図 `ORDER BY updated_at` → `created_at` に修正
+  - ADM-001: ソートキー `updated_at` → `submitted_at DESC NULLS LAST` に修正 + 期間フィルタのセマンティクス明確化
+  - ADM-001: draft ソート順の矛盾修正（`created_at DESC` 追加）
+  - 再レビュー: RPT-001 LGTM、ADM-001 LGTM
+- **codex レビュー（Phase 4 後）**
+  - review-finding 051 起票: PERMISSION_DENIED が上流（RBC-004）と乖離
+- **review-finding 051 対応**（PERMISSION_DENIED → FORBIDDEN 統一）
+  - ユーザー指摘: なぜ上流と違う設計になったのかをはっきりすべき
+  - 経緯調査: Step 5 authz.md 作成時に独断導入された概念。上流に定義なし
+  - codex に追加情報を踏まえた判断を依頼 → 方針 C（MVP では FORBIDDEN に統一、将来分離可能と注記）
+  - 9ファイルを修正（authz.md, openapi.yaml, security.md, architecture.md, domain_model.md, files.md, report-create/edit/detail.md）
+  - 内部レビュー: LGTM
+  - codex レビュー: 051 resolved、新規指摘なし
+- **Step 5 完了宣言**
+  - task-plan Phase 3/4 ステータスを完了に更新
+  - progress.md を完了（2026-03-23）に更新
+
+### 未完了
+- なし（Step 5 完了）
+
+### ブロッカー
+- なし
+
+### 次にやること
+1. Step 6（テスト設計）に着手
+   - まず `dev-journal/guide/work-breakdown/step6-testing.md` を確認
+   - open issues のうち Step 6 に関連するもの（ops-028）を確認
+2. Step 6 の作業計画を立案（Plan エージェント）
+
+### 学び・気づき
+- review-finding 048 のレビューを内部レビューに回してしまったが、codex からの指摘は codex に再レビューを委譲すべき。正しい流れ: 修正 → コミット → `/codex-review`
+- review-finding の修正後は `pending-review/` に移動してからコミット。`resolved/` に移動するのは codex が解決確認した後
+- PERMISSION_DENIED の導入は上流に定義がない概念の独断導入だった。「なぜ上流と違うのか」を問うユーザーの視点が、スコープ逸脱を防ぐ重要なチェックポイント
+- codex に判断を求める際、追加の文脈情報（MVP での実益、プロジェクトルール等）を添えると、より妥当な回答が得られる
+
+### 意思決定ログ
+- PERMISSION_DENIED 廃止: 方針 C を採用。MVP の外部契約は上流 RBC-004 準拠で FORBIDDEN に統一。将来分離は authz.md に注記として残す。理由: MVP で分離の実益なし、独断導入は「設計判断を独断しない」に反する
+- ソートキー統一: RPT-001 は `created_at`（DB インデックスと整合）、ADM-001 は `submitted_at DESC NULLS LAST`（画面仕様「提出日の降順」と整合）+ draft 間は `created_at DESC` で補完
+- Phase 4 横断レビュー warning の PASS 判定: openapi.yaml のエラーコード略記（description 内、実害なし）と submitter 用語（動詞と名詞の区別、glossary.md の意図に反しない）は下流に支障なしと判断
+
+---
+
+## セッション: 2026-03-23 14:10（前回）
 
 ### ゴール
 - Step 5 完了を目指す（Issue 037 → Phase 3 → Phase 4 → 完了宣言）
@@ -64,63 +122,3 @@
 - Approver 追跡閲覧: rbac.md に正式化。コミット 1f4aa58 で下流は修正済みだったが上流反映が漏れていた
 - Auto Memory 運用: 禁止ではなく `.claude/memory/` に書かせる。次セッションで自動読み込みされないが、git 追跡外で蓄積可能。将来ルール化の種になりうる
 - codex レビュー手順: `/codex-review` スキルを使い、コミット後に正式手順で実行する
-
----
-
-## セッション: 2026-03-22 20:37（前回）
-
-### ゴール
-- 成果物の図を Mermaid 形式に統一する
-- 詳細設計の図の不足を洗い出し、補強する
-
-### 作業ログ
-- **ASCII罫線図 → Mermaid変換**（3ファイル・5箇所）
-  - domain_model.md: 集約構成図 + レイヤー責務図
-  - architecture.md: システム全体構成図 + ミドルウェアチェーン
-  - business-flow.md: 月次業務サイクル図
-- **ASCIIシーケンス図 → Mermaid変換**（architecture.md・2箇所）
-  - ログイン→JWT発行、認証付きリクエストフロー
-- **UIライブラリ変更: shadcn/ui → MUI**
-  - ADR-0001 に比較検討がなかった点をユーザーに報告
-  - ポートフォリオ用途で「楽にきれいに」→ MUI が最適と判断
-  - 4ファイル・5箇所を更新（ADR, architecture, security の Tailwind→Emotion）
-- **全13画面に処理シーケンス図を追加**（18図）
-  - ユーザー指摘: 詳細設計に「ボタン→API→サービス→ドメイン→DB」の縦断フローがない
-  - 内部レビュー: blocker 5件 + warning 10件 → 修正 → 再レビュー LGTM
-  - codex レビュー: 3件（OpenAPI項目名不一致、INSERT文カラム名、カーソル条件欠落）→ 修正 → 再レビュー LGTM
-- **フローチャート追加**（3ファイル・4図）
-  - report-detail.md: 提出バリデーション + 状態遷移操作の権限チェック（統合図）
-  - files.md: ファイルアップロードバリデーション
-  - auth-login.md: 認証フロー分岐（SEC-011 合流表現）
-  - 内部レビュー: blocker 2件（自己承認チェック比較対象、却下フロー自己チェック欠落）→ 修正 → LGTM
-  - codex レビュー: 2件 → 045 即修正 + 044 issue 037 起票 → 再レビュー LGTM
-- **UIデザインガイドライン作成**（ui-guidelines.md）
-  - MUI デフォルトテーマベース、ステータスカラーマッピング、コンポーネント使用方針
-  - work-breakdown + task-plan に成果物として追記
-- **work-breakdown 改善**
-  - 完了条件に「処理シーケンス図」「フローチャート」を追加
-  - レビュー観点にも同項目を追加
-  - 今後 Planner が自動的にスコープに含めるようになる
-
-### 未完了
-- issue 037（auth-login フローチャートの API 契約不整合）未対応
-
-### ブロッカー
-- なし
-
-### 次にやること
-1. issue 037 対応（auth-login フローチャートを API 契約に合わせるか、API 契約を拡張するか）
-2. Phase 3（authz.md）に着手
-3. Phase 4（最終レビュー）
-4. Step 5 完了宣言
-
-### 学び・気づき
-- work-breakdown に書かれていない成果物は作られない。Planner も Designer も work-breakdown に忠実に動く。成果物の「完了条件」にシーケンス図・フローチャートを含めなかったことが、今回の補強作業の根本原因
-- ADR にUIライブラリの比較検討がなかった。選定理由が1行では判断根拠が不十分。ただしMVPでは変更コストが低いため実害は小さかった
-- codex レビューは内部レビューと異なる視点で指摘する（OpenAPI との項目名一致、DBカラム名の大文字小文字など）。両方実施することで網羅性が上がる
-
-### 意思決定ログ
-- UIライブラリ: shadcn/ui → MUI に変更。理由: ポートフォリオ用途で「楽にきれいに」、MUI はテーマで一貫性担保、DataGrid 等の業務コンポーネント充実、Claude の実装力も MUI の方が高い
-- UIデザイン方針: MUI デフォルトテーマをそのまま使用。カラー変更は theme.ts 1ファイルで後から可能
-- 上流シーケンス図は残す: 詳細設計に縦断フローを追加しても、上流（要件定義・アーキテクチャ）の図は別視点のため削除しない
-- work-breakdown 改善: 「完了条件」と「レビュー観点」に図の有無を追加することで、次回以降は Planner が自動的にスコープに含める
