@@ -45,3 +45,17 @@ Step 6 は Phase 1 完了の段階であり、Step 全体の完了条件は Phas
 
 ### 判定理由
 今回の再レビュー対象は「未作成だった必須成果物が揃ったか」であり、Phase 分割の説明だけでは未作成状態は解消されない。Step 6 の機能別・横断テストケースが未作成のため、本指摘はクローズ不可。
+
+## 再レビュー結果（2026-03-23, 2回目）
+
+対応不十分（差し戻し継続）。
+
+### 確認内容
+- 作業計画ファイルは [step6-testing.md](/root-project/dev-journal/progress-management/task-plans/step6-testing.md) として存在し、Step 着手時の計画作成要件は満たしている。
+- 機能別テストケース 7 本（`auth.md` `reports.md` `items.md` `attachments.md` `workflow.md` `dashboard.md` `tenant.md`）は追加されており、各ファイルに「テストID / テストレベル / レイヤー / テスト関数名候補 / 入力 / 期待結果」の列も確認できた。
+- ただし Step 6 の必須成果物である [cross-cutting.md](/root-project/dev-journal/deliverables/docs/60_test/test_cases/cross-cutting.md) は未作成のままだった。作業分解は [step6-testing.md](/root-project/dev-journal/guide/work-breakdown/step6-testing.md#L81) で `cross-cutting.md` を 6-B-8 の成果物として必須定義している。
+- `test_strategy.md` でも [test_strategy.md](/root-project/dev-journal/deliverables/docs/60_test/test_strategy.md#L268) が `cross-cutting.md` の責務を「テナント分離、RBACマトリクス、E2Eシナリオ」と定義し、[test_strategy.md](/root-project/dev-journal/deliverables/docs/60_test/test_strategy.md#L276) で「全リソース × テナント越境 = 404」を同ファイルへ集約するよう要求している。
+- 実際には [dashboard.md](/root-project/dev-journal/deliverables/docs/60_test/test_cases/dashboard.md#L104) にダッシュボードのテナント分離ケース `DSH-018` が追加されており、責務境界の一部が機能別ファイルへ流出している。これは `cross-cutting.md` 欠落を埋める代替にはならず、むしろ「横断観点を集約して網羅性を見える化する」という Step 6 の設計方針から外れる。
+
+### 判定理由
+Step 6 の完了条件である「重要領域のテストケースが網羅されている」を満たすには、横断成果物 `cross-cutting.md` に少なくともテナント分離、RBAC マトリクス、E2E シナリオを集約して下流実装者が参照できる状態が必要である。現状は 7 本の機能別ファイルのみで、`CRS-` 系テストケースも 1 件も定義されていないため、本指摘は引き続きクローズ不可。
