@@ -66,3 +66,13 @@
 - `dev-journal/deliverables/docs/50_detail_design/openapi.yaml`
   - `info.description` に「エラーコード一覧の正本は security.md 8.4」と参照を書き、仕様の起点を固定する
   - 可能なら `components/schemas/Error` の `details` 説明にも「400/422 のみ」を追記して `security.md` と文言を揃える
+
+## 再レビュー結果（2026-03-23, commit `25b2282`）
+
+解消を確認。
+
+- `security.md` 8.2 が `code` / `message` / `details` を含む統一エラー形式を正式形として定義し、`details` の適用範囲も 400/422 に限定している
+- `security.md` 8.4 のエラーコード表に `401 INVALID_CREDENTIALS` が通常行として追加され、ログイン固有注記に依存しない一覧になった
+- `openapi.yaml` 冒頭に「エラーコード一覧の正本は security.md §8.4」と明記され、`components/schemas/Error.details` の説明も `security.md` と揃っている
+
+これにより、Step 5 の範囲で「共通エラー JSON 構造」と「全 API 共通のエラーコード一覧」の参照起点が閉じ、元指摘の「単一の完全仕様になっていない」は解消した。

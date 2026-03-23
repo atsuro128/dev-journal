@@ -64,3 +64,13 @@
   - `info.description` にも API 全体の日時表現ルールとして同内容を 1 行追記するとよい
 - `dev-journal/deliverables/docs/50_detail_design/security.md`
   - 6.3 付近または API 共通規約の節に、API payload の日時も UTC `Z` 形式で返す旨を追記して `openapi.yaml` と揃える
+
+## 再レビュー結果（2026-03-23, commit `25b2282`）
+
+解消を確認。
+
+- `openapi.yaml` `info.description` に、全日時フィールドを ISO 8601 UTC `Z` 形式で返却・受理し、タイムゾーンオフセット付き表記を使わないことが API 全体の共通規約として追記された
+- `openapi.yaml` の全 `format: date-time` 項目に UTC `Z` 形式の具体例が追加され、各フィールド単位でも契約が閉じた
+- 元指摘に含まれていたヘッダー論点は前回再検証時点で独立指摘としては弱いと整理済みであり、今回の未解消論点は日時フォーマットのみだった
+
+したがって、Step 5 の API 契約として未明記だった日時表現ルールは充足され、元指摘で再レビュー対象として残していた不足は解消した。

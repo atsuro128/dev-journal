@@ -23,6 +23,12 @@ Phase 1 着手時にディレクトリ構成の判断が必要になる。
 
 ## 解決内容
 
+### 2026-03-23: 対応不要と判断
+
+- 技術スタックが Rust + React → Go + React に変更済み
+- `packages/` は Rust 時代の npm workspaces 共有パッケージ構想の名残。Go + React 構成では不要
+- 現状 `explanation.md` のみが残存しており実コードなし
+- Step 7 Phase 1（基盤構築）で `packages/` ディレクトリを削除する
 
 ## 解決日
-
+2026-03-23
