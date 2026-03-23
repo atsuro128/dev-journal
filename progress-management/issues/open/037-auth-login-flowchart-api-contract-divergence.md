@@ -37,7 +37,13 @@ Step 5（詳細設計）
 ---
 
 ## 解決内容
-<!-- pending-review へ移動する前に記入 -->
+フローチャートを API 契約（200/400/401/429）に合わせる方針で修正。
+
+1. **auth-login.md §11**: E1(422 バリデーションエラー) と E3(独立 401) を削除し、全認証関連エラーを E2(401 INVALID_CREDENTIALS) に合流。フローのスコープを「リクエストボディのパース・必須項目チェック成功後」に限定し、注記を更新。
+2. **openapi.yaml**: login request schema から `format: email` / `minLength: 8` を削除（SEC-011 によりサーバー側で形式別エラーを返さないため）。`400` レスポンスを追加。description に SEC-011 によるスキーマ制約省略の意図を明記。
+3. **security.md §8.4**: login エンドポイントが認証関連失敗を `401 INVALID_CREDENTIALS` に統一し、`400 VALIDATION_ERROR` を返さない旨の注記を追加。
+
+関連: review-finding 046（format: email / minLength: 8 削除の妥当性を記録）
 
 ## 解決日
-<!-- YYYY-MM-DD -->
+2026-03-23

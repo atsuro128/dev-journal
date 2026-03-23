@@ -134,7 +134,9 @@ paths:
     post:
       tags: [auth]
       summary: ログイン
-      description: メールアドレスとパスワードで認証し、JWT を発行する。
+      description: |
+        メールアドレスとパスワードで認証し、JWT を発行する。
+        SEC-011 に基づき、メール形式・パスワード長のバリデーション制約はスキーマに含めない（認証関連の全失敗を 401 に統一するため）。クライアント側で入力バリデーションを実施すること。
       operationId: login
       security: []
       requestBody:
@@ -147,13 +149,11 @@ paths:
               properties:
                 email:
                   type: string
-                  format: email
                   maxLength: 254
                   description: メールアドレス
                 password:
                   type: string
                   format: password
-                  minLength: 8
                   maxLength: 128
                   description: パスワード
       responses:
@@ -167,6 +167,16 @@ paths:
                 properties:
                   data:
                     $ref: "#/components/schemas/AuthTokens"
+        "400":
+          description: リクエストボディ不正（JSON パースエラー・必須項目欠落）
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error:
+                  code: BAD_REQUEST
+                  message: "Invalid request body"
         "401":
           description: 認証失敗
           content:
