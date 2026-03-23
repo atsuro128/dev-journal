@@ -30,3 +30,16 @@ test_strategy.md §2.3 を全面書き換え。「対象外」を削除し、以
 - レート制限テスト: 統合テスト、PR時実行、security.md の4種制限値（100/20/5/10 req/min）を明記、429+Retry-After確認、記載先は cross-cutting.md
 - レスポンスタイムテスト: 統合テスト（軽量スモーク）、mainマージ後実行、requirements.md の期待値（p95 500ms、5MB 5秒）を明記
 - CI組み込み方針（§5.1）にも非機能テストのタイミングを追記
+
+## 再レビュー結果（2026-03-23）
+
+対応妥当（クローズ）。
+
+### 確認内容
+- [test_strategy.md](/root-project/dev-journal/deliverables/docs/60_test/test_strategy.md#L88) に非機能テスト方針が追加され、レート制限テストを「統合テスト / PR 時実行 / 429 + Retry-After 確認」として定義している。
+- 同ファイルで制限値も `100 req/min` `20 req/min` `5 req/min` `10 req/min` と明記されており、[security.md](/root-project/dev-journal/deliverables/docs/50_detail_design/security.md#L303) の詳細設計と一致している。
+- [test_strategy.md](/root-project/dev-journal/deliverables/docs/60_test/test_strategy.md#L108) にレスポンスタイムの方針が追加され、main マージ後に p95 を監視するスモークテストと、`500ms` / `5MB 5秒` の合否基準が定義された。
+- CI 組み込み方針も [test_strategy.md](/root-project/dev-journal/deliverables/docs/60_test/test_strategy.md#L198) で更新され、PR 時と main マージ後で非機能テストの実施タイミングが整理されている。
+
+### 判定理由
+Step 6 に要求されていた非機能テストの「テストレベル・実施タイミング・合否基準」が文書化され、上流要件およびセキュリティ設計との不整合は解消されたため。

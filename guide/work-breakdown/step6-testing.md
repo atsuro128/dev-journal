@@ -198,11 +198,11 @@ Step 5 完了
 - **出力**: `deliverables/docs/60_test/test_cases/attachments.md`
 - **対応ハンドラ**: attachment_handler_test.go
 - **作業内容**:
-  - 署名付きURL発行・削除のエンドポイントテスト（エンドポイント数: 2）
+  - uploadAttachment/listAttachments/getAttachmentDownload/deleteAttachment のエンドポイントテスト（エンドポイント数: 4）
   - MIME タイプ制限・ファイルサイズ制限のバリデーションテスト
   - 標準列（テストID: ATT-XXX）に従って記述
 - **完了条件**:
-  - 2 エンドポイントの正常系・異常系テストケースが網羅されている
+  - 4 エンドポイントの正常系・異常系テストケースが網羅されている
   - MIME/サイズ制限テストが含まれている
 
 ### 6-B-5: ワークフローテストケース定義
