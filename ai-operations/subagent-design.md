@@ -5,6 +5,8 @@
 Step 4（基本設計）以降の開発フェーズにおいて、**役割（ロール）** に対応したカスタムサブエージェント（全15体）を `.claude/agents/` に配置する。
 計画者・設計者・実装者・レビュー者の役割分担で、並列化・品質ゲート・専門性の分離を実現する。
 
+> この文書はエージェント設計のカタログであり、実運用の固定手順ではない。実際の起用有無・順序・役割分担は `work-breakdown/` と `task-plans/` を正とする。
+
 ---
 
 ## エージェント一覧
@@ -60,12 +62,12 @@ Step 4（基本設計）以降の開発フェーズにおいて、**役割（ロ
 
 ## タスク実行計画
 
-architect がタスク実行計画を永続ファイルとして作成する。指揮役はこのファイルを読んで状況を把握し、エージェントを起動する。
+Lead または計画用エージェントがタスク実行計画を永続ファイルとして作成する。指揮役はこのファイルを読んで状況を把握し、エージェントを起動する。
 
 ```
 dev-journal/progress-management/task-plans/
-├── step5.md     # design-architect が作成・更新
-└── step6-7.md   # impl-architect が作成・更新
+├── step5.md     # Lead または計画用エージェントが作成・更新
+└── step6-7.md   # Lead または計画用エージェントが作成・更新
 ```
 
 - Step 4 は成果物が少なく task-plans 不要（work-breakdown にプロセスを記載）
@@ -93,30 +95,31 @@ Lead が basic-designer に直接委譲（architect 不要）
 ### Step 5: 詳細設計
 
 ```
-design-architect: タスク分解・依存関係・受け入れ基準を策定
+Lead または計画用エージェント: タスク分解・依存関係・受け入れ基準を策定
     ↓
-architect の計画に従いタスクを実行:
+計画に従いタスクを実行:
   基盤タスク（DB・セキュリティ・監視）
   機能別タスク（画面詳細 → API 定義）
     ↓
 design-unit-reviewer × 各機能: 設計整合性チェック
     ↓
-design-architect: authz.md 作成 + ui_flow.md 最終更新 + 全成果物の整合性確認
+必要なら統合担当: 全成果物の整合性確認
 design-cross-reviewer: 全機能横断 + 上流トレーサビリティ
 ```
 
 ### Step 6+: 実装フェーズ
 
 ```
-impl-architect: 実装タスク分解・依存関係整理・受け入れ基準
+Lead または計画用エージェント: 実装タスク分解・依存関係整理・受け入れ基準
     ↓
 test-designer → test_strategy.md, test_cases.md
     ↓
 platform-builder → 骨組み・共通基盤・Docker・CI（初回のみ）
     ↓
 各機能ごと:
-  backend-developer + frontend-developer（並列）
-    → test-implementer
+  test-implementer
+    ↓
+  backend-developer + frontend-developer
     ↓
 impl-unit-reviewer × 各機能: フロント/バック横断 + 設計トレーサビリティ
 test-reviewer: テスト品質・網羅性チェック
@@ -140,7 +143,7 @@ impl-cross-reviewer: 全機能横断 + セキュリティ + 設計整合性
 | `/commit` | レビューエージェントの結果を確認してからコミットするフローに組み込み可能 |
 | `/codex-review` | Step 成果物完成後の外部レビュー。エージェントレビューは作業中の品質ゲート |
 | `/issue` | レビューエージェントが blocker を検出した場合、issue 起票につなげる |
-| `/plan` | design-architect / impl-architect がプラン策定の補助として機能 |
+| `/plan` | Lead または計画用エージェントによるプラン策定の補助として機能 |
 
 ---
 

@@ -11,10 +11,12 @@
 | 成果物 | パス |
 |--------|------|
 | アーキテクチャ設計 | `deliverables/docs/30_architecture/architecture.md` |
+| API 契約 | `deliverables/docs/50_detail_design/openapi.yaml` |
 | DB スキーマ | `deliverables/docs/50_detail_design/db_schema.md` |
+| 認可設計 | `deliverables/docs/50_detail_design/authz.md` |
 | セキュリティ設計 | `deliverables/docs/50_detail_design/security.md` |
 | 監視・ログ設計 | `deliverables/docs/50_detail_design/monitoring.md` |
-| ブランチ戦略 | `ai-dev-framework/rules/branching.md` |
+| 並列開発運用ルール | `dev-journal/ai-operations/subagent-workflow.md` |
 
 ### 作業計画
 
@@ -31,8 +33,23 @@ Step 着手時にまず作業計画を立案し、以下に保存する:
 - `go build ./...` と `npm run build` が通る
 - フロントエンドから `GET /health` を呼び出してバックエンドと疎通できる
 - CI パイプラインが動作する（PR 時に lint / test / build が自動実行される）
+- hooks により、Claude Code 実行中の format と軽量 lint が自動実行される
 - テストコードがコンパイル可能なスケルトン（interface + スタブ）が存在する
 - テストコード実装（Step 8）が即座に開始できる状態になっている
+
+### 並列実装開始条件
+
+Step 8 / Step 9 の担当を並列着手させる前に、以下を Step 7 で固定すること。
+
+- API エラーレスポンス形式（HTTP ステータス、アプリケーションコード、メッセージ、フィールドエラーの構造）
+- 認証コンテキストとテナントコンテキストの受け渡し方式（ミドルウェア → Handler → Service）
+- RBAC チェックの入口と責務分担
+- Repository 層での `tenant_id` 強制ルール
+- OpenAPI 生成物の配置先と、手書きコードとの責務境界
+- 共通テストヘルパー・フィクスチャの配置先
+- フロントエンド API クライアントの責務（認証トークン管理、共通エラーハンドリング、リトライ有無）
+
+上記が未確定の状態で、機能別のテスト実装・機能実装に着手してはならない。
 
 ---
 
@@ -47,7 +64,9 @@ Step 着手時にまず作業計画を立案し、以下に保存する:
 - マイグレーションが正常終了し RLS が設定されているか
 - `go build ./...` と `npm run build` が通るか
 - CI パイプラインが動作するか
+- hooks による format / 軽量 lint が動作するか
 - ヘルスチェックエンドポイント（`/health`）が存在するか
+- Step 8 / Step 9 の担当が参照する共通契約（エラー形式、認証/テナントコンテキスト、RBAC 入口、OpenAPI 生成物配置、テストヘルパー配置）が固定されているか
 
 ---
 
@@ -83,7 +102,7 @@ Step 6 完了
 
 ### 7-B: 基盤構築
 
-- **入力**: architecture.md, db_schema.md, security.md, monitoring.md, branching.md
+- **入力**: architecture.md, openapi.yaml, db_schema.md, authz.md, security.md, monitoring.md, subagent-workflow.md
 - **出力**: `expense-saas/` 配下のディレクトリ構造・共通基盤
 - **ゴール**: 7-B 完了後、各機能タスク（8-A〜8-G）が依存関係に従って並列開発できる状態にする
 - **作業内容**:
@@ -96,6 +115,7 @@ Step 6 完了
   - ヘルスチェックエンドポイント（`GET /health`）
   - Docker Compose（PostgreSQL, API, Web）
   - CI/CD パイプライン設計・実装（下記の判断ポイントを計画時に決定する）
+  - hooks 設計・実装（Edit/Write 後の format、危険変更前の軽量 lint）
   - 環境変数・設定管理
   - 不要ディレクトリの整理（`packages/` 削除 — issue 008）
   - openapi.yaml からインターフェース/型定義を生成（Handler/Service/Repository の Go interface、TypeScript の API レスポンス/リクエスト型）
@@ -106,7 +126,12 @@ Step 6 完了
   - ブランチ保護ルール: main への直接プッシュ禁止、CI 通過必須とするか
   - マージ前チェック: テスト通過・ビルド成功・lint エラーゼロを必須とするか
   - デプロイ: main マージ時に自動デプロイするか、手動承認を挟むか
-  - 参照: `ai-dev-framework/rules/branching.md`（ブランチモデル定義済み）
+  - 参照: 並列開発運用ルール（配置場所は固定しない）
+- **hooks 設計（計画時の判断ポイント）**:
+  - Edit / Write 後にどの format を自動実行するか
+  - 危険変更前にどの軽量 lint を走らせるか
+  - hooks 失敗時の挙動（警告のみ / ブロック）
+  - GitHub Actions と重複するチェックをどこまで許容するか
 - **Dev Container 複数インスタンス対応（計画時の判断ポイント）**:
   - ポート競合回避: 複数インスタンスが同時起動した場合の API / Web / DB ポートの分離方式
   - DB 分離: インスタンスごとに独立した PostgreSQL を使うか、同一 DB で別スキーマとするか
@@ -117,5 +142,7 @@ Step 6 完了
   - `go build ./...` と `npm run build` が通る
   - フロントエンドから `GET /health` を呼び出してバックエンドと疎通できる
   - CI パイプラインが動作する（PR 時に lint / test / build が自動実行される）
+  - hooks により、Claude Code 実行中の format と軽量 lint が自動実行される
   - テストコードがコンパイル可能なスケルトン（interface + スタブ）が存在する
   - テストコード実装（Step 8）が即座に開始できる状態になっている
+  - 並列実装開始条件で列挙した共通契約が文書またはコード上で固定され、各担当が参照先を一意に判断できる

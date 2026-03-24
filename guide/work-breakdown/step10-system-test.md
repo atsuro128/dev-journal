@@ -12,6 +12,9 @@
 |--------|------|
 | テスト戦略 | `deliverables/docs/60_test/test_strategy.md` |
 | テストケース（横断） | `deliverables/docs/60_test/test_cases/cross-cutting.md` |
+| API 契約 | `deliverables/docs/50_detail_design/openapi.yaml` |
+| 認可設計 | `deliverables/docs/50_detail_design/authz.md` |
+| セキュリティ設計 | `deliverables/docs/50_detail_design/security.md` |
 | 全機能の実装コード | `expense-saas/apps/` |
 | 画面仕様（機能別） | `deliverables/docs/50_detail_design/screens/*.md` |
 

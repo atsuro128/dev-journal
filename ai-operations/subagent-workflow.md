@@ -5,6 +5,8 @@
 親エージェント（Claude Code のメインセッション）が**指揮役**として 15 体のサブエージェントを呼び出し、成果物を作り上げるワークフロー。
 指揮役はタスクの分配・品質ゲートの判定・ユーザーへの確認を担い、自身では成果物を直接書かない。
 
+> この文書は「推奨パターン」を示す。実際の運用は `work-breakdown/` と `task-plans/` を正とし、ここに書かれたエージェント構成や順序を固定ルールとして扱わない。
+
 ### 指揮役の責務
 
 | 責務 | 内容 |
@@ -33,13 +35,13 @@
 
 ### task-plans（`dev-journal/progress-management/task-plans/`）
 
-architect が作成する「**どう作るか**」の詳細計画。複雑な Step でのみ使用する。
+Lead または計画用エージェントが作成する「**どう作るか**」の詳細計画。複雑な Step でのみ使用する。
 
 含めるもの: タスク分割、エージェント割当、実行順序、依存グラフ、共有ファイル調整、受け入れ基準、リスク分析
 
 ### いつ task-plans が必要か
 
-- 成果物が多く、複数エージェントの並列実行が必要な Step → architect に task-plans を作成させる
+- 成果物が多く、複数エージェントの並列実行が必要な Step → task-plans を作成する
 - 成果物が少なく、プロセスが明確な Step → work-breakdown のプロセスだけで十分（task-plans 不要）
 
 ### 実行時の情報源
@@ -56,7 +58,7 @@ architect が作成する「**どう作るか**」の詳細計画。複雑な St
 1. progress.md を確認 → 現在の Step を把握
 2. work-breakdown/ の該当 Step を確認 → プロセスと成果物を把握
    - task-plans/ が存在する場合 → 各タスクの状態・担当セッションを把握
-   - task-plans/ が存在せず、work-breakdown のプロセスが architect 起動から始まる場合 → architect を起動
+   - task-plans/ が存在しない場合 → 計画用エージェントに委譲する
 3. issues/open/ のブロッカーを確認 → 未解決ブロッカーがあれば先に対応
 4. ユーザーに作業計画を提示して合意を得る
 ```
@@ -83,7 +85,7 @@ model と isolation はエージェント定義のフロントマターで設定
 - 並列編集が発生する場合、成果物を作成するサブエージェントは `isolation: "worktree"` で起動する
 - 並列実行時は `Agent` ツールを 1 メッセージ内に複数記述して同時起動
 - 並列編集が発生しない場合（Step 4 等）は worktree 不要、main に直接コミット
-- 詳細は `ai-dev-framework/rules/branching.md` を参照
+- 詳細は並列開発運用ルールを参照
 
 ### 品質ゲートの判定基準
 
@@ -125,11 +127,11 @@ architect 不要。task-plans 不要。
 
 ```
 Lead
- 1. design-architect を起動: task-plans/step5.md を作成
+ 1. task-plans/step5*.md を用意
  2. ユーザーに作業計画を提示 → 合意
- 3. task-plans に従いタスクを実行（architect が決めた順序で）
+ 3. task-plans に従いタスクを実行
  4. タスク完了ごとに design-unit-reviewer でレビュー
- 5. 全タスク完了後: design-architect で統合（authz.md + ui_flow.md 最終版）
+ 5. 全タスク完了後: 必要なら統合担当を起動して最終整合
  6. design-cross-reviewer で横断レビュー
  7. /codex-review（Step 成果物完成後の外部レビュー）
 ```
@@ -163,7 +165,7 @@ Lead
 
 ```
 Lead
- 1. impl-architect を起動: 実装タスク分解・依存関係・受け入れ基準
+ 1. task-plans を用意
  2. ユーザーに作業計画を提示 → 合意
 ```
 
@@ -187,15 +189,16 @@ Lead
 
 ### 機能実装（機能単位で繰り返し）
 
-各機能（認証 → 経費CRUD → 添付 → 承認）について以下を繰り返す:
+各機能について、`work-breakdown/step8-test-implementation.md` と `work-breakdown/step9-feature-implementation.md` の依存順に従って進める:
 
 ```
 Lead
- 1. backend-developer + frontend-developer を並列起動
- 2. 両方完了後、test-implementer を起動
- 3. impl-unit-reviewer でレビュー
- 4. 品質ゲート判定
- 5. ユーザーにコミット確認（機能単位）
+ 1. test-implementer を起動（必要なら機能別に並列）
+ 2. test-reviewer または impl-unit-reviewer でレビュー
+ 3. backend-developer / frontend-developer を起動（work-breakdown の作業ルールに従う）
+ 4. impl-unit-reviewer でレビュー
+ 5. 品質ゲート判定
+ 6. ユーザーにコミット確認（機能単位）
 ```
 
 ### 横断レビュー
