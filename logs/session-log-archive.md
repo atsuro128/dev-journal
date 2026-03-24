@@ -418,3 +418,50 @@
 ### 意思決定ログ
 - PERMISSION_DENIED 廃止: 方針 C。MVP の外部契約は上流 RBC-004 準拠で FORBIDDEN に統一
 - ソートキー統一: RPT-001 は created_at、ADM-001 は submitted_at DESC NULLS LAST
+
+---
+
+## セッション: 2026-03-23 18:15（アーカイブ）
+
+### ゴール
+- Step 6（テスト設計）を完了させる（成果物構成確定 → 作業計画 → Phase 1〜3 → 完了宣言）
+
+### 作業ログ
+- **成果物構成の再検討**（ユーザー主導）
+  - 当初案: test_strategy.md + test_cases.md（2ファイル）
+  - ユーザー指摘: 「下流が困る」前提を疑え。Step 5 で1機能=1ファイルに変更した教訓
+  - 4エージェント（test-designer, test-implementer, backend-dev, planner）に意見聴取 → 全員「分割すべき」で一致
+  - TDD 前提の粒度議論: 「機能グループ単位」ではなく「Goハンドラファイル単位」が正解
+  - 再度4エージェントに確認 → dashboard/categories/tenant の扱いで意見分岐
+  - 最終確定: test_strategy.md + test_cases/ 8ファイル（auth, reports, items, attachments, workflow, dashboard, tenant, cross-cutting）
+  - work-breakdown（step6/step7）更新、issue ops-028 クローズ
+- **作業計画立案**（Plan エージェント）
+  - 判断ポイント5点確定（カバレッジ基準、CI/CD、レビュー単位、E2E粒度、フィクスチャ）
+  - 3 Phase 構成: Phase 1（テスト戦略）→ Phase 2（機能別TC 7並列）→ Phase 3（横断TC）
+  - task-plan 書き出し、test-designer/test-reviewer エージェント定義更新
+- **Phase 1: テスト戦略策定**（6-A）
+  - test_strategy.md 作成（621行、13セクション）
+  - 内部レビュー: blocker 5件 → 修正 → 再レビュー PASS
+  - codex レビュー: 052（成果物未完成）、053（非機能テスト方針欠落）→ 053 対応 → resolved
+- **Phase 2: 機能別テストケース**（6-B-1〜7、7並列）
+  - 計397件 → 内部レビュー → codex レビュー
+- **Phase 3: 横断テストケース**（6-B-8）
+  - cross-cutting.md(84件) → 内部レビュー → codex 最終レビュー LGTM
+- **Step 6 完了宣言**
+
+### 未完了
+- なし（Step 6 完了）
+
+### ブロッカー
+- なし
+
+### 次にやること
+1. Step 7（実装・運用）に着手
+
+### 学び・気づき
+- 成果物構成の前提を疑うユーザーの視点が、TDD に基づく正しい粒度（ハンドラ単位）の発見につながった
+- 内部レビューの「再レビュー省略」を提案したらユーザーに指摘された。ワークフローの「PASS まで繰り返す」は省略不可
+
+### 意思決定ログ
+- 成果物粒度: test_cases を Goハンドラファイル単位（8ファイル）に分割
+- 非機能テスト方針: MVP対象外ではなく、上流に具体値があるため方針を定義
