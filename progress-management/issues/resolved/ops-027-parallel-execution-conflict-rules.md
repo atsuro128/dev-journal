@@ -37,7 +37,7 @@ Step 4+5 着手前までに方針を確定する。
 
 ## 解決内容
 
-提案 C（タスクごとにブランチを切って最後にマージ）を採用。3 階層ブランチモデル（main → Wave ブランチ → タスクブランチ）を `ai-dev-framework/rules/branching.md` に定義。ops-032 に包含される形で解決。
+提案 C（タスクごとにブランチを切って最後にマージ）を採用。当初は `ai-dev-framework/rules/branching.md` に定義し、その後プロジェクト確定版を `dev-journal/guide/parallel-branch-operation.md` に昇格した。ops-032 に包含される形で解決。
 
 ## 解決日
 2026-03-16

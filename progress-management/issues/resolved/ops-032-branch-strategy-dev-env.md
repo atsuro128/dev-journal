@@ -28,7 +28,7 @@ Step 5 以降（並列実行の技術的前提条件）
 
 ## 対応内容
 
-以下を定義する成果物 `ai-dev-framework/rules/branching.md` を作成（Step 7 Phase 1 から前倒し）:
+以下を定義する成果物として、当初は `ai-dev-framework/rules/branching.md` を作成し、その後プロジェクト確定版を `dev-journal/guide/parallel-branch-operation.md` に昇格した:
 
 - ブランチモデル（main / develop / feature、タスク ID ベース命名）
 - git worktree 運用方針（並列セッションの分離）
@@ -50,11 +50,11 @@ Step 5 着手前
 
 ### 2026-03-16: ブランチ戦略
 
-ブランチ戦略のみ解決。`ai-dev-framework/rules/branching.md` に worktree + PR ベースのブランチモデルを定義。ops-027 もこのブランチ戦略で解決。
+ブランチ戦略のみ解決。当初は `ai-dev-framework/rules/branching.md` に worktree + PR ベースのブランチモデルを定義し、その後 `dev-journal/guide/parallel-branch-operation.md` をプロジェクト側の確定版ガイドとした。ops-027 もこのブランチ戦略で解決。
 
 ### 2026-03-18: 設計ドキュメントへの適用範囲拡大
 
-`branching.md` の適用範囲を「Step 6 以降」から「Step 5 以降」に拡大。設計ドキュメントの並列作成にも worktree/PR ベースの隔離を適用する。`subagent-workflow.md` の並列実行ルール・共有ファイル調整・コミットタイミングを PR ベースに更新。
+`branching.md` の適用範囲を「Step 6 以降」から「Step 5 以降」に拡大。その後、プロジェクト確定版は `dev-journal/guide/parallel-branch-operation.md` へ移し、設計ドキュメントの並列作成にも worktree/PR ベースの隔離を適用する方針を維持した。
 
 ### 2026-03-23: 残課題を work-breakdown に格上げしてクローズ
 

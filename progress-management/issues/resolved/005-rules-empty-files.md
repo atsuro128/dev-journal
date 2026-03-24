@@ -40,7 +40,7 @@ project-management
 
 | 旧ファイル | 理由 |
 |-----------|------|
-| `ai-dev-framework/rules/branching.md` | `.claude/rules/` 体系に移行前の旧配置。ブランチ戦略は ops-032 で解決済み |
+| `ai-dev-framework/rules/branching.md` | 削除済みの旧配置。プロジェクト確定版は `dev-journal/guide/parallel-branch-operation.md` に移管 |
 
 ## 解決内容
 
