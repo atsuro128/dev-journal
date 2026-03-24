@@ -5,21 +5,24 @@ AI駆動開発フレームワーク。テンプレート・エージェント設
 ```
 ai-dev-framework/
 ├── agents/                      # エージェント手順書
+│   ├── issue-review-procedure.md
 │   ├── re-review-procedure.md
 │   └── review-procedure.md
-├── prompts/                     # 指示文テンプレート
-│   └── README.md
 ├── scripts/                     # 自動化スクリプト
 │   ├── db-reset.sh
 │   ├── lint.sh
 │   └── setup.sh
 └── templates/                   # ドキュメントテンプレート
     ├── ADR-template.md
-    ├── issue-template.md
     ├── README-template.md
-    └── RFC-template.md
+    ├── issue-template.md
+    ├── review-finding-template.md
+    ├── task-plan-template.md
+    ├── task-template.md
+    └── work-breakdown-template.md
 ```
 
 ## 備考
 
 - 旧 `rules/` ディレクトリは `root-project/.claude/rules/` に移行済み（ADR-002）
+- 旧 `prompts/` ディレクトリは廃止済み
