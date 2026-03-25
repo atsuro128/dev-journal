@@ -14,7 +14,7 @@
 | `30_arch/adr/0003-rls-tenant-isolation.md` | RLS テナント分離の詳細設計 |
 | `.claude/rules/security-policy.md` | セキュリティポリシー全体 |
 | `10_requirements/rbac.md` | RBAC + テナント分離フロー |
-| `references/glossary.md` | 用語集 |
+| `deliverables/docs/01_glossary.md` | 用語集 |
 
 ---
 

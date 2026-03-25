@@ -14,7 +14,7 @@
 | `preliminary/02_actor-analysis.md` | アクター別の業務分析 |
 | `preliminary/03_business-flow.md` | 業務フロー・状態遷移 |
 | `preliminary/04_business-rules.md` | ビジネスルール一覧（ルールID体系） |
-| `references/glossary.md` | 用語定義 |
+| `deliverables/docs/01_glossary.md` | 用語定義 |
 
 ---
 

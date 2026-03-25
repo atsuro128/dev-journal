@@ -13,7 +13,7 @@
 | `20_domain/state_machine.md` | 状態遷移、ステータス値 |
 | `30_arch/adr/0002-multi-tenant.md` | Shared DB + tenant_id 方式 |
 | `30_arch/adr/0003-rls-tenant-isolation.md` | RLS ポリシー設計 |
-| `references/glossary.md` | テーブル/カラム命名 |
+| `deliverables/docs/01_glossary.md` | テーブル/カラム命名 |
 
 ---
 

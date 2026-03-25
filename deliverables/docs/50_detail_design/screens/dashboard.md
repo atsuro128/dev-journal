@@ -20,7 +20,7 @@
 | `10_requirements/usecases.md` | UC-SYS04 |
 | `10_requirements/requirements.md` | DASH-001〜DASH-005 |
 | `10_requirements/rbac.md` | 3.2（経費レポート権限） |
-| `references/glossary.md` | 操作用語の統一 |
+| `deliverables/docs/01_glossary.md` | 操作用語の統一 |
 
 ---
 

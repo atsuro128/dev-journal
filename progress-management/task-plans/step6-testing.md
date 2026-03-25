@@ -83,5 +83,5 @@ Step 5 完了（確認済み）
 - **上流整合性**: openapi.yaml の全エンドポイント（31 operationId、health 除く30）、state_machine.md の遷移ルール（T1〜T5, X1〜X10）、rbac.md の権限マトリクスと一致しているか
 - **タスク間整合性**: テストID の命名規則が統一され、重複がないか。機能別ファイルと cross-cutting.md の責務境界が守られているか
 - **MVP スコープ**: `deliverables/docs/02_scope.md` の範囲内か
-- **用語集準拠**: `dev-journal/references/glossary.md` の用語を使用しているか
+- **用語集準拠**: `dev-journal/deliverables/docs/01_glossary.md` の用語を使用しているか
 - **完了条件**: work-breakdown に定義された完了条件を全て満たしているか

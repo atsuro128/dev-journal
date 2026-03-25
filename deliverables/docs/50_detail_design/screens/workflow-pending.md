@@ -21,7 +21,7 @@
 | `10_requirements/workflow.md` | 状態遷移定義 |
 | `20_domain/state_machine.md` | 遷移 T2/T3 の事前条件・事後条件 |
 | `10_requirements/rbac.md` | 承認フロー権限（§3.3） |
-| `references/glossary.md` | 用語集 |
+| `deliverables/docs/01_glossary.md` | 用語集 |
 
 ## 3. アクションの責務分担（screens/report-detail.md との接点）
 

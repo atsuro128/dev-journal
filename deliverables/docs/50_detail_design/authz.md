@@ -26,7 +26,7 @@
 | `50_detail_design/security.md` | JWT クレーム構造、テナント分離実装、レート制限 |
 | `50_detail_design/files.md` | 添付ファイルの認可フロー |
 | `20_domain/state_machine.md` | 状態遷移の事前条件・事後条件 |
-| `references/glossary.md` | 用語集 |
+| `deliverables/docs/01_glossary.md` | 用語集 |
 
 ---
 

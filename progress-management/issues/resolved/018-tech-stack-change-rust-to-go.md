@@ -32,7 +32,7 @@ Step 3（アーキテクチャ設計）
 - `.devcontainer/Dockerfile` — Go ベースに変更
 - 詳細設計（Step 5）— ORM / クエリビルダの選定（SQLx → sqlc / GORM 等）
 - `dev-journal/guide/portfolio_project_steps.md` — Rust 固有の記述を Go に更新
-- `dev-journal/references/glossary.md` — 技術用語の更新（該当があれば）
+- `dev-journal/deliverables/docs/01_glossary.md` — 技術用語の更新（該当があれば）
 
 ### 影響を受けない成果物
 - 要件定義（Step 1）— 技術スタック非依存

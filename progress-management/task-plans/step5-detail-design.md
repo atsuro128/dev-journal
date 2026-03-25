@@ -112,5 +112,5 @@ T1-17: monitoring.md ─────┘
 - **上流整合性**: 入力として参照した上流成果物と矛盾がないか
 - **タスク間整合性**: 並列タスクの成果物間で用語・ID・参照関係が統一されているか
 - **MVP スコープ**: `deliverables/docs/02_scope.md` の範囲内か
-- **用語集準拠**: `dev-journal/references/glossary.md` の用語を使用しているか
+- **用語集準拠**: `dev-journal/deliverables/docs/01_glossary.md` の用語を使用しているか
 - **完了条件**: work-breakdown に定義された完了条件を満たしているか

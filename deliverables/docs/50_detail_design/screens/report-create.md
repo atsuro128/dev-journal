@@ -22,7 +22,7 @@
 | `10_requirements/requirements.md` | RPT-F01 ~ F07 |
 | `10_requirements/workflow.md` | 状態遷移定義 |
 | `20_domain/state_machine.md` | 状態遷移詳細 |
-| `references/glossary.md` | 用語集 |
+| `deliverables/docs/01_glossary.md` | 用語集 |
 
 ---
 

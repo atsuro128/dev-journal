@@ -40,13 +40,13 @@
 
 ## 操作
 
-| 用語 | 英語 | 定義 |
-|---|---|---|
-| 提出 | Submit | Member が下書きのレポートを承認者に提出する操作（draft → submitted） |
-| 承認 | Approve | Approver が提出されたレポートを承認する操作（submitted → approved） |
-| 却下 | Reject | Approver が提出されたレポートを差し戻す操作（submitted → rejected）。却下理由必須 |
-| 支払完了 | Mark as Paid | Accounting が承認済みレポートの支払完了を記録する操作（approved → paid） |
-| 再申請 | Resubmit | 却下後に新規レポートとして再度申請すること。元レポートへの参照を保持 |
+| 用語 | 英語 | 定義 | 使わない表現 |
+|---|---|---|---|
+| 提出 | Submit | Member が下書きのレポートを承認者に提出する操作（draft → submitted） | 申請、送信 |
+| 承認 | Approve | Approver が提出されたレポートを承認する操作（submitted → approved） | — |
+| 却下 | Reject | Approver が提出されたレポートを差し戻す操作（submitted → rejected）。却下理由必須 | 差戻し、リジェクト |
+| 支払完了 | Mark as Paid | Accounting が承認済みレポートの支払完了を記録する操作（approved → paid） | 精算、清算 |
+| 再申請 | Resubmit | 却下後に新規レポートとして再度申請すること。元レポートへの参照を保持 | 再提出、やり直し |
 
 ## 技術用語
 

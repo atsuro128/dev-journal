@@ -44,7 +44,7 @@
 
 **参照先**:
 - 上流成果物: `dev-journal/deliverables/docs/` 配下
-- 用語集: `dev-journal/references/glossary.md`
+- 用語集: `dev-journal/deliverables/docs/01_glossary.md`
 - 並列ブランチ運用: `dev-journal/guide/parallel-branch-operation.md`
 
 ## Phase 構成
@@ -275,5 +275,5 @@ Phase 5（CI/CD + hooks）[Phase 1-4 完了に依存]
 - **共通前提遵守**: 共通契約・担当境界・禁止事項が守られているか
 - **トレーサビリティ**: operationId, テーブル定義, 認可ルールの対応関係が追跡可能か
 - **MVP スコープ**: `deliverables/docs/02_scope.md` の範囲内か
-- **用語集準拠**: `dev-journal/references/glossary.md` の用語を使用しているか
+- **用語集準拠**: `dev-journal/deliverables/docs/01_glossary.md` の用語を使用しているか
 - **完了条件**: work-breakdown に定義された完了条件を全て満たしているか

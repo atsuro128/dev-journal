@@ -21,7 +21,7 @@
 | `10_requirements/usecases.md` | UC-M08 |
 | `10_requirements/requirements.md` | RPT-F01 ~ F07 |
 | `10_requirements/rbac.md` | 権限マトリクス |
-| `references/glossary.md` | 用語集 |
+| `deliverables/docs/01_glossary.md` | 用語集 |
 
 ---
 

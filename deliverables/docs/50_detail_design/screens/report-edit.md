@@ -22,7 +22,7 @@
 | `10_requirements/requirements.md` | RPT-F01 ~ F07 |
 | `10_requirements/rbac.md` | 権限マトリクス |
 | `20_domain/state_machine.md` | 状態遷移詳細・操作マトリクス |
-| `references/glossary.md` | 用語集 |
+| `deliverables/docs/01_glossary.md` | 用語集 |
 
 ---
 

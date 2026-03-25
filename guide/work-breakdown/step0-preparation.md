@@ -14,7 +14,6 @@
 
 ## 【root-project 整備】
 
-- `references/glossary.md`：`deliverables/docs/01_glossary.md` の用語を転記・集約（AI参照用の生きた用語集として運用）
 - `references/links.md`：参考にした資料・公式ドキュメントのリンクを記録し始める
 - `templates/README-template.md`：最終成果物の `project/README.md` 雛形を確認・調整
 
@@ -35,7 +34,6 @@
 
 ### 2. 内部整合性
 - `00_goals.md` の訴求ポイントと `02_scope.md` の MVP 機能が矛盾していないか（ゴールで掲げた技術的訴求が MVP に含まれているか）
-- `01_glossary.md` と `references/glossary.md` の用語定義が一致しているか
 - `02_scope.md` の Phase 3 追加機能が MVP と重複・矛盾していないか
 
 ### 3. 下流作業可能性

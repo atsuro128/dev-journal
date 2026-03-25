@@ -15,7 +15,7 @@
 | `30_arch/architecture.md` | S3 インフラ構成（2）、添付エンドポイント（5.1） |
 | `30_arch/adr/0004-infra.md` | S3 設定・署名付き URL |
 | `.claude/rules/security-policy.md` | ファイルセキュリティポリシー（3, 5） |
-| `references/glossary.md` | 用語集 |
+| `deliverables/docs/01_glossary.md` | 用語集 |
 
 ---
 

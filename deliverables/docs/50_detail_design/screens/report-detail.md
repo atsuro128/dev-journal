@@ -24,7 +24,7 @@
 | `10_requirements/rbac.md` | 権限マトリクス |
 | `20_domain/state_machine.md` | 状態遷移詳細・操作マトリクス |
 | `20_domain/domain_model.md` | ExpenseReport, ExpenseItem, Attachment |
-| `references/glossary.md` | 用語集 |
+| `deliverables/docs/01_glossary.md` | 用語集 |
 
 ---
 

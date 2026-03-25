@@ -32,7 +32,7 @@
 | `10_requirements/requirements.md` | AUTH-F06, SEC-001, SEC-002, SEC-006, SEC-010 |
 | `30_arch/architecture.md` | 認証エンドポイント（&sect;5.1）、認証フロー（&sect;3.3） |
 | `10_requirements/rbac.md` | 認証関連の権限マトリクス（&sect;3.1） |
-| `references/glossary.md` | 用語集 |
+| `deliverables/docs/01_glossary.md` | 用語集 |
 
 ---
 

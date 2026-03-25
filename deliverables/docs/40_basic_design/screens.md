@@ -14,7 +14,7 @@
 | `10_requirements/rbac.md` | RBAC 権限マトリクス |
 | `10_requirements/workflow.md` | 状態遷移 |
 | `30_arch/architecture.md` | フロントエンド構成・APIエンドポイント |
-| `references/glossary.md` | 用語集 |
+| `deliverables/docs/01_glossary.md` | 用語集 |
 
 ---
 

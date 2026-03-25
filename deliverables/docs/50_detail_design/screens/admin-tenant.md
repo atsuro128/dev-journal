@@ -19,7 +19,7 @@
 | `40_basic_design/screens.md` | §3.5（管理系画面一覧）、§4（共通UIパターン） |
 | `10_requirements/usecases.md` | UC-AD01 |
 | `10_requirements/rbac.md` | §3.5（管理機能権限） |
-| `references/glossary.md` | 用語統一 |
+| `deliverables/docs/01_glossary.md` | 用語統一 |
 
 ---
 
