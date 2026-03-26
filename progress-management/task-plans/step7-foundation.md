@@ -45,7 +45,7 @@
 **参照先**:
 - 上流成果物: `dev-journal/deliverables/docs/` 配下
 - 用語集: `dev-journal/deliverables/docs/01_glossary.md`
-- 並列ブランチ運用: `dev-journal/guide/parallel-branch-operation.md`
+- 並列ブランチ運用: `ai-dev-framework/guide/parallel-branch-operation.md`
 
 ## Phase 構成
 

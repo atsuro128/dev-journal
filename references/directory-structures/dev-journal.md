@@ -4,7 +4,7 @@
 
 ```
 dev-journal/
-├── ai-operations/                    # AI運用設計
+├── operations/                    # AI運用設計
 │   ├── overview.md                   # AI運用方針（全体）
 │   ├── hooks-design.md               # Hooks設計資料
 │   ├── subagent-design.md            # サブエージェント設計
