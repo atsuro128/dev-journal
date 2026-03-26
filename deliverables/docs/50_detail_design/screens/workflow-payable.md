@@ -17,6 +17,7 @@
 | **画面ID** | SCR-WFL-002 |
 | **画面名** | 支払待ち一覧 |
 | **URL パス** | `/payments` |
+| **対応要件ID** | WFL-F05（支払待ち一覧） |
 | **対応 UC** | UC-AC01（承認済みレポートを確認する） |
 | **対応 API** | `GET /api/workflow/payable` |
 | **アクセス可能ロール** | Accounting |

@@ -17,6 +17,7 @@
 | 画面ID | SCR-RPT-002 |
 | 画面名 | レポート作成 |
 | URLパス | `/reports/new` |
+| 対応要件ID | RPT-F01（レポート作成） |
 | 対応UC | UC-M01（経費レポートを作成する）、UC-M09（却下レポートを再申請する） |
 | 対応ロール | Member, Approver, Admin, Accounting |
 | 使用API | POST /api/reports |

@@ -18,6 +18,7 @@
 | 画面名 | テナント情報 |
 | URLパス | `/settings/tenant` |
 | 目的 | テナント（企業）の基本情報を確認する |
+| 対応要件ID | ADM-F01（テナント情報取得） |
 | 対応UC | UC-AD01（Admin: テナント情報確認） |
 | 対応ロール | Admin |
 | APIエンドポイント | `GET /api/tenant` |

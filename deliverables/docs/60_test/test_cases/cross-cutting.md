@@ -123,55 +123,55 @@
 
 #### 経費レポート — テナント分離
 
-| テストID | テストレベル | レイヤー | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
-|---------|------------|---------|----------------|-------------------|---------|
-| CRS-001 | 統合 | handler | `TestTenantIsolation_GetReport_OtherTenant_404` | `userMember`（テナントA）のトークンで `GET /api/reports/{report_tenant_b_draft.id}` を実行。テナントBの `report_tenant_b_draft` がDB上に存在する | 404 RESOURCE_NOT_FOUND。テナントBのレポートが存在しないかのように扱われる |
-| CRS-002 | 統合 | handler | `TestTenantIsolation_UpdateReport_OtherTenant_404` | `userMember`（テナントA）のトークンで `PUT /api/reports/{report_tenant_b_draft.id}` を実行 | 404 RESOURCE_NOT_FOUND |
-| CRS-003 | 統合 | handler | `TestTenantIsolation_DeleteReport_OtherTenant_404` | `userMember`（テナントA）のトークンで `DELETE /api/reports/{report_tenant_b_draft.id}` を実行 | 404 RESOURCE_NOT_FOUND |
-| CRS-004 | 統合 | handler | `TestTenantIsolation_SubmitReport_OtherTenant_404` | `userMember`（テナントA）のトークンで `POST /api/reports/{report_tenant_b_draft.id}/submit` を実行 | 404 RESOURCE_NOT_FOUND |
+| テストID | テストレベル | レイヤー | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---------|------------|---------|---------|-----------|-----------|----------------|-------------------|---------|
+| CRS-001 | 統合 | handler | テナント分離 | TNT-F02, TNT-005 | authz.md#5, db_schema.md#RLS | `TestTenantIsolation_GetReport_OtherTenant_404` | `userMember`（テナントA）のトークンで `GET /api/reports/{report_tenant_b_draft.id}` を実行。テナントBの `report_tenant_b_draft` がDB上に存在する | 404 RESOURCE_NOT_FOUND。テナントBのレポートが存在しないかのように扱われる |
+| CRS-002 | 統合 | handler | テナント分離 | TNT-F02, TNT-005 | authz.md#5, db_schema.md#RLS | `TestTenantIsolation_UpdateReport_OtherTenant_404` | `userMember`（テナントA）のトークンで `PUT /api/reports/{report_tenant_b_draft.id}` を実行 | 404 RESOURCE_NOT_FOUND |
+| CRS-003 | 統合 | handler | テナント分離 | TNT-F02, TNT-005 | authz.md#5, db_schema.md#RLS | `TestTenantIsolation_DeleteReport_OtherTenant_404` | `userMember`（テナントA）のトークンで `DELETE /api/reports/{report_tenant_b_draft.id}` を実行 | 404 RESOURCE_NOT_FOUND |
+| CRS-004 | 統合 | handler | テナント分離 | TNT-F02, TNT-005 | authz.md#5, db_schema.md#RLS | `TestTenantIsolation_SubmitReport_OtherTenant_404` | `userMember`（テナントA）のトークンで `POST /api/reports/{report_tenant_b_draft.id}/submit` を実行 | 404 RESOURCE_NOT_FOUND |
 
 #### 経費明細 — テナント分離
 
-| テストID | テストレベル | レイヤー | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
-|---------|------------|---------|----------------|-------------------|---------|
-| CRS-005 | 統合 | handler | `TestTenantIsolation_CreateItem_OtherTenant_404` | `userMember`（テナントA）のトークンで `POST /api/reports/{report_tenant_b_draft.id}/items` を実行 | 404 RESOURCE_NOT_FOUND |
-| CRS-006 | 統合 | handler | `TestTenantIsolation_UpdateItem_OtherTenant_404` | `userMember`（テナントA）のトークンで `PUT /api/reports/{report_tenant_b_draft.id}/items/{item_tenant_b.id}` を実行 | 404 RESOURCE_NOT_FOUND |
-| CRS-007 | 統合 | handler | `TestTenantIsolation_DeleteItem_OtherTenant_404` | `userMember`（テナントA）のトークンで `DELETE /api/reports/{report_tenant_b_draft.id}/items/{item_tenant_b.id}` を実行 | 404 RESOURCE_NOT_FOUND |
+| テストID | テストレベル | レイヤー | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---------|------------|---------|---------|-----------|-----------|----------------|-------------------|---------|
+| CRS-005 | 統合 | handler | テナント分離 | TNT-F02, TNT-005 | authz.md#5, db_schema.md#RLS | `TestTenantIsolation_CreateItem_OtherTenant_404` | `userMember`（テナントA）のトークンで `POST /api/reports/{report_tenant_b_draft.id}/items` を実行 | 404 RESOURCE_NOT_FOUND |
+| CRS-006 | 統合 | handler | テナント分離 | TNT-F02, TNT-005 | authz.md#5, db_schema.md#RLS | `TestTenantIsolation_UpdateItem_OtherTenant_404` | `userMember`（テナントA）のトークンで `PUT /api/reports/{report_tenant_b_draft.id}/items/{item_tenant_b.id}` を実行 | 404 RESOURCE_NOT_FOUND |
+| CRS-007 | 統合 | handler | テナント分離 | TNT-F02, TNT-005 | authz.md#5, db_schema.md#RLS | `TestTenantIsolation_DeleteItem_OtherTenant_404` | `userMember`（テナントA）のトークンで `DELETE /api/reports/{report_tenant_b_draft.id}/items/{item_tenant_b.id}` を実行 | 404 RESOURCE_NOT_FOUND |
 
 #### 添付ファイル — テナント分離
 
-| テストID | テストレベル | レイヤー | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
-|---------|------------|---------|----------------|-------------------|---------|
-| CRS-008 | 統合 | handler | `TestTenantIsolation_UploadAttachment_OtherTenant_404` | `userMember`（テナントA）のトークンで `POST /api/reports/{report_tenant_b_draft.id}/items/{item_tenant_b.id}/attachments` を実行 | 404 RESOURCE_NOT_FOUND |
-| CRS-009 | 統合 | handler | `TestTenantIsolation_ListAttachments_OtherTenant_404` | `userMember`（テナントA）のトークンで `GET /api/reports/{report_tenant_b_draft.id}/items/{item_tenant_b.id}/attachments` を実行 | 404 RESOURCE_NOT_FOUND |
-| CRS-010 | 統合 | handler | `TestTenantIsolation_GetAttachmentDownload_OtherTenant_404` | `userMember`（テナントA）のトークンで `GET /api/reports/{report_tenant_b_draft.id}/items/{item_tenant_b.id}/attachments/{attachment_tenant_b.id}` を実行 | 404 RESOURCE_NOT_FOUND |
-| CRS-011 | 統合 | handler | `TestTenantIsolation_DeleteAttachment_OtherTenant_404` | `userMember`（テナントA）のトークンで `DELETE /api/reports/{report_tenant_b_draft.id}/items/{item_tenant_b.id}/attachments/{attachment_tenant_b.id}` を実行 | 404 RESOURCE_NOT_FOUND |
+| テストID | テストレベル | レイヤー | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---------|------------|---------|---------|-----------|-----------|----------------|-------------------|---------|
+| CRS-008 | 統合 | handler | テナント分離 | TNT-F02, TNT-005 | authz.md#5, db_schema.md#RLS | `TestTenantIsolation_UploadAttachment_OtherTenant_404` | `userMember`（テナントA）のトークンで `POST /api/reports/{report_tenant_b_draft.id}/items/{item_tenant_b.id}/attachments` を実行 | 404 RESOURCE_NOT_FOUND |
+| CRS-009 | 統合 | handler | テナント分離 | TNT-F02, TNT-005 | authz.md#5, db_schema.md#RLS | `TestTenantIsolation_ListAttachments_OtherTenant_404` | `userMember`（テナントA）のトークンで `GET /api/reports/{report_tenant_b_draft.id}/items/{item_tenant_b.id}/attachments` を実行 | 404 RESOURCE_NOT_FOUND |
+| CRS-010 | 統合 | handler | テナント分離 | TNT-F02, TNT-005 | authz.md#5, db_schema.md#RLS | `TestTenantIsolation_GetAttachmentDownload_OtherTenant_404` | `userMember`（テナントA）のトークンで `GET /api/reports/{report_tenant_b_draft.id}/items/{item_tenant_b.id}/attachments/{attachment_tenant_b.id}` を実行 | 404 RESOURCE_NOT_FOUND |
+| CRS-011 | 統合 | handler | テナント分離 | TNT-F02, TNT-005 | authz.md#5, db_schema.md#RLS | `TestTenantIsolation_DeleteAttachment_OtherTenant_404` | `userMember`（テナントA）のトークンで `DELETE /api/reports/{report_tenant_b_draft.id}/items/{item_tenant_b.id}/attachments/{attachment_tenant_b.id}` を実行 | 404 RESOURCE_NOT_FOUND |
 
 #### ワークフロー — テナント分離
 
 テナントAの Approver がテナントBの `submitted` レポートを操作しようとする、テナントAの Accounting がテナントBの `approved` レポートを操作しようとするケースを検証する。
 
-| テストID | テストレベル | レイヤー | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
-|---------|------------|---------|----------------|-------------------|---------|
-| CRS-012 | 統合 | handler | `TestTenantIsolation_ApproveReport_OtherTenant_404` | `userApprover`（テナントA）のトークンで `POST /api/workflow/{report_tenant_b_submitted.id}/approve` を実行 | 404 RESOURCE_NOT_FOUND |
-| CRS-013 | 統合 | handler | `TestTenantIsolation_RejectReport_OtherTenant_404` | `userApprover`（テナントA）のトークンで `POST /api/workflow/{report_tenant_b_submitted.id}/reject` を実行（却下理由あり） | 404 RESOURCE_NOT_FOUND |
-| CRS-014 | 統合 | handler | `TestTenantIsolation_PayReport_OtherTenant_404` | `userAccounting`（テナントA）のトークンで `POST /api/workflow/{report_tenant_b_approved.id}/pay` を実行 | 404 RESOURCE_NOT_FOUND |
+| テストID | テストレベル | レイヤー | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---------|------------|---------|---------|-----------|-----------|----------------|-------------------|---------|
+| CRS-012 | 統合 | handler | テナント分離 | TNT-F02, TNT-005 | authz.md#5, db_schema.md#RLS | `TestTenantIsolation_ApproveReport_OtherTenant_404` | `userApprover`（テナントA）のトークンで `POST /api/workflow/{report_tenant_b_submitted.id}/approve` を実行 | 404 RESOURCE_NOT_FOUND |
+| CRS-013 | 統合 | handler | テナント分離 | TNT-F02, TNT-005 | authz.md#5, db_schema.md#RLS | `TestTenantIsolation_RejectReport_OtherTenant_404` | `userApprover`（テナントA）のトークンで `POST /api/workflow/{report_tenant_b_submitted.id}/reject` を実行（却下理由あり） | 404 RESOURCE_NOT_FOUND |
+| CRS-014 | 統合 | handler | テナント分離 | TNT-F02, TNT-005 | authz.md#5, db_schema.md#RLS | `TestTenantIsolation_PayReport_OtherTenant_404` | `userAccounting`（テナントA）のトークンで `POST /api/workflow/{report_tenant_b_approved.id}/pay` を実行 | 404 RESOURCE_NOT_FOUND |
 
 #### テナントメンバー — テナント分離
 
 `GET /api/tenant/members` は JWT の `tenant_id` スコープでフィルタされるため、テナントBのメンバーはレスポンスに含まれない（テナントBを直接指定するURL操作ではなく、RLS による分離）。
 
-| テストID | テストレベル | レイヤー | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
-|---------|------------|---------|----------------|-------------------|---------|
-| CRS-015 | 統合 | handler | `TestTenantIsolation_ListTenantMembers_ExcludesOtherTenant` | `userAdmin`（テナントA）のトークンで `GET /api/tenant/members` を実行。テナントBにも `userMemberB` が登録済み | 200 OK。レスポンスの `data` にテナントAのメンバーのみ含まれ、`userMemberB`（`bbbbbbbb-3333-3333-3333-000000000003`）が含まれないこと |
+| テストID | テストレベル | レイヤー | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---------|------------|---------|---------|-----------|-----------|----------------|-------------------|---------|
+| CRS-015 | 統合 | handler | テナント分離 | TNT-F02, TNT-005 | authz.md#5, db_schema.md#RLS | `TestTenantIsolation_ListTenantMembers_ExcludesOtherTenant` | `userAdmin`（テナントA）のトークンで `GET /api/tenant/members` を実行。テナントBにも `userMemberB` が登録済み | 200 OK。レスポンスの `data` にテナントAのメンバーのみ含まれ、`userMemberB`（`bbbbbbbb-3333-3333-3333-000000000003`）が含まれないこと |
 
 **備考**: CRS-015 がテナント分離テストの正本。TNT-008（tenant.md）は同一テナント内のメンバー一覧のデータ正確性テストとして残す（テナント越境アクセステストではない）。実装時は CRS-015 でテナント越境を検証し、TNT-008 でレスポンスのフィルタリング正確性を検証する。両方実装する。
 
 #### ダッシュボード — テナント分離
 
-| テストID | テストレベル | レイヤー | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
-|---------|------------|---------|----------------|-------------------|---------|
-| CRS-016 | 統合 | handler | `TestTenantIsolation_Dashboard_ExcludesOtherTenantData` | `userMember`（テナントA）のトークンで `GET /api/dashboard` を実行。テナントBに `report_tenant_b_draft` が1件存在。テナントAには `userMember` の draft が1件のみ | 200 OK。集計値にテナントBのデータが含まれないこと（`data.my_draft_count == 1`）。DSH-018 と対応（CRS-016 が横断観点の正本） |
+| テストID | テストレベル | レイヤー | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---------|------------|---------|---------|-----------|-----------|----------------|-------------------|---------|
+| CRS-016 | 統合 | handler | テナント分離 | TNT-F02, TNT-005 | authz.md#5, db_schema.md#RLS | `TestTenantIsolation_Dashboard_ExcludesOtherTenantData` | `userMember`（テナントA）のトークンで `GET /api/dashboard` を実行。テナントBに `report_tenant_b_draft` が1件存在。テナントAには `userMember` の draft が1件のみ | 200 OK。集計値にテナントBのデータが含まれないこと（`data.my_draft_count == 1`）。DSH-018 と対応（CRS-016 が横断観点の正本） |
 
 ---
 
@@ -237,52 +237,52 @@
 
 下記テストケースは RBAC マトリクスの「重点検証ポイント」（`test_strategy.md` §11.2）のうち、機能別ファイルでカバーされていない組み合わせを補完する。機能別ファイルに既存テストがある場合は重複させず、テストIDのクロス参照のみ行う。
 
-| テストID | テストレベル | レイヤー | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
-|---------|------------|---------|----------------|-------------------|---------|
-| CRS-021 | 統合 | handler | `TestRBAC_ListAllReports_Member_Forbidden` | `userMember` のトークンで `GET /api/reports/all` | 403 FORBIDDEN。`reports.md` での検証を補完（マトリクス確認用） |
-| CRS-022 | 統合 | handler | `TestRBAC_ListAllReports_Approver_Forbidden` | `userApprover` のトークンで `GET /api/reports/all` | 403 FORBIDDEN |
-| CRS-023 | 統合 | handler | `TestRBAC_ListAllReports_Admin_OK` | `userAdmin` のトークンで `GET /api/reports/all` | 200 OK |
-| CRS-024 | 統合 | handler | `TestRBAC_ListAllReports_Accounting_OK` | `userAccounting` のトークンで `GET /api/reports/all` | 200 OK |
-| CRS-025 | 統合 | handler | `TestRBAC_ListPendingReports_Member_Forbidden` | `userMember` のトークンで `GET /api/workflow/pending` | 403 FORBIDDEN（WFL-006 とクロス参照） |
-| CRS-026 | 統合 | handler | `TestRBAC_ListPendingReports_Admin_Forbidden` | `userAdmin` のトークンで `GET /api/workflow/pending` | 403 FORBIDDEN（WFL-007 とクロス参照） |
-| CRS-027 | 統合 | handler | `TestRBAC_ListPendingReports_Accounting_Forbidden` | `userAccounting` のトークンで `GET /api/workflow/pending` | 403 FORBIDDEN（WFL-008 とクロス参照） |
-| CRS-028 | 統合 | handler | `TestRBAC_ApproveReport_Member_Forbidden` | `userMember` のトークンで `POST /api/workflow/{report_submitted.id}/approve` | 403 FORBIDDEN（WFL-017 とクロス参照） |
-| CRS-029 | 統合 | handler | `TestRBAC_ApproveReport_Admin_Forbidden` | `userAdmin` のトークンで `POST /api/workflow/{report_submitted.id}/approve` | 403 FORBIDDEN（WFL-018 とクロス参照） |
-| CRS-030 | 統合 | handler | `TestRBAC_ApproveReport_Accounting_Forbidden` | `userAccounting` のトークンで `POST /api/workflow/{report_submitted.id}/approve` | 403 FORBIDDEN（WFL-019 とクロス参照） |
-| CRS-031 | 統合 | handler | `TestRBAC_RejectReport_Member_Forbidden` | `userMember` のトークンで `POST /api/workflow/{report_submitted.id}/reject` | 403 FORBIDDEN（WFL-027 とクロス参照） |
-| CRS-032 | 統合 | handler | `TestRBAC_RejectReport_Admin_Forbidden` | `userAdmin` のトークンで `POST /api/workflow/{report_submitted.id}/reject` | 403 FORBIDDEN（WFL-028 とクロス参照） |
-| CRS-033 | 統合 | handler | `TestRBAC_RejectReport_Accounting_Forbidden` | `userAccounting` のトークンで `POST /api/workflow/{report_submitted.id}/reject` | 403 FORBIDDEN（WFL-029 とクロス参照） |
-| CRS-034 | 統合 | handler | `TestRBAC_ListPayableReports_Member_Forbidden` | `userMember` のトークンで `GET /api/workflow/payable` | 403 FORBIDDEN |
-| CRS-035 | 統合 | handler | `TestRBAC_ListPayableReports_Approver_Forbidden` | `userApprover` のトークンで `GET /api/workflow/payable` | 403 FORBIDDEN |
-| CRS-036 | 統合 | handler | `TestRBAC_ListPayableReports_Admin_Forbidden` | `userAdmin` のトークンで `GET /api/workflow/payable` | 403 FORBIDDEN |
-| CRS-037 | 統合 | handler | `TestRBAC_MarkReportAsPaid_Member_Forbidden` | `userMember` のトークンで `POST /api/workflow/{report_approved.id}/pay` | 403 FORBIDDEN |
-| CRS-038 | 統合 | handler | `TestRBAC_MarkReportAsPaid_Approver_Forbidden` | `userApprover` のトークンで `POST /api/workflow/{report_approved.id}/pay` | 403 FORBIDDEN |
-| CRS-039 | 統合 | handler | `TestRBAC_MarkReportAsPaid_Admin_Forbidden` | `userAdmin` のトークンで `POST /api/workflow/{report_approved.id}/pay` | 403 FORBIDDEN |
-| CRS-040 | 統合 | handler | `TestRBAC_GetTenant_Approver_Forbidden` | `userApprover` のトークンで `GET /api/tenant` | 403 FORBIDDEN（TNT-003 とクロス参照） |
-| CRS-041 | 統合 | handler | `TestRBAC_GetTenant_Member_Forbidden` | `userMember` のトークンで `GET /api/tenant` | 403 FORBIDDEN（TNT-004 とクロス参照） |
-| CRS-042 | 統合 | handler | `TestRBAC_GetTenant_Accounting_Forbidden` | `userAccounting` のトークンで `GET /api/tenant` | 403 FORBIDDEN（TNT-005 とクロス参照） |
-| CRS-043 | 統合 | handler | `TestRBAC_ListTenantMembers_Approver_Forbidden` | `userApprover` のトークンで `GET /api/tenant/members` | 403 FORBIDDEN（TNT-010 とクロス参照） |
-| CRS-044 | 統合 | handler | `TestRBAC_ListTenantMembers_Member_Forbidden` | `userMember` のトークンで `GET /api/tenant/members` | 403 FORBIDDEN（TNT-011 とクロス参照） |
-| CRS-045 | 統合 | handler | `TestRBAC_GetTenant_Admin_OK` | `userAdmin` のトークンで `GET /api/tenant` | 200 OK（TNT-001 とクロス参照） |
-| CRS-046 | 統合 | handler | `TestRBAC_ListTenantMembers_Admin_OK` | `userAdmin` のトークンで `GET /api/tenant/members` | 200 OK（TNT-006 とクロス参照） |
-| CRS-047 | 統合 | handler | `TestRBAC_ListTenantMembers_Accounting_OK` | `userAccounting` のトークンで `GET /api/tenant/members` | 200 OK（TNT-007 とクロス参照） |
+| テストID | テストレベル | レイヤー | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---------|------------|---------|---------|-----------|-----------|----------------|-------------------|---------|
+| CRS-021 | 統合 | handler | 認可 | RPT-F07, RBC-013 | openapi.yaml#listAllReports, authz.md#4.4 | `TestRBAC_ListAllReports_Member_Forbidden` | `userMember` のトークンで `GET /api/reports/all` | 403 FORBIDDEN。`reports.md` での検証を補完（マトリクス確認用） |
+| CRS-022 | 統合 | handler | 認可 | RPT-F07, RBC-013 | openapi.yaml#listAllReports, authz.md#4.4 | `TestRBAC_ListAllReports_Approver_Forbidden` | `userApprover` のトークンで `GET /api/reports/all` | 403 FORBIDDEN |
+| CRS-023 | 統合 | handler | 認可 | RPT-F07, RBC-013 | openapi.yaml#listAllReports, authz.md#4.4 | `TestRBAC_ListAllReports_Admin_OK` | `userAdmin` のトークンで `GET /api/reports/all` | 200 OK |
+| CRS-024 | 統合 | handler | 認可 | RPT-F07, RBC-013 | openapi.yaml#listAllReports, authz.md#4.4 | `TestRBAC_ListAllReports_Accounting_OK` | `userAccounting` のトークンで `GET /api/reports/all` | 200 OK |
+| CRS-025 | 統合 | handler | 認可 | RBAC-F01, RBC-001 | openapi.yaml#listPendingReports, authz.md#3 | `TestRBAC_ListPendingReports_Member_Forbidden` | `userMember` のトークンで `GET /api/workflow/pending` | 403 FORBIDDEN（WFL-006 とクロス参照） |
+| CRS-026 | 統合 | handler | 認可 | RBAC-F01, RBC-001 | openapi.yaml#listPendingReports, authz.md#3 | `TestRBAC_ListPendingReports_Admin_Forbidden` | `userAdmin` のトークンで `GET /api/workflow/pending` | 403 FORBIDDEN（WFL-007 とクロス参照） |
+| CRS-027 | 統合 | handler | 認可 | RBAC-F01, RBC-001 | openapi.yaml#listPendingReports, authz.md#3 | `TestRBAC_ListPendingReports_Accounting_Forbidden` | `userAccounting` のトークンで `GET /api/workflow/pending` | 403 FORBIDDEN（WFL-008 とクロス参照） |
+| CRS-028 | 統合 | handler | 認可 | RBAC-F01, RBC-001 | openapi.yaml#approveReport, authz.md#3 | `TestRBAC_ApproveReport_Member_Forbidden` | `userMember` のトークンで `POST /api/workflow/{report_submitted.id}/approve` | 403 FORBIDDEN（WFL-017 とクロス参照） |
+| CRS-029 | 統合 | handler | 認可 | RBAC-F01, RBC-001 | openapi.yaml#approveReport, authz.md#3 | `TestRBAC_ApproveReport_Admin_Forbidden` | `userAdmin` のトークンで `POST /api/workflow/{report_submitted.id}/approve` | 403 FORBIDDEN（WFL-018 とクロス参照） |
+| CRS-030 | 統合 | handler | 認可 | RBAC-F01, RBC-001 | openapi.yaml#approveReport, authz.md#3 | `TestRBAC_ApproveReport_Accounting_Forbidden` | `userAccounting` のトークンで `POST /api/workflow/{report_submitted.id}/approve` | 403 FORBIDDEN（WFL-019 とクロス参照） |
+| CRS-031 | 統合 | handler | 認可 | RBAC-F01, RBC-001 | openapi.yaml#rejectReport, authz.md#3 | `TestRBAC_RejectReport_Member_Forbidden` | `userMember` のトークンで `POST /api/workflow/{report_submitted.id}/reject` | 403 FORBIDDEN（WFL-027 とクロス参照） |
+| CRS-032 | 統合 | handler | 認可 | RBAC-F01, RBC-001 | openapi.yaml#rejectReport, authz.md#3 | `TestRBAC_RejectReport_Admin_Forbidden` | `userAdmin` のトークンで `POST /api/workflow/{report_submitted.id}/reject` | 403 FORBIDDEN（WFL-028 とクロス参照） |
+| CRS-033 | 統合 | handler | 認可 | RBAC-F01, RBC-001 | openapi.yaml#rejectReport, authz.md#3 | `TestRBAC_RejectReport_Accounting_Forbidden` | `userAccounting` のトークンで `POST /api/workflow/{report_submitted.id}/reject` | 403 FORBIDDEN（WFL-029 とクロス参照） |
+| CRS-034 | 統合 | handler | 認可 | RBAC-F01, RBC-001 | openapi.yaml#listPayableReports, authz.md#3 | `TestRBAC_ListPayableReports_Member_Forbidden` | `userMember` のトークンで `GET /api/workflow/payable` | 403 FORBIDDEN |
+| CRS-035 | 統合 | handler | 認可 | RBAC-F01, RBC-001 | openapi.yaml#listPayableReports, authz.md#3 | `TestRBAC_ListPayableReports_Approver_Forbidden` | `userApprover` のトークンで `GET /api/workflow/payable` | 403 FORBIDDEN |
+| CRS-036 | 統合 | handler | 認可 | RBAC-F01, RBC-001 | openapi.yaml#listPayableReports, authz.md#3 | `TestRBAC_ListPayableReports_Admin_Forbidden` | `userAdmin` のトークンで `GET /api/workflow/payable` | 403 FORBIDDEN |
+| CRS-037 | 統合 | handler | 認可 | RBAC-F01, RBC-001 | openapi.yaml#markReportAsPaid, authz.md#3 | `TestRBAC_MarkReportAsPaid_Member_Forbidden` | `userMember` のトークンで `POST /api/workflow/{report_approved.id}/pay` | 403 FORBIDDEN |
+| CRS-038 | 統合 | handler | 認可 | RBAC-F01, RBC-001 | openapi.yaml#markReportAsPaid, authz.md#3 | `TestRBAC_MarkReportAsPaid_Approver_Forbidden` | `userApprover` のトークンで `POST /api/workflow/{report_approved.id}/pay` | 403 FORBIDDEN |
+| CRS-039 | 統合 | handler | 認可 | RBAC-F01, RBC-001 | openapi.yaml#markReportAsPaid, authz.md#3 | `TestRBAC_MarkReportAsPaid_Admin_Forbidden` | `userAdmin` のトークンで `POST /api/workflow/{report_approved.id}/pay` | 403 FORBIDDEN |
+| CRS-040 | 統合 | handler | 認可 | ADM-F01, RBC-001 | openapi.yaml#getTenant, authz.md#3 | `TestRBAC_GetTenant_Approver_Forbidden` | `userApprover` のトークンで `GET /api/tenant` | 403 FORBIDDEN（TNT-003 とクロス参照） |
+| CRS-041 | 統合 | handler | 認可 | ADM-F01, RBC-001 | openapi.yaml#getTenant, authz.md#3 | `TestRBAC_GetTenant_Member_Forbidden` | `userMember` のトークンで `GET /api/tenant` | 403 FORBIDDEN（TNT-004 とクロス参照） |
+| CRS-042 | 統合 | handler | 認可 | ADM-F01, RBC-001 | openapi.yaml#getTenant, authz.md#3 | `TestRBAC_GetTenant_Accounting_Forbidden` | `userAccounting` のトークンで `GET /api/tenant` | 403 FORBIDDEN（TNT-005 とクロス参照） |
+| CRS-043 | 統合 | handler | 認可 | ADM-F01, RBC-001 | openapi.yaml#listTenantMembers, authz.md#3 | `TestRBAC_ListTenantMembers_Approver_Forbidden` | `userApprover` のトークンで `GET /api/tenant/members` | 403 FORBIDDEN（TNT-010 とクロス参照） |
+| CRS-044 | 統合 | handler | 認可 | ADM-F01, RBC-001 | openapi.yaml#listTenantMembers, authz.md#3 | `TestRBAC_ListTenantMembers_Member_Forbidden` | `userMember` のトークンで `GET /api/tenant/members` | 403 FORBIDDEN（TNT-011 とクロス参照） |
+| CRS-045 | 統合 | handler | 認可 | ADM-F01 | openapi.yaml#getTenant, authz.md#3 | `TestRBAC_GetTenant_Admin_OK` | `userAdmin` のトークンで `GET /api/tenant` | 200 OK（TNT-001 とクロス参照） |
+| CRS-046 | 統合 | handler | 認可 | ADM-F01 | openapi.yaml#listTenantMembers, authz.md#3 | `TestRBAC_ListTenantMembers_Admin_OK` | `userAdmin` のトークンで `GET /api/tenant/members` | 200 OK（TNT-006 とクロス参照） |
+| CRS-047 | 統合 | handler | 認可 | ADM-F01 | openapi.yaml#listTenantMembers, authz.md#3 | `TestRBAC_ListTenantMembers_Accounting_OK` | `userAccounting` のトークンで `GET /api/tenant/members` | 200 OK（TNT-007 とクロス参照） |
 
 **内部統制ルールの整合性確認（RBC-016 / RBC-012）**:
 
-| テストID | テストレベル | レイヤー | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
-|---------|------------|---------|----------------|-------------------|---------|
-| CRS-048 | 統合 | handler | `TestRBAC_SelfApproval_Forbidden` | `userApprover` が自分で作成した submitted レポートに対して `POST /api/workflow/{id}/approve` を実行（RBC-016 自己承認禁止） | 403 SELF_APPROVAL_NOT_ALLOWED。自己承認禁止（`workflow.md` WFL-020 とクロス参照） |
-| CRS-049 | 統合 | handler | `TestRBAC_SelfRejection_Forbidden` | `userApprover` が自分で作成した submitted レポートに対して `POST /api/workflow/{id}/reject` を実行（RBC-016 自己却下禁止） | 403 SELF_APPROVAL_NOT_ALLOWED。自己却下禁止（`workflow.md` WFL-030 とクロス参照） |
-| CRS-050 | 統合 | handler | `TestRBAC_SelfPayment_Forbidden` | `userAccounting` が自分で作成した approved レポートに対して `POST /api/workflow/{id}/pay` を実行（RBC-012 自己支払禁止） | 403 SELF_PAYMENT_NOT_ALLOWED。自己支払処理禁止（`workflow.md` WFL-040 とクロス参照） |
+| テストID | テストレベル | レイヤー | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---------|------------|---------|---------|-----------|-----------|----------------|-------------------|---------|
+| CRS-048 | 統合 | handler | 認可 | RBC-016 | openapi.yaml#approveReport, authz.md#4.2 | `TestRBAC_SelfApproval_Forbidden` | `userApprover` が自分で作成した submitted レポートに対して `POST /api/workflow/{id}/approve` を実行（RBC-016 自己承認禁止） | 403 SELF_APPROVAL_NOT_ALLOWED。自己承認禁止（`workflow.md` WFL-020 とクロス参照） |
+| CRS-049 | 統合 | handler | 認可 | RBC-016 | openapi.yaml#rejectReport, authz.md#4.2 | `TestRBAC_SelfRejection_Forbidden` | `userApprover` が自分で作成した submitted レポートに対して `POST /api/workflow/{id}/reject` を実行（RBC-016 自己却下禁止） | 403 SELF_APPROVAL_NOT_ALLOWED。自己却下禁止（`workflow.md` WFL-030 とクロス参照） |
+| CRS-050 | 統合 | handler | 認可 | RBC-012 | openapi.yaml#markReportAsPaid, authz.md#4.3 | `TestRBAC_SelfPayment_Forbidden` | `userAccounting` が自分で作成した approved レポートに対して `POST /api/workflow/{id}/pay` を実行（RBC-012 自己支払禁止） | 403 SELF_PAYMENT_NOT_ALLOWED。自己支払処理禁止（`workflow.md` WFL-040 とクロス参照） |
 
 **Admin の二面性確認（RBC-014）**:
 
-| テストID | テストレベル | レイヤー | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
-|---------|------------|---------|----------------|-------------------|---------|
-| CRS-051 | 統合 | handler | `TestRBAC_Admin_CanEditOwnReport` | `userAdmin` が自分で作成した draft レポートを `PUT /api/reports/{id}` で更新 | 200 OK。Admin は自分のレポートを申請者として操作可能（RBC-014） |
-| CRS-052 | 統合 | handler | `TestRBAC_Admin_CannotEditOtherReport` | `userAdmin` が `userMember` の draft レポートを `PUT /api/reports/{id}` で更新しようとする | 403 FORBIDDEN。Admin は他者のレポートを編集不可（RBC-014） |
-| CRS-053 | 統合 | handler | `TestRBAC_Admin_CanViewAllReports` | `userAdmin` のトークンで `GET /api/reports/{userMember_report.id}` を実行 | 200 OK。Admin は全レポートを閲覧可能（RBC-013） |
-| CRS-054 | 統合 | handler | `TestRBAC_Admin_CannotApprove` | `userAdmin` のトークンで `POST /api/workflow/{report_submitted.id}/approve` を実行 | 403 FORBIDDEN。Admin は承認不可（RBAC マトリクス §3.3）。CRS-029 とクロス参照 |
+| テストID | テストレベル | レイヤー | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---------|------------|---------|---------|-----------|-----------|----------------|-------------------|---------|
+| CRS-051 | 統合 | handler | 認可 | RBC-014 | openapi.yaml#updateReport, authz.md#4.4 | `TestRBAC_Admin_CanEditOwnReport` | `userAdmin` が自分で作成した draft レポートを `PUT /api/reports/{id}` で更新 | 200 OK。Admin は自分のレポートを申請者として操作可能（RBC-014） |
+| CRS-052 | 統合 | handler | 認可 | RBC-014 | openapi.yaml#updateReport, authz.md#4.4 | `TestRBAC_Admin_CannotEditOtherReport` | `userAdmin` が `userMember` の draft レポートを `PUT /api/reports/{id}` で更新しようとする | 403 FORBIDDEN。Admin は他者のレポートを編集不可（RBC-014） |
+| CRS-053 | 統合 | handler | 認可 | RBC-013 | openapi.yaml#getReport, authz.md#4.4 | `TestRBAC_Admin_CanViewAllReports` | `userAdmin` のトークンで `GET /api/reports/{userMember_report.id}` を実行 | 200 OK。Admin は全レポートを閲覧可能（RBC-013） |
+| CRS-054 | 統合 | handler | 認可 | RBC-013 | openapi.yaml#approveReport, authz.md#3 | `TestRBAC_Admin_CannotApprove` | `userAdmin` のトークンで `POST /api/workflow/{report_submitted.id}/approve` を実行 | 403 FORBIDDEN。Admin は承認不可（RBAC マトリクス §3.3）。CRS-029 とクロス参照 |
 
 ---
 
@@ -304,9 +304,9 @@ Playwright を使用した主要業務フローのテストシナリオ。フロ
 
 #### テストケース
 
-| テストID | テストレベル | レイヤー | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
-|---------|------------|---------|----------------|-------------------|---------|
-| CRS-055 | E2E | - | `test_flow1_submit_approve_pay` | フロー1 全体（CRS-056〜CRS-068 のステップを一つの E2E テストとして実行） | 全ステップが正常完了し、最終的にレポートの状態が `paid` になること |
+| テストID | テストレベル | レイヤー | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---------|------------|---------|---------|-----------|-----------|----------------|-------------------|---------|
+| CRS-055 | E2E | - | 正常系 | WFL-F01, WFL-F02, WFL-F03 | openapi.yaml, state_machine.md | `test_flow1_submit_approve_pay` | フロー1 全体（CRS-056〜CRS-068 のステップを一つの E2E テストとして実行） | 全ステップが正常完了し、最終的にレポートの状態が `paid` になること |
 
 #### ステップ詳細（CRS-055 の内部ステップ）
 
@@ -323,18 +323,18 @@ Playwright を使用した主要業務フローのテストシナリオ。フロ
 | 9 | 支払待ち一覧ページ（`/workflow/payable`）に遷移し、対象レポートを確認 | `GET /api/workflow/payable` → 200。一覧にステップ2で作成したレポートが表示される |
 | 10 | 対象レポートの「支払完了」ボタンをクリック | `POST /api/workflow/{id}/pay` → 200。レポートの状態が `paid` に変更。画面にステータス「支払済み」が表示される |
 
-| テストID | テストレベル | レイヤー | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
-|---------|------------|---------|----------------|-------------------|---------|
-| CRS-056 | E2E | - | `test_flow1_step1_login_as_member` | `test-member@example.com` / `TestPass1!` でログイン | ダッシュボード画面表示。JWT 取得成功 |
-| CRS-057 | E2E | - | `test_flow1_step2_create_report` | タイトル: 「2026年3月経費」、対象期間: 2026-03-01〜2026-03-31 | `POST /api/reports` → 201。`status: "draft"` |
-| CRS-058 | E2E | - | `test_flow1_step3_add_item` | 金額: 1000、カテゴリ: 交通費、支出日: 2026-03-10、摘要: 「電車代」 | `POST /api/reports/{id}/items` → 201。レポートの `total_amount == 1000` |
-| CRS-059 | E2E | - | `test_flow1_step4_submit_report` | 「提出する」ボタンクリック | `POST /api/reports/{id}/submit` → 200。`status: "submitted"` |
-| CRS-060 | E2E | - | `test_flow1_step5_login_as_approver` | ログアウト後、`test-approver@example.com` でログイン | ダッシュボードに `pending_approval_count >= 1` |
-| CRS-061 | E2E | - | `test_flow1_step6_view_pending_list` | `/workflow/pending` に遷移 | `GET /api/workflow/pending` → 200。提出済みレポートが一覧に表示される |
-| CRS-062 | E2E | - | `test_flow1_step7_approve_report` | 「承認」ボタンクリック | `POST /api/workflow/{id}/approve` → 200。`status: "approved"` |
-| CRS-063 | E2E | - | `test_flow1_step8_login_as_accounting` | ログアウト後、`test-accounting@example.com` でログイン | ダッシュボードに `pending_payment_count >= 1` |
-| CRS-064 | E2E | - | `test_flow1_step9_view_payable_list` | `/workflow/payable` に遷移 | `GET /api/workflow/payable` → 200。承認済みレポートが一覧に表示される |
-| CRS-065 | E2E | - | `test_flow1_step10_pay_report` | 「支払完了」ボタンクリック | `POST /api/workflow/{id}/pay` → 200。`status: "paid"` |
+| テストID | テストレベル | レイヤー | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---------|------------|---------|---------|-----------|-----------|----------------|-------------------|---------|
+| CRS-056 | E2E | - | 正常系 | AUTH-F02 | openapi.yaml#login | `test_flow1_step1_login_as_member` | `test-member@example.com` / `TestPass1!` でログイン | ダッシュボード画面表示。JWT 取得成功 |
+| CRS-057 | E2E | - | 正常系 | RPT-F01 | openapi.yaml#createReport | `test_flow1_step2_create_report` | タイトル: 「2026年3月経費」、対象期間: 2026-03-01〜2026-03-31 | `POST /api/reports` → 201。`status: "draft"` |
+| CRS-058 | E2E | - | 正常系 | ITM-F01 | openapi.yaml#createItem | `test_flow1_step3_add_item` | 金額: 1000、カテゴリ: 交通費、支出日: 2026-03-10、摘要: 「電車代」 | `POST /api/reports/{id}/items` → 201。レポートの `total_amount == 1000` |
+| CRS-059 | E2E | - | 正常系 | RPT-F06, WFL-010 | openapi.yaml#submitReport, state_machine.md#T1 | `test_flow1_step4_submit_report` | 「提出する」ボタンクリック | `POST /api/reports/{id}/submit` → 200。`status: "submitted"` |
+| CRS-060 | E2E | - | 正常系 | AUTH-F02, DASH-002 | openapi.yaml#login, openapi.yaml#getDashboard | `test_flow1_step5_login_as_approver` | ログアウト後、`test-approver@example.com` でログイン | ダッシュボードに `pending_approval_count >= 1` |
+| CRS-061 | E2E | - | 正常系 | WFL-F04 | openapi.yaml#listPendingReports | `test_flow1_step6_view_pending_list` | `/workflow/pending` に遷移 | `GET /api/workflow/pending` → 200。提出済みレポートが一覧に表示される |
+| CRS-062 | E2E | - | 正常系 | WFL-F01, WFL-011 | openapi.yaml#approveReport, state_machine.md#T2 | `test_flow1_step7_approve_report` | 「承認」ボタンクリック | `POST /api/workflow/{id}/approve` → 200。`status: "approved"` |
+| CRS-063 | E2E | - | 正常系 | AUTH-F02, DASH-003 | openapi.yaml#login, openapi.yaml#getDashboard | `test_flow1_step8_login_as_accounting` | ログアウト後、`test-accounting@example.com` でログイン | ダッシュボードに `pending_payment_count >= 1` |
+| CRS-064 | E2E | - | 正常系 | WFL-F05 | openapi.yaml#listPayableReports | `test_flow1_step9_view_payable_list` | `/workflow/payable` に遷移 | `GET /api/workflow/payable` → 200。承認済みレポートが一覧に表示される |
+| CRS-065 | E2E | - | 正常系 | WFL-F03, WFL-013 | openapi.yaml#markReportAsPaid, state_machine.md#T4 | `test_flow1_step10_pay_report` | 「支払完了」ボタンクリック | `POST /api/workflow/{id}/pay` → 200。`status: "paid"` |
 
 ---
 
@@ -342,9 +342,9 @@ Playwright を使用した主要業務フローのテストシナリオ。フロ
 
 #### テストケース
 
-| テストID | テストレベル | レイヤー | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
-|---------|------------|---------|----------------|-------------------|---------|
-| CRS-066 | E2E | - | `test_flow2_reject_and_resubmit` | フロー2 全体（CRS-067〜CRS-074 のステップを一つの E2E テストとして実行） | 全ステップが正常完了し、再申請レポートが submitted 状態になること |
+| テストID | テストレベル | レイヤー | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---------|------------|---------|---------|-----------|-----------|----------------|-------------------|---------|
+| CRS-066 | E2E | - | 正常系 | WFL-F02, RPT-015 | openapi.yaml, state_machine.md | `test_flow2_reject_and_resubmit` | フロー2 全体（CRS-067〜CRS-074 のステップを一つの E2E テストとして実行） | 全ステップが正常完了し、再申請レポートが submitted 状態になること |
 
 #### ステップ詳細（CRS-066 の内部ステップ）
 
@@ -359,24 +359,24 @@ Playwright を使用した主要業務フローのテストシナリオ。フロ
 | 7 | 「再申請する」ボタンをクリック（新規 draft レポートが作成される） | `POST /api/reports` に `reference_report_id` が設定される → 201。新規 draft レポートが作成される。元レポートの明細がコピーされていることを確認 |
 | 8 | 再申請レポートの内容を確認し、提出 | `POST /api/reports/{new_id}/submit` → 200。`status: "submitted"` |
 
-| テストID | テストレベル | レイヤー | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
-|---------|------------|---------|----------------|-------------------|---------|
-| CRS-067 | E2E | - | `test_flow2_step1_login_and_submit` | Member でログイン → レポート作成 → 明細追加 → 提出 | `status: "submitted"` |
-| CRS-068 | E2E | - | `test_flow2_step2_login_as_approver_and_reject` | Approver でログイン → 却下理由入力 → 却下 | `POST /api/workflow/{id}/reject` → 200。`status: "rejected"` |
-| CRS-069 | E2E | - | `test_flow2_step3_login_as_member_and_view_rejection` | Member でログイン → 却下レポート詳細確認 | 却下理由が画面に表示される |
-| CRS-070 | E2E | - | `test_flow2_step4_resubmit` | 「再申請する」ボタンクリック | 新規 draft レポートが `reference_report_id` 付きで作成される。元レポートの明細がコピーされている |
-| CRS-071 | E2E | - | `test_flow2_step5_confirm_copied_items` | 再申請レポートの明細一覧を確認 | 元レポートの明細（金額・カテゴリ・摘要）がコピーされていること。添付ファイルはコピーされていないこと（openapi.yaml の createReport 説明参照） |
-| CRS-072 | E2E | - | `test_flow2_step6_submit_resubmit` | 再申請レポートを提出 | `POST /api/reports/{new_id}/submit` → 200。`status: "submitted"` |
+| テストID | テストレベル | レイヤー | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---------|------------|---------|---------|-----------|-----------|----------------|-------------------|---------|
+| CRS-067 | E2E | - | 正常系 | RPT-F01, RPT-F06 | openapi.yaml#createReport, openapi.yaml#submitReport | `test_flow2_step1_login_and_submit` | Member でログイン → レポート作成 → 明細追加 → 提出 | `status: "submitted"` |
+| CRS-068 | E2E | - | 正常系 | WFL-F02, WFL-012 | openapi.yaml#rejectReport, state_machine.md#T3 | `test_flow2_step2_login_as_approver_and_reject` | Approver でログイン → 却下理由入力 → 却下 | `POST /api/workflow/{id}/reject` → 200。`status: "rejected"` |
+| CRS-069 | E2E | - | 正常系 | RPT-F03 | openapi.yaml#getReport | `test_flow2_step3_login_as_member_and_view_rejection` | Member でログイン → 却下レポート詳細確認 | 却下理由が画面に表示される |
+| CRS-070 | E2E | - | 正常系 | RPT-015, RPT-016 | openapi.yaml#createReport, db_schema.md#expense_reports.reference_report_id | `test_flow2_step4_resubmit` | 「再申請する」ボタンクリック | 新規 draft レポートが `reference_report_id` 付きで作成される。元レポートの明細がコピーされている |
+| CRS-071 | E2E | - | 正常系 | RPT-015 | openapi.yaml#createReport | `test_flow2_step5_confirm_copied_items` | 再申請レポートの明細一覧を確認 | 元レポートの明細（金額・カテゴリ・摘要）がコピーされていること。添付ファイルはコピーされていないこと（openapi.yaml の createReport 説明参照） |
+| CRS-072 | E2E | - | 正常系 | RPT-F06, WFL-010 | openapi.yaml#submitReport, state_machine.md#T1 | `test_flow2_step6_submit_resubmit` | 再申請レポートを提出 | `POST /api/reports/{new_id}/submit` → 200。`status: "submitted"` |
 
 ---
 
 ### フロー3（オプション）: Admin のテナント管理フロー
 
-| テストID | テストレベル | レイヤー | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
-|---------|------------|---------|----------------|-------------------|---------|
-| CRS-073 | E2E | - | `test_flow3_admin_dashboard` | `test-admin@example.com` でログイン | ダッシュボードに Admin 専用フィールド（`tenant_draft_count`、`tenant_submitted_count`、`tenant_member_count` 等）が表示される |
-| CRS-074 | E2E | - | `test_flow3_admin_list_all_reports` | Admin でログイン → `/reports/all` に遷移 | `GET /api/reports/all` → 200。テナント内の全ユーザーのレポートが一覧表示される |
-| CRS-075 | E2E | - | `test_flow3_admin_view_tenant_info` | Admin でログイン → テナント設定画面に遷移 | `GET /api/tenant` → 200。テナント名・作成日等が表示される |
+| テストID | テストレベル | レイヤー | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---------|------------|---------|---------|-----------|-----------|----------------|-------------------|---------|
+| CRS-073 | E2E | - | 正常系 | DASH-F01, DASH-004 | openapi.yaml#getDashboard | `test_flow3_admin_dashboard` | `test-admin@example.com` でログイン | ダッシュボードに Admin 専用フィールド（`tenant_draft_count`、`tenant_submitted_count`、`tenant_member_count` 等）が表示される |
+| CRS-074 | E2E | - | 正常系 | RPT-F07 | openapi.yaml#listAllReports | `test_flow3_admin_list_all_reports` | Admin でログイン → `/reports/all` に遷移 | `GET /api/reports/all` → 200。テナント内の全ユーザーのレポートが一覧表示される |
+| CRS-075 | E2E | - | 正常系 | ADM-F01 | openapi.yaml#getTenant | `test_flow3_admin_view_tenant_info` | Admin でログイン → テナント設定画面に遷移 | `GET /api/tenant` → 200。テナント名・作成日等が表示される |
 
 ---
 
@@ -399,15 +399,15 @@ Playwright を使用した主要業務フローのテストシナリオ。フロ
 
 #### テストケース
 
-| テストID | テストレベル | レイヤー | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
-|---------|------------|---------|----------------|-------------------|---------|
-| CRS-076 | 統合 | handler | `TestRateLimit_AuthenticatedRequests_ExceedsLimit_429` | `userMember` のトークンで `GET /api/dashboard` を 101 回連続送信（1分以内） | 100 回目までは 200 OK。101 回目から `429 Too Many Requests` が返る。レスポンスヘッダーに `Retry-After` が含まれる |
-| CRS-077 | 統合 | handler | `TestRateLimit_Unauthenticated_Login_ExceedsLimit_429` | 認証なしで `POST /api/auth/login`（存在しないメールアドレス）を 21 回連続送信（同一 IP から） | 20 回目までは `401 INVALID_CREDENTIALS`。21 回目から `429 Too Many Requests` が返る。`Retry-After` ヘッダーが含まれる |
-| CRS-078 | 統合 | handler | `TestRateLimit_LoginAttempts_ExceedsLimit_429` | 同一 IP から `POST /api/auth/login` を 6 回連続送信 | 5 回目までは 401 INVALID_CREDENTIALS（または 200）。6 回目から `429 Too Many Requests` が返る。`Retry-After` ヘッダーが含まれる |
-| CRS-079 | 統合 | handler | `TestRateLimit_FileUpload_ExceedsLimit_429` | `userMember` のトークンで `POST .../attachments` を 11 回連続送信（同一 user_id） | 10 回目までは 201 Created（または 422）。11 回目から `429 Too Many Requests` が返る。`Retry-After` ヘッダーが含まれる |
-| CRS-080 | 統合 | handler | `TestRateLimit_ResponseBody_ContainsRetryAfter` | レート制限超過後のレスポンスボディ確認 | `{"error": {"code": "RATE_LIMIT_EXCEEDED", "message": "Too many requests. Please try again later."}}` 形式であること（`security.md` §5.2 準拠） |
-| CRS-081 | 統合 | handler | `TestRateLimit_RateLimitHeaders_Present` | `userMember` のトークンで `GET /api/dashboard` を実行 | レスポンスヘッダーに `X-RateLimit-Limit`、`X-RateLimit-Remaining`、`X-RateLimit-Reset` が含まれること（`security.md` §4.3 準拠） |
-| CRS-082 | 統合 | handler | `TestRateLimit_DifferentUsers_IndependentLimits` | `userMember`（テナントA）と `userAccounting`（テナントA）がそれぞれ 90 回リクエストを送信 | それぞれのカウンターが独立して管理されており、互いのカウントが影響しないこと（user_id ベースのレート制限の独立性） |
+| テストID | テストレベル | レイヤー | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---------|------------|---------|---------|-----------|-----------|----------------|-------------------|---------|
+| CRS-076 | 統合 | handler | 性能 | NFR-SEC-005 | security.md#4.1 | `TestRateLimit_AuthenticatedRequests_ExceedsLimit_429` | `userMember` のトークンで `GET /api/dashboard` を 101 回連続送信（1分以内） | 100 回目までは 200 OK。101 回目から `429 Too Many Requests` が返る。レスポンスヘッダーに `Retry-After` が含まれる |
+| CRS-077 | 統合 | handler | 性能 | NFR-SEC-005 | security.md#4.1 | `TestRateLimit_Unauthenticated_Login_ExceedsLimit_429` | 認証なしで `POST /api/auth/login`（存在しないメールアドレス）を 21 回連続送信（同一 IP から） | 20 回目までは `401 INVALID_CREDENTIALS`。21 回目から `429 Too Many Requests` が返る。`Retry-After` ヘッダーが含まれる |
+| CRS-078 | 統合 | handler | 性能 | NFR-SEC-005 | security.md#4.1 | `TestRateLimit_LoginAttempts_ExceedsLimit_429` | 同一 IP から `POST /api/auth/login` を 6 回連続送信 | 5 回目までは 401 INVALID_CREDENTIALS（または 200）。6 回目から `429 Too Many Requests` が返る。`Retry-After` ヘッダーが含まれる |
+| CRS-079 | 統合 | handler | 性能 | NFR-SEC-005 | security.md#4.1 | `TestRateLimit_FileUpload_ExceedsLimit_429` | `userMember` のトークンで `POST .../attachments` を 11 回連続送信（同一 user_id） | 10 回目までは 201 Created（または 422）。11 回目から `429 Too Many Requests` が返る。`Retry-After` ヘッダーが含まれる |
+| CRS-080 | 統合 | handler | 性能 | NFR-SEC-005 | security.md#4.1, security.md#5.2 | `TestRateLimit_ResponseBody_ContainsRetryAfter` | レート制限超過後のレスポンスボディ確認 | `{"error": {"code": "RATE_LIMIT_EXCEEDED", "message": "Too many requests. Please try again later."}}` 形式であること（`security.md` §5.2 準拠） |
+| CRS-081 | 統合 | handler | 性能 | NFR-SEC-005 | security.md#4.1, security.md#4.3 | `TestRateLimit_RateLimitHeaders_Present` | `userMember` のトークンで `GET /api/dashboard` を実行 | レスポンスヘッダーに `X-RateLimit-Limit`、`X-RateLimit-Remaining`、`X-RateLimit-Reset` が含まれること（`security.md` §4.3 準拠） |
+| CRS-082 | 統合 | handler | 性能 | NFR-SEC-005 | security.md#4.1 | `TestRateLimit_DifferentUsers_IndependentLimits` | `userMember`（テナントA）と `userAccounting`（テナントA）がそれぞれ 90 回リクエストを送信 | それぞれのカウンターが独立して管理されており、互いのカウントが影響しないこと（user_id ベースのレート制限の独立性） |
 
 ---
 
@@ -424,14 +424,14 @@ Playwright を使用した主要業務フローのテストシナリオ。フロ
 
 **テスト方針**: 各エンドポイントに対して複数回リクエストを送信し、p95 レスポンスタイムを計測する。CI では main ブランチへのマージ後に実行する（E2E テストと同タイミング）。本格的な負荷テストは行わない（軽量スモークテスト）。
 
-| テストID | テストレベル | レイヤー | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
-|---------|------------|---------|----------------|-------------------|---------|
-| CRS-083 | 統合 | handler | `TestResponseTime_GetDashboard_P95_Under500ms` | `userMember` のトークンで `GET /api/dashboard` を 20 回実行し、レスポンスタイムを計測 | p95 レスポンスタイムが 500ms 以下であること |
-| CRS-084 | 統合 | handler | `TestResponseTime_ListMyReports_P95_Under500ms` | `userMember` のトークンで `GET /api/reports` を 20 回実行（テナントAに 50 件のレポートが存在する状態） | p95 レスポンスタイムが 500ms 以下であること |
-| CRS-085 | 統合 | handler | `TestResponseTime_ListAllReports_P95_Under500ms` | `userAdmin` のトークンで `GET /api/reports/all` を 20 回実行（テナントAに 50 件のレポートが存在する状態） | p95 レスポンスタイムが 500ms 以下であること |
-| CRS-086 | 統合 | handler | `TestResponseTime_GetReport_P95_Under500ms` | `userMember` のトークンで `GET /api/reports/{report_draft.id}` を 20 回実行 | p95 レスポンスタイムが 500ms 以下であること |
-| CRS-087 | 統合 | handler | `TestResponseTime_ListPendingReports_P95_Under500ms` | `userApprover` のトークンで `GET /api/workflow/pending` を 20 回実行 | p95 レスポンスタイムが 500ms 以下であること |
-| CRS-088 | 統合 | handler | `TestResponseTime_FileUpload_5MB_Under5s` | `userMember` のトークンで `POST .../attachments` に 5MB の PDF ファイルをアップロード（テスト用ダミーファイル、MinIO 使用） | アップロード完了まで 5 秒以下であること |
+| テストID | テストレベル | レイヤー | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---------|------------|---------|---------|-----------|-----------|----------------|-------------------|---------|
+| CRS-083 | 統合 | handler | 性能 | NFR-PERF-001 | architecture.md#8.1 | `TestResponseTime_GetDashboard_P95_Under500ms` | `userMember` のトークンで `GET /api/dashboard` を 20 回実行し、レスポンスタイムを計測 | p95 レスポンスタイムが 500ms 以下であること |
+| CRS-084 | 統合 | handler | 性能 | NFR-PERF-001 | architecture.md#8.1 | `TestResponseTime_ListMyReports_P95_Under500ms` | `userMember` のトークンで `GET /api/reports` を 20 回実行（テナントAに 50 件のレポートが存在する状態） | p95 レスポンスタイムが 500ms 以下であること |
+| CRS-085 | 統合 | handler | 性能 | NFR-PERF-001 | architecture.md#8.1 | `TestResponseTime_ListAllReports_P95_Under500ms` | `userAdmin` のトークンで `GET /api/reports/all` を 20 回実行（テナントAに 50 件のレポートが存在する状態） | p95 レスポンスタイムが 500ms 以下であること |
+| CRS-086 | 統合 | handler | 性能 | NFR-PERF-001 | architecture.md#8.1 | `TestResponseTime_GetReport_P95_Under500ms` | `userMember` のトークンで `GET /api/reports/{report_draft.id}` を 20 回実行 | p95 レスポンスタイムが 500ms 以下であること |
+| CRS-087 | 統合 | handler | 性能 | NFR-PERF-001 | architecture.md#8.1 | `TestResponseTime_ListPendingReports_P95_Under500ms` | `userApprover` のトークンで `GET /api/workflow/pending` を 20 回実行 | p95 レスポンスタイムが 500ms 以下であること |
+| CRS-088 | 統合 | handler | 性能 | NFR-PERF-002 | architecture.md#8.1, files.md | `TestResponseTime_FileUpload_5MB_Under5s` | `userMember` のトークンで `POST .../attachments` に 5MB の PDF ファイルをアップロード（テスト用ダミーファイル、MinIO 使用） | アップロード完了まで 5 秒以下であること |
 
 ---
 
@@ -545,7 +545,7 @@ import { test as setup } from '@playwright/test';
 
 setup('E2E フィクスチャ投入', async ({ request }) => {
   // テスト用 DB をリセットして標準フィクスチャを投入する
-  // 実装方法は Step 7（実装・運用）フェーズで決定する
+  // 実装方法は Step 8（基盤構築）フェーズで決定する
 });
 ```
 

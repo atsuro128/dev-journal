@@ -17,6 +17,7 @@
 | **画面ID** | SCR-WFL-001 |
 | **画面名** | 承認待ち一覧 |
 | **URL パス** | `/approvals` |
+| **対応要件ID** | WFL-F04（承認待ち一覧） |
 | **対応 UC** | UC-A01（承認待ちレポートを確認する） |
 | **対応 API** | `GET /api/workflow/pending` |
 | **アクセス可能ロール** | Approver |

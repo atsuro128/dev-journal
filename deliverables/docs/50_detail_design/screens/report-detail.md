@@ -17,6 +17,7 @@
 | 画面ID | SCR-RPT-004 |
 | 画面名 | レポート詳細 |
 | URLパス | `/reports/:id` |
+| 対応要件ID | RPT-F03（レポート詳細取得）、RPT-F05（レポート削除）、RPT-F06（レポート提出）、ITM-F01〜F03（明細CRUD）、ATT-F01〜F04（添付ファイル）、WFL-F01（承認）、WFL-F02（却下）、WFL-F03（支払完了） |
 | 対応UC | UC-M02, UC-M03, UC-M03a, UC-M05, UC-M06, UC-M07, UC-M09, UC-A02, UC-A03, UC-AC02 |
 | 対応ロール | 全ロール（権限に準ずる） |
 | 使用API | GET /api/reports/:id, POST /api/reports/:id/items, PUT /api/reports/:id/items/:itemId, DELETE /api/reports/:id/items/:itemId, POST /api/reports/:id/items/:itemId/attachments, GET /api/reports/:id/items/:itemId/attachments/:attId, DELETE /api/reports/:id/items/:itemId/attachments/:attId, POST /api/reports/:id/submit, DELETE /api/reports/:id, POST /api/workflow/:id/approve, POST /api/workflow/:id/reject, POST /api/workflow/:id/pay |

@@ -64,52 +64,52 @@
 
 ### 1.1 正常系
 
-| テストID | テストレベル | レイヤー | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
-|---------|------------|---------|---------------|------------------|---------|
-| ITM-001 | 統合 | handler | `TestCreateItem_Success` | 前提: `report_draft`（所有者: Member）でリクエスト実行者 = Member。リクエスト: `{"expense_date":"2026-03-10","amount":2000,"category_id":"<transportation UUID>","description":"タクシー代"}` | 201 Created。レスポンスボディに `data.id`（UUID）、`data.amount=2000`、`data.category`、`data.description`、`data.expense_date` が含まれる |
-| ITM-002 | 統合 | handler | `TestCreateItem_TotalAmountRecalculated` | 前提: `report_draft`（既存明細 amount=1000）に amount=500 の明細を追加 | 201 Created。レポートの total_amount が 1500 に更新されている（DB で確認） |
-| ITM-003 | 統合 | handler | `TestCreateItem_ByApprover` | 前提: Approver が自分の draft レポートに明細追加 | 201 Created（暗黙的ロール包含により Approver も作成可能） |
-| ITM-004 | 統合 | handler | `TestCreateItem_ByAccounting` | 前提: Accounting が自分の draft レポートに明細追加 | 201 Created（暗黙的ロール包含により Accounting も作成可能） |
-| ITM-005 | 統合 | handler | `TestCreateItem_ByAdmin` | 前提: Admin が自分の draft レポートに明細追加 | 201 Created（暗黙的ロール包含により Admin も作成可能） |
-| ITM-006 | 単体 | domain | `TestExpenseItem_AmountMinimum` | amount=1（最小値）で明細を作成 | エラーなし。amount=1 の明細が生成される |
+| テストID | テストレベル | レイヤー | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---------|------------|---------|---------|-----------|-----------|---------------|------------------|---------|
+| ITM-001 | 統合 | handler | 正常系 | ITM-F01 | openapi.yaml#createItem, db_schema.md#expense_items | `TestCreateItem_Success` | 前提: `report_draft`（所有者: Member）でリクエスト実行者 = Member。リクエスト: `{"expense_date":"2026-03-10","amount":2000,"category_id":"<transportation UUID>","description":"タクシー代"}` | 201 Created。レスポンスボディに `data.id`（UUID）、`data.amount=2000`、`data.category`、`data.description`、`data.expense_date` が含まれる |
+| ITM-002 | 統合 | handler | 正常系 | ITM-F01, RPT-006 | openapi.yaml#createItem, db_schema.md#expense_reports.total_amount | `TestCreateItem_TotalAmountRecalculated` | 前提: `report_draft`（既存明細 amount=1000）に amount=500 の明細を追加 | 201 Created。レポートの total_amount が 1500 に更新されている（DB で確認） |
+| ITM-003 | 統合 | handler | 認可 | ITM-F01, RBC-010 | openapi.yaml#createItem, authz.md#4.1 | `TestCreateItem_ByApprover` | 前提: Approver が自分の draft レポートに明細追加 | 201 Created（暗黙的ロール包含により Approver も作成可能） |
+| ITM-004 | 統合 | handler | 認可 | ITM-F01, RBC-010 | openapi.yaml#createItem, authz.md#4.1 | `TestCreateItem_ByAccounting` | 前提: Accounting が自分の draft レポートに明細追加 | 201 Created（暗黙的ロール包含により Accounting も作成可能） |
+| ITM-005 | 統合 | handler | 認可 | ITM-F01, RBC-010 | openapi.yaml#createItem, authz.md#4.1 | `TestCreateItem_ByAdmin` | 前提: Admin が自分の draft レポートに明細追加 | 201 Created（暗黙的ロール包含により Admin も作成可能） |
+| ITM-006 | 単体 | domain | 境界値 | ITM-002 | db_schema.md#expense_items.amount | `TestExpenseItem_AmountMinimum` | amount=1（最小値）で明細を作成 | エラーなし。amount=1 の明細が生成される |
 
 ### 1.2 バリデーションエラー（422）
 
-| テストID | テストレベル | レイヤー | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
-|---------|------------|---------|---------------|------------------|---------|
-| ITM-011 | 統合 | handler | `TestCreateItem_AmountZero` | `amount=0`、他フィールドは有効値 | 422 VALIDATION_ERROR。`details[].field = "amount"` を含む |
-| ITM-012 | 統合 | handler | `TestCreateItem_AmountNegative` | `amount=-1`、他フィールドは有効値 | 422 VALIDATION_ERROR。`details[].field = "amount"` を含む |
-| ITM-013 | 単体 | domain | `TestExpenseItem_AmountZero` | ドメイン層で amount=0 の明細を直接生成 | `InvalidAmount` エラーが返る（ITM-002 不変条件: amount > 0） |
-| ITM-014 | 単体 | domain | `TestExpenseItem_AmountNegative` | ドメイン層で amount=-100 の明細を直接生成 | `InvalidAmount` エラーが返る |
-| ITM-015 | 統合 | handler | `TestCreateItem_MissingExpenseDate` | `expense_date` を省略 | 422 VALIDATION_ERROR。`details[].field = "expense_date"` を含む |
-| ITM-016 | 統合 | handler | `TestCreateItem_InvalidExpenseDateFormat` | `expense_date="not-a-date"` | 422 VALIDATION_ERROR |
-| ITM-017 | 統合 | handler | `TestCreateItem_MissingCategoryId` | `category_id` を省略 | 422 VALIDATION_ERROR。`details[].field = "category_id"` を含む |
-| ITM-018 | 統合 | handler | `TestCreateItem_InvalidCategoryId` | `category_id="invalid-uuid"` | 422 VALIDATION_ERROR |
-| ITM-019 | 統合 | handler | `TestCreateItem_NonExistentCategoryId` | `category_id` に存在しない UUID を指定 | 422 VALIDATION_ERROR または 404。実装方針に応じて確認 |
-| ITM-020 | 統合 | handler | `TestCreateItem_MissingDescription` | `description` を省略 | 422 VALIDATION_ERROR。`details[].field = "description"` を含む |
-| ITM-021 | 統合 | handler | `TestCreateItem_EmptyDescription` | `description=""` | 422 VALIDATION_ERROR（minLength=1 違反） |
-| ITM-022 | 統合 | handler | `TestCreateItem_DescriptionTooLong` | `description` を 501 文字の文字列で指定 | 422 VALIDATION_ERROR（maxLength=500 違反） |
-| ITM-023 | 統合 | handler | `TestCreateItem_DescriptionMaxLength` | `description` を 500 文字の文字列で指定 | 201 Created（境界値: 500 文字は許容） |
+| テストID | テストレベル | レイヤー | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---------|------------|---------|---------|-----------|-----------|---------------|------------------|---------|
+| ITM-011 | 統合 | handler | 境界値 | ITM-002 | openapi.yaml#createItem, db_schema.md#expense_items.amount | `TestCreateItem_AmountZero` | `amount=0`、他フィールドは有効値 | 422 VALIDATION_ERROR。`details[].field = "amount"` を含む |
+| ITM-012 | 統合 | handler | 境界値 | ITM-002 | openapi.yaml#createItem, db_schema.md#expense_items.amount | `TestCreateItem_AmountNegative` | `amount=-1`、他フィールドは有効値 | 422 VALIDATION_ERROR。`details[].field = "amount"` を含む |
+| ITM-013 | 単体 | domain | 境界値 | ITM-002 | db_schema.md#expense_items.amount#CHECK | `TestExpenseItem_AmountZero` | ドメイン層で amount=0 の明細を直接生成 | `InvalidAmount` エラーが返る（ITM-002 不変条件: amount > 0） |
+| ITM-014 | 単体 | domain | 境界値 | ITM-002 | db_schema.md#expense_items.amount#CHECK | `TestExpenseItem_AmountNegative` | ドメイン層で amount=-100 の明細を直接生成 | `InvalidAmount` エラーが返る |
+| ITM-015 | 統合 | handler | 異常系 | ITM-001 | openapi.yaml#createItem | `TestCreateItem_MissingExpenseDate` | `expense_date` を省略 | 422 VALIDATION_ERROR。`details[].field = "expense_date"` を含む |
+| ITM-016 | 統合 | handler | 異常系 | ITM-001 | openapi.yaml#createItem | `TestCreateItem_InvalidExpenseDateFormat` | `expense_date="not-a-date"` | 422 VALIDATION_ERROR |
+| ITM-017 | 統合 | handler | 異常系 | ITM-003 | openapi.yaml#createItem | `TestCreateItem_MissingCategoryId` | `category_id` を省略 | 422 VALIDATION_ERROR。`details[].field = "category_id"` を含む |
+| ITM-018 | 統合 | handler | 異常系 | ITM-003 | openapi.yaml#createItem | `TestCreateItem_InvalidCategoryId` | `category_id="invalid-uuid"` | 422 VALIDATION_ERROR |
+| ITM-019 | 統合 | handler | 異常系 | ITM-003, ITM-005 | openapi.yaml#createItem, db_schema.md#categories | `TestCreateItem_NonExistentCategoryId` | `category_id` に存在しない UUID を指定 | 422 VALIDATION_ERROR または 404。実装方針に応じて確認 |
+| ITM-020 | 統合 | handler | 異常系 | ITM-004 | openapi.yaml#createItem | `TestCreateItem_MissingDescription` | `description` を省略 | 422 VALIDATION_ERROR。`details[].field = "description"` を含む |
+| ITM-021 | 統合 | handler | 異常系 | ITM-004 | openapi.yaml#createItem | `TestCreateItem_EmptyDescription` | `description=""` | 422 VALIDATION_ERROR（minLength=1 違反） |
+| ITM-022 | 統合 | handler | 境界値 | ITM-004 | openapi.yaml#createItem | `TestCreateItem_DescriptionTooLong` | `description` を 501 文字の文字列で指定 | 422 VALIDATION_ERROR（maxLength=500 違反） |
+| ITM-023 | 統合 | handler | 境界値 | ITM-004 | openapi.yaml#createItem | `TestCreateItem_DescriptionMaxLength` | `description` を 500 文字の文字列で指定 | 201 Created（境界値: 500 文字は許容） |
 
 ### 1.3 認証エラー（401）
 
-| テストID | テストレベル | レイヤー | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
-|---------|------------|---------|---------------|------------------|---------|
-| ITM-031 | 統合 | handler | `TestCreateItem_Unauthorized` | JWT トークンなしでリクエスト | 401 UNAUTHORIZED |
-| ITM-032 | 統合 | handler | `TestCreateItem_ExpiredToken` | 期限切れ JWT でリクエスト | 401 TOKEN_EXPIRED |
+| テストID | テストレベル | レイヤー | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---------|------------|---------|---------|-----------|-----------|---------------|------------------|---------|
+| ITM-031 | 統合 | handler | 異常系 | ITM-F01 | openapi.yaml#createItem | `TestCreateItem_Unauthorized` | JWT トークンなしでリクエスト | 401 UNAUTHORIZED |
+| ITM-032 | 統合 | handler | 異常系 | ITM-F01, SEC-003 | openapi.yaml#createItem, security.md#2.1 | `TestCreateItem_ExpiredToken` | 期限切れ JWT でリクエスト | 401 TOKEN_EXPIRED |
 
 ### 1.4 認可エラー（403）
 
-| テストID | テストレベル | レイヤー | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
-|---------|------------|---------|---------------|------------------|---------|
-| ITM-041 | 統合 | handler | `TestCreateItem_ForbiddenByNonOwner` | 前提: Member Bが Member A の `report_draft` に対してリクエスト（同一テナント・別ユーザー） | 403 FORBIDDEN（所有権不足） |
-| ITM-042 | 統合 | handler | `TestCreateItem_ForbiddenByAdminNonOwner` | 前提: Admin が他者（Member）の `report_draft` に対してリクエスト（RBC-014） | 403 FORBIDDEN（Admin も他者のレポートは操作不可） |
+| テストID | テストレベル | レイヤー | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---------|------------|---------|---------|-----------|-----------|---------------|------------------|---------|
+| ITM-041 | 統合 | handler | 認可 | ITM-F01, RBC-010 | openapi.yaml#createItem, authz.md#4.1 | `TestCreateItem_ForbiddenByNonOwner` | 前提: Member Bが Member A の `report_draft` に対してリクエスト（同一テナント・別ユーザー） | 403 FORBIDDEN（所有権不足） |
+| ITM-042 | 統合 | handler | 認可 | ITM-F01, RBC-014 | openapi.yaml#createItem, authz.md#4.4 | `TestCreateItem_ForbiddenByAdminNonOwner` | 前提: Admin が他者（Member）の `report_draft` に対してリクエスト（RBC-014） | 403 FORBIDDEN（Admin も他者のレポートは操作不可） |
 
 ### 1.5 リソース不在（404）
 
-| テストID | テストレベル | レイヤー | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
-|---------|------------|---------|---------------|------------------|---------|
-| ITM-051 | 統合 | handler | `TestCreateItem_ReportNotFound` | 存在しないレポートID（`00000000-0000-0000-0000-000000000000`）で POST | 404 RESOURCE_NOT_FOUND |
+| テストID | テストレベル | レイヤー | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---------|------------|---------|---------|-----------|-----------|---------------|------------------|---------|
+| ITM-051 | 統合 | handler | 異常系 | ITM-F01 | openapi.yaml#createItem | `TestCreateItem_ReportNotFound` | 存在しないレポートID（`00000000-0000-0000-0000-000000000000`）で POST | 404 RESOURCE_NOT_FOUND |
 
 ---
 
@@ -117,13 +117,13 @@
 
 レポートが `submitted` 以降の状態では明細追加は拒否される（ITM-010 不変条件: draft 制約）。
 
-| テストID | テストレベル | レイヤー | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
-|---------|------------|---------|---------------|------------------|---------|
-| ITM-061 | 統合 | handler | `TestCreateItem_ReportSubmitted_Rejected` | 前提: `report_submitted` に対して所有者 Member が POST | 422 REPORT_NOT_EDITABLE |
-| ITM-062 | 統合 | handler | `TestCreateItem_ReportApproved_Rejected` | 前提: `report_approved` に対して所有者 Member が POST | 422 REPORT_NOT_EDITABLE |
-| ITM-063 | 統合 | handler | `TestCreateItem_ReportRejected_Rejected` | 前提: `report_rejected` に対して所有者 Member が POST | 422 REPORT_NOT_EDITABLE |
-| ITM-064 | 統合 | handler | `TestCreateItem_ReportPaid_Rejected` | 前提: `report_paid` に対して所有者 Member が POST | 422 REPORT_NOT_EDITABLE |
-| ITM-065 | 単体 | domain | `TestExpenseReport_AddItem_NotDraft` | ドメイン層で submitted 状態のレポートに明細を追加 | `ReportNotEditable` エラーが返る |
+| テストID | テストレベル | レイヤー | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---------|------------|---------|---------|-----------|-----------|---------------|------------------|---------|
+| ITM-061 | 統合 | handler | 状態遷移 | ITM-010, ITM-F01 | openapi.yaml#createItem | `TestCreateItem_ReportSubmitted_Rejected` | 前提: `report_submitted` に対して所有者 Member が POST | 422 REPORT_NOT_EDITABLE |
+| ITM-062 | 統合 | handler | 状態遷移 | ITM-010, ITM-F01 | openapi.yaml#createItem | `TestCreateItem_ReportApproved_Rejected` | 前提: `report_approved` に対して所有者 Member が POST | 422 REPORT_NOT_EDITABLE |
+| ITM-063 | 統合 | handler | 状態遷移 | ITM-010, ITM-F01 | openapi.yaml#createItem | `TestCreateItem_ReportRejected_Rejected` | 前提: `report_rejected` に対して所有者 Member が POST | 422 REPORT_NOT_EDITABLE |
+| ITM-064 | 統合 | handler | 状態遷移 | ITM-010, ITM-F01 | openapi.yaml#createItem | `TestCreateItem_ReportPaid_Rejected` | 前提: `report_paid` に対して所有者 Member が POST | 422 REPORT_NOT_EDITABLE |
+| ITM-065 | 単体 | domain | 状態遷移 | ITM-010 | state_machine.md | `TestExpenseReport_AddItem_NotDraft` | ドメイン層で submitted 状態のレポートに明細を追加 | `ReportNotEditable` エラーが返る |
 
 ---
 
@@ -131,52 +131,52 @@
 
 ### 3.1 正常系
 
-| テストID | テストレベル | レイヤー | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
-|---------|------------|---------|---------------|------------------|---------|
-| ITM-101 | 統合 | handler | `TestUpdateItem_Success` | 前提: `report_draft` の明細 `dddddddd-0001-0001-0001-000000000001`（amount=1000）。リクエスト: `{"expense_date":"2026-03-11","amount":1500,"category_id":"<transportation UUID>","description":"タクシー代（修正）","updated_at":"<現在の updated_at>"}` | 200 OK。レスポンスボディに更新後の明細データ（amount=1500 等）が含まれる |
-| ITM-102 | 統合 | handler | `TestUpdateItem_TotalAmountRecalculated` | 前提: `report_draft`（明細 amount=1000）を amount=2000 に更新 | 200 OK。レポートの total_amount が 2000 に更新されている（DB で確認） |
-| ITM-103 | 統合 | handler | `TestUpdateItem_ByApprover` | 前提: Approver が自分の draft レポートの明細を更新 | 200 OK |
-| ITM-104 | 統合 | handler | `TestUpdateItem_ByAccounting` | 前提: Accounting が自分の draft レポートの明細を更新 | 200 OK |
-| ITM-105 | 統合 | handler | `TestUpdateItem_ByAdmin` | 前提: Admin が自分の draft レポートの明細を更新 | 200 OK |
+| テストID | テストレベル | レイヤー | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---------|------------|---------|---------|-----------|-----------|---------------|------------------|---------|
+| ITM-101 | 統合 | handler | 正常系 | ITM-F02 | openapi.yaml#updateItem, db_schema.md#expense_items | `TestUpdateItem_Success` | 前提: `report_draft` の明細 `dddddddd-0001-0001-0001-000000000001`（amount=1000）。リクエスト: `{"expense_date":"2026-03-11","amount":1500,"category_id":"<transportation UUID>","description":"タクシー代（修正）","updated_at":"<現在の updated_at>"}` | 200 OK。レスポンスボディに更新後の明細データ（amount=1500 等）が含まれる |
+| ITM-102 | 統合 | handler | 正常系 | ITM-F02, RPT-006 | openapi.yaml#updateItem, db_schema.md#expense_reports.total_amount | `TestUpdateItem_TotalAmountRecalculated` | 前提: `report_draft`（明細 amount=1000）を amount=2000 に更新 | 200 OK。レポートの total_amount が 2000 に更新されている（DB で確認） |
+| ITM-103 | 統合 | handler | 認可 | ITM-F02, RBC-010 | openapi.yaml#updateItem, authz.md#4.1 | `TestUpdateItem_ByApprover` | 前提: Approver が自分の draft レポートの明細を更新 | 200 OK |
+| ITM-104 | 統合 | handler | 認可 | ITM-F02, RBC-010 | openapi.yaml#updateItem, authz.md#4.1 | `TestUpdateItem_ByAccounting` | 前提: Accounting が自分の draft レポートの明細を更新 | 200 OK |
+| ITM-105 | 統合 | handler | 認可 | ITM-F02, RBC-010 | openapi.yaml#updateItem, authz.md#4.1 | `TestUpdateItem_ByAdmin` | 前提: Admin が自分の draft レポートの明細を更新 | 200 OK |
 
 ### 3.2 バリデーションエラー（422）
 
-| テストID | テストレベル | レイヤー | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
-|---------|------------|---------|---------------|------------------|---------|
-| ITM-111 | 統合 | handler | `TestUpdateItem_AmountZero` | `amount=0`、`updated_at` は有効値 | 422 VALIDATION_ERROR |
-| ITM-112 | 統合 | handler | `TestUpdateItem_AmountNegative` | `amount=-1`、`updated_at` は有効値 | 422 VALIDATION_ERROR |
-| ITM-113 | 統合 | handler | `TestUpdateItem_MissingUpdatedAt` | `updated_at` を省略（楽観的ロックフィールド必須） | 422 VALIDATION_ERROR。`details[].field = "updated_at"` を含む |
-| ITM-114 | 統合 | handler | `TestUpdateItem_MissingDescription` | `description` を省略 | 422 VALIDATION_ERROR |
-| ITM-115 | 統合 | handler | `TestUpdateItem_EmptyDescription` | `description=""` | 422 VALIDATION_ERROR（minLength=1 違反） |
-| ITM-116 | 統合 | handler | `TestUpdateItem_DescriptionTooLong` | `description` を 501 文字で指定 | 422 VALIDATION_ERROR（maxLength=500 違反） |
-| ITM-117 | 統合 | handler | `TestUpdateItem_InvalidExpenseDateFormat` | `expense_date="2026/03/10"`（スラッシュ区切り） | 422 VALIDATION_ERROR |
+| テストID | テストレベル | レイヤー | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---------|------------|---------|---------|-----------|-----------|---------------|------------------|---------|
+| ITM-111 | 統合 | handler | 境界値 | ITM-002, ITM-F02 | openapi.yaml#updateItem | `TestUpdateItem_AmountZero` | `amount=0`、`updated_at` は有効値 | 422 VALIDATION_ERROR |
+| ITM-112 | 統合 | handler | 境界値 | ITM-002, ITM-F02 | openapi.yaml#updateItem | `TestUpdateItem_AmountNegative` | `amount=-1`、`updated_at` は有効値 | 422 VALIDATION_ERROR |
+| ITM-113 | 統合 | handler | 異常系 | ITM-F02 | openapi.yaml#updateItem | `TestUpdateItem_MissingUpdatedAt` | `updated_at` を省略（楽観的ロックフィールド必須） | 422 VALIDATION_ERROR。`details[].field = "updated_at"` を含む |
+| ITM-114 | 統合 | handler | 異常系 | ITM-004, ITM-F02 | openapi.yaml#updateItem | `TestUpdateItem_MissingDescription` | `description` を省略 | 422 VALIDATION_ERROR |
+| ITM-115 | 統合 | handler | 異常系 | ITM-004, ITM-F02 | openapi.yaml#updateItem | `TestUpdateItem_EmptyDescription` | `description=""` | 422 VALIDATION_ERROR（minLength=1 違反） |
+| ITM-116 | 統合 | handler | 境界値 | ITM-004, ITM-F02 | openapi.yaml#updateItem | `TestUpdateItem_DescriptionTooLong` | `description` を 501 文字で指定 | 422 VALIDATION_ERROR（maxLength=500 違反） |
+| ITM-117 | 統合 | handler | 異常系 | ITM-001, ITM-F02 | openapi.yaml#updateItem | `TestUpdateItem_InvalidExpenseDateFormat` | `expense_date="2026/03/10"`（スラッシュ区切り） | 422 VALIDATION_ERROR |
 
 ### 3.3 楽観的ロック競合（409）
 
-| テストID | テストレベル | レイヤー | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
-|---------|------------|---------|---------------|------------------|---------|
-| ITM-121 | 統合 | handler | `TestUpdateItem_OptimisticLockConflict` | 前提: `report_draft` の明細を取得後、別リクエストで同明細を更新済み。古い `updated_at` を使って PUT | 409 CONFLICT |
+| テストID | テストレベル | レイヤー | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---------|------------|---------|---------|-----------|-----------|---------------|------------------|---------|
+| ITM-121 | 統合 | handler | 異常系 | ITM-F02 | openapi.yaml#updateItem | `TestUpdateItem_OptimisticLockConflict` | 前提: `report_draft` の明細を取得後、別リクエストで同明細を更新済み。古い `updated_at` を使って PUT | 409 CONFLICT |
 
 ### 3.4 認証エラー（401）
 
-| テストID | テストレベル | レイヤー | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
-|---------|------------|---------|---------------|------------------|---------|
-| ITM-131 | 統合 | handler | `TestUpdateItem_Unauthorized` | JWT トークンなしでリクエスト | 401 UNAUTHORIZED |
+| テストID | テストレベル | レイヤー | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---------|------------|---------|---------|-----------|-----------|---------------|------------------|---------|
+| ITM-131 | 統合 | handler | 異常系 | ITM-F02 | openapi.yaml#updateItem | `TestUpdateItem_Unauthorized` | JWT トークンなしでリクエスト | 401 UNAUTHORIZED |
 
 ### 3.5 認可エラー（403）
 
-| テストID | テストレベル | レイヤー | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
-|---------|------------|---------|---------------|------------------|---------|
-| ITM-141 | 統合 | handler | `TestUpdateItem_ForbiddenByNonOwner` | 前提: 別ユーザー（Member B）が Member A の `report_draft` の明細を更新（同一テナント） | 403 FORBIDDEN |
-| ITM-142 | 統合 | handler | `TestUpdateItem_ForbiddenByAdminNonOwner` | 前提: Admin が他者（Member）の `report_draft` の明細を更新（RBC-014） | 403 FORBIDDEN |
+| テストID | テストレベル | レイヤー | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---------|------------|---------|---------|-----------|-----------|---------------|------------------|---------|
+| ITM-141 | 統合 | handler | 認可 | ITM-F02, RBC-010 | openapi.yaml#updateItem, authz.md#4.1 | `TestUpdateItem_ForbiddenByNonOwner` | 前提: 別ユーザー（Member B）が Member A の `report_draft` の明細を更新（同一テナント） | 403 FORBIDDEN |
+| ITM-142 | 統合 | handler | 認可 | ITM-F02, RBC-014 | openapi.yaml#updateItem, authz.md#4.4 | `TestUpdateItem_ForbiddenByAdminNonOwner` | 前提: Admin が他者（Member）の `report_draft` の明細を更新（RBC-014） | 403 FORBIDDEN |
 
 ### 3.6 リソース不在（404）
 
-| テストID | テストレベル | レイヤー | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
-|---------|------------|---------|---------------|------------------|---------|
-| ITM-151 | 統合 | handler | `TestUpdateItem_ReportNotFound` | 存在しないレポートID で PUT | 404 RESOURCE_NOT_FOUND |
-| ITM-152 | 統合 | handler | `TestUpdateItem_ItemNotFound` | 正しいレポートID・存在しない明細ID で PUT | 404 RESOURCE_NOT_FOUND |
-| ITM-153 | 統合 | handler | `TestUpdateItem_ItemBelongsToDifferentReport` | 正しいレポートID・別レポートに属する明細ID で PUT | 404 RESOURCE_NOT_FOUND（明細の親チェック違反） |
+| テストID | テストレベル | レイヤー | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---------|------------|---------|---------|-----------|-----------|---------------|------------------|---------|
+| ITM-151 | 統合 | handler | 異常系 | ITM-F02 | openapi.yaml#updateItem | `TestUpdateItem_ReportNotFound` | 存在しないレポートID で PUT | 404 RESOURCE_NOT_FOUND |
+| ITM-152 | 統合 | handler | 異常系 | ITM-F02 | openapi.yaml#updateItem | `TestUpdateItem_ItemNotFound` | 正しいレポートID・存在しない明細ID で PUT | 404 RESOURCE_NOT_FOUND |
+| ITM-153 | 統合 | handler | 異常系 | ITM-F02 | openapi.yaml#updateItem | `TestUpdateItem_ItemBelongsToDifferentReport` | 正しいレポートID・別レポートに属する明細ID で PUT | 404 RESOURCE_NOT_FOUND（明細の親チェック違反） |
 
 ---
 
@@ -184,13 +184,13 @@
 
 レポートが `submitted` 以降の状態では明細更新は拒否される（ITM-010 不変条件: draft 制約）。
 
-| テストID | テストレベル | レイヤー | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
-|---------|------------|---------|---------------|------------------|---------|
-| ITM-161 | 統合 | handler | `TestUpdateItem_ReportSubmitted_Rejected` | 前提: `report_submitted` の明細に対して所有者 Member が PUT | 422 REPORT_NOT_EDITABLE |
-| ITM-162 | 統合 | handler | `TestUpdateItem_ReportApproved_Rejected` | 前提: `report_approved` の明細に対して所有者 Member が PUT | 422 REPORT_NOT_EDITABLE |
-| ITM-163 | 統合 | handler | `TestUpdateItem_ReportRejected_Rejected` | 前提: `report_rejected` の明細に対して所有者 Member が PUT | 422 REPORT_NOT_EDITABLE |
-| ITM-164 | 統合 | handler | `TestUpdateItem_ReportPaid_Rejected` | 前提: `report_paid` の明細に対して所有者 Member が PUT | 422 REPORT_NOT_EDITABLE |
-| ITM-165 | 単体 | domain | `TestExpenseReport_UpdateItem_NotDraft` | ドメイン層で submitted 状態のレポートの明細を更新 | `ReportNotEditable` エラーが返る |
+| テストID | テストレベル | レイヤー | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---------|------------|---------|---------|-----------|-----------|---------------|------------------|---------|
+| ITM-161 | 統合 | handler | 状態遷移 | ITM-010, ITM-F02 | openapi.yaml#updateItem | `TestUpdateItem_ReportSubmitted_Rejected` | 前提: `report_submitted` の明細に対して所有者 Member が PUT | 422 REPORT_NOT_EDITABLE |
+| ITM-162 | 統合 | handler | 状態遷移 | ITM-010, ITM-F02 | openapi.yaml#updateItem | `TestUpdateItem_ReportApproved_Rejected` | 前提: `report_approved` の明細に対して所有者 Member が PUT | 422 REPORT_NOT_EDITABLE |
+| ITM-163 | 統合 | handler | 状態遷移 | ITM-010, ITM-F02 | openapi.yaml#updateItem | `TestUpdateItem_ReportRejected_Rejected` | 前提: `report_rejected` の明細に対して所有者 Member が PUT | 422 REPORT_NOT_EDITABLE |
+| ITM-164 | 統合 | handler | 状態遷移 | ITM-010, ITM-F02 | openapi.yaml#updateItem | `TestUpdateItem_ReportPaid_Rejected` | 前提: `report_paid` の明細に対して所有者 Member が PUT | 422 REPORT_NOT_EDITABLE |
+| ITM-165 | 単体 | domain | 状態遷移 | ITM-010 | state_machine.md | `TestExpenseReport_UpdateItem_NotDraft` | ドメイン層で submitted 状態のレポートの明細を更新 | `ReportNotEditable` エラーが返る |
 
 ---
 
@@ -198,37 +198,37 @@
 
 ### 5.1 正常系
 
-| テストID | テストレベル | レイヤー | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
-|---------|------------|---------|---------------|------------------|---------|
-| ITM-201 | 統合 | handler | `TestDeleteItem_Success` | 前提: `report_draft` の明細 `dddddddd-0001-0001-0001-000000000001` を所有者 Member が DELETE | 204 No Content |
-| ITM-202 | 統合 | handler | `TestDeleteItem_TotalAmountRecalculated` | 前提: `report_draft`（明細 amount=1000）を削除 | 204 No Content。レポートの total_amount が 0 に更新されている（DB で確認） |
-| ITM-203 | 統合 | handler | `TestDeleteItem_SoftDelete` | 前提: 明細を DELETE 後、DB を直接確認 | 削除された明細の `deleted_at` が NULL でない（論理削除: DAT-002 不変条件） |
-| ITM-204 | 統合 | handler | `TestDeleteItem_AttachmentsCascadeSoftDeleted` | 前提: 添付ファイルを持つ明細を DELETE | 204 No Content。紐づく添付ファイルも `deleted_at` が設定される（連動論理削除） |
-| ITM-205 | 統合 | handler | `TestDeleteItem_ByApprover` | 前提: Approver が自分の draft レポートの明細を DELETE | 204 No Content |
-| ITM-206 | 統合 | handler | `TestDeleteItem_ByAccounting` | 前提: Accounting が自分の draft レポートの明細を DELETE | 204 No Content |
-| ITM-207 | 統合 | handler | `TestDeleteItem_ByAdmin` | 前提: Admin が自分の draft レポートの明細を DELETE | 204 No Content |
+| テストID | テストレベル | レイヤー | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---------|------------|---------|---------|-----------|-----------|---------------|------------------|---------|
+| ITM-201 | 統合 | handler | 正常系 | ITM-F03 | openapi.yaml#deleteItem | `TestDeleteItem_Success` | 前提: `report_draft` の明細 `dddddddd-0001-0001-0001-000000000001` を所有者 Member が DELETE | 204 No Content |
+| ITM-202 | 統合 | handler | 正常系 | ITM-F03, RPT-006 | openapi.yaml#deleteItem, db_schema.md#expense_reports.total_amount | `TestDeleteItem_TotalAmountRecalculated` | 前提: `report_draft`（明細 amount=1000）を削除 | 204 No Content。レポートの total_amount が 0 に更新されている（DB で確認） |
+| ITM-203 | 統合 | handler | 正常系 | ITM-F03, NFR-DATA-001 | openapi.yaml#deleteItem, db_schema.md#expense_items.deleted_at | `TestDeleteItem_SoftDelete` | 前提: 明細を DELETE 後、DB を直接確認 | 削除された明細の `deleted_at` が NULL でない（論理削除: DAT-002 不変条件） |
+| ITM-204 | 統合 | handler | 正常系 | ITM-F03 | openapi.yaml#deleteItem, db_schema.md#attachments.deleted_at | `TestDeleteItem_AttachmentsCascadeSoftDeleted` | 前提: 添付ファイルを持つ明細を DELETE | 204 No Content。紐づく添付ファイルも `deleted_at` が設定される（連動論理削除） |
+| ITM-205 | 統合 | handler | 認可 | ITM-F03, RBC-010 | openapi.yaml#deleteItem, authz.md#4.1 | `TestDeleteItem_ByApprover` | 前提: Approver が自分の draft レポートの明細を DELETE | 204 No Content |
+| ITM-206 | 統合 | handler | 認可 | ITM-F03, RBC-010 | openapi.yaml#deleteItem, authz.md#4.1 | `TestDeleteItem_ByAccounting` | 前提: Accounting が自分の draft レポートの明細を DELETE | 204 No Content |
+| ITM-207 | 統合 | handler | 認可 | ITM-F03, RBC-010 | openapi.yaml#deleteItem, authz.md#4.1 | `TestDeleteItem_ByAdmin` | 前提: Admin が自分の draft レポートの明細を DELETE | 204 No Content |
 
 ### 5.2 認証エラー（401）
 
-| テストID | テストレベル | レイヤー | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
-|---------|------------|---------|---------------|------------------|---------|
-| ITM-211 | 統合 | handler | `TestDeleteItem_Unauthorized` | JWT トークンなしでリクエスト | 401 UNAUTHORIZED |
+| テストID | テストレベル | レイヤー | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---------|------------|---------|---------|-----------|-----------|---------------|------------------|---------|
+| ITM-211 | 統合 | handler | 異常系 | ITM-F03 | openapi.yaml#deleteItem | `TestDeleteItem_Unauthorized` | JWT トークンなしでリクエスト | 401 UNAUTHORIZED |
 
 ### 5.3 認可エラー（403）
 
-| テストID | テストレベル | レイヤー | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
-|---------|------------|---------|---------------|------------------|---------|
-| ITM-221 | 統合 | handler | `TestDeleteItem_ForbiddenByNonOwner` | 前提: 別ユーザー（Member B）が Member A の `report_draft` の明細を DELETE（同一テナント） | 403 FORBIDDEN |
-| ITM-222 | 統合 | handler | `TestDeleteItem_ForbiddenByAdminNonOwner` | 前提: Admin が他者（Member）の `report_draft` の明細を DELETE（RBC-014） | 403 FORBIDDEN |
+| テストID | テストレベル | レイヤー | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---------|------------|---------|---------|-----------|-----------|---------------|------------------|---------|
+| ITM-221 | 統合 | handler | 認可 | ITM-F03, RBC-010 | openapi.yaml#deleteItem, authz.md#4.1 | `TestDeleteItem_ForbiddenByNonOwner` | 前提: 別ユーザー（Member B）が Member A の `report_draft` の明細を DELETE（同一テナント） | 403 FORBIDDEN |
+| ITM-222 | 統合 | handler | 認可 | ITM-F03, RBC-014 | openapi.yaml#deleteItem, authz.md#4.4 | `TestDeleteItem_ForbiddenByAdminNonOwner` | 前提: Admin が他者（Member）の `report_draft` の明細を DELETE（RBC-014） | 403 FORBIDDEN |
 
 ### 5.4 リソース不在（404）
 
-| テストID | テストレベル | レイヤー | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
-|---------|------------|---------|---------------|------------------|---------|
-| ITM-231 | 統合 | handler | `TestDeleteItem_ReportNotFound` | 存在しないレポートID で DELETE | 404 RESOURCE_NOT_FOUND |
-| ITM-232 | 統合 | handler | `TestDeleteItem_ItemNotFound` | 正しいレポートID・存在しない明細ID で DELETE | 404 RESOURCE_NOT_FOUND |
-| ITM-233 | 統合 | handler | `TestDeleteItem_ItemBelongsToDifferentReport` | 正しいレポートID・別レポートに属する明細ID で DELETE | 404 RESOURCE_NOT_FOUND（明細の親チェック違反） |
-| ITM-234 | 統合 | handler | `TestDeleteItem_AlreadyDeleted` | 論理削除済み明細に再度 DELETE | 404 RESOURCE_NOT_FOUND |
+| テストID | テストレベル | レイヤー | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---------|------------|---------|---------|-----------|-----------|---------------|------------------|---------|
+| ITM-231 | 統合 | handler | 異常系 | ITM-F03 | openapi.yaml#deleteItem | `TestDeleteItem_ReportNotFound` | 存在しないレポートID で DELETE | 404 RESOURCE_NOT_FOUND |
+| ITM-232 | 統合 | handler | 異常系 | ITM-F03 | openapi.yaml#deleteItem | `TestDeleteItem_ItemNotFound` | 正しいレポートID・存在しない明細ID で DELETE | 404 RESOURCE_NOT_FOUND |
+| ITM-233 | 統合 | handler | 異常系 | ITM-F03 | openapi.yaml#deleteItem | `TestDeleteItem_ItemBelongsToDifferentReport` | 正しいレポートID・別レポートに属する明細ID で DELETE | 404 RESOURCE_NOT_FOUND（明細の親チェック違反） |
+| ITM-234 | 統合 | handler | 異常系 | ITM-F03, NFR-DATA-001 | openapi.yaml#deleteItem | `TestDeleteItem_AlreadyDeleted` | 論理削除済み明細に再度 DELETE | 404 RESOURCE_NOT_FOUND |
 
 ---
 
@@ -236,13 +236,13 @@
 
 レポートが `submitted` 以降の状態では明細削除は拒否される（ITM-010 不変条件: draft 制約）。
 
-| テストID | テストレベル | レイヤー | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
-|---------|------------|---------|---------------|------------------|---------|
-| ITM-241 | 統合 | handler | `TestDeleteItem_ReportSubmitted_Rejected` | 前提: `report_submitted` の明細に対して所有者 Member が DELETE | 422 REPORT_NOT_EDITABLE |
-| ITM-242 | 統合 | handler | `TestDeleteItem_ReportApproved_Rejected` | 前提: `report_approved` の明細に対して所有者 Member が DELETE | 422 REPORT_NOT_EDITABLE |
-| ITM-243 | 統合 | handler | `TestDeleteItem_ReportRejected_Rejected` | 前提: `report_rejected` の明細に対して所有者 Member が DELETE | 422 REPORT_NOT_EDITABLE |
-| ITM-244 | 統合 | handler | `TestDeleteItem_ReportPaid_Rejected` | 前提: `report_paid` の明細に対して所有者 Member が DELETE | 422 REPORT_NOT_EDITABLE |
-| ITM-245 | 単体 | domain | `TestExpenseReport_DeleteItem_NotDraft` | ドメイン層で submitted 状態のレポートの明細を削除 | `ReportNotEditable` エラーが返る |
+| テストID | テストレベル | レイヤー | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---------|------------|---------|---------|-----------|-----------|---------------|------------------|---------|
+| ITM-241 | 統合 | handler | 状態遷移 | ITM-010, ITM-F03 | openapi.yaml#deleteItem | `TestDeleteItem_ReportSubmitted_Rejected` | 前提: `report_submitted` の明細に対して所有者 Member が DELETE | 422 REPORT_NOT_EDITABLE |
+| ITM-242 | 統合 | handler | 状態遷移 | ITM-010, ITM-F03 | openapi.yaml#deleteItem | `TestDeleteItem_ReportApproved_Rejected` | 前提: `report_approved` の明細に対して所有者 Member が DELETE | 422 REPORT_NOT_EDITABLE |
+| ITM-243 | 統合 | handler | 状態遷移 | ITM-010, ITM-F03 | openapi.yaml#deleteItem | `TestDeleteItem_ReportRejected_Rejected` | 前提: `report_rejected` の明細に対して所有者 Member が DELETE | 422 REPORT_NOT_EDITABLE |
+| ITM-244 | 統合 | handler | 状態遷移 | ITM-010, ITM-F03 | openapi.yaml#deleteItem | `TestDeleteItem_ReportPaid_Rejected` | 前提: `report_paid` の明細に対して所有者 Member が DELETE | 422 REPORT_NOT_EDITABLE |
+| ITM-245 | 単体 | domain | 状態遷移 | ITM-010 | state_machine.md | `TestExpenseReport_DeleteItem_NotDraft` | ドメイン層で submitted 状態のレポートの明細を削除 | `ReportNotEditable` エラーが返る |
 
 ---
 
@@ -252,20 +252,20 @@
 
 本セクションでは「RBACミドルウェア層での拒否」が発生するケース（認証必須エンドポイントへの未認証アクセス）のみを定義する。ロールによるアクセス拒否はすべてのロールに POST /PUT /DELETE が許可されているため、非所有者の 403 は §1.4 / §3.5 / §5.3 で扱う。
 
-| テストID | テストレベル | レイヤー | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
-|---------|------------|---------|---------------|------------------|---------|
-| ITM-301 | 統合 | handler | `TestCreateItem_RBACAllRolesAllowed_Member` | Member が自分の draft レポートに POST | 201 Created（RBAC ミドルウェアは通過。所有権チェックも通過） |
-| ITM-302 | 統合 | handler | `TestCreateItem_RBACAllRolesAllowed_Approver` | Approver が自分の draft レポートに POST | 201 Created |
-| ITM-303 | 統合 | handler | `TestCreateItem_RBACAllRolesAllowed_Accounting` | Accounting が自分の draft レポートに POST | 201 Created |
-| ITM-304 | 統合 | handler | `TestCreateItem_RBACAllRolesAllowed_Admin` | Admin が自分の draft レポートに POST | 201 Created |
-| ITM-305 | 統合 | handler | `TestUpdateItem_RBACAllRolesAllowed_Member` | Member が自分の draft レポートの明細に PUT | 200 OK |
-| ITM-306 | 統合 | handler | `TestUpdateItem_RBACAllRolesAllowed_Approver` | Approver が自分の draft レポートの明細に PUT | 200 OK |
-| ITM-307 | 統合 | handler | `TestUpdateItem_RBACAllRolesAllowed_Accounting` | Accounting が自分の draft レポートの明細に PUT | 200 OK |
-| ITM-308 | 統合 | handler | `TestUpdateItem_RBACAllRolesAllowed_Admin` | Admin が自分の draft レポートの明細に PUT | 200 OK |
-| ITM-309 | 統合 | handler | `TestDeleteItem_RBACAllRolesAllowed_Member` | Member が自分の draft レポートの明細に DELETE | 204 No Content |
-| ITM-310 | 統合 | handler | `TestDeleteItem_RBACAllRolesAllowed_Approver` | Approver が自分の draft レポートの明細に DELETE | 204 No Content |
-| ITM-311 | 統合 | handler | `TestDeleteItem_RBACAllRolesAllowed_Accounting` | Accounting が自分の draft レポートの明細に DELETE | 204 No Content |
-| ITM-312 | 統合 | handler | `TestDeleteItem_RBACAllRolesAllowed_Admin` | Admin が自分の draft レポートの明細に DELETE | 204 No Content |
+| テストID | テストレベル | レイヤー | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---------|------------|---------|---------|-----------|-----------|---------------|------------------|---------|
+| ITM-301 | 統合 | handler | 認可 | RBAC-F01, RBC-001 | authz.md#3, openapi.yaml#createItem | `TestCreateItem_RBACAllRolesAllowed_Member` | Member が自分の draft レポートに POST | 201 Created（RBAC ミドルウェアは通過。所有権チェックも通過） |
+| ITM-302 | 統合 | handler | 認可 | RBAC-F01, RBC-001 | authz.md#3, openapi.yaml#createItem | `TestCreateItem_RBACAllRolesAllowed_Approver` | Approver が自分の draft レポートに POST | 201 Created |
+| ITM-303 | 統合 | handler | 認可 | RBAC-F01, RBC-001 | authz.md#3, openapi.yaml#createItem | `TestCreateItem_RBACAllRolesAllowed_Accounting` | Accounting が自分の draft レポートに POST | 201 Created |
+| ITM-304 | 統合 | handler | 認可 | RBAC-F01, RBC-001 | authz.md#3, openapi.yaml#createItem | `TestCreateItem_RBACAllRolesAllowed_Admin` | Admin が自分の draft レポートに POST | 201 Created |
+| ITM-305 | 統合 | handler | 認可 | RBAC-F01, RBC-001 | authz.md#3, openapi.yaml#updateItem | `TestUpdateItem_RBACAllRolesAllowed_Member` | Member が自分の draft レポートの明細に PUT | 200 OK |
+| ITM-306 | 統合 | handler | 認可 | RBAC-F01, RBC-001 | authz.md#3, openapi.yaml#updateItem | `TestUpdateItem_RBACAllRolesAllowed_Approver` | Approver が自分の draft レポートの明細に PUT | 200 OK |
+| ITM-307 | 統合 | handler | 認可 | RBAC-F01, RBC-001 | authz.md#3, openapi.yaml#updateItem | `TestUpdateItem_RBACAllRolesAllowed_Accounting` | Accounting が自分の draft レポートの明細に PUT | 200 OK |
+| ITM-308 | 統合 | handler | 認可 | RBAC-F01, RBC-001 | authz.md#3, openapi.yaml#updateItem | `TestUpdateItem_RBACAllRolesAllowed_Admin` | Admin が自分の draft レポートの明細に PUT | 200 OK |
+| ITM-309 | 統合 | handler | 認可 | RBAC-F01, RBC-001 | authz.md#3, openapi.yaml#deleteItem | `TestDeleteItem_RBACAllRolesAllowed_Member` | Member が自分の draft レポートの明細に DELETE | 204 No Content |
+| ITM-310 | 統合 | handler | 認可 | RBAC-F01, RBC-001 | authz.md#3, openapi.yaml#deleteItem | `TestDeleteItem_RBACAllRolesAllowed_Approver` | Approver が自分の draft レポートの明細に DELETE | 204 No Content |
+| ITM-311 | 統合 | handler | 認可 | RBAC-F01, RBC-001 | authz.md#3, openapi.yaml#deleteItem | `TestDeleteItem_RBACAllRolesAllowed_Accounting` | Accounting が自分の draft レポートの明細に DELETE | 204 No Content |
+| ITM-312 | 統合 | handler | 認可 | RBAC-F01, RBC-001 | authz.md#3, openapi.yaml#deleteItem | `TestDeleteItem_RBACAllRolesAllowed_Admin` | Admin が自分の draft レポートの明細に DELETE | 204 No Content |
 
 ---
 

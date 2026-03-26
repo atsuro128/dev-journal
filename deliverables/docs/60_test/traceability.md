@@ -30,7 +30,7 @@
 | 要件ID | 要件概要 | 設計反映先 | テスト反映先 | 備考 |
 |--------|---------|-----------|------------|------|
 | RBAC-F01 | ロール検証ミドルウェア（全 API でロール検証） | `authz.md#3`, `openapi.yaml#x-authz` | `test_cases/cross-cutting.md#CRS-021〜054` | |
-| RBAC-F02 | リソース所有者チェック | `authz.md#4`, `openapi.yaml#x-authz.ownership_required` | `test_cases/cross-cutting.md#CRS-021〜054`, `test_cases/reports.md#RPT-054〜` | |
+| RBAC-F02 | リソース所有者チェック | `authz.md#4`, `openapi.yaml#x-authz.ownership_required` | `test_cases/cross-cutting.md#CRS-021〜054`, `test_cases/reports.md#RPT-036, RPT-038, RPT-043〜044, RPT-054` | |
 
 ### 1.3 テナント分離（TNT-F*）
 
@@ -46,11 +46,11 @@
 |--------|---------|-----------|------------|------|
 | RPT-F01 | レポート作成（draft で作成） | `openapi.yaml#createReport`, `db_schema.md#expense_reports` | `test_cases/reports.md#RPT-008〜018` | |
 | RPT-F02 | 自分のレポート一覧取得 | `openapi.yaml#listMyReports` | `test_cases/reports.md#RPT-001〜007` | |
-| RPT-F03 | レポート詳細取得 | `openapi.yaml#getReport` | `test_cases/reports.md#RPT-019〜030` | |
-| RPT-F04 | レポート編集（draft のみ） | `openapi.yaml#updateReport` | `test_cases/reports.md#RPT-031〜044` | |
+| RPT-F03 | レポート詳細取得 | `openapi.yaml#getReport` | `test_cases/reports.md#RPT-027〜034` | |
+| RPT-F04 | レポート編集（draft のみ） | `openapi.yaml#updateReport` | `test_cases/reports.md#RPT-035〜041` | |
 | RPT-F05 | レポート削除（draft のみ、論理削除） | `openapi.yaml#deleteReport` | `test_cases/reports.md#RPT-045〜052` | |
 | RPT-F06 | レポート提出（draft → submitted） | `openapi.yaml#submitReport` | `test_cases/reports.md#RPT-053〜065` | |
-| RPT-F07 | テナント全レポート一覧取得（Admin + Accounting） | `openapi.yaml#listAllReports` | `test_cases/reports.md#RPT-066〜075` | |
+| RPT-F07 | テナント全レポート一覧取得（Admin + Accounting） | `openapi.yaml#listAllReports` | `test_cases/reports.md#RPT-020〜026` | |
 
 ### 1.5 経費明細 CRUD（ITM-F*）
 
@@ -64,20 +64,20 @@
 
 | 要件ID | 要件概要 | 設計反映先 | テスト反映先 | 備考 |
 |--------|---------|-----------|------------|------|
-| WFL-F01 | 承認（submitted → approved） | `openapi.yaml#approveReport`, `db_schema.md#expense_reports.approved_by` | `test_cases/workflow.md#WFL-` | |
-| WFL-F02 | 却下（submitted → rejected） | `openapi.yaml#rejectReport`, `db_schema.md#expense_reports.rejected_by` | `test_cases/workflow.md#WFL-` | |
-| WFL-F03 | 支払完了（approved → paid） | `openapi.yaml#markReportAsPaid`, `db_schema.md#expense_reports.paid_by` | `test_cases/workflow.md#WFL-` | |
-| WFL-F04 | 承認待ち一覧（Approver 用） | `openapi.yaml#listPendingReports` | `test_cases/workflow.md#WFL-001〜015` | |
-| WFL-F05 | 支払待ち一覧（Accounting 用） | `openapi.yaml#listPayableReports` | `test_cases/workflow.md#WFL-` | |
+| WFL-F01 | 承認（submitted → approved） | `openapi.yaml#approveReport`, `db_schema.md#expense_reports.approved_by` | `test_cases/workflow.md#WFL-010〜025` | |
+| WFL-F02 | 却下（submitted → rejected） | `openapi.yaml#rejectReport`, `db_schema.md#expense_reports.rejected_by` | `test_cases/workflow.md#WFL-026〜041` | |
+| WFL-F03 | 支払完了（approved → paid） | `openapi.yaml#markReportAsPaid`, `db_schema.md#expense_reports.paid_by` | `test_cases/workflow.md#WFL-051〜063` | |
+| WFL-F04 | 承認待ち一覧（Approver 用） | `openapi.yaml#listPendingReports` | `test_cases/workflow.md#WFL-001〜009` | |
+| WFL-F05 | 支払待ち一覧（Accounting 用） | `openapi.yaml#listPayableReports` | `test_cases/workflow.md#WFL-042〜050` | |
 
 ### 1.7 添付ファイル（ATT-F*）
 
 | 要件ID | 要件概要 | 設計反映先 | テスト反映先 | 備考 |
 |--------|---------|-----------|------------|------|
-| ATT-F01 | ファイルアップロード（S3 + DB メタデータ） | `openapi.yaml#uploadAttachment`, `files.md`, `db_schema.md#attachments` | `test_cases/attachments.md#ATT-001〜040` | |
-| ATT-F02 | ファイル一覧取得 | `openapi.yaml#listAttachments` | `test_cases/attachments.md#ATT-` | |
-| ATT-F03 | ファイルダウンロード（署名付き URL 発行） | `openapi.yaml#getAttachmentDownload`, `files.md#署名付きURL` | `test_cases/attachments.md#ATT-` | |
-| ATT-F04 | ファイル削除（論理削除） | `openapi.yaml#deleteAttachment` | `test_cases/attachments.md#ATT-` | |
+| ATT-F01 | ファイルアップロード（S3 + DB メタデータ） | `openapi.yaml#uploadAttachment`, `files.md`, `db_schema.md#attachments` | `test_cases/attachments.md#ATT-001〜019` | |
+| ATT-F02 | ファイル一覧取得 | `openapi.yaml#listAttachments` | `test_cases/attachments.md#ATT-020〜029` | |
+| ATT-F03 | ファイルダウンロード（署名付き URL 発行） | `openapi.yaml#getAttachmentDownload`, `files.md#署名付きURL` | `test_cases/attachments.md#ATT-030〜041` | |
+| ATT-F04 | ファイル削除（論理削除） | `openapi.yaml#deleteAttachment` | `test_cases/attachments.md#ATT-042〜054` | |
 
 ### 1.8 ダッシュボード（DASH-F*）
 
@@ -100,30 +100,30 @@
 | ルールID | ルール概要 | 設計反映先 | テスト反映先 | 備考 |
 |---------|-----------|-----------|------------|------|
 | RBC-001 | 全 API でミドルウェアによるロール検証 | `authz.md#3`, `openapi.yaml#x-authz` | `test_cases/cross-cutting.md#CRS-021〜054` | |
-| RBC-002 | 1 ユーザーは 1 テナントにつき 1 ロールのみ | `db_schema.md#tenant_memberships#UNIQUE` | `test_cases/tenant.md#TNT-` | |
+| RBC-002 | 1 ユーザーは 1 テナントにつき 1 ロールのみ | `db_schema.md#tenant_memberships#UNIQUE` | `test_cases/tenant.md#TNT-006〜008` | |
 | RBC-003 | リソースアクセスは「ロール」と「所有権」の両方で制御 | `authz.md#4` | `test_cases/cross-cutting.md#CRS-021〜054` | |
 | RBC-004 | 同一テナント内の権限不足時は 403 Forbidden | `authz.md#3.4`, `openapi.yaml` | `test_cases/cross-cutting.md#CRS-021〜054` | |
-| RBC-010 | 申請系操作は所有者のレポートに限定 | `authz.md#4.1`, `openapi.yaml#x-authz.ownership_required` | `test_cases/reports.md#RPT-054`, `test_cases/workflow.md#WFL-` | |
-| RBC-011 | Approver は同テナント submitted レポートを承認/却下可能 | `authz.md#4.2`, `openapi.yaml#approveReport`, `openapi.yaml#rejectReport` | `test_cases/workflow.md#WFL-`, `test_cases/cross-cutting.md#CRS-021〜054` | |
-| RBC-012 | Accounting の自己支払処理禁止 | `authz.md#4.3`, `openapi.yaml#markReportAsPaid` | `test_cases/workflow.md#WFL-` | |
-| RBC-013 | Admin は同テナント全レポートを閲覧可能（編集不可） | `authz.md#4.4`, `openapi.yaml#listAllReports`, `openapi.yaml#getReport` | `test_cases/reports.md#RPT-`, `test_cases/cross-cutting.md#CRS-021〜054` | |
-| RBC-014 | Admin は自分のレポートのみ申請者操作可能 | `authz.md#4.4` | `test_cases/reports.md#RPT-`, `test_cases/cross-cutting.md#CRS-021〜054` | |
+| RBC-010 | 申請系操作は所有者のレポートに限定 | `authz.md#4.1`, `openapi.yaml#x-authz.ownership_required` | `test_cases/reports.md#RPT-054`, `test_cases/cross-cutting.md#CRS-051〜052` | |
+| RBC-011 | Approver は同テナント submitted レポートを承認/却下可能 | `authz.md#4.2`, `openapi.yaml#approveReport`, `openapi.yaml#rejectReport` | `test_cases/workflow.md#WFL-010〜012, WFL-026`, `test_cases/cross-cutting.md#CRS-021〜054` | |
+| RBC-012 | Accounting の自己支払処理禁止 | `authz.md#4.3`, `openapi.yaml#markReportAsPaid` | `test_cases/workflow.md#WFL-056`, `test_cases/cross-cutting.md#CRS-050` | |
+| RBC-013 | Admin は同テナント全レポートを閲覧可能（編集不可） | `authz.md#4.4`, `openapi.yaml#listAllReports`, `openapi.yaml#getReport` | `test_cases/reports.md#RPT-020〜021, RPT-032`, `test_cases/cross-cutting.md#CRS-023, CRS-053` | |
+| RBC-014 | Admin は自分のレポートのみ申請者操作可能 | `authz.md#4.4` | `test_cases/reports.md#RPT-013, RPT-038, RPT-044`, `test_cases/cross-cutting.md#CRS-051〜052` | |
 | RBC-015 | Approver は全件承認型（MVP） | `authz.md#4.2`, `openapi.yaml#listPendingReports` | `test_cases/workflow.md#WFL-001〜005` | |
-| RBC-016 | Approver の自己承認・自己却下禁止 | `authz.md#4.2`, `openapi.yaml#approveReport`, `openapi.yaml#rejectReport` | `test_cases/workflow.md#WFL-` | |
+| RBC-016 | Approver の自己承認・自己却下禁止 | `authz.md#4.2`, `openapi.yaml#approveReport`, `openapi.yaml#rejectReport` | `test_cases/workflow.md#WFL-018, WFL-035`, `test_cases/cross-cutting.md#CRS-048〜049` | |
 
 ### 2.2 ワークフロー・状態遷移ルール（WFL-*）
 
 | ルールID | ルール概要 | 設計反映先 | テスト反映先 | 備考 |
 |---------|-----------|-----------|------------|------|
-| WFL-001 | 状態遷移はドメイン層で一元管理 | `20_domain/state_machine.md`, `db_schema.md#expense_reports.status` | `test_cases/reports.md#RPT-` | |
-| WFL-002 | 許可される遷移のみ実行可能 | `20_domain/state_machine.md#許可遷移`, `db_schema.md#CHECK制約` | `test_cases/reports.md#RPT-`, `test_cases/workflow.md#WFL-` | |
-| WFL-003 | 状態遷移を実行できるロールは遷移ごとに定義 | `20_domain/state_machine.md`, `authz.md` | `test_cases/workflow.md#WFL-` | |
-| WFL-004 | 終端状態（rejected, paid）からの遷移は不可 | `20_domain/state_machine.md#X9`, `20_domain/state_machine.md#X10` | `test_cases/workflow.md#WFL-` | |
+| WFL-001 | 状態遷移はドメイン層で一元管理 | `20_domain/state_machine.md`, `db_schema.md#expense_reports.status` | `test_cases/reports.md#RPT-065〜090` | |
+| WFL-002 | 許可される遷移のみ実行可能 | `20_domain/state_machine.md#許可遷移`, `db_schema.md#CHECK制約` | `test_cases/reports.md#RPT-073〜082`, `test_cases/workflow.md#WFL-013〜016, WFL-031〜034, WFL-052〜055` | |
+| WFL-003 | 状態遷移を実行できるロールは遷移ごとに定義 | `20_domain/state_machine.md`, `authz.md` | `test_cases/workflow.md#WFL-019〜022, WFL-036〜039, WFL-057〜060` | |
+| WFL-004 | 終端状態（rejected, paid）からの遷移は不可 | `20_domain/state_machine.md#X9`, `20_domain/state_machine.md#X10` | `test_cases/reports.md#RPT-081〜082`, `test_cases/workflow.md#WFL-015〜016, WFL-033〜034, WFL-054〜055` | |
 | WFL-010 | draft → submitted 遷移（所有者、明細1件以上） | `openapi.yaml#submitReport`, `20_domain/state_machine.md#T1` | `test_cases/reports.md#RPT-053〜065` | |
-| WFL-011 | submitted → approved 遷移（Approver、自己承認禁止） | `openapi.yaml#approveReport`, `20_domain/state_machine.md#T2` | `test_cases/workflow.md#WFL-` | |
-| WFL-012 | submitted → rejected 遷移（却下理由必須） | `openapi.yaml#rejectReport`, `20_domain/state_machine.md#T3` | `test_cases/workflow.md#WFL-` | |
-| WFL-013 | approved → paid 遷移（Accounting、自己処理禁止） | `openapi.yaml#markReportAsPaid`, `20_domain/state_machine.md#T4` | `test_cases/workflow.md#WFL-` | |
-| WFL-014 | 提出時に同テナントに Approver が 1 人以上必要 | `openapi.yaml#submitReport` | `test_cases/reports.md#RPT-` | |
+| WFL-011 | submitted → approved 遷移（Approver、自己承認禁止） | `openapi.yaml#approveReport`, `20_domain/state_machine.md#T2` | `test_cases/workflow.md#WFL-010〜012, WFL-018`, `test_cases/reports.md#RPT-083〜085` | |
+| WFL-012 | submitted → rejected 遷移（却下理由必須） | `openapi.yaml#rejectReport`, `20_domain/state_machine.md#T3` | `test_cases/workflow.md#WFL-026〜030`, `test_cases/reports.md#RPT-086〜088` | |
+| WFL-013 | approved → paid 遷移（Accounting、自己処理禁止） | `openapi.yaml#markReportAsPaid`, `20_domain/state_machine.md#T4` | `test_cases/workflow.md#WFL-051, WFL-056`, `test_cases/reports.md#RPT-089〜090` | |
+| WFL-014 | 提出時に同テナントに Approver が 1 人以上必要 | `openapi.yaml#submitReport` | `test_cases/reports.md#RPT-057, RPT-071` | |
 | WFL-015 | draft → (削除) 遷移（所有者、論理削除） | `openapi.yaml#deleteReport`, `20_domain/state_machine.md#T5` | `test_cases/reports.md#RPT-045〜052` | |
 
 ### 2.3 テナント分離ルール（TNT-*）
@@ -154,40 +154,40 @@
 
 | ルールID | ルール概要 | 設計反映先 | テスト反映先 | 備考 |
 |---------|-----------|-----------|------------|------|
-| ATT-002 | 許可ファイル形式: JPEG, PNG, PDF | `openapi.yaml#uploadAttachment`, `files.md#3`, `db_schema.md#attachments#CHECK` | `test_cases/attachments.md#ATT-001〜003`, `test_cases/attachments.md#ATT-011〜` | |
-| ATT-003 | 1 ファイルサイズ上限: 5MB | `openapi.yaml#uploadAttachment`, `db_schema.md#attachments#CHECK` | `test_cases/attachments.md#ATT-004`, `test_cases/attachments.md#ATT-012` | |
-| ATT-010 | ファイルダウンロードは署名付き URL 経由 | `openapi.yaml#getAttachmentDownload`, `files.md#署名付きURL` | `test_cases/attachments.md#ATT-` | |
-| ATT-011 | 署名付き URL 発行前に認可チェック必須 | `openapi.yaml#getAttachmentDownload`, `authz.md#6.5` | `test_cases/attachments.md#ATT-` | |
-| ATT-012 | 署名付き URL の有効期限: 15 分 | `files.md#署名付きURL`, `openapi.yaml#getAttachmentDownload` | `test_cases/attachments.md#ATT-` | |
-| ATT-013 | アップロード時に MIME タイプを検証 | `openapi.yaml#uploadAttachment`, `files.md#3.2` | `test_cases/attachments.md#ATT-011〜014` | |
-| ATT-014 | S3 パスにテナント ID を含む | `files.md#3.3`, `db_schema.md#attachments.s3_key` | `test_cases/attachments.md#ATT-` | |
-| ATT-020 | 添付の追加・削除は draft 状態のみ | `openapi.yaml#uploadAttachment`, `openapi.yaml#deleteAttachment` | `test_cases/attachments.md#ATT-016〜`, `test_cases/attachments.md#ATT-` | |
+| ATT-002 | 許可ファイル形式: JPEG, PNG, PDF | `openapi.yaml#uploadAttachment`, `files.md#3`, `db_schema.md#attachments#CHECK` | `test_cases/attachments.md#ATT-001〜003, ATT-007〜008` | |
+| ATT-003 | 1 ファイルサイズ上限: 5MB | `openapi.yaml#uploadAttachment`, `db_schema.md#attachments#CHECK` | `test_cases/attachments.md#ATT-004, ATT-006` | |
+| ATT-010 | ファイルダウンロードは署名付き URL 経由 | `openapi.yaml#getAttachmentDownload`, `files.md#署名付きURL` | `test_cases/attachments.md#ATT-030〜034` | |
+| ATT-011 | 署名付き URL 発行前に認可チェック必須 | `openapi.yaml#getAttachmentDownload`, `authz.md#6.5` | `test_cases/attachments.md#ATT-035〜038` | |
+| ATT-012 | 署名付き URL の有効期限: 15 分 | `files.md#署名付きURL`, `openapi.yaml#getAttachmentDownload` | `test_cases/attachments.md#ATT-034` | |
+| ATT-013 | アップロード時に MIME タイプを検証 | `openapi.yaml#uploadAttachment`, `files.md#3.2` | `test_cases/attachments.md#ATT-007〜010` | |
+| ATT-014 | S3 パスにテナント ID を含む | `files.md#3.3`, `db_schema.md#attachments.s3_key` | `test_cases/attachments.md#ATT-001` | S3 パスの検証は ATT-001 のレコード挿入時に暗黙的に確認 |
+| ATT-020 | 添付の追加・削除は draft 状態のみ | `openapi.yaml#uploadAttachment`, `openapi.yaml#deleteAttachment` | `test_cases/attachments.md#ATT-013〜016, ATT-048〜051` | |
 
 ### 2.6 経費レポートルール（RPT-*）
 
 | ルールID | ルール概要 | 設計反映先 | テスト反映先 | 備考 |
 |---------|-----------|-----------|------------|------|
 | RPT-001 | レポートにはタイトルが必須 | `openapi.yaml#createReport`, `db_schema.md#expense_reports.title` | `test_cases/reports.md#RPT-009` | |
-| RPT-002 | レポートには対象期間（開始日・終了日）が必須 | `openapi.yaml#createReport`, `db_schema.md#expense_reports` | `test_cases/reports.md#RPT-` | |
+| RPT-002 | レポートには対象期間（開始日・終了日）が必須 | `openapi.yaml#createReport`, `db_schema.md#expense_reports` | `test_cases/reports.md#RPT-008, RPT-010` | |
 | RPT-003 | 対象期間の開始日は終了日以前 | `openapi.yaml#createReport`, `db_schema.md#expense_reports#CHECK` | `test_cases/reports.md#RPT-010` | |
 | RPT-006 | 合計金額は明細の金額合計から自動計算 | `db_schema.md#expense_reports.total_amount` | `test_cases/items.md#ITM-002` | |
-| RPT-011 | レポート編集は draft 状態のみ | `openapi.yaml#updateReport` | `test_cases/reports.md#RPT-` | |
-| RPT-012 | レポート編集は所有者のみ | `openapi.yaml#updateReport`, `authz.md#4.1` | `test_cases/reports.md#RPT-` | |
-| RPT-013 | レポート削除は draft 状態のみ | `openapi.yaml#deleteReport` | `test_cases/reports.md#RPT-` | |
-| RPT-014 | レポート提出には明細が 1 件以上必要 | `openapi.yaml#submitReport` | `test_cases/reports.md#RPT-` | |
-| RPT-015 | 却下後の再申請は新規レポートとして作成 | `openapi.yaml#createReport` | `test_cases/reports.md#RPT-` | |
-| RPT-016 | 再申請レポートは元レポートへの参照を保持 | `db_schema.md#expense_reports.reference_report_id` | `test_cases/reports.md#RPT-` | |
+| RPT-011 | レポート編集は draft 状態のみ | `openapi.yaml#updateReport` | `test_cases/reports.md#RPT-037` | |
+| RPT-012 | レポート編集は所有者のみ | `openapi.yaml#updateReport`, `authz.md#4.1` | `test_cases/reports.md#RPT-036, RPT-038` | |
+| RPT-013 | レポート削除は draft 状態のみ | `openapi.yaml#deleteReport` | `test_cases/reports.md#RPT-045, RPT-048〜052` | |
+| RPT-014 | レポート提出には明細が 1 件以上必要 | `openapi.yaml#submitReport` | `test_cases/reports.md#RPT-056, RPT-066` | |
+| RPT-015 | 却下後の再申請は新規レポートとして作成 | `openapi.yaml#createReport` | `test_cases/reports.md#RPT-014〜019` | |
+| RPT-016 | 再申請レポートは元レポートへの参照を保持 | `db_schema.md#expense_reports.reference_report_id` | `test_cases/reports.md#RPT-014, RPT-016` | |
 
 ### 2.7 経費明細ルール（ITM-*）
 
 | ルールID | ルール概要 | 設計反映先 | テスト反映先 | 備考 |
 |---------|-----------|-----------|------------|------|
-| ITM-001 | 明細には日付が必須 | `openapi.yaml#createItem`, `db_schema.md#expense_items.expense_date` | `test_cases/items.md#ITM-` | |
-| ITM-002 | 明細には金額が必須（正の整数値） | `openapi.yaml#createItem`, `db_schema.md#expense_items.amount#CHECK` | `test_cases/items.md#ITM-` | |
-| ITM-003 | 明細にはカテゴリが必須 | `openapi.yaml#createItem`, `db_schema.md#expense_items.category_id` | `test_cases/items.md#ITM-` | |
-| ITM-004 | 明細には摘要が必須 | `openapi.yaml#createItem`, `db_schema.md#expense_items.description` | `test_cases/items.md#ITM-` | |
+| ITM-001 | 明細には日付が必須 | `openapi.yaml#createItem`, `db_schema.md#expense_items.expense_date` | `test_cases/items.md#ITM-015〜016` | |
+| ITM-002 | 明細には金額が必須（正の整数値） | `openapi.yaml#createItem`, `db_schema.md#expense_items.amount#CHECK` | `test_cases/items.md#ITM-006, ITM-011〜014, ITM-111〜112` | |
+| ITM-003 | 明細にはカテゴリが必須 | `openapi.yaml#createItem`, `db_schema.md#expense_items.category_id` | `test_cases/items.md#ITM-017〜019` | |
+| ITM-004 | 明細には摘要が必須 | `openapi.yaml#createItem`, `db_schema.md#expense_items.description` | `test_cases/items.md#ITM-020〜023` | |
 | ITM-005 | カテゴリは固定 6 種類 | `openapi.yaml#listCategories`, `db_schema.md#categories` | `test_cases/dashboard.md#DSH-019〜020` | |
-| ITM-010 | 明細の追加・編集・削除は draft 状態のみ | `openapi.yaml#createItem`, `openapi.yaml#updateItem`, `openapi.yaml#deleteItem` | `test_cases/items.md#ITM-` | |
+| ITM-010 | 明細の追加・編集・削除は draft 状態のみ | `openapi.yaml#createItem`, `openapi.yaml#updateItem`, `openapi.yaml#deleteItem` | `test_cases/items.md#ITM-061〜065, ITM-161〜165, ITM-241〜245` | |
 
 ### 2.8 ダッシュボードルール（DASH-*）
 
@@ -207,10 +207,10 @@
 
 | 要件ID | 要件概要 | 設計反映先 | テスト反映先 | 備考 |
 |--------|---------|-----------|------------|------|
-| NFR-PERF-001 | API レスポンスタイム p95 500ms 以下 | `architecture.md#8.1`, ADR-0001, ADR-0005 | `test_cases/cross-cutting.md#CRS-` | |
-| NFR-PERF-002 | ファイルアップロード 5秒以下（5MB） | `architecture.md#8.1`, `files.md`, ADR-0004 | `test_cases/attachments.md#ATT-` | |
-| NFR-PERF-003 | 同時接続ユーザー数 100 | `architecture.md#8.1`, ADR-0002, ADR-0004 | `test_cases/cross-cutting.md#CRS-` | |
-| NFR-PERF-004 | カーソルベースページネーション（デフォルト20件） | `architecture.md#5.3`, `openapi.yaml` | `test_cases/reports.md#RPT-`, `test_cases/cross-cutting.md#CRS-` | |
+| NFR-PERF-001 | API レスポンスタイム p95 500ms 以下 | `architecture.md#8.1`, ADR-0001, ADR-0005 | `test_cases/cross-cutting.md#CRS-083〜087` | |
+| NFR-PERF-002 | ファイルアップロード 5秒以下（5MB） | `architecture.md#8.1`, `files.md`, ADR-0004 | `test_cases/cross-cutting.md#CRS-088` | |
+| NFR-PERF-003 | 同時接続ユーザー数 100 | `architecture.md#8.1`, ADR-0002, ADR-0004 | - | 本格負荷テストは MVP スコープ外。CRS-083〜088 の軽量スモークテストで代替 |
+| NFR-PERF-004 | カーソルベースページネーション（デフォルト20件） | `architecture.md#5.3`, `openapi.yaml` | `test_cases/reports.md#RPT-001〜003`, `test_cases/workflow.md#WFL-005, WFL-046` | |
 
 ### 3.2 セキュリティ（NFR-SEC-*）
 
@@ -223,14 +223,14 @@
 | NFR-SEC-005 | レート制限（認証済み: 100 req/min/user、未認証: 20 req/min/IP） | `security.md#4.1`, `openapi.yaml#x-ratelimit` | `test_cases/cross-cutting.md#CRS-076〜088` | ルールID: SEC-012 |
 | NFR-SEC-006 | CORS（許可オリジンを明示指定） | `security.md#4.2` | `test_cases/cross-cutting.md#CRS-076〜088` | ルールID: SEC-013 |
 | NFR-SEC-007 | セキュリティヘッダー（HSTS, X-Content-Type-Options, X-Frame-Options） | `security.md#4.3` | `test_cases/cross-cutting.md#CRS-076〜088` | ルールID: SEC-014 |
-| NFR-SEC-008 | ファイルアップロード MIMEタイプ検証、5MB制限 | `files.md#3`, `openapi.yaml#uploadAttachment` | `test_cases/attachments.md#ATT-` | ルールID: ATT-013, ATT-003 |
+| NFR-SEC-008 | ファイルアップロード MIMEタイプ検証、5MB制限 | `files.md#3`, `openapi.yaml#uploadAttachment` | `test_cases/attachments.md#ATT-004, ATT-006〜010` | ルールID: ATT-013, ATT-003 |
 
 ### 3.3 可用性（NFR-AVAIL-*）
 
 | 要件ID | 要件概要 | 設計反映先 | テスト反映先 | 備考 |
 |--------|---------|-----------|------------|------|
-| NFR-AVAIL-001 | 稼働率 99.5% | `architecture.md#8.3`, ADR-0004 | `test_cases/cross-cutting.md#CRS-` | |
-| NFR-AVAIL-002 | ヘルスチェックエンドポイント `/health` | `openapi.yaml#getHealth`, `architecture.md#8.3`, ADR-0005 | `test_cases/cross-cutting.md#CRS-` | |
+| NFR-AVAIL-001 | 稼働率 99.5% | `architecture.md#8.3`, ADR-0004 | - | 運用監視で確認。自動テスト対象外（インフラ SLA の計測は本番環境でのみ可能） |
+| NFR-AVAIL-002 | ヘルスチェックエンドポイント `/health` | `openapi.yaml#getHealth`, `architecture.md#8.3`, ADR-0005 | - | Step 9 以降で実装時にヘルスチェックテストを追加 |
 | NFR-AVAIL-003 | DB バックアップ RDS 自動バックアップ 7日間保持 | `architecture.md#8.3`, ADR-0004 | - | 運用確認項目 |
 
 ### 3.4 データ（NFR-DATA-*）
@@ -238,22 +238,22 @@
 | 要件ID | 要件概要 | 設計反映先 | テスト反映先 | 備考 |
 |--------|---------|-----------|------------|------|
 | NFR-DATA-001 | 論理削除（deleted_at タイムスタンプ方式） | `db_schema.md#全業務テーブル` | `test_cases/reports.md#RPT-045〜052` | ルールID: DAT-002 |
-| NFR-DATA-002 | 全レコードに created_at, updated_at | `db_schema.md#全業務テーブル` | `test_cases/cross-cutting.md#CRS-` | ルールID: DAT-004 |
-| NFR-DATA-003 | 提出以降のレポートは物理削除不可 | `db_schema.md#expense_reports.deleted_at` | `test_cases/reports.md#RPT-` | ルールID: DAT-001 |
-| NFR-DATA-004 | MVP監査証跡（改ざんしにくいデータ構造） | `db_schema.md#expense_reports` | `test_cases/reports.md#RPT-` | |
-| NFR-DATA-005 | 日本円（JPY）のみ、整数値 | `db_schema.md#expense_items.amount` | `test_cases/items.md#ITM-` | ルールID: ITM-002 |
-| NFR-DATA-006 | 文字コード UTF-8 | `db_schema.md#CREATE DATABASE` | - | |
-| NFR-DATA-007 | タイムゾーン UTC保存、表示時JST変換 | `architecture.md#4.2` | - | |
+| NFR-DATA-002 | 全レコードに created_at, updated_at | `db_schema.md#全業務テーブル` | `test_cases/reports.md#RPT-008, RPT-035`, `test_cases/items.md#ITM-001, ITM-101` | ルールID: DAT-004。各 CRUD の正常系レスポンスで created_at/updated_at の存在を暗黙的に検証 |
+| NFR-DATA-003 | 提出以降のレポートは物理削除不可 | `db_schema.md#expense_reports.deleted_at` | `test_cases/reports.md#RPT-045, RPT-049〜052` | ルールID: DAT-001 |
+| NFR-DATA-004 | MVP監査証跡（改ざんしにくいデータ構造） | `db_schema.md#expense_reports` | `test_cases/reports.md#RPT-053, RPT-065` | submitted_at/approved_at/rejected_at/paid_at の記録を検証 |
+| NFR-DATA-005 | 日本円（JPY）のみ、整数値 | `db_schema.md#expense_items.amount` | `test_cases/items.md#ITM-006, ITM-011〜014` | ルールID: ITM-002 |
+| NFR-DATA-006 | 文字コード UTF-8 | `db_schema.md#CREATE DATABASE` | - | 自動テスト対象外（DB 設定で保証。マイグレーション時に確認） |
+| NFR-DATA-007 | タイムゾーン UTC保存、表示時JST変換 | `architecture.md#4.2` | - | 自動テスト対象外（アプリケーション実装規約で保証。Step 9 以降でタイムスタンプ形式の検証を含める） |
 
 ### 3.5 ユーザビリティ（NFR-UX-*）
 
 | 要件ID | 要件概要 | 設計反映先 | テスト反映先 | 備考 |
 |--------|---------|-----------|------------|------|
-| NFR-UX-001 | レスポンシブデザイン（PC・タブレット・スマートフォン対応） | `architecture.md#8.5`, ADR-0001（MUI 選定） | `test_cases/cross-cutting.md#CRS-` | |
-| NFR-UX-002 | UI 日本語固定 | `architecture.md#8.5` | `test_cases/cross-cutting.md#CRS-` | |
-| NFR-UX-003 | 操作結果の即時フィードバック | `architecture.md#8.5` | `test_cases/cross-cutting.md#CRS-` | |
-| NFR-UX-004 | クライアントサイドリアルタイムバリデーション | `architecture.md#8.5` | `test_cases/cross-cutting.md#CRS-` | |
-| NFR-UX-005 | API 通信中のローディング表示 | `architecture.md#8.5` | `test_cases/cross-cutting.md#CRS-` | |
+| NFR-UX-001 | レスポンシブデザイン（PC・タブレット・スマートフォン対応） | `architecture.md#8.5`, ADR-0001（MUI 選定） | `test_cases/cross-cutting.md#CRS-055〜075` | E2E テストで主要フローの画面表示を検証 |
+| NFR-UX-002 | UI 日本語固定 | `architecture.md#8.5` | `test_cases/cross-cutting.md#CRS-055〜075` | E2E テストで日本語表示を暗黙的に検証 |
+| NFR-UX-003 | 操作結果の即時フィードバック | `architecture.md#8.5` | `test_cases/cross-cutting.md#CRS-055〜075` | E2E テストで操作後のフィードバック表示を検証 |
+| NFR-UX-004 | クライアントサイドリアルタイムバリデーション | `architecture.md#8.5` | - | フロントエンド実装時に E2E テストで追加。Step 9 以降で対応 |
+| NFR-UX-005 | API 通信中のローディング表示 | `architecture.md#8.5` | - | フロントエンド実装時に E2E テストで追加。Step 9 以降で対応 |
 
 ---
 
@@ -261,13 +261,13 @@
 
 | 遷移ID | 禁止遷移 | 設計反映先 | テスト反映先 | 備考 |
 |--------|---------|-----------|------------|------|
-| X1 | draft → approved（承認スキップ禁止） | `20_domain/state_machine.md#X1` | `test_cases/reports.md#RPT-` | |
-| X2 | draft → rejected（未提出却下禁止） | `20_domain/state_machine.md#X2` | `test_cases/reports.md#RPT-` | |
-| X3 | draft → paid（承認スキップ禁止） | `20_domain/state_machine.md#X3` | `test_cases/reports.md#RPT-` | |
+| X1 | draft → approved（承認スキップ禁止） | `20_domain/state_machine.md#X1` | `test_cases/reports.md#RPT-061, RPT-073` | |
+| X2 | draft → rejected（未提出却下禁止） | `20_domain/state_machine.md#X2` | `test_cases/reports.md#RPT-062, RPT-074` | |
+| X3 | draft → paid（承認スキップ禁止） | `20_domain/state_machine.md#X3` | `test_cases/reports.md#RPT-063, RPT-075` | |
 | X4 | submitted → draft（提出取消 MVP 対象外） | `20_domain/state_machine.md#X4` | `test_cases/reports.md#RPT-055` | |
-| X5 | submitted → paid（承認スキップ禁止） | `20_domain/state_machine.md#X5` | `test_cases/workflow.md#WFL-` | |
-| X6 | approved → draft（承認済みを下書きに戻せない） | `20_domain/state_machine.md#X6` | `test_cases/workflow.md#WFL-` | |
-| X7 | approved → submitted（逆遷移禁止） | `20_domain/state_machine.md#X7` | `test_cases/workflow.md#WFL-` | |
-| X8 | approved → rejected（承認後の却下不可） | `20_domain/state_machine.md#X8` | `test_cases/workflow.md#WFL-` | |
-| X9 | rejected → 任意（終端状態からの遷移不可） | `20_domain/state_machine.md#X9` | `test_cases/workflow.md#WFL-` | |
-| X10 | paid → 任意（終端状態からの遷移不可） | `20_domain/state_machine.md#X10` | `test_cases/workflow.md#WFL-` | |
+| X5 | submitted → paid（承認スキップ禁止） | `20_domain/state_machine.md#X5` | `test_cases/reports.md#RPT-077`, `test_cases/workflow.md#WFL-052` | |
+| X6 | approved → draft（承認済みを下書きに戻せない） | `20_domain/state_machine.md#X6` | `test_cases/reports.md#RPT-078` | |
+| X7 | approved → submitted（逆遷移禁止） | `20_domain/state_machine.md#X7` | `test_cases/reports.md#RPT-079` | |
+| X8 | approved → rejected（承認後の却下不可） | `20_domain/state_machine.md#X8` | `test_cases/reports.md#RPT-080`, `test_cases/workflow.md#WFL-031` | |
+| X9 | rejected → 任意（終端状態からの遷移不可） | `20_domain/state_machine.md#X9` | `test_cases/reports.md#RPT-081`, `test_cases/workflow.md#WFL-015, WFL-033, WFL-055` | |
+| X10 | paid → 任意（終端状態からの遷移不可） | `20_domain/state_machine.md#X10` | `test_cases/reports.md#RPT-082`, `test_cases/workflow.md#WFL-016, WFL-034, WFL-054` | |

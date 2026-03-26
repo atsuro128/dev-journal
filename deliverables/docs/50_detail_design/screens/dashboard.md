@@ -19,6 +19,7 @@
 | **目的** | ログイン後のホーム画面。ロール別に経費の概況を表示する |
 | **URLパス** | `/dashboard` |
 | **対応ロール** | Member, Approver, Accounting, Admin（全ロール） |
+| **対応要件ID** | DASH-F01（ダッシュボード取得） |
 | **対応ユースケース** | UC-SYS04 |
 | **使用APIエンドポイント** | GET /api/dashboard |
 

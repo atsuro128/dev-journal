@@ -18,6 +18,7 @@
 | 画面名 | テナント全レポート一覧 |
 | URLパス | `/reports/all` |
 | 目的 | テナント内の全経費レポートを閲覧し、経費状況を俯瞰する |
+| 対応要件ID | RPT-F07（テナント全レポート一覧取得） |
 | 対応UC | UC-AD02（Admin: 全レポート閲覧）、UC-AC03（Accounting: 経費一覧閲覧） |
 | 対応ロール | Admin, Accounting |
 | APIエンドポイント | `GET /api/reports/all`, `GET /api/tenant/members` |

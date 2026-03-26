@@ -17,6 +17,7 @@
 | 画面ID | SCR-RPT-001 |
 | 画面名 | レポート一覧（自分） |
 | URLパス | `/reports` |
+| 対応要件ID | RPT-F02（レポート一覧取得（自分）） |
 | 対応UC | UC-M08（レポートの状況を確認する） |
 | 対応ロール | Member, Approver, Admin, Accounting |
 | 使用API | GET /api/reports |

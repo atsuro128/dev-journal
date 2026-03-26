@@ -278,7 +278,7 @@ SCR-{カテゴリ}-{連番}
 | SCR-RPT-004 | レポート詳細 | GET /api/reports/:id, POST /api/reports/:id/items, PUT /api/reports/:id/items/:itemId, DELETE /api/reports/:id/items/:itemId, POST /api/reports/:id/items/:itemId/attachments, DELETE /api/reports/:id/items/:itemId/attachments/:attId, POST /api/reports/:id/submit, DELETE /api/reports/:id, POST /api/workflow/:id/approve, POST /api/workflow/:id/reject, POST /api/workflow/:id/pay |
 | SCR-WFL-001 | 承認待ち一覧 | GET /api/workflow/pending |
 | SCR-WFL-002 | 支払待ち一覧 | GET /api/workflow/payable |
-| SCR-ADM-001 | テナント全レポート一覧 | GET /api/reports/all |
+| SCR-ADM-001 | テナント全レポート一覧 | GET /api/reports/all, GET /api/tenant/members |
 | SCR-ADM-002 | テナント情報 | GET /api/tenant |
 
 共通API（全認証済み画面で使用）: GET /api/auth/me, POST /api/auth/refresh, POST /api/auth/logout

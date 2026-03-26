@@ -55,17 +55,17 @@
 
 ### listPendingReports — GET /api/workflow/pending
 
-| テストID | テストレベル | レイヤー | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
-|---------|------------|---------|---------------|-------------------|---------|
-| WFL-001 | 統合 | handler | `TestListPendingReports_Success` | 認証済み Approver でリクエスト。`report_submitted` がDB上に存在する | 200 OK。`data` にテナントA の submitted レポートが含まれる。`pagination` が返る |
-| WFL-002 | 統合 | handler | `TestListPendingReports_IncludesOwnReport` | Test Approver 本人が作成した submitted レポートがDB上に存在する状態でリクエスト | 200 OK。自分のレポートも一覧に含まれ、`is_own_report: true` が設定されている |
-| WFL-003 | 統合 | handler | `TestListPendingReports_ExcludesNonSubmitted` | テナントA に draft / approved / rejected / paid 状態のレポートのみ存在する | 200 OK。`data` が空配列 `[]` |
-| WFL-004 | 統合 | handler | `TestListPendingReports_FilterByApplicantName` | クエリパラメータ `applicant_name=Test` を指定してリクエスト | 200 OK。申請者名が部分一致するレポートのみ返る |
-| WFL-005 | 統合 | handler | `TestListPendingReports_Pagination` | `limit=1` かつ submitted レポートが2件以上存在する状態でリクエスト | 200 OK。`data` の件数が1件。`pagination.next_cursor` が返る |
-| WFL-006 | 統合 | handler | `TestListPendingReports_Forbidden_Member` | Member ロールのユーザーで認証してリクエスト | 403 FORBIDDEN |
-| WFL-007 | 統合 | handler | `TestListPendingReports_Forbidden_Admin` | Admin ロールのユーザーで認証してリクエスト | 403 FORBIDDEN |
-| WFL-008 | 統合 | handler | `TestListPendingReports_Forbidden_Accounting` | Accounting ロールのユーザーで認証してリクエスト | 403 FORBIDDEN |
-| WFL-009 | 統合 | handler | `TestListPendingReports_Unauthorized` | 認証ヘッダーなしでリクエスト | 401 UNAUTHORIZED |
+| テストID | テストレベル | レイヤー | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---------|------------|---------|---------|-----------|-----------|---------------|-------------------|---------|
+| WFL-001 | 統合 | handler | 正常系 | WFL-F04, RBC-015 | openapi.yaml#listPendingReports | `TestListPendingReports_Success` | 認証済み Approver でリクエスト。`report_submitted` がDB上に存在する | 200 OK。`data` にテナントA の submitted レポートが含まれる。`pagination` が返る |
+| WFL-002 | 統合 | handler | 正常系 | WFL-F04 | openapi.yaml#listPendingReports | `TestListPendingReports_IncludesOwnReport` | Test Approver 本人が作成した submitted レポートがDB上に存在する状態でリクエスト | 200 OK。自分のレポートも一覧に含まれ、`is_own_report: true` が設定されている |
+| WFL-003 | 統合 | handler | 正常系 | WFL-F04 | openapi.yaml#listPendingReports | `TestListPendingReports_ExcludesNonSubmitted` | テナントA に draft / approved / rejected / paid 状態のレポートのみ存在する | 200 OK。`data` が空配列 `[]` |
+| WFL-004 | 統合 | handler | 正常系 | WFL-F04 | openapi.yaml#listPendingReports | `TestListPendingReports_FilterByApplicantName` | クエリパラメータ `applicant_name=Test` を指定してリクエスト | 200 OK。申請者名が部分一致するレポートのみ返る |
+| WFL-005 | 統合 | handler | 正常系 | WFL-F04, NFR-PERF-004 | openapi.yaml#listPendingReports | `TestListPendingReports_Pagination` | `limit=1` かつ submitted レポートが2件以上存在する状態でリクエスト | 200 OK。`data` の件数が1件。`pagination.next_cursor` が返る |
+| WFL-006 | 統合 | handler | 認可 | RBAC-F01, RBC-001 | openapi.yaml#listPendingReports, authz.md#3 | `TestListPendingReports_Forbidden_Member` | Member ロールのユーザーで認証してリクエスト | 403 FORBIDDEN |
+| WFL-007 | 統合 | handler | 認可 | RBAC-F01, RBC-001 | openapi.yaml#listPendingReports, authz.md#3 | `TestListPendingReports_Forbidden_Admin` | Admin ロールのユーザーで認証してリクエスト | 403 FORBIDDEN |
+| WFL-008 | 統合 | handler | 認可 | RBAC-F01, RBC-001 | openapi.yaml#listPendingReports, authz.md#3 | `TestListPendingReports_Forbidden_Accounting` | Accounting ロールのユーザーで認証してリクエスト | 403 FORBIDDEN |
+| WFL-009 | 統合 | handler | 異常系 | WFL-F04 | openapi.yaml#listPendingReports | `TestListPendingReports_Unauthorized` | 認証ヘッダーなしでリクエスト | 401 UNAUTHORIZED |
 
 ---
 
@@ -73,43 +73,43 @@
 
 #### 正常系
 
-| テストID | テストレベル | レイヤー | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
-|---------|------------|---------|---------------|-------------------|---------|
-| WFL-010 | 統合 | handler | `TestApproveReport_Success` | Approver で認証。対象: `report_submitted`（作成者: Test Member）。リクエストボディ: `{"updated_at": "<report_submitted の updated_at>"}` | 200 OK。レスポンスの `data.status` が `"approved"` になっている。`data.approved_by` が Approver のユーザーID。DBのレコードも `approved` に更新されている |
-| WFL-011 | 統合 | handler | `TestApproveReport_SuccessWithComment` | Approver で認証。リクエストボディ: `{"comment": "問題ありません", "updated_at": "<updated_at>"}` | 200 OK。レスポンスの `data.approval_comment` が `"問題ありません"` |
-| WFL-012 | 統合 | handler | `TestApproveReport_SuccessWithoutComment` | Approver で認証。リクエストボディに `comment` フィールドを含めない | 200 OK。承認コメントは空または null |
+| テストID | テストレベル | レイヤー | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---------|------------|---------|---------|-----------|-----------|---------------|-------------------|---------|
+| WFL-010 | 統合 | handler | 正常系 | WFL-F01, WFL-011 | openapi.yaml#approveReport, state_machine.md#T2 | `TestApproveReport_Success` | Approver で認証。対象: `report_submitted`（作成者: Test Member）。リクエストボディ: `{"updated_at": "<report_submitted の updated_at>"}` | 200 OK。レスポンスの `data.status` が `"approved"` になっている。`data.approved_by` が Approver のユーザーID。DBのレコードも `approved` に更新されている |
+| WFL-011 | 統合 | handler | 正常系 | WFL-F01 | openapi.yaml#approveReport | `TestApproveReport_SuccessWithComment` | Approver で認証。リクエストボディ: `{"comment": "問題ありません", "updated_at": "<updated_at>"}` | 200 OK。レスポンスの `data.approval_comment` が `"問題ありません"` |
+| WFL-012 | 統合 | handler | 正常系 | WFL-F01 | openapi.yaml#approveReport | `TestApproveReport_SuccessWithoutComment` | Approver で認証。リクエストボディに `comment` フィールドを含めない | 200 OK。承認コメントは空または null |
 
 #### 状態遷移の禁止パス（ハンドラ層統合テスト: X5〜X10）
 
-| テストID | テストレベル | レイヤー | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
-|---------|------------|---------|---------------|-------------------|---------|
-| WFL-013 | 統合 | handler | `TestApproveReport_AlreadyApproved` | Approver で認証。対象: `report_approved`（approved 状態）（state_machine.md §T2 事前条件 No.1: status == submitted の違反）。リクエストボディ: `{"updated_at": "<updated_at>"}` | 422 INVALID_STATE_TRANSITION |
-| WFL-014 | 統合 | handler | `TestApproveReport_DraftState` | Approver で認証。対象: draft 状態のレポート | 422 INVALID_STATE_TRANSITION |
-| WFL-015 | 統合 | handler | `TestApproveReport_RejectedState` | Approver で認証。対象: rejected 状態のレポート（X9: rejected→approved は禁止） | 422 INVALID_STATE_TRANSITION |
-| WFL-016 | 統合 | handler | `TestApproveReport_PaidState` | Approver で認証。対象: paid 状態のレポート（X10: paid→approved は禁止） | 422 INVALID_STATE_TRANSITION |
+| テストID | テストレベル | レイヤー | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---------|------------|---------|---------|-----------|-----------|---------------|-------------------|---------|
+| WFL-013 | 統合 | handler | 状態遷移 | WFL-002 | openapi.yaml#approveReport, state_machine.md#T2 | `TestApproveReport_AlreadyApproved` | Approver で認証。対象: `report_approved`（approved 状態）（state_machine.md §T2 事前条件 No.1: status == submitted の違反）。リクエストボディ: `{"updated_at": "<updated_at>"}` | 422 INVALID_STATE_TRANSITION |
+| WFL-014 | 統合 | handler | 状態遷移 | WFL-002 | openapi.yaml#approveReport | `TestApproveReport_DraftState` | Approver で認証。対象: draft 状態のレポート | 422 INVALID_STATE_TRANSITION |
+| WFL-015 | 統合 | handler | 状態遷移 | WFL-004 | openapi.yaml#approveReport, state_machine.md#X9 | `TestApproveReport_RejectedState` | Approver で認証。対象: rejected 状態のレポート（X9: rejected→approved は禁止） | 422 INVALID_STATE_TRANSITION |
+| WFL-016 | 統合 | handler | 状態遷移 | WFL-004 | openapi.yaml#approveReport, state_machine.md#X10 | `TestApproveReport_PaidState` | Approver で認証。対象: paid 状態のレポート（X10: paid→approved は禁止） | 422 INVALID_STATE_TRANSITION |
 
 #### 自己承認禁止（RBC-016）
 
-| テストID | テストレベル | レイヤー | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
-|---------|------------|---------|---------------|-------------------|---------|
-| WFL-018 | 統合 | handler | `TestApproveReport_SelfApproval` | Test Approver 本人が作成した submitted レポートを、同じ Test Approver で承認しようとする | 403 SELF_APPROVAL_NOT_ALLOWED |
+| テストID | テストレベル | レイヤー | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---------|------------|---------|---------|-----------|-----------|---------------|-------------------|---------|
+| WFL-018 | 統合 | handler | 認可 | RBC-016 | openapi.yaml#approveReport, authz.md#4.2 | `TestApproveReport_SelfApproval` | Test Approver 本人が作成した submitted レポートを、同じ Test Approver で承認しようとする | 403 SELF_APPROVAL_NOT_ALLOWED |
 
 #### RBACテスト（ロール別拒否）
 
-| テストID | テストレベル | レイヤー | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
-|---------|------------|---------|---------------|-------------------|---------|
-| WFL-019 | 統合 | handler | `TestApproveReport_Forbidden_Member` | Member で認証。対象: `report_submitted` | 403 FORBIDDEN |
-| WFL-020 | 統合 | handler | `TestApproveReport_Forbidden_Admin` | Admin で認証。対象: `report_submitted` | 403 FORBIDDEN |
-| WFL-021 | 統合 | handler | `TestApproveReport_Forbidden_Accounting` | Accounting で認証。対象: `report_submitted` | 403 FORBIDDEN |
-| WFL-022 | 統合 | handler | `TestApproveReport_Unauthorized` | 認証ヘッダーなし | 401 UNAUTHORIZED |
+| テストID | テストレベル | レイヤー | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---------|------------|---------|---------|-----------|-----------|---------------|-------------------|---------|
+| WFL-019 | 統合 | handler | 認可 | RBAC-F01, RBC-001 | openapi.yaml#approveReport, authz.md#3 | `TestApproveReport_Forbidden_Member` | Member で認証。対象: `report_submitted` | 403 FORBIDDEN |
+| WFL-020 | 統合 | handler | 認可 | RBAC-F01, RBC-001 | openapi.yaml#approveReport, authz.md#3 | `TestApproveReport_Forbidden_Admin` | Admin で認証。対象: `report_submitted` | 403 FORBIDDEN |
+| WFL-021 | 統合 | handler | 認可 | RBAC-F01, RBC-001 | openapi.yaml#approveReport, authz.md#3 | `TestApproveReport_Forbidden_Accounting` | Accounting で認証。対象: `report_submitted` | 403 FORBIDDEN |
+| WFL-022 | 統合 | handler | 異常系 | WFL-F01 | openapi.yaml#approveReport | `TestApproveReport_Unauthorized` | 認証ヘッダーなし | 401 UNAUTHORIZED |
 
 #### その他の異常系
 
-| テストID | テストレベル | レイヤー | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
-|---------|------------|---------|---------------|-------------------|---------|
-| WFL-023 | 統合 | handler | `TestApproveReport_NotFound` | Approver で認証。存在しないレポートID（`00000000-0000-0000-0000-000000000099`）を指定 | 404 RESOURCE_NOT_FOUND |
-| WFL-024 | 統合 | handler | `TestApproveReport_Conflict_OptimisticLock` | Approver で認証。対象: `report_submitted`。リクエストボディの `updated_at` に古い（不一致の）タイムスタンプを指定 | 409 CONFLICT |
-| WFL-025 | 統合 | handler | `TestApproveReport_MissingUpdatedAt` | Approver で認証。リクエストボディに `updated_at` フィールドなし | 400 または 422（バリデーションエラー） |
+| テストID | テストレベル | レイヤー | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---------|------------|---------|---------|-----------|-----------|---------------|-------------------|---------|
+| WFL-023 | 統合 | handler | 異常系 | WFL-F01 | openapi.yaml#approveReport | `TestApproveReport_NotFound` | Approver で認証。存在しないレポートID（`00000000-0000-0000-0000-000000000099`）を指定 | 404 RESOURCE_NOT_FOUND |
+| WFL-024 | 統合 | handler | 異常系 | WFL-F01 | openapi.yaml#approveReport | `TestApproveReport_Conflict_OptimisticLock` | Approver で認証。対象: `report_submitted`。リクエストボディの `updated_at` に古い（不一致の）タイムスタンプを指定 | 409 CONFLICT |
+| WFL-025 | 統合 | handler | 異常系 | WFL-F01 | openapi.yaml#approveReport | `TestApproveReport_MissingUpdatedAt` | Approver で認証。リクエストボディに `updated_at` フィールドなし | 400 または 422（バリデーションエラー） |
 
 ---
 
@@ -117,65 +117,65 @@
 
 #### 正常系
 
-| テストID | テストレベル | レイヤー | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
-|---------|------------|---------|---------------|-------------------|---------|
-| WFL-026 | 統合 | handler | `TestRejectReport_Success` | Approver で認証。対象: `report_submitted`。リクエストボディ: `{"rejection_reason": "領収書が不明瞭です", "updated_at": "<updated_at>"}` | 200 OK。レスポンスの `data.status` が `"rejected"`。`data.rejected_by` が Approver のユーザーID。`data.rejection_reason` が `"領収書が不明瞭です"` |
+| テストID | テストレベル | レイヤー | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---------|------------|---------|---------|-----------|-----------|---------------|-------------------|---------|
+| WFL-026 | 統合 | handler | 正常系 | WFL-F02, WFL-012 | openapi.yaml#rejectReport, state_machine.md#T3 | `TestRejectReport_Success` | Approver で認証。対象: `report_submitted`。リクエストボディ: `{"rejection_reason": "領収書が不明瞭です", "updated_at": "<updated_at>"}` | 200 OK。レスポンスの `data.status` が `"rejected"`。`data.rejected_by` が Approver のユーザーID。`data.rejection_reason` が `"領収書が不明瞭です"` |
 
 #### 却下理由バリデーション（state_machine.md §T3 事前条件 No.3: rejection_reason 非空）
 
-| テストID | テストレベル | レイヤー | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
-|---------|------------|---------|---------------|-------------------|---------|
-| WFL-027 | 統合 | handler | `TestRejectReport_MissingRejectionReason` | Approver で認証。リクエストボディに `rejection_reason` フィールドなし（`{"updated_at": "<updated_at>"}` のみ） | 422 MISSING_REJECTION_REASON |
-| WFL-028 | 統合 | handler | `TestRejectReport_EmptyRejectionReason` | Approver で認証。リクエストボディ: `{"rejection_reason": "", "updated_at": "<updated_at>"}` | 422 MISSING_REJECTION_REASON |
-| WFL-029 | 統合 | handler | `TestRejectReport_RejectionReasonMaxLength` | Approver で認証。`rejection_reason` が1000文字の文字列 | 200 OK（境界値: 上限ちょうど） |
-| WFL-030 | 統合 | handler | `TestRejectReport_RejectionReasonTooLong` | Approver で認証。`rejection_reason` が1001文字の文字列 | 400 または 422（バリデーションエラー） |
+| テストID | テストレベル | レイヤー | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---------|------------|---------|---------|-----------|-----------|---------------|-------------------|---------|
+| WFL-027 | 統合 | handler | 異常系 | WFL-012 | openapi.yaml#rejectReport, state_machine.md#T3 | `TestRejectReport_MissingRejectionReason` | Approver で認証。リクエストボディに `rejection_reason` フィールドなし（`{"updated_at": "<updated_at>"}` のみ） | 422 MISSING_REJECTION_REASON |
+| WFL-028 | 統合 | handler | 異常系 | WFL-012 | openapi.yaml#rejectReport, state_machine.md#T3 | `TestRejectReport_EmptyRejectionReason` | Approver で認証。リクエストボディ: `{"rejection_reason": "", "updated_at": "<updated_at>"}` | 422 MISSING_REJECTION_REASON |
+| WFL-029 | 統合 | handler | 境界値 | WFL-012 | openapi.yaml#rejectReport | `TestRejectReport_RejectionReasonMaxLength` | Approver で認証。`rejection_reason` が1000文字の文字列 | 200 OK（境界値: 上限ちょうど） |
+| WFL-030 | 統合 | handler | 境界値 | WFL-012 | openapi.yaml#rejectReport | `TestRejectReport_RejectionReasonTooLong` | Approver で認証。`rejection_reason` が1001文字の文字列 | 400 または 422（バリデーションエラー） |
 
 #### 状態遷移の禁止パス（ハンドラ層統合テスト: X8 相当）
 
-| テストID | テストレベル | レイヤー | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
-|---------|------------|---------|---------------|-------------------|---------|
-| WFL-031 | 統合 | handler | `TestRejectReport_AlreadyApproved` | Approver で認証。対象: `report_approved`（X8: approved→rejected は禁止）。リクエストボディ: `{"rejection_reason": "理由", "updated_at": "<updated_at>"}` | 422 INVALID_STATE_TRANSITION |
-| WFL-032 | 統合 | handler | `TestRejectReport_DraftState` | Approver で認証。対象: draft 状態のレポート | 422 INVALID_STATE_TRANSITION |
-| WFL-033 | 統合 | handler | `TestRejectReport_RejectedState` | Approver で認証。対象: rejected 状態のレポート（X9: 終端状態からの遷移不可） | 422 INVALID_STATE_TRANSITION |
-| WFL-034 | 統合 | handler | `TestRejectReport_PaidState` | Approver で認証。対象: paid 状態のレポート（X10: 終端状態からの遷移不可） | 422 INVALID_STATE_TRANSITION |
+| テストID | テストレベル | レイヤー | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---------|------------|---------|---------|-----------|-----------|---------------|-------------------|---------|
+| WFL-031 | 統合 | handler | 状態遷移 | WFL-002 | openapi.yaml#rejectReport, state_machine.md#X8 | `TestRejectReport_AlreadyApproved` | Approver で認証。対象: `report_approved`（X8: approved→rejected は禁止）。リクエストボディ: `{"rejection_reason": "理由", "updated_at": "<updated_at>"}` | 422 INVALID_STATE_TRANSITION |
+| WFL-032 | 統合 | handler | 状態遷移 | WFL-002 | openapi.yaml#rejectReport | `TestRejectReport_DraftState` | Approver で認証。対象: draft 状態のレポート | 422 INVALID_STATE_TRANSITION |
+| WFL-033 | 統合 | handler | 状態遷移 | WFL-004 | openapi.yaml#rejectReport, state_machine.md#X9 | `TestRejectReport_RejectedState` | Approver で認証。対象: rejected 状態のレポート（X9: 終端状態からの遷移不可） | 422 INVALID_STATE_TRANSITION |
+| WFL-034 | 統合 | handler | 状態遷移 | WFL-004 | openapi.yaml#rejectReport, state_machine.md#X10 | `TestRejectReport_PaidState` | Approver で認証。対象: paid 状態のレポート（X10: 終端状態からの遷移不可） | 422 INVALID_STATE_TRANSITION |
 
 #### 自己却下禁止（RBC-016）
 
-| テストID | テストレベル | レイヤー | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
-|---------|------------|---------|---------------|-------------------|---------|
-| WFL-035 | 統合 | handler | `TestRejectReport_SelfRejection` | Test Approver 本人が作成した submitted レポートを、同じ Test Approver で却下しようとする。リクエストボディ: `{"rejection_reason": "理由", "updated_at": "<updated_at>"}` | 403 SELF_APPROVAL_NOT_ALLOWED |
+| テストID | テストレベル | レイヤー | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---------|------------|---------|---------|-----------|-----------|---------------|-------------------|---------|
+| WFL-035 | 統合 | handler | 認可 | RBC-016 | openapi.yaml#rejectReport, authz.md#4.2 | `TestRejectReport_SelfRejection` | Test Approver 本人が作成した submitted レポートを、同じ Test Approver で却下しようとする。リクエストボディ: `{"rejection_reason": "理由", "updated_at": "<updated_at>"}` | 403 SELF_APPROVAL_NOT_ALLOWED |
 
 #### RBACテスト（ロール別拒否）
 
-| テストID | テストレベル | レイヤー | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
-|---------|------------|---------|---------------|-------------------|---------|
-| WFL-036 | 統合 | handler | `TestRejectReport_Forbidden_Member` | Member で認証。対象: `report_submitted` | 403 FORBIDDEN |
-| WFL-037 | 統合 | handler | `TestRejectReport_Forbidden_Admin` | Admin で認証。対象: `report_submitted` | 403 FORBIDDEN |
-| WFL-038 | 統合 | handler | `TestRejectReport_Forbidden_Accounting` | Accounting で認証。対象: `report_submitted` | 403 FORBIDDEN |
-| WFL-039 | 統合 | handler | `TestRejectReport_Unauthorized` | 認証ヘッダーなし | 401 UNAUTHORIZED |
+| テストID | テストレベル | レイヤー | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---------|------------|---------|---------|-----------|-----------|---------------|-------------------|---------|
+| WFL-036 | 統合 | handler | 認可 | RBAC-F01, RBC-001 | openapi.yaml#rejectReport, authz.md#3 | `TestRejectReport_Forbidden_Member` | Member で認証。対象: `report_submitted` | 403 FORBIDDEN |
+| WFL-037 | 統合 | handler | 認可 | RBAC-F01, RBC-001 | openapi.yaml#rejectReport, authz.md#3 | `TestRejectReport_Forbidden_Admin` | Admin で認証。対象: `report_submitted` | 403 FORBIDDEN |
+| WFL-038 | 統合 | handler | 認可 | RBAC-F01, RBC-001 | openapi.yaml#rejectReport, authz.md#3 | `TestRejectReport_Forbidden_Accounting` | Accounting で認証。対象: `report_submitted` | 403 FORBIDDEN |
+| WFL-039 | 統合 | handler | 異常系 | WFL-F02 | openapi.yaml#rejectReport | `TestRejectReport_Unauthorized` | 認証ヘッダーなし | 401 UNAUTHORIZED |
 
 #### その他の異常系
 
-| テストID | テストレベル | レイヤー | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
-|---------|------------|---------|---------------|-------------------|---------|
-| WFL-040 | 統合 | handler | `TestRejectReport_NotFound` | Approver で認証。存在しないレポートID を指定 | 404 RESOURCE_NOT_FOUND |
-| WFL-041 | 統合 | handler | `TestRejectReport_Conflict_OptimisticLock` | Approver で認証。リクエストボディの `updated_at` に古いタイムスタンプを指定 | 409 CONFLICT |
+| テストID | テストレベル | レイヤー | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---------|------------|---------|---------|-----------|-----------|---------------|-------------------|---------|
+| WFL-040 | 統合 | handler | 異常系 | WFL-F02 | openapi.yaml#rejectReport | `TestRejectReport_NotFound` | Approver で認証。存在しないレポートID を指定 | 404 RESOURCE_NOT_FOUND |
+| WFL-041 | 統合 | handler | 異常系 | WFL-F02 | openapi.yaml#rejectReport | `TestRejectReport_Conflict_OptimisticLock` | Approver で認証。リクエストボディの `updated_at` に古いタイムスタンプを指定 | 409 CONFLICT |
 
 ---
 
 ### listPayableReports — GET /api/workflow/payable
 
-| テストID | テストレベル | レイヤー | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
-|---------|------------|---------|---------------|-------------------|---------|
-| WFL-042 | 統合 | handler | `TestListPayableReports_Success` | Accounting で認証。`report_approved` がDB上に存在する | 200 OK。`data` にテナントA の approved レポートが含まれる。`pagination` が返る |
-| WFL-043 | 統合 | handler | `TestListPayableReports_IncludesOwnReport` | Test Accounting 本人が作成した approved レポートがDB上に存在する状態でリクエスト | 200 OK。自分のレポートも一覧に含まれ、`is_own_report: true` が設定されている |
-| WFL-044 | 統合 | handler | `TestListPayableReports_ExcludesNonApproved` | テナントA に draft / submitted / rejected / paid 状態のレポートのみ存在する | 200 OK。`data` が空配列 `[]` |
-| WFL-045 | 統合 | handler | `TestListPayableReports_FilterByApplicantName` | クエリパラメータ `applicant_name=Test` を指定してリクエスト | 200 OK。申請者名が部分一致するレポートのみ返る |
-| WFL-046 | 統合 | handler | `TestListPayableReports_Pagination` | `limit=1` かつ approved レポートが2件以上存在する状態でリクエスト | 200 OK。`data` の件数が1件。`pagination.next_cursor` が返る |
-| WFL-047 | 統合 | handler | `TestListPayableReports_Forbidden_Member` | Member で認証 | 403 FORBIDDEN |
-| WFL-048 | 統合 | handler | `TestListPayableReports_Forbidden_Approver` | Approver で認証 | 403 FORBIDDEN |
-| WFL-049 | 統合 | handler | `TestListPayableReports_Forbidden_Admin` | Admin で認証 | 403 FORBIDDEN |
-| WFL-050 | 統合 | handler | `TestListPayableReports_Unauthorized` | 認証ヘッダーなし | 401 UNAUTHORIZED |
+| テストID | テストレベル | レイヤー | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---------|------------|---------|---------|-----------|-----------|---------------|-------------------|---------|
+| WFL-042 | 統合 | handler | 正常系 | WFL-F05 | openapi.yaml#listPayableReports | `TestListPayableReports_Success` | Accounting で認証。`report_approved` がDB上に存在する | 200 OK。`data` にテナントA の approved レポートが含まれる。`pagination` が返る |
+| WFL-043 | 統合 | handler | 正常系 | WFL-F05 | openapi.yaml#listPayableReports | `TestListPayableReports_IncludesOwnReport` | Test Accounting 本人が作成した approved レポートがDB上に存在する状態でリクエスト | 200 OK。自分のレポートも一覧に含まれ、`is_own_report: true` が設定されている |
+| WFL-044 | 統合 | handler | 正常系 | WFL-F05 | openapi.yaml#listPayableReports | `TestListPayableReports_ExcludesNonApproved` | テナントA に draft / submitted / rejected / paid 状態のレポートのみ存在する | 200 OK。`data` が空配列 `[]` |
+| WFL-045 | 統合 | handler | 正常系 | WFL-F05 | openapi.yaml#listPayableReports | `TestListPayableReports_FilterByApplicantName` | クエリパラメータ `applicant_name=Test` を指定してリクエスト | 200 OK。申請者名が部分一致するレポートのみ返る |
+| WFL-046 | 統合 | handler | 正常系 | WFL-F05, NFR-PERF-004 | openapi.yaml#listPayableReports | `TestListPayableReports_Pagination` | `limit=1` かつ approved レポートが2件以上存在する状態でリクエスト | 200 OK。`data` の件数が1件。`pagination.next_cursor` が返る |
+| WFL-047 | 統合 | handler | 認可 | RBAC-F01, RBC-001 | openapi.yaml#listPayableReports, authz.md#3 | `TestListPayableReports_Forbidden_Member` | Member で認証 | 403 FORBIDDEN |
+| WFL-048 | 統合 | handler | 認可 | RBAC-F01, RBC-001 | openapi.yaml#listPayableReports, authz.md#3 | `TestListPayableReports_Forbidden_Approver` | Approver で認証 | 403 FORBIDDEN |
+| WFL-049 | 統合 | handler | 認可 | RBAC-F01, RBC-001 | openapi.yaml#listPayableReports, authz.md#3 | `TestListPayableReports_Forbidden_Admin` | Admin で認証 | 403 FORBIDDEN |
+| WFL-050 | 統合 | handler | 異常系 | WFL-F05 | openapi.yaml#listPayableReports | `TestListPayableReports_Unauthorized` | 認証ヘッダーなし | 401 UNAUTHORIZED |
 
 ---
 
@@ -183,41 +183,41 @@
 
 #### 正常系
 
-| テストID | テストレベル | レイヤー | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
-|---------|------------|---------|---------------|-------------------|---------|
-| WFL-051 | 統合 | handler | `TestMarkReportAsPaid_Success` | Accounting で認証。対象: `report_approved`（作成者: Test Member）。リクエストボディ: `{"updated_at": "<report_approved の updated_at>"}` | 200 OK。レスポンスの `data.status` が `"paid"`。`data.paid_by` が Accounting のユーザーID。DBのレコードも `paid` に更新されている |
+| テストID | テストレベル | レイヤー | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---------|------------|---------|---------|-----------|-----------|---------------|-------------------|---------|
+| WFL-051 | 統合 | handler | 正常系 | WFL-F03, WFL-013 | openapi.yaml#markReportAsPaid, state_machine.md#T4 | `TestMarkReportAsPaid_Success` | Accounting で認証。対象: `report_approved`（作成者: Test Member）。リクエストボディ: `{"updated_at": "<report_approved の updated_at>"}` | 200 OK。レスポンスの `data.status` が `"paid"`。`data.paid_by` が Accounting のユーザーID。DBのレコードも `paid` に更新されている |
 
 #### 状態遷移の禁止パス（ハンドラ層統合テスト: X5〜X7）
 
-| テストID | テストレベル | レイヤー | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
-|---------|------------|---------|---------------|-------------------|---------|
-| WFL-052 | 統合 | handler | `TestMarkReportAsPaid_X5_SubmittedToPaid` | Accounting で認証。対象: `report_submitted`（submitted 状態）（X5: submitted→paid は禁止）。リクエストボディ: `{"updated_at": "<updated_at>"}` | 422 INVALID_STATE_TRANSITION |
-| WFL-053 | 統合 | handler | `TestMarkReportAsPaid_X6_DraftToPaid` | Accounting で認証。対象: draft 状態のレポート（X3 相当: draft→paid は禁止） | 422 INVALID_STATE_TRANSITION |
-| WFL-054 | 統合 | handler | `TestMarkReportAsPaid_AlreadyPaid` | Accounting で認証。対象: paid 状態のレポート（X10: paid→paid は禁止） | 422 INVALID_STATE_TRANSITION |
-| WFL-055 | 統合 | handler | `TestMarkReportAsPaid_RejectedState` | Accounting で認証。対象: rejected 状態のレポート（X9: 終端状態からの遷移不可） | 422 INVALID_STATE_TRANSITION |
+| テストID | テストレベル | レイヤー | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---------|------------|---------|---------|-----------|-----------|---------------|-------------------|---------|
+| WFL-052 | 統合 | handler | 状態遷移 | WFL-002 | openapi.yaml#markReportAsPaid, state_machine.md#X5 | `TestMarkReportAsPaid_X5_SubmittedToPaid` | Accounting で認証。対象: `report_submitted`（submitted 状態）（X5: submitted→paid は禁止）。リクエストボディ: `{"updated_at": "<updated_at>"}` | 422 INVALID_STATE_TRANSITION |
+| WFL-053 | 統合 | handler | 状態遷移 | WFL-002 | openapi.yaml#markReportAsPaid | `TestMarkReportAsPaid_X6_DraftToPaid` | Accounting で認証。対象: draft 状態のレポート（X3 相当: draft→paid は禁止） | 422 INVALID_STATE_TRANSITION |
+| WFL-054 | 統合 | handler | 状態遷移 | WFL-004 | openapi.yaml#markReportAsPaid, state_machine.md#X10 | `TestMarkReportAsPaid_AlreadyPaid` | Accounting で認証。対象: paid 状態のレポート（X10: paid→paid は禁止） | 422 INVALID_STATE_TRANSITION |
+| WFL-055 | 統合 | handler | 状態遷移 | WFL-004 | openapi.yaml#markReportAsPaid, state_machine.md#X9 | `TestMarkReportAsPaid_RejectedState` | Accounting で認証。対象: rejected 状態のレポート（X9: 終端状態からの遷移不可） | 422 INVALID_STATE_TRANSITION |
 
 #### 自己支払処理禁止（RBC-012）
 
-| テストID | テストレベル | レイヤー | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
-|---------|------------|---------|---------------|-------------------|---------|
-| WFL-056 | 統合 | handler | `TestMarkReportAsPaid_SelfPayment` | Test Accounting 本人が作成した approved レポートを、同じ Test Accounting で支払完了しようとする。リクエストボディ: `{"updated_at": "<updated_at>"}` | 403 SELF_PAYMENT_NOT_ALLOWED |
+| テストID | テストレベル | レイヤー | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---------|------------|---------|---------|-----------|-----------|---------------|-------------------|---------|
+| WFL-056 | 統合 | handler | 認可 | RBC-012 | openapi.yaml#markReportAsPaid, authz.md#4.3 | `TestMarkReportAsPaid_SelfPayment` | Test Accounting 本人が作成した approved レポートを、同じ Test Accounting で支払完了しようとする。リクエストボディ: `{"updated_at": "<updated_at>"}` | 403 SELF_PAYMENT_NOT_ALLOWED |
 
 #### RBACテスト（ロール別拒否）
 
-| テストID | テストレベル | レイヤー | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
-|---------|------------|---------|---------------|-------------------|---------|
-| WFL-057 | 統合 | handler | `TestMarkReportAsPaid_Forbidden_Member` | Member で認証。対象: `report_approved` | 403 FORBIDDEN |
-| WFL-058 | 統合 | handler | `TestMarkReportAsPaid_Forbidden_Approver` | Approver で認証。対象: `report_approved` | 403 FORBIDDEN |
-| WFL-059 | 統合 | handler | `TestMarkReportAsPaid_Forbidden_Admin` | Admin で認証。対象: `report_approved` | 403 FORBIDDEN |
-| WFL-060 | 統合 | handler | `TestMarkReportAsPaid_Unauthorized` | 認証ヘッダーなし | 401 UNAUTHORIZED |
+| テストID | テストレベル | レイヤー | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---------|------------|---------|---------|-----------|-----------|---------------|-------------------|---------|
+| WFL-057 | 統合 | handler | 認可 | RBAC-F01, RBC-001 | openapi.yaml#markReportAsPaid, authz.md#3 | `TestMarkReportAsPaid_Forbidden_Member` | Member で認証。対象: `report_approved` | 403 FORBIDDEN |
+| WFL-058 | 統合 | handler | 認可 | RBAC-F01, RBC-001 | openapi.yaml#markReportAsPaid, authz.md#3 | `TestMarkReportAsPaid_Forbidden_Approver` | Approver で認証。対象: `report_approved` | 403 FORBIDDEN |
+| WFL-059 | 統合 | handler | 認可 | RBAC-F01, RBC-001 | openapi.yaml#markReportAsPaid, authz.md#3 | `TestMarkReportAsPaid_Forbidden_Admin` | Admin で認証。対象: `report_approved` | 403 FORBIDDEN |
+| WFL-060 | 統合 | handler | 異常系 | WFL-F03 | openapi.yaml#markReportAsPaid | `TestMarkReportAsPaid_Unauthorized` | 認証ヘッダーなし | 401 UNAUTHORIZED |
 
 #### その他の異常系
 
-| テストID | テストレベル | レイヤー | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
-|---------|------------|---------|---------------|-------------------|---------|
-| WFL-061 | 統合 | handler | `TestMarkReportAsPaid_NotFound` | Accounting で認証。存在しないレポートID を指定 | 404 RESOURCE_NOT_FOUND |
-| WFL-062 | 統合 | handler | `TestMarkReportAsPaid_Conflict_OptimisticLock` | Accounting で認証。リクエストボディの `updated_at` に古いタイムスタンプを指定 | 409 CONFLICT |
-| WFL-063 | 統合 | handler | `TestMarkReportAsPaid_MissingUpdatedAt` | Accounting で認証。リクエストボディに `updated_at` フィールドなし | 400 または 422（バリデーションエラー） |
+| テストID | テストレベル | レイヤー | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---------|------------|---------|---------|-----------|-----------|---------------|-------------------|---------|
+| WFL-061 | 統合 | handler | 異常系 | WFL-F03 | openapi.yaml#markReportAsPaid | `TestMarkReportAsPaid_NotFound` | Accounting で認証。存在しないレポートID を指定 | 404 RESOURCE_NOT_FOUND |
+| WFL-062 | 統合 | handler | 異常系 | WFL-F03 | openapi.yaml#markReportAsPaid | `TestMarkReportAsPaid_Conflict_OptimisticLock` | Accounting で認証。リクエストボディの `updated_at` に古いタイムスタンプを指定 | 409 CONFLICT |
+| WFL-063 | 統合 | handler | 異常系 | WFL-F03 | openapi.yaml#markReportAsPaid | `TestMarkReportAsPaid_MissingUpdatedAt` | Accounting で認証。リクエストボディに `updated_at` フィールドなし | 400 または 422（バリデーションエラー） |
 
 ---
 

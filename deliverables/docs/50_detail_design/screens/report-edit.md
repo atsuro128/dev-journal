@@ -17,6 +17,7 @@
 | 画面ID | SCR-RPT-003 |
 | 画面名 | レポート編集 |
 | URLパス | `/reports/:id/edit` |
+| 対応要件ID | RPT-F04（レポート編集） |
 | 対応UC | UC-M04（レポートを編集する） |
 | 対応ロール | Member, Approver, Admin, Accounting（所有者のみ） |
 | 使用API | GET /api/reports/:id, PUT /api/reports/:id |

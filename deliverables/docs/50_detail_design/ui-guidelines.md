@@ -60,6 +60,40 @@ const theme = createTheme({
 });
 ```
 
+### スペーシング
+
+`theme.spacing` の基準値は MUI デフォルトの **8px** をそのまま使用する。全ての余白・間隔は基準値の倍数で指定する。
+
+#### 余白スケール
+
+| トークン名 | 値 | `theme.spacing()` | 主な用途 |
+|-----------|-----|-------------------|---------|
+| xs | 4px | `0.5` | アイコンとテキストの間隔、Chip 内余白 |
+| sm | 8px | `1` | フォーム要素内のパディング、隣接ボタン間 |
+| md | 16px | `2` | カード内パディング、フォーム要素間の垂直間隔 |
+| lg | 24px | `3` | セクション間の間隔、カード間のギャップ |
+| xl | 32px | `4` | ページ上下の余白、メインコンテンツの外側パディング |
+
+#### 主要レイアウトでの使い方
+
+| レイアウト要素 | 適用箇所 | 値 |
+|--------------|---------|-----|
+| カード内パディング | `Card` > `CardContent` の `sx.p` | `md` (16px) |
+| フォーム要素間 | `Stack` の `spacing` | `md` (16px) |
+| セクション間 | 見出し＋コンテンツブロック間の `mb` | `lg` (24px) |
+| 一覧行間 | `DataGrid` の `rowSpacingType` は MUI デフォルト | デフォルト |
+| ダイアログ内パディング | `DialogContent` の `sx.p` | `lg` (24px) |
+| ページ外側余白 | `Container` の `sx.py` | `xl` (32px) |
+
+```typescript
+// frontend/src/theme.ts（spacing 部分）
+const theme = createTheme({
+  spacing: 8, // デフォルト値を明示（1 unit = 8px）
+});
+
+// 使用例: theme.spacing(2) → '16px', theme.spacing(0.5) → '4px'
+```
+
 ### ダークモード
 
 MVP では未対応とする。将来対応する場合は `theme.ts` の `palette.mode` を切り替える構成を想定する。
@@ -115,18 +149,54 @@ MUI デフォルトのブレークポイントをそのまま使用する。
 
 ## 4. コンポーネント使用方針
 
-画面種別に応じて以下の MUI コンポーネントを使用する。
+MUI コンポーネントを以下の3区分に分類し、実装者の判断基準を明確にする。
 
-| 画面種別 | 使用コンポーネント | 備考 |
-|----------|-------------------|------|
-| 一覧画面（レポート一覧、承認待ち等） | `DataGrid` (Community 版) | ソート・フィルタ機能を活用 |
-| フォーム（作成・編集） | `TextField`, `Select`, `DatePicker` | バリデーション表示は `error` + `helperText` |
-| 詳細画面 | `Card`, `Typography`, `Chip` | ステータスは Chip で表示 |
-| 確認ダイアログ | `Dialog` | screens.md §4.6 の操作で使用 |
-| 通知 | `Snackbar` + `Alert` | トースト通知。成功/エラーを色で区別 |
-| ナビゲーション | `AppBar`, `Drawer`, `Breadcrumbs` | screens.md §4.2, §4.3 準拠 |
-| ボタン | `Button` | 主操作: `variant="contained"`, 副操作: `variant="outlined"` |
-| ローディング | `Skeleton`, `CircularProgress` | 初回読み込み: Skeleton, 操作中: CircularProgress |
+### 使用 OK — そのまま使用してよいコンポーネント
+
+MUI のデフォルト Props・スタイルのまま利用する。プロジェクト固有のラッパーは不要。
+
+| コンポーネント | 用途 | 備考 |
+|--------------|------|------|
+| `Button` | 全画面の操作ボタン | variant / color の使い分けは §4 末尾を参照 |
+| `Typography` | テキスト表示全般 | variant でサイズ・ウェイトを統一 |
+| `Card`, `CardContent`, `CardActions` | 詳細画面・サマリ表示 | パディングはスペーシング規約 (md: 16px) に従う |
+| `Dialog`, `DialogTitle`, `DialogContent`, `DialogActions` | 確認ダイアログ | screens.md §4.6 の操作で使用 |
+| `Snackbar` + `Alert` | トースト通知 | 成功/エラーを severity で区別（§8 参照） |
+| `Chip` | ステータス表示 | color マッピングは §5 参照 |
+| `Stack` | 垂直・水平レイアウト | spacing にスペーシングトークンを使用 |
+| `Grid` | グリッドレイアウト | レスポンシブ対応に使用 |
+| `Container` | ページ幅制約 | `maxWidth="lg"` 固定 |
+| `Skeleton` | 初回読み込み表示 | 画面描画前のプレースホルダー |
+| `CircularProgress` | 操作中ローディング | ボタン内や画面中央に表示 |
+| `Tooltip` | 補足情報 | IconButton と組み合わせて使用 |
+| `Breadcrumbs` | パンくずナビ | screens.md §4.3 準拠 |
+| `IconButton` | ツールバー等の省スペースボタン | 必ず `Tooltip` と併用 |
+
+### 非推奨 — 使用しないコンポーネント
+
+以下のコンポーネントは MVP では使用しない。理由とともに代替手段を示す。
+
+| コンポーネント | 非推奨の理由 | 代替 |
+|--------------|------------|------|
+| `Accordion` | MVP の画面設計に折りたたみ UI がない | `Card` でセクションを分割 |
+| `Tabs` | 画面内タブ切替は screens.md に定義されていない | 画面遷移で対応 |
+| `Stepper` | ウィザード形式のフローは MVP スコープ外 | 単一フォームで完結 |
+| `SpeedDial` | モバイルファーストの FAB パターンは採用しない | 通常の `Button` |
+| `BottomNavigation` | モバイル専用ナビは MVP スコープ外 | `Drawer` で統一 |
+| `Table` (素の HTML テーブル) | 一覧画面ではソート・フィルタが必要 | `DataGrid` を使用 |
+
+### カスタム必要 — ラップしてプロジェクト固有の Props・スタイルを適用するコンポーネント
+
+以下のコンポーネントはプロジェクト共通のラッパーコンポーネントを作成し、統一した Props・スタイルで使用する。ラッパーは `frontend/src/components/` に配置する。
+
+| MUI コンポーネント | ラッパー名 | カスタム内容 |
+|-------------------|----------|-------------|
+| `DataGrid` (Community 版) | `AppDataGrid` | 日本語ロケール設定、共通カラム定義（日付・金額・ステータス列のフォーマッタ）、ソート・フィルタのデフォルト設定 |
+| `TextField` | `AppTextField` | `size="small"` デフォルト化、`fullWidth` デフォルト化、エラー表示の統一ヘルパー |
+| `Select` | `AppSelect` | `size="small"` デフォルト化、`fullWidth` デフォルト化、空選択肢のプレースホルダー統一 |
+| `DatePicker` | `AppDatePicker` | 日本語ロケール (`ja`)・`YYYY/MM/DD` フォーマット・`size="small"` のデフォルト化 |
+| `AppBar` | `AppHeader` | アプリロゴ・ユーザーメニュー・Drawer 開閉トリガーの統合（screens.md §4.2 準拠） |
+| `Drawer` | `AppSidebar` | ナビゲーションメニュー項目・アクティブ状態ハイライトの統合（screens.md §4.2 準拠） |
 
 ### ボタンの使い分け
 

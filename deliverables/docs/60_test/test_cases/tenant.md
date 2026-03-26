@@ -54,23 +54,23 @@
 
 ### 正常系
 
-| テストID | テストレベル | レイヤー | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
-|---------|-----------|---------|---------------|-----------------|---------|
-| TNT-001 | 統合 | handler | `TestGetTenant_Admin_OK` | 認証済み Admin（`aaaaaaaa-1111-1111-1111-000000000001`）で `GET /api/tenant` を実行 | 200 OK。レスポンス `data.id` = テナントA の UUID、`data.name` = `"Test Company A"`、`data.created_at` が RFC3339 形式の文字列であること |
+| テストID | テストレベル | レイヤー | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---------|-----------|---------|---------|-----------|-----------|---------------|-----------------|---------|
+| TNT-001 | 統合 | handler | 正常系 | ADM-F01 | openapi.yaml#getTenant, db_schema.md#tenants | `TestGetTenant_Admin_OK` | 認証済み Admin（`aaaaaaaa-1111-1111-1111-000000000001`）で `GET /api/tenant` を実行 | 200 OK。レスポンス `data.id` = テナントA の UUID、`data.name` = `"Test Company A"`、`data.created_at` が RFC3339 形式の文字列であること |
 
 ### 異常系: 未認証
 
-| テストID | テストレベル | レイヤー | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
-|---------|-----------|---------|---------------|-----------------|---------|
-| TNT-002 | 統合 | handler | `TestGetTenant_Unauthenticated` | Authorization ヘッダーなしで `GET /api/tenant` を実行 | 401 UNAUTHORIZED |
+| テストID | テストレベル | レイヤー | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---------|-----------|---------|---------|-----------|-----------|---------------|-----------------|---------|
+| TNT-002 | 統合 | handler | 異常系 | ADM-F01 | openapi.yaml#getTenant | `TestGetTenant_Unauthenticated` | Authorization ヘッダーなしで `GET /api/tenant` を実行 | 401 UNAUTHORIZED |
 
 ### 異常系: RBAC（Admin 以外のロールは全て 403）
 
-| テストID | テストレベル | レイヤー | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
-|---------|-----------|---------|---------------|-----------------|---------|
-| TNT-003 | 統合 | handler | `TestGetTenant_Approver_Forbidden` | 認証済み Approver（`aaaaaaaa-2222-2222-2222-000000000002`）で `GET /api/tenant` を実行 | 403 FORBIDDEN。エラーコード `FORBIDDEN` |
-| TNT-004 | 統合 | handler | `TestGetTenant_Member_Forbidden` | 認証済み Member（`aaaaaaaa-3333-3333-3333-000000000003`）で `GET /api/tenant` を実行 | 403 FORBIDDEN。エラーコード `FORBIDDEN` |
-| TNT-005 | 統合 | handler | `TestGetTenant_Accounting_Forbidden` | 認証済み Accounting（`aaaaaaaa-4444-4444-4444-000000000004`）で `GET /api/tenant` を実行 | 403 FORBIDDEN。エラーコード `FORBIDDEN` |
+| テストID | テストレベル | レイヤー | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---------|-----------|---------|---------|-----------|-----------|---------------|-----------------|---------|
+| TNT-003 | 統合 | handler | 認可 | ADM-F01, RBC-001 | openapi.yaml#getTenant, authz.md#3 | `TestGetTenant_Approver_Forbidden` | 認証済み Approver（`aaaaaaaa-2222-2222-2222-000000000002`）で `GET /api/tenant` を実行 | 403 FORBIDDEN。エラーコード `FORBIDDEN` |
+| TNT-004 | 統合 | handler | 認可 | ADM-F01, RBC-001 | openapi.yaml#getTenant, authz.md#3 | `TestGetTenant_Member_Forbidden` | 認証済み Member（`aaaaaaaa-3333-3333-3333-000000000003`）で `GET /api/tenant` を実行 | 403 FORBIDDEN。エラーコード `FORBIDDEN` |
+| TNT-005 | 統合 | handler | 認可 | ADM-F01, RBC-001 | openapi.yaml#getTenant, authz.md#3 | `TestGetTenant_Accounting_Forbidden` | 認証済み Accounting（`aaaaaaaa-4444-4444-4444-000000000004`）で `GET /api/tenant` を実行 | 403 FORBIDDEN。エラーコード `FORBIDDEN` |
 
 ---
 
@@ -78,24 +78,24 @@
 
 ### 正常系
 
-| テストID | テストレベル | レイヤー | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
-|---------|-----------|---------|---------------|-----------------|---------|
-| TNT-006 | 統合 | handler | `TestListTenantMembers_Admin_OK` | 認証済み Admin（`aaaaaaaa-1111-1111-1111-000000000001`）で `GET /api/tenant/members` を実行。テナントAに Admin, Approver, Member, Accounting の 4 ユーザーが登録済み | 200 OK。`data` が配列で、4 件のメンバーが返ること。各要素に `id`（UUID）と `name`（文字列）が含まれること（`UserSummary` スキーマ準拠） |
-| TNT-007 | 統合 | handler | `TestListTenantMembers_Accounting_OK` | 認証済み Accounting（`aaaaaaaa-4444-4444-4444-000000000004`）で `GET /api/tenant/members` を実行 | 200 OK。`data` が配列で、テナントA の全メンバーが返ること |
-| TNT-008 | 統合 | handler | `TestListTenantMembers_ReturnsOwnTenantOnly` | 認証済み Admin（テナントA）で `GET /api/tenant/members` を実行。テナントBにも別ユーザーが登録済み | 200 OK。レスポンスに含まれるユーザーIDが全てテナントA のメンバーのみであること。テナントBのユーザー（`bbbbbbbb-3333-3333-3333-000000000003`）が含まれないこと |
+| テストID | テストレベル | レイヤー | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---------|-----------|---------|---------|-----------|-----------|---------------|-----------------|---------|
+| TNT-006 | 統合 | handler | 正常系 | ADM-F01 | openapi.yaml#listTenantMembers | `TestListTenantMembers_Admin_OK` | 認証済み Admin（`aaaaaaaa-1111-1111-1111-000000000001`）で `GET /api/tenant/members` を実行。テナントAに Admin, Approver, Member, Accounting の 4 ユーザーが登録済み | 200 OK。`data` が配列で、4 件のメンバーが返ること。各要素に `id`（UUID）と `name`（文字列）が含まれること（`UserSummary` スキーマ準拠） |
+| TNT-007 | 統合 | handler | 正常系 | ADM-F01 | openapi.yaml#listTenantMembers | `TestListTenantMembers_Accounting_OK` | 認証済み Accounting（`aaaaaaaa-4444-4444-4444-000000000004`）で `GET /api/tenant/members` を実行 | 200 OK。`data` が配列で、テナントA の全メンバーが返ること |
+| TNT-008 | 統合 | handler | テナント分離 | ADM-F01, TNT-F02 | openapi.yaml#listTenantMembers, db_schema.md#RLS | `TestListTenantMembers_ReturnsOwnTenantOnly` | 認証済み Admin（テナントA）で `GET /api/tenant/members` を実行。テナントBにも別ユーザーが登録済み | 200 OK。レスポンスに含まれるユーザーIDが全てテナントA のメンバーのみであること。テナントBのユーザー（`bbbbbbbb-3333-3333-3333-000000000003`）が含まれないこと |
 
 ### 異常系: 未認証
 
-| テストID | テストレベル | レイヤー | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
-|---------|-----------|---------|---------------|-----------------|---------|
-| TNT-009 | 統合 | handler | `TestListTenantMembers_Unauthenticated` | Authorization ヘッダーなしで `GET /api/tenant/members` を実行 | 401 UNAUTHORIZED |
+| テストID | テストレベル | レイヤー | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---------|-----------|---------|---------|-----------|-----------|---------------|-----------------|---------|
+| TNT-009 | 統合 | handler | 異常系 | ADM-F01 | openapi.yaml#listTenantMembers | `TestListTenantMembers_Unauthenticated` | Authorization ヘッダーなしで `GET /api/tenant/members` を実行 | 401 UNAUTHORIZED |
 
 ### 異常系: RBAC（Approver および Member は 403）
 
-| テストID | テストレベル | レイヤー | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
-|---------|-----------|---------|---------------|-----------------|---------|
-| TNT-010 | 統合 | handler | `TestListTenantMembers_Approver_Forbidden` | 認証済み Approver（`aaaaaaaa-2222-2222-2222-000000000002`）で `GET /api/tenant/members` を実行 | 403 FORBIDDEN。エラーコード `FORBIDDEN` |
-| TNT-011 | 統合 | handler | `TestListTenantMembers_Member_Forbidden` | 認証済み Member（`aaaaaaaa-3333-3333-3333-000000000003`）で `GET /api/tenant/members` を実行 | 403 FORBIDDEN。エラーコード `FORBIDDEN` |
+| テストID | テストレベル | レイヤー | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---------|-----------|---------|---------|-----------|-----------|---------------|-----------------|---------|
+| TNT-010 | 統合 | handler | 認可 | ADM-F01, RBC-001 | openapi.yaml#listTenantMembers, authz.md#3 | `TestListTenantMembers_Approver_Forbidden` | 認証済み Approver（`aaaaaaaa-2222-2222-2222-000000000002`）で `GET /api/tenant/members` を実行 | 403 FORBIDDEN。エラーコード `FORBIDDEN` |
+| TNT-011 | 統合 | handler | 認可 | ADM-F01, RBC-001 | openapi.yaml#listTenantMembers, authz.md#3 | `TestListTenantMembers_Member_Forbidden` | 認証済み Member（`aaaaaaaa-3333-3333-3333-000000000003`）で `GET /api/tenant/members` を実行 | 403 FORBIDDEN。エラーコード `FORBIDDEN` |
 
 ---
 
