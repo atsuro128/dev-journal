@@ -203,18 +203,18 @@ stateDiagram-v2
 
 以下の遷移はドメイン層で **InvalidStateTransition エラー** を返す。
 
-| # | 遷移 | 拒否理由 | 分類 |
-|---|------|---------|------|
-| X1 | draft → approved | 承認プロセスのスキップ | プロセス保護 |
-| X2 | draft → rejected | 未提出レポートの却下不可 | プロセス保護 |
-| X3 | draft → paid | 承認プロセスのスキップ | プロセス保護 |
-| X4 | submitted → draft | 提出取消は MVP 対象外 | スコープ制限 |
-| X5 | submitted → paid | 承認プロセスのスキップ | プロセス保護 |
-| X6 | approved → draft | 承認済みの巻き戻し不可 | 監査保護 |
-| X7 | approved → submitted | 承認済みの巻き戻し不可 | 監査保護 |
-| X8 | approved → rejected | 承認後の却下不可 | 監査保護 |
-| X9 | rejected → (任意) | 終端状態からの遷移不可 | 終端保護 |
-| X10 | paid → (任意) | 終端状態からの遷移不可 | 終端保護 |
+| # | 遷移 | 拒否理由 | 分類 | ルールID |
+|---|------|---------|------|---------|
+| X1 | draft → approved | 承認プロセスのスキップ | プロセス保護 | WFL-002, WFL-003 |
+| X2 | draft → rejected | 未提出レポートの却下不可 | プロセス保護 | WFL-002, WFL-003 |
+| X3 | draft → paid | 承認プロセスのスキップ | プロセス保護 | WFL-002, WFL-003 |
+| X4 | submitted → draft | 提出取消は MVP 対象外 | スコープ制限 | WFL-002 |
+| X5 | submitted → paid | 承認プロセスのスキップ | プロセス保護 | WFL-002, WFL-003 |
+| X6 | approved → draft | 承認済みの巻き戻し不可 | 監査保護 | WFL-002 |
+| X7 | approved → submitted | 承認済みの巻き戻し不可 | 監査保護 | WFL-002 |
+| X8 | approved → rejected | 承認後の却下不可 | 監査保護 | WFL-002 |
+| X9 | rejected → (任意) | 終端状態からの遷移不可 | 終端保護 | WFL-002, WFL-004 |
+| X10 | paid → (任意) | 終端状態からの遷移不可 | 終端保護 | WFL-002, WFL-004 |
 
 ### 遷移マトリクス
 
