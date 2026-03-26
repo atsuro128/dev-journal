@@ -1,5 +1,17 @@
 # テストケース: テナント管理（TNT-）
 
+## この文書の役割
+
+| 項目 | 内容 |
+|------|------|
+| 目的 | テナント情報・メンバー管理エンドポイント（getTenant, listTenantMembers）のテストケースを定義する |
+| 正本情報 | ADM-F01 および RPT-F07（メンバー一覧付随機能）に対応するテストケース一覧 |
+| 扱わない内容 | テナント横断テスト（→ cross-cutting.md）、Phase 3 のメンバー招待・ロール変更テスト |
+| 主な参照元 | `50_detail_design/openapi.yaml#/api/tenant`, `50_detail_design/authz.md#6.7`, `10_requirements/requirements.md#ADM-F01` |
+| 主な参照先 | `60_test/traceability.md`, テスト実装（Step 9） |
+
+---
+
 ## 概要
 
 | 項目 | 内容 |

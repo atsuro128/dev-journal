@@ -1,17 +1,25 @@
 # 状態遷移 詳細設計
 
+## この文書の役割
+
+| 項目 | 内容 |
+|------|------|
+| 目的 | 状態遷移の事前条件・事後条件・禁止遷移を定義する |
+| 正本情報 | 状態一覧、遷移一覧、遷移条件、禁止遷移、競合制御 |
+| 扱わない内容 | 業務背景、画面遷移、DB 制約の詳細 |
+| 主な参照元 | `../10_requirements/policies.md`, `./domain_model.md` |
+| 主な参照先 | `../50_detail_design/openapi.yaml`, `../50_detail_design/db_schema.md`, `../60_test/test_cases/workflow.md` |
+
 ## 1. 概要
 
 本書では、経費レポートの状態遷移をドメイン設計の観点から詳細化する。
-`10_requirements/workflow.md` で定義した遷移ルールを基に、ドメイン層での実装方針・事前条件・事後条件・エラー処理を明確にする。
+`10_requirements/policies.md` で定義した遷移ルール（SS4）を基に、ドメイン層での実装方針・事前条件・事後条件・エラー処理を明確にする。
 
 ### 参照ドキュメント
 
 | ドキュメント | 役割 |
 |------------|------|
-| `10_requirements/workflow.md` | 状態遷移の業務要件 |
-| `10_requirements/rbac.md` | 遷移実行者の権限 |
-| `10_requirements/preliminary/04_business-rules.md` | ルールID体系 |
+| `10_requirements/policies.md` | 状態遷移の業務要件（SS4）、RBAC（SS3）、業務ルール（SS5）、ルールID体系（SS2） |
 | `20_domain/domain_model.md` | エンティティ・集約設計 |
 
 ---

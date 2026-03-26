@@ -1,5 +1,15 @@
 # SCR-RPT-002: レポート作成
 
+## この文書の役割
+
+| 項目 | 内容 |
+|------|------|
+| 目的 | 「レポート作成」画面の詳細仕様を定義する |
+| 正本情報 | 入力項目、バリデーション、API 連携、エラー表示 |
+| 扱わない内容 | 全画面共通の UI ガイドライン（ui-guidelines.md）、画面間の遷移定義（ui_flow.md）、API 詳細定義（openapi.yaml） |
+| 主な参照元 | `40_basic_design/ui_flow.md`, `40_basic_design/screens.md`, `50_detail_design/openapi.yaml`, `50_detail_design/authz.md` |
+| 主な参照先 | `60_test/test_cases/reports.md` |
+
 ## 1. 基本情報
 
 | 項目 | 内容 |
@@ -20,7 +30,7 @@
 | `40_basic_design/ui_flow.md` | 画面遷移図 |
 | `10_requirements/usecases.md` | UC-M01, UC-M09 |
 | `10_requirements/requirements.md` | RPT-F01 ~ F07 |
-| `10_requirements/workflow.md` | 状態遷移定義 |
+| `10_requirements/policies.md` | 状態遷移定義（SS4）、業務ルール（SS5） |
 | `20_domain/state_machine.md` | 状態遷移詳細 |
 | `deliverables/docs/01_glossary.md` | 用語集 |
 

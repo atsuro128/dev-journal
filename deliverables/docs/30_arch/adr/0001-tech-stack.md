@@ -1,5 +1,15 @@
 # ADR-0001: 技術スタック選定
 
+## この文書の役割
+
+| 項目 | 内容 |
+|------|------|
+| 目的 | バックエンド・フロントエンド・DB・主要ライブラリの技術選定根拠を記録する |
+| 正本情報 | 技術スタックの判断対象、選択肢、決定、理由、トレードオフ |
+| 扱わない内容 | 技術スタック以外のアーキテクチャ判断、実装詳細 |
+| 主な参照元 | `../../10_requirements/requirements.md` |
+| 主な参照先 | `../architecture.md`, `../diagrams.md` |
+
 ## ステータス
 承認済
 
@@ -92,3 +102,17 @@
 - sqlc の採用により、SQL マイグレーションとクエリ定義が一元的に管理される。スキーマ変更時のコンパイルエラーで不整合を早期検出できる
 - フロントエンドとバックエンドの言語が異なるため、API スキーマ（OpenAPI）を契約として明確に定義する必要がある（Step 4+5 で対応）
 - MUI の採用により、テーマ設定でデザインの一貫性を担保できる。DataGrid・Dialog・AppBar 等の業務アプリ向けコンポーネントにより、UI 実装の工数を削減
+
+## 反映先
+
+| 反映先文書 | 反映内容 |
+|-----------|---------|
+| `../architecture.md` §2 | レイヤー構成（Go + Chi + sqlc）、ミドルウェアチェーン |
+| `../architecture.md` §3 | バックエンドディレクトリ構成、ライブラリ配置 |
+| `../architecture.md` §4 | フロントエンドディレクトリ構成（React + Vite + MUI + TanStack Query） |
+| `../architecture.md` §8.1 | 非機能要求マッピング: Go によるパフォーマンス目標達成 |
+| `../architecture.md` §8.2 | 非機能要求マッピング: golang-jwt, argon2id のセキュリティ要件対応 |
+| `../../50_detail_design/security.md` §2.1 | JWT 実装詳細（golang-jwt/jwt ライブラリ使用） |
+| `../../50_detail_design/security.md` §3 | パスワードハッシュ実装（alexedwards/argon2id ライブラリ使用） |
+| `../../50_detail_design/db_schema.md` §2 | 型マッピング・設計方針（PostgreSQL + sqlc 前提） |
+| `../../50_detail_design/ui-guidelines.md` §1 | MUI デザインガイドライン（MUI 選定に基づく） |

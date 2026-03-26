@@ -1,5 +1,17 @@
 # テストケース一覧: 経費レポート（RPT-）
 
+## この文書の役割
+
+| 項目 | 内容 |
+|------|------|
+| 目的 | 経費レポート CRUD・提出エンドポイント（/api/reports/*）のテストケースを定義する |
+| 正本情報 | RPT-F01〜F07 に対応するテストケース一覧 |
+| 扱わない内容 | 明細・添付・ワークフローの詳細テスト、テナント横断テスト（→ cross-cutting.md） |
+| 主な参照元 | `50_detail_design/openapi.yaml#/api/reports/*`, `20_domain/state_machine.md`, `10_requirements/requirements.md#RPT-F*` |
+| 主な参照先 | `60_test/traceability.md`, テスト実装（Step 9） |
+
+---
+
 ## 概要
 
 本ファイルは経費レポート（`/api/reports/*`）に関するテストケースを定義する。

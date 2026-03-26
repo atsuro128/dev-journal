@@ -1,5 +1,15 @@
 # SCR-RPT-004: レポート詳細
 
+## この文書の役割
+
+| 項目 | 内容 |
+|------|------|
+| 目的 | 「レポート詳細」画面の詳細仕様を定義する |
+| 正本情報 | 表示項目、操作（明細追加・提出・承認・却下・支払完了）、API 連携、エラー表示 |
+| 扱わない内容 | 全画面共通の UI ガイドライン（ui-guidelines.md）、画面間の遷移定義（ui_flow.md）、API 詳細定義（openapi.yaml） |
+| 主な参照元 | `40_basic_design/ui_flow.md`, `40_basic_design/screens.md`, `50_detail_design/openapi.yaml`, `50_detail_design/authz.md` |
+| 主な参照先 | `60_test/test_cases/reports.md`, `60_test/test_cases/workflow.md`, `60_test/test_cases/items.md`, `60_test/test_cases/attachments.md` |
+
 ## 1. 基本情報
 
 | 項目 | 内容 |
@@ -20,8 +30,7 @@
 | `40_basic_design/ui_flow.md` | 画面遷移図 |
 | `10_requirements/usecases.md` | UC-M02, UC-M03, UC-M03a, UC-M05, UC-M06, UC-M07, UC-M09, UC-A02, UC-A03, UC-AC02 |
 | `10_requirements/requirements.md` | RPT-F01 ~ F07, ITM-F01 ~ F03, ATT-F01 ~ F04 |
-| `10_requirements/workflow.md` | 状態遷移定義 |
-| `10_requirements/rbac.md` | 権限マトリクス |
+| `10_requirements/policies.md` | 状態遷移定義（SS4）、権限マトリクス（SS3） |
 | `20_domain/state_machine.md` | 状態遷移詳細・操作マトリクス |
 | `20_domain/domain_model.md` | ExpenseReport, ExpenseItem, Attachment |
 | `deliverables/docs/01_glossary.md` | 用語集 |

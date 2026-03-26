@@ -30,7 +30,7 @@
 
 | タスク | 成果物 | 入力（主要） | エージェント | 状態 |
 |--------|--------|-------------|------------|------|
-| 6-A: テスト戦略策定 | `test_strategy.md` | authz.md, db_schema.md, openapi.yaml, state_machine.md, security.md, rbac.md, files.md, `.claude/rules/testing.md` | test-designer | 未着手 |
+| 6-A: テスト戦略策定 | `test_strategy.md` | authz.md, db_schema.md, openapi.yaml, state_machine.md, security.md, policies.md, files.md, `.claude/rules/testing.md` | test-designer | 未着手 |
 | 6-A-R1: 内部レビュー | — | — | test-reviewer | 未着手 |
 | 6-A-R2: codex レビュー | — | — | codex | 未着手 |
 
@@ -56,7 +56,7 @@
 
 | タスク | 成果物 | 入力（主要） | エージェント | 状態 |
 |--------|--------|-------------|------------|------|
-| 6-B-8: 横断TC | `test_cases/cross-cutting.md` | 6-B-1〜7 の全テストケースファイル, authz.md, rbac.md | test-designer | 未着手 |
+| 6-B-8: 横断TC | `test_cases/cross-cutting.md` | 6-B-1〜7 の全テストケースファイル, authz.md, policies.md | test-designer | 未着手 |
 | 6-B-8-R1: 内部レビュー | — | — | test-reviewer | 未着手 |
 | 6-B-8-R2: codex レビュー | — | — | codex | 未着手 |
 
@@ -80,7 +80,7 @@ Step 5 完了（確認済み）
 ## 品質基準
 
 - **下流作業可能性**: Step 7 実装者が各テストケースを迷わずコードに落とし込める粒度で書かれているか（唯一の判定基準）
-- **上流整合性**: openapi.yaml の全エンドポイント（31 operationId、health 除く30）、state_machine.md の遷移ルール（T1〜T5, X1〜X10）、rbac.md の権限マトリクスと一致しているか
+- **上流整合性**: openapi.yaml の全エンドポイント（31 operationId、health 除く30）、state_machine.md の遷移ルール（T1〜T5, X1〜X10）、policies.md の権限マトリクスと一致しているか
 - **タスク間整合性**: テストID の命名規則が統一され、重複がないか。機能別ファイルと cross-cutting.md の責務境界が守られているか
 - **MVP スコープ**: `deliverables/docs/02_scope.md` の範囲内か
 - **用語集準拠**: `dev-journal/deliverables/docs/01_glossary.md` の用語を使用しているか

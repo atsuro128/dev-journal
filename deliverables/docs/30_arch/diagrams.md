@@ -1,6 +1,18 @@
 # 構成図・データフロー図
 
+## この文書の役割
+
+| 項目 | 内容 |
+|------|------|
+| 目的 | architecture.md の内容を図で表現する |
+| 正本情報 | システム構成図、リクエスト処理フロー、デプロイ/配信の概要図 |
+| 扱わない内容 | 図だけでは伝わらない長文仕様 |
+| 主な参照元 | `./architecture.md`, `./adr/*.md` |
+| 主な参照先 | `../40_basic_design/*`, `../50_detail_design/*`, `../70_operations/release.md` |
+
 ## 1. システム構成図
+
+> 対応: [architecture.md](architecture.md) 2 システム全体構成
 
 ```mermaid
 graph TB
@@ -48,6 +60,8 @@ graph TB
 
 ## 2. リクエスト処理フロー
 
+> 対応: [architecture.md](architecture.md) 3.2 ミドルウェアチェーン
+
 ```mermaid
 sequenceDiagram
     participant C as クライアント
@@ -94,6 +108,8 @@ sequenceDiagram
 
 ## 3. 認証フロー
 
+> 対応: [architecture.md](architecture.md) 3.3 認証フロー
+
 ```mermaid
 sequenceDiagram
     participant C as クライアント
@@ -137,6 +153,8 @@ sequenceDiagram
 
 ## 4. テナント分離フロー
 
+> 対応: [architecture.md](architecture.md) 3.4 テナント分離の実行フロー
+
 ```mermaid
 graph TD
     subgraph Request["リクエスト処理"]
@@ -168,6 +186,8 @@ graph TD
 
 ## 5. 状態遷移図
 
+> 対応: [architecture.md](architecture.md) は本図を参照（状態遷移の定義は `20_domain/domain_model.md` 7 が正本）
+
 ```mermaid
 stateDiagram-v2
     [*] --> draft: レポート作成
@@ -187,6 +207,8 @@ stateDiagram-v2
 
 ## 6. デプロイパイプライン（計画）
 
+> 対応: [architecture.md](architecture.md) 4.0 SPA 配信方式（ビルド・配信の概要）
+
 ```mermaid
 graph LR
     subgraph CI["GitHub Actions"]
@@ -205,6 +227,8 @@ graph LR
 ---
 
 ## 7. ローカル開発環境
+
+> 対応: architecture.md では本図を参照（ローカル環境の詳細は本図が正本）
 
 ```mermaid
 graph TB

@@ -1,5 +1,15 @@
 # アーキテクチャ設計
 
+## この文書の役割
+
+| 項目 | 内容 |
+|------|------|
+| 目的 | システム全体の構造と共通方式を定義する |
+| 正本情報 | レイヤ責務、認証/認可の通し方、URL 方針、テナント分離方式、非機能実現方針 |
+| 扱わない内容 | 判断理由の詳細（ADR に委譲）、図の正本（diagrams.md に委譲）、機能別詳細設計 |
+| 主な参照元 | `../10_requirements/requirements.md`, `../10_requirements/policies.md`, `../20_domain/*`, `./adr/*.md` |
+| 主な参照先 | `./diagrams.md`, `../50_detail_design/*`, `../70_operations/*` |
+
 ## 1. 概要
 
 本書は ADR-0001〜0005 の決定を統合し、経費精算SaaS のシステム全体構造を定義する。
@@ -22,34 +32,19 @@
 
 ### レイヤー構成
 
-```mermaid
-graph TD
-    subgraph Client["クライアント"]
-        FE["React TypeScript + Vite\nページ / コンポーネント / TanStack Query / Router"]
-    end
+> 図については [diagrams.md](diagrams.md) 1 システム構成図 および 2 リクエスト処理フロー を参照
 
-    Client -- "HTTPS（JSON）" --> LB
+クライアント（React + TypeScript + Vite）から ALB を経由し、ECS Fargate 上の Go API サーバーがリクエストを処理する。サーバー内部は以下のレイヤーで構成される。
 
-    subgraph LB["ALB"]
-        ALB["ヘルスチェック / TLS 終端 / ルーティング"]
-    end
+| レイヤー | 責務 |
+|---------|------|
+| ミドルウェアチェーン | CORS → SecurityHeaders → RequestID → Logger → RateLimit → Auth（JWT検証） → TenantContext（RLS設定） → RBAC（ロール検証） |
+| ハンドラ層（HTTP Handler） | リクエスト/レスポンスの変換、入力バリデーション、所有権チェック |
+| サービス層（Application Service） | ユースケースの実行、トランザクション管理、集約間の調整 |
+| ドメイン層（Domain） | エンティティ・値オブジェクト、状態遷移の制御（WFL-001）、不変条件の検証、ドメインエラーの生成 |
+| リポジトリ層（Repository） | sqlc 生成コードの利用、tenant_id フィルタの強制（TNT-002, TNT-003）、論理削除の適用（DAT-002） |
 
-    LB --> ECS
-
-    subgraph ECS["ECS Fargate（Go）"]
-        MW["ミドルウェアチェーン\nCORS → RequestID → Logger → RateLimit\n→ Auth（JWT検証） → TenantContext（RLS設定）\n→ RBAC（ロール検証）"]
-        Handler["ハンドラ層（HTTP Handler）\nリクエスト/レスポンスの変換\n入力バリデーション / 所有権チェック"]
-        Service["サービス層（Application Service）\nユースケースの実行\nトランザクション管理 / 集約間の調整"]
-        Domain["ドメイン層（Domain）\nエンティティ・値オブジェクト\n状態遷移の制御（WFL-001） / 不変条件の検証\nドメインエラーの生成"]
-        Repo["リポジトリ層（Repository）\nsqlc 生成コードの利用\ntenant_id フィルタの強制（TNT-002, TNT-003）\n論理削除の適用（DAT-002）"]
-
-        MW --> Handler --> Service --> Domain --> Repo
-    end
-
-    Repo --> RDS["RDS\nPostgreSQL + RLS"]
-    Repo --> S3["S3\n領収書ストレージ"]
-    MW --> CW["CloudWatch\nLogs / Metrics"]
-```
+データストアとして RDS（PostgreSQL + RLS）と S3（領収書ストレージ）を使用し、CloudWatch にログ・メトリクスを出力する。
 
 ---
 
@@ -119,60 +114,42 @@ expense-saas/
 
 リクエスト処理の順序。各ミドルウェアは Chi のミドルウェアパターンで実装する。
 
-```mermaid
-graph TD
-    REQ["リクエスト受信"] --> C1
-    C1["[1] CORS\nSEC-013: 許可オリジンを環境変数で指定"] --> C2
-    C2["[2] SecurityHeaders\nSEC-014: HSTS, X-Content-Type-Options, X-Frame-Options"] --> C3
-    C3["[3] RequestID\nUUID を生成し context + レスポンスヘッダー（X-Request-ID）に設定"] --> C4
-    C4["[4] Logger\n構造化ログ出力（request_id, method, path, status, duration_ms）"] --> C5
-    C5["[5] RateLimit\nSEC-012: 認証済み 100 req/min/user, 未認証 20 req/min/IP"] --> C6
-    C6["[6] Auth（JWT検証）\nSEC-003, SEC-004: RS256 で署名検証、有効期限確認\n認証不要エンドポイントはスキップ"] --> C7
-    C7["[7] TenantContext\npool.Acquire でコネクション固定\nBEGIN + SET LOCAL app.current_tenant\nリクエスト完了時に COMMIT/ROLLBACK"] --> C8
-    C8["[8] RBAC\nRBC-001: ルートごとに必要ロールを検証。権限不足は 403"] --> HANDLER
-    HANDLER["ハンドラ\nビジネスロジック実行"]
-```
+> 図については [diagrams.md](diagrams.md) 2 リクエスト処理フロー を参照
+
+| 順序 | ミドルウェア | 責務 | 関連要件 |
+|------|------------|------|---------|
+| [1] | CORS | 許可オリジンを環境変数で指定 | SEC-013 |
+| [2] | SecurityHeaders | HSTS, X-Content-Type-Options, X-Frame-Options | SEC-014 |
+| [3] | RequestID | UUID を生成し context + レスポンスヘッダー（X-Request-ID）に設定 | - |
+| [4] | Logger | 構造化ログ出力（request_id, method, path, status, duration_ms） | - |
+| [5] | RateLimit | 認証済み 100 req/min/user, 未認証 20 req/min/IP | SEC-012 |
+| [6] | Auth（JWT検証） | RS256 で署名検証、有効期限確認。認証不要エンドポイントはスキップ | SEC-003, SEC-004 |
+| [7] | TenantContext | pool.Acquire でコネクション固定。BEGIN + SET LOCAL app.current_tenant。リクエスト完了時に COMMIT/ROLLBACK | TNT-002 |
+| [8] | RBAC | ルートごとに必要ロールを検証。権限不足は 403 | RBC-001 |
 
 ### 3.3 認証フロー
 
 #### ログイン → JWT 発行
 
-```mermaid
-sequenceDiagram
-    participant C as クライアント
-    participant S as サーバー
-    participant DB as DB
+> 図については [diagrams.md](diagrams.md) 3 認証フロー を参照
 
-    C->>S: POST /api/auth/login<br/>{email, password}
-    Note right of S: オーナーロール接続 — RLS バイパス
-    S->>DB: SELECT user
-    DB-->>S: user record
-    Note right of S: Argon2id 検証
-    S->>DB: SELECT membership
-    DB-->>S: role, tenant_id
-    Note right of S: JWT 生成:<br/>access_token [15min]<br/>  claims: user_id, tenant_id, role<br/>refresh_token [7day]
-    S-->>C: {access_token, refresh_token}
-```
+1. クライアントが `POST /api/auth/login` に email, password を送信
+2. サーバーはオーナーロール接続（RLS バイパス）で users テーブルを参照
+3. Argon2id でパスワードを検証
+4. tenant_memberships から role, tenant_id を取得
+5. JWT を生成: access_token（15分、claims: user_id, tenant_id, role）、refresh_token（7日）
+6. トークンペアをクライアントに返却
 
 #### 認証付きリクエスト
 
-```mermaid
-sequenceDiagram
-    participant C as クライアント
-    participant S as サーバー
-    participant DB as DB
+> 図については [diagrams.md](diagrams.md) 3 認証フロー を参照
 
-    C->>S: GET /api/reports<br/>Authorization: Bearer
-    Note right of S: [Auth] JWT RS256 検証
-    Note right of S: [TenantContext]<br/>Acquire conn + BEGIN
-    S->>DB: SET LOCAL app.current_tenant
-    Note right of S: [RBAC] ロール検証
-    S->>DB: SELECT [同一conn, RLS適用]
-    DB-->>S: filtered rows
-    S->>DB: COMMIT
-    Note right of S: SET LOCAL 自動リセット
-    S-->>C: {reports: [...]}
-```
+1. クライアントが `Authorization: Bearer {access_token}` ヘッダー付きでリクエスト
+2. Auth ミドルウェアが JWT RS256 検証
+3. TenantContext ミドルウェアが Acquire conn + BEGIN + SET LOCAL app.current_tenant
+4. RBAC ミドルウェアがロール検証
+5. ハンドラがビジネスロジックを実行（同一 conn、RLS 適用）
+6. COMMIT（SET LOCAL 自動リセット）後、レスポンスを返却
 
 ### 3.4 テナント分離の実行フロー
 
@@ -478,10 +455,66 @@ ADR-0005 の結論を反映。
 
 ---
 
-## 8. 品質チェック
+## 8. 非機能要求マッピング
+
+`requirements.md` §4 の非機能要求が本アーキテクチャのどこに反映されたかを示す。
+
+### 8.1 パフォーマンス（§4.1）
+
+| 要件概要 | 関連ルールID | 反映先 ADR | 反映先セクション |
+|----------|-------------|-----------|----------------|
+| API レスポンスタイム p95 500ms 以下 | - | ADR-0001（Go 選定理由）, ADR-0005（メトリクス閾値） | §2 レイヤー構成, §7 監視・ログ方針 |
+| ファイルアップロード 5秒以下（5MB） | ATT-003 | ADR-0004（S3 選定） | §5.1 URL 設計（添付エンドポイント） |
+| 同時接続ユーザー数 100 | - | ADR-0002（Shared DB 選定理由）, ADR-0004（Fargate スペック） | §2 システム全体構成 |
+| カーソルベースページネーション（デフォルト20件） | - | - | §5.3 ページネーション |
+
+### 8.2 セキュリティ（§4.2）
+
+| 要件概要 | 関連ルールID | 反映先 ADR | 反映先セクション |
+|----------|-------------|-----------|----------------|
+| JWT RS256 認証 | SEC-003, SEC-004 | ADR-0001（golang-jwt 選定） | §3.3 認証フロー, §6.1 多層防御 [3] |
+| パスワード Argon2id ハッシュ | SEC-002, SEC-010 | ADR-0001（argon2id ライブラリ選定） | §6.1 多層防御 [3] |
+| テナント分離（アプリ層 + RLS 二重保証） | TNT-001〜005 | ADR-0002, ADR-0003 | §3.4 テナント分離の実行フロー, §6.1 多層防御 [5] |
+| RBAC ミドルウェア | RBC-001 | - | §3.2 ミドルウェアチェーン [8], §6.1 多層防御 [4] |
+| レート制限 | SEC-012 | - | §3.2 ミドルウェアチェーン [5], §6.2 レート制限 |
+| CORS 許可オリジン明示指定 | SEC-013 | - | §3.2 ミドルウェアチェーン [1], §6.1 多層防御 [2] |
+| セキュリティヘッダー（HSTS 等） | SEC-014 | - | §3.2 ミドルウェアチェーン [2], §6.1 多層防御 [2] |
+| ファイルアップロード MIME 検証・5MB制限 | ATT-013, ATT-003 | ADR-0004（S3 選定） | §5.1 URL 設計（添付エンドポイント） |
+
+### 8.3 可用性（§4.3）
+
+| 要件概要 | 関連ルールID | 反映先 ADR | 反映先セクション |
+|----------|-------------|-----------|----------------|
+| 稼働率 99.5% | - | ADR-0004（Single-AZ リスク受容） | §2 システム全体構成 |
+| ヘルスチェック `/health` | - | ADR-0005（ヘルスチェック定義） | §7 監視・ログ方針 |
+| RDS 自動バックアップ 7日間保持 | - | ADR-0004（RDS 選定） | §2 システム全体構成 |
+
+### 8.4 データ（§4.4）
+
+| 要件概要 | 関連ルールID | 反映先 ADR | 反映先セクション |
+|----------|-------------|-----------|----------------|
+| 論理削除（deleted_at） | DAT-002 | - | §2 レイヤー構成（リポジトリ層の責務） |
+| 全レコードに created_at, updated_at | DAT-004 | - | §2 レイヤー構成（リポジトリ層の責務） |
+| 提出以降の物理削除不可 | DAT-001 | - | §3.5 エラーハンドリング（ReportNotDeletable） |
+| 日本円（JPY）整数値 | ITM-002 | - | §5.2 共通レスポンス形式 |
+| UTC 保存、表示時 JST 変換 | - | - | §4.2 認証状態管理（フロントエンド責務） |
+
+### 8.5 ユーザビリティ（§4.5）
+
+| 要件概要 | 関連ルールID | 反映先 ADR | 反映先セクション |
+|----------|-------------|-----------|----------------|
+| レスポンシブデザイン | - | ADR-0001（MUI 選定） | §4.1 ディレクトリ構成 |
+| UI 日本語固定 | - | - | §4.3 ページとロールの対応 |
+| 操作結果の即時フィードバック | - | - | §4.4 サーバー状態管理（TanStack Query） |
+| クライアントサイドバリデーション | - | - | §4.1 ディレクトリ構成 |
+| ローディング表示 | - | - | §4.4 サーバー状態管理（TanStack Query） |
+
+---
+
+## 9. 品質チェック
 
 - [x] 「なぜその技術か」を ADR で短く言えるか → ADR-0001〜0005 で記録済み
-- [x] 図（構成図・データフロー）が1枚以上あるか → §2, §3.2, §3.3, §3.4 に記載（diagrams.md で Mermaid 図を別途作成）
+- [x] 図（構成図・データフロー）が1枚以上あるか → diagrams.md に Mermaid 図を集約。本書の各セクションから参照リンクで連携
 - [x] テナント分離の二重保証の方針が決まっているか → アプリ層 WHERE + RLS（ADR-0003）
 - [x] 監視・ログの方針が決まっているか → ADR-0005、§7 で方針記載
 - [x] バックエンドのレイヤー構成が明確か → Handler → Service → Domain → Repository

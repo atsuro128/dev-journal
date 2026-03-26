@@ -1,5 +1,15 @@
 # 監視・ログ設計
 
+## この文書の役割
+
+| 項目 | 内容 |
+|------|------|
+| 目的 | 何を計測し、どう検知し、どんなログを残すかを定義する |
+| 正本情報 | 監視対象、閾値、ログフィールド、通知フロー |
+| 扱わない内容 | 障害対応手順（runbook.md）、リリース手順（release.md）、復旧 Runbook |
+| 主な参照元 | `30_arch/adr/0005-monitoring-logging.md`, `30_arch/architecture.md`, `10_requirements/requirements.md` |
+| 主な参照先 | `70_operations/runbook.md`, `70_operations/release.md` |
+
 ## 1. 概要
 
 本書は経費精算SaaS の監視・ログ設計を詳細に定義する。ADR-0005（監視・ログ戦略）で決定した方針を具体的な実装仕様に落とし込む。

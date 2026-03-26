@@ -1,5 +1,15 @@
 # ADR-0005: 監視・ログ戦略
 
+## この文書の役割
+
+| 項目 | 内容 |
+|------|------|
+| 目的 | 監視基盤・ログフレームワーク・アラート方式の選定根拠を記録する |
+| 正本情報 | 監視・ログ方式の判断対象、選択肢、決定、理由、トレードオフ |
+| 扱わない内容 | インフラ構成（ADR-0004 に委譲）、運用手順の詳細 |
+| 主な参照元 | `../../10_requirements/requirements.md`, `./0004-infra.md` |
+| 主な参照先 | `../architecture.md`, `../../50_detail_design/monitoring.md`, `../../70_operations/*` |
+
 ## ステータス
 承認済
 
@@ -170,3 +180,16 @@ MVP ではメール通知。将来的に Slack/PagerDuty 連携を検討。
 - ログの保持期間は CloudWatch Logs の設定で管理（MVP: 30日間）
 - 将来的に OpenTelemetry への移行を阻害しない設計にする（slog のハンドラを差し替え可能）
 - CloudWatch ダッシュボードの構築は Step 7 Phase 2 で実施
+
+## 反映先
+
+| 反映先文書 | 反映内容 |
+|-----------|---------|
+| `../architecture.md` §7 | 監視・ログ方針サマリー（slog → JSON → CloudWatch、ヘルスチェック、アラート） |
+| `../architecture.md` §3.2 | ミドルウェアチェーン [3] RequestID、[4] Logger の責務定義 |
+| `../architecture.md` §8.1 | 非機能要求マッピング: p95 メトリクス閾値 |
+| `../architecture.md` §8.3 | 非機能要求マッピング: ヘルスチェック定義 |
+| `../../50_detail_design/monitoring.md` §2 | 構造化ログ設計（slog JSONHandler、標準フィールド定義、ログレベル方針） |
+| `../../50_detail_design/monitoring.md` §5 | メトリクスフィルタ・CloudWatch Alarm 設計（閾値、名前空間の正式化） |
+| `../../50_detail_design/monitoring.md` §7 | ヘルスチェック実装仕様（エンドポイント詳細、ALB 設定） |
+| `../../50_detail_design/monitoring.md` §8 | アラート通知設計（SNS トピック、通知フロー） |

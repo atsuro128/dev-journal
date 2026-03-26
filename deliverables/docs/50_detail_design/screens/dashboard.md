@@ -1,5 +1,15 @@
 # ダッシュボード画面詳細仕様
 
+## この文書の役割
+
+| 項目 | 内容 |
+|------|------|
+| 目的 | 「ダッシュボード」画面の詳細仕様を定義する |
+| 正本情報 | 表示項目、ロール別差分、API 連携、エラー表示 |
+| 扱わない内容 | 全画面共通の UI ガイドライン（ui-guidelines.md）、画面間の遷移定義（ui_flow.md）、API 詳細定義（openapi.yaml） |
+| 主な参照元 | `40_basic_design/ui_flow.md`, `40_basic_design/screens.md`, `50_detail_design/openapi.yaml`, `50_detail_design/authz.md` |
+| 主な参照先 | `60_test/test_cases/dashboard.md` |
+
 ## 1. 概要
 
 | 項目 | 内容 |
@@ -19,7 +29,7 @@
 | `40_basic_design/screens.md` | 3.2（ダッシュボード）、4.1〜4.5（共通UIパターン） |
 | `10_requirements/usecases.md` | UC-SYS04 |
 | `10_requirements/requirements.md` | DASH-001〜DASH-005 |
-| `10_requirements/rbac.md` | 3.2（経費レポート権限） |
+| `10_requirements/policies.md` | SS3.7（権限マトリクス概要） |
 | `deliverables/docs/01_glossary.md` | 操作用語の統一 |
 
 ---

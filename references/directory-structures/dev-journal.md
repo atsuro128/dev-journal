@@ -20,9 +20,8 @@ dev-journal/
 │       ├── 10_requirements/          # 要件定義
 │       │   ├── requirements.md
 │       │   ├── usecases.md
-│       │   ├── workflow.md
-│       │   ├── rbac.md
-│       │   └── preliminary/          # 事前調査
+│       │   ├── policies.md
+│       │   └── preliminary/          # 事前調査（workflow.md, rbac.md 含む）
 │       │       ├── 01_business-overview.md
 │       │       ├── 02_actor-analysis.md
 │       │       ├── 03_business-flow.md

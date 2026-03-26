@@ -1,5 +1,15 @@
 # 画面一覧
 
+## この文書の役割
+
+| 項目 | 内容 |
+|------|------|
+| 目的 | 画面一覧、画面責務、対応ユースケースを定義する |
+| 正本情報 | 画面ID、URL、対象ロール、画面目的、対応UC |
+| 扱わない内容 | 入力項目詳細、バリデーション、API 呼び出し詳細 |
+| 主な参照元 | `10_requirements/usecases.md`, `30_arch/architecture.md` |
+| 主な参照先 | `40_basic_design/ui_flow.md`, `50_detail_design/screens/*.md` |
+
 ## 1. 概要
 
 本書は、経費精算SaaS MVP の全画面を一覧化し、画面IDの命名規則と共通UIパターンを定義する。
@@ -11,8 +21,7 @@
 |------------|------|
 | `10_requirements/usecases.md` | ユースケース |
 | `10_requirements/requirements.md` | 機能要件・非機能要件 |
-| `10_requirements/rbac.md` | RBAC 権限マトリクス |
-| `10_requirements/workflow.md` | 状態遷移 |
+| `10_requirements/policies.md` | RBAC 権限マトリクス（SS3）、状態遷移（SS4） |
 | `30_arch/architecture.md` | フロントエンド構成・APIエンドポイント |
 | `deliverables/docs/01_glossary.md` | 用語集 |
 

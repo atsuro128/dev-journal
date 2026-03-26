@@ -1,5 +1,15 @@
 # SCR-AUTH-001: サインアップ
 
+## この文書の役割
+
+| 項目 | 内容 |
+|------|------|
+| 目的 | 「サインアップ」画面の詳細仕様を定義する |
+| 正本情報 | 入力項目、バリデーション、API 連携、エラー表示 |
+| 扱わない内容 | 全画面共通の UI ガイドライン（ui-guidelines.md）、画面間の遷移定義（ui_flow.md）、API 詳細定義（openapi.yaml） |
+| 主な参照元 | `40_basic_design/ui_flow.md`, `40_basic_design/screens.md`, `50_detail_design/openapi.yaml`, `50_detail_design/authz.md` |
+| 主な参照先 | `60_test/test_cases/auth.md` |
+
 ## 1. 基本情報
 
 | 項目 | 内容 |
@@ -31,7 +41,7 @@
 | `10_requirements/usecases.md` | UC-SYS01 |
 | `10_requirements/requirements.md` | AUTH-F01, SEC-001, SEC-002, SEC-003, SEC-010 |
 | `30_arch/architecture.md` | 認証エンドポイント（&sect;5.1）、認証フロー（&sect;3.3） |
-| `10_requirements/rbac.md` | 認証関連の権限マトリクス（&sect;3.1） |
+| `10_requirements/policies.md` | 認証関連の権限マトリクス（SS3.8） |
 | `deliverables/docs/01_glossary.md` | 用語集 |
 
 ---

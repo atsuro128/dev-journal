@@ -1,5 +1,15 @@
 # ドメインモデル設計
 
+## この文書の役割
+
+| 項目 | 内容 |
+|------|------|
+| 目的 | エンティティ、値オブジェクト、集約、不変条件を定義する |
+| 正本情報 | エンティティ構造、不変条件、集約境界、ドメイン責務 |
+| 扱わない内容 | 状態遷移の詳細、DB 物理設計、インフラ方式 |
+| 主な参照元 | `../10_requirements/requirements.md`, `../10_requirements/policies.md` |
+| 主な参照先 | `./state_machine.md`, `../50_detail_design/db_schema.md` |
+
 ## 1. 概要
 
 本書では、経費精算SaaS の主要エンティティ・値オブジェクト・集約・不変条件を定義する。
@@ -10,9 +20,7 @@
 | ドキュメント | 役割 |
 |------------|------|
 | `10_requirements/requirements.md` | 機能要件・非機能要件 |
-| `10_requirements/workflow.md` | 状態遷移定義 |
-| `10_requirements/rbac.md` | ロール・権限マトリクス |
-| `10_requirements/preliminary/04_business-rules.md` | ビジネスルール一覧（ルールID体系） |
+| `10_requirements/policies.md` | 状態遷移定義（SS4）、RBAC（SS3）、業務ルール（SS5）、ルールID体系（SS2） |
 | `20_domain/state_machine.md` | 状態遷移の詳細設計（本ステップで作成） |
 
 ---

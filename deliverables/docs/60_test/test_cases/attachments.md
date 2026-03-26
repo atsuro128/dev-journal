@@ -1,5 +1,17 @@
 # 添付ファイルテストケース一覧
 
+## この文書の役割
+
+| 項目 | 内容 |
+|------|------|
+| 目的 | 添付ファイルエンドポイント（uploadAttachment, listAttachments, getAttachmentDownload, deleteAttachment）のテストケースを定義する |
+| 正本情報 | ATT-F01〜F04 に対応するテストケース一覧 |
+| 扱わない内容 | テナント横断テスト（→ cross-cutting.md）、S3 インフラ詳細 |
+| 主な参照元 | `50_detail_design/openapi.yaml#/api/reports/{id}/items/{itemId}/attachments/*`, `50_detail_design/files.md`, `10_requirements/requirements.md#ATT-F*` |
+| 主な参照先 | `60_test/traceability.md`, テスト実装（Step 9） |
+
+---
+
 ## 概要
 
 本書は添付ファイル（Attachment）に関する4エンドポイントのテストケースを定義する。

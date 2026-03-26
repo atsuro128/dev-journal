@@ -1,5 +1,17 @@
 # テストケース: ダッシュボード / カテゴリ
 
+## この文書の役割
+
+| 項目 | 内容 |
+|------|------|
+| 目的 | ダッシュボード取得（getDashboard）・カテゴリ一覧（listCategories）エンドポイントのテストケースを定義する |
+| 正本情報 | DASH-F01 および ITM-005（カテゴリ固定6種類）に対応するテストケース一覧 |
+| 扱わない内容 | テナント横断テスト（→ cross-cutting.md）、レポート詳細テスト（→ reports.md） |
+| 主な参照元 | `50_detail_design/openapi.yaml#/api/dashboard`, `10_requirements/requirements.md#DASH-F*` |
+| 主な参照先 | `60_test/traceability.md`, テスト実装（Step 9） |
+
+---
+
 本ファイルは以下の 2 ハンドラに対応するテストケースを定義する。
 
 | ハンドラ | テストファイル | エンドポイント | operationId |

@@ -1,5 +1,15 @@
 # SCR-ADM-002: テナント情報
 
+## この文書の役割
+
+| 項目 | 内容 |
+|------|------|
+| 目的 | 「テナント情報」画面の詳細仕様を定義する |
+| 正本情報 | 表示項目、操作、API 連携、エラー表示 |
+| 扱わない内容 | 全画面共通の UI ガイドライン（ui-guidelines.md）、画面間の遷移定義（ui_flow.md）、API 詳細定義（openapi.yaml） |
+| 主な参照元 | `40_basic_design/ui_flow.md`, `40_basic_design/screens.md`, `50_detail_design/openapi.yaml`, `50_detail_design/authz.md` |
+| 主な参照先 | `60_test/test_cases/tenant.md` |
+
 ## 1. 基本情報
 
 | 項目 | 内容 |
@@ -18,7 +28,7 @@
 |------------|---------|
 | `40_basic_design/screens.md` | §3.5（管理系画面一覧）、§4（共通UIパターン） |
 | `10_requirements/usecases.md` | UC-AD01 |
-| `10_requirements/rbac.md` | §3.5（管理機能権限） |
+| `10_requirements/policies.md` | SS3.8（API操作別権限マトリクス・管理機能） |
 | `deliverables/docs/01_glossary.md` | 用語統一 |
 
 ---

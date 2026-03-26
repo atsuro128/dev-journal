@@ -1,5 +1,15 @@
 # DB スキーマ設計
 
+## この文書の役割
+
+| 項目 | 内容 |
+|------|------|
+| 目的 | テーブル、制約、RLS、インデックスを定義する |
+| 正本情報 | DDL、RLS ポリシー、主要インデックス、エンティティ対応 |
+| 扱わない内容 | API 入出力、画面仕様 |
+| 主な参照元 | `20_domain/domain_model.md`, `20_domain/state_machine.md`, `30_arch/adr/0003-rls-tenant-isolation.md` |
+| 主な参照先 | `50_detail_design/authz.md`, `60_test/test_cases/*.md` |
+
 ## 1. 概要
 
 本書では、経費精算 SaaS の PostgreSQL データベーススキーマを定義する。
@@ -175,31 +185,89 @@ erDiagram
 
 ---
 
+## 3.5. ドメインモデル対応表
+
+`domain_model.md` のエンティティ・値オブジェクト・集約と本スキーマのテーブル・カラムの対応関係を示す。
+
+### エンティティ対応
+
+| ドメインモデル要素 | 種別 | 集約 | 対応テーブル | 備考 |
+|-------------------|------|------|-------------|------|
+| Tenant | エンティティ（集約ルート） | Tenant Aggregate | `tenants` | 全カラム対応 |
+| User | エンティティ（集約ルート） | User Aggregate | `users` | 全カラム対応。`tenant_id` なし（`tenant_memberships` 経由） |
+| TenantMembership | エンティティ | User Aggregate | `tenant_memberships` | 全カラム対応 |
+| ExpenseReport | エンティティ（集約ルート） | ExpenseReport Aggregate | `expense_reports` | 全カラム対応 |
+| ExpenseItem | エンティティ | ExpenseReport Aggregate | `expense_items` | `category` 属性を `category_id` FK に変換（下記「値オブジェクト対応」参照） |
+| Attachment | エンティティ | ExpenseReport Aggregate | `attachments` | `s3_path` を `s3_key` に改名（セクション 11 参照） |
+
+### 値オブジェクト対応
+
+| ドメインモデル要素 | 種別 | 対応カラム | 実装方式 | 備考 |
+|-------------------|------|-----------|---------|------|
+| ReportStatus | 値オブジェクト（enum） | `expense_reports.status` | `VARCHAR(20)` + `CHECK` 制約 | 値: `draft`, `submitted`, `approved`, `rejected`, `paid` |
+| Role | 値オブジェクト（enum） | `tenant_memberships.role` | `VARCHAR(20)` + `CHECK` 制約 | 値: `admin`, `approver`, `member`, `accounting` |
+| Category | 値オブジェクト（enum） | `expense_items.category_id` | `categories` マスタテーブル + FK | ドメインモデルの enum 6 値をマスタテーブルのシードデータに変換。Phase 3 カスタムカテゴリ対応のため |
+| MimeType | 値オブジェクト（enum） | `attachments.mime_type` | `VARCHAR(50)` + `CHECK` 制約 | 値: `image/jpeg`, `image/png`, `application/pdf` |
+
+### 集約境界とテーブルの関係
+
+| 集約 | 集約ルート | 構成テーブル | トランザクション境界 |
+|------|-----------|-------------|-------------------|
+| ExpenseReport Aggregate | `expense_reports` | `expense_reports`, `expense_items`, `attachments` | 1トランザクションで整合性保証 |
+| Tenant Aggregate | `tenants` | `tenants` | 単体 |
+| User Aggregate | `users` | `users`, `tenant_memberships` | サインアップ時に `tenants` + `users` + `tenant_memberships` を1トランザクションで作成 |
+
+### DB 固有テーブル（ドメインモデルに対応なし）
+
+以下のテーブルはインフラ層の実装要件として追加したもので、`domain_model.md` には対応するエンティティが存在しない。
+
+| テーブル | 目的 | 理由 |
+|---------|------|------|
+| `categories` | 経費カテゴリのマスタデータ | ドメインモデルでは `Category` enum だが、Phase 3 拡張性のためマスタテーブル化 |
+| `refresh_tokens` | リフレッシュトークン管理 | 認証基盤の実装要件（`security.md` 2.1） |
+| `password_reset_tokens` | パスワードリセットトークン管理 | 認証基盤の実装要件（`security.md` 2.3） |
+
+### Phase 3 エンティティの対応状況
+
+`domain_model.md` セクション 9 に記載された Phase 3 エンティティの本スキーマでの扱い。
+
+| ドメインモデル要素 | 種別 | 本スキーマでの扱い | 参照先 |
+|-------------------|------|-------------------|--------|
+| AuditLog | エンティティ（Phase 3） | 設計ノートとして DDL を記載 | セクション 10.1 |
+| Notification | エンティティ（Phase 3） | 未定義（MVP スコープ外） | -- |
+| Invitation | エンティティ（Phase 3） | 未定義（MVP スコープ外） | -- |
+
+---
+
 ## 4. テーブル定義（DDL）
 
 ### 4.1 tenants（テナント）
 
 ```sql
+-- [TNT-001] テナント境界の基本単位
+-- [AUTH-F01] サインアップ時にテナント（企業）を新規作成
 CREATE TABLE tenants (
     tenant_id    UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
     company_name VARCHAR(200) NOT NULL,
-    created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
-    updated_at   TIMESTAMPTZ NOT NULL DEFAULT now()
+    created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),  -- [DAT-004]
+    updated_at   TIMESTAMPTZ NOT NULL DEFAULT now()   -- [DAT-004]
 );
 ```
 
 ### 4.2 users（ユーザー）
 
 ```sql
+-- [AUTH-F01] サインアップ時にアカウント作成
+-- [SEC-001] 認証方式はメール + パスワード
 CREATE TABLE users (
     user_id       UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
-    email         VARCHAR(254) NOT NULL,
+    email         VARCHAR(254) NOT NULL,                -- [SEC-001] メールアドレスによる認証
     name          VARCHAR(100) NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
-    created_at    TIMESTAMPTZ  NOT NULL DEFAULT now(),
-    updated_at    TIMESTAMPTZ  NOT NULL DEFAULT now(),
+    password_hash VARCHAR(255) NOT NULL,                -- [SEC-002] Argon2id ハッシュ
+    created_at    TIMESTAMPTZ  NOT NULL DEFAULT now(),   -- [DAT-004]
+    updated_at    TIMESTAMPTZ  NOT NULL DEFAULT now(),   -- [DAT-004]
 
-    CONSTRAINT users_email_unique UNIQUE (email)
+    CONSTRAINT users_email_unique UNIQUE (email)        -- システム全体で一意
 );
 ```
 
@@ -208,18 +276,21 @@ CREATE TABLE users (
 ### 4.3 tenant_memberships（テナントメンバーシップ）
 
 ```sql
+-- [RBC-002] 1ユーザーは1テナントにつき1つのロールのみ持つ
+-- [TNT-001] ユーザーとテナントの関連を管理
 CREATE TABLE tenant_memberships (
     tenant_id  UUID        NOT NULL REFERENCES tenants(tenant_id),
     user_id    UUID        NOT NULL REFERENCES users(user_id),
-    role       VARCHAR(20) NOT NULL,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    role       VARCHAR(20) NOT NULL,                    -- [RBC-002] テナント内でのロール
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),      -- [DAT-004]
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),      -- [DAT-004]
 
     PRIMARY KEY (tenant_id, user_id),
 
-    -- MVP: 1 ユーザー = 1 テナント（RBC-002）
+    -- [RBC-002] MVP: 1 ユーザー = 1 テナント
     CONSTRAINT tenant_memberships_user_unique UNIQUE (user_id),
 
+    -- [RBC-002] ロール値はドメインモデルの Role 値オブジェクトに対応
     CONSTRAINT tenant_memberships_role_check
         CHECK (role IN ('admin', 'approver', 'member', 'accounting'))
 );
@@ -228,6 +299,8 @@ CREATE TABLE tenant_memberships (
 ### 4.4 categories（経費カテゴリ）
 
 ```sql
+-- [ITM-005] カテゴリは固定6種類（MVP）。Phase 3 でカスタムカテゴリに拡張
+-- [ITM-003] 明細にはカテゴリが必須（本テーブルがマスタ）
 CREATE TABLE categories (
     category_id UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id   UUID        REFERENCES tenants(tenant_id),  -- NULL = グローバル（システム定義）
@@ -235,13 +308,13 @@ CREATE TABLE categories (
     name_ja     VARCHAR(100) NOT NULL,
     sort_order  INTEGER     NOT NULL DEFAULT 0,
     is_active   BOOLEAN     NOT NULL DEFAULT true,
-    created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
-    updated_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),   -- [DAT-004]
+    updated_at  TIMESTAMPTZ NOT NULL DEFAULT now(),   -- [DAT-004]
 
     -- 一意性は部分ユニークインデックスで保証（テーブル外に定義）
 );
 
--- グローバルカテゴリの一意性（tenant_id IS NULL）
+-- [ITM-005] グローバルカテゴリの一意性（tenant_id IS NULL）
 CREATE UNIQUE INDEX categories_global_code_unique
     ON categories (code) WHERE tenant_id IS NULL;
 
@@ -260,36 +333,42 @@ CREATE UNIQUE INDEX categories_tenant_code_unique
 ### 4.5 expense_reports（経費レポート）
 
 ```sql
+-- [RPT-F01] 経費レポートの作成・管理
+-- [RPT-005] レポートは必ず1つのテナントに属する
+-- [WFL-001] 状態遷移はドメイン層で一元管理
 CREATE TABLE expense_reports (
     report_id            UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id            UUID         NOT NULL REFERENCES tenants(tenant_id),
-    user_id              UUID         NOT NULL REFERENCES users(user_id),
-    title                VARCHAR(200) NOT NULL,
-    period_start         DATE         NOT NULL,
-    period_end           DATE         NOT NULL,
-    status               VARCHAR(20)  NOT NULL DEFAULT 'draft',
-    total_amount         INTEGER      NOT NULL DEFAULT 0,
-    reference_report_id  UUID         REFERENCES expense_reports(report_id),
-    submitted_by         UUID         REFERENCES users(user_id),
-    submitted_at         TIMESTAMPTZ,
-    approved_by          UUID         REFERENCES users(user_id),
-    approved_at          TIMESTAMPTZ,
-    approval_comment     VARCHAR(1000),
-    rejected_by          UUID         REFERENCES users(user_id),
-    rejected_at          TIMESTAMPTZ,
-    rejection_reason     VARCHAR(1000),
-    paid_by              UUID         REFERENCES users(user_id),
-    paid_at              TIMESTAMPTZ,
-    created_at           TIMESTAMPTZ  NOT NULL DEFAULT now(),
-    updated_at           TIMESTAMPTZ  NOT NULL DEFAULT now(),
-    deleted_at           TIMESTAMPTZ,
+    tenant_id            UUID         NOT NULL REFERENCES tenants(tenant_id),   -- [TNT-001] テナント分離
+    user_id              UUID         NOT NULL REFERENCES users(user_id),       -- [RPT-004] 作成者に紐づく
+    title                VARCHAR(200) NOT NULL,                                 -- [RPT-001] タイトル必須
+    period_start         DATE         NOT NULL,                                 -- [RPT-002] 対象期間必須
+    period_end           DATE         NOT NULL,                                 -- [RPT-002] 対象期間必須
+    status               VARCHAR(20)  NOT NULL DEFAULT 'draft',                 -- [WFL-001] 状態遷移はドメイン層で一元管理
+    total_amount         INTEGER      NOT NULL DEFAULT 0,                       -- [RPT-006] 明細の合計から自動計算
+    reference_report_id  UUID         REFERENCES expense_reports(report_id),    -- [RPT-016] 再申請元レポートへの参照
+    submitted_by         UUID         REFERENCES users(user_id),                -- [WFL-010] 提出者
+    submitted_at         TIMESTAMPTZ,                                           -- [WFL-010] 提出日時
+    approved_by          UUID         REFERENCES users(user_id),                -- [WFL-011] 承認者
+    approved_at          TIMESTAMPTZ,                                           -- [WFL-011] 承認日時
+    approval_comment     VARCHAR(1000),                                         -- [WFL-011] 承認コメント（任意）
+    rejected_by          UUID         REFERENCES users(user_id),                -- [WFL-012] 却下者
+    rejected_at          TIMESTAMPTZ,                                           -- [WFL-012] 却下日時
+    rejection_reason     VARCHAR(1000),                                         -- [WFL-012] 却下理由（却下時必須）
+    paid_by              UUID         REFERENCES users(user_id),                -- [WFL-013] 支払処理者
+    paid_at              TIMESTAMPTZ,                                           -- [WFL-013] 支払完了日時
+    created_at           TIMESTAMPTZ  NOT NULL DEFAULT now(),                   -- [DAT-004]
+    updated_at           TIMESTAMPTZ  NOT NULL DEFAULT now(),                   -- [DAT-004]
+    deleted_at           TIMESTAMPTZ,                                           -- [DAT-002] 論理削除
 
+    -- [WFL-002] 許可される遷移のみ実行可能（DB 層では値の範囲制約のみ）
     CONSTRAINT expense_reports_status_check
         CHECK (status IN ('draft', 'submitted', 'approved', 'rejected', 'paid')),
 
+    -- [RPT-003] 対象期間の開始日は終了日以前
     CONSTRAINT expense_reports_period_check
         CHECK (period_start <= period_end),
 
+    -- [RPT-006] 合計金額は 0 以上
     CONSTRAINT expense_reports_total_amount_check
         CHECK (total_amount >= 0)
 );
@@ -298,18 +377,21 @@ CREATE TABLE expense_reports (
 ### 4.6 expense_items（経費明細）
 
 ```sql
+-- [ITM-F01] 経費明細の追加・管理
+-- [ITM-006] 明細は必ず1つのレポートに属する
 CREATE TABLE expense_items (
     item_id      UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
-    report_id    UUID         NOT NULL REFERENCES expense_reports(report_id),
-    tenant_id    UUID         NOT NULL REFERENCES tenants(tenant_id),
-    expense_date DATE         NOT NULL,
-    amount       INTEGER      NOT NULL,
-    category_id  UUID         NOT NULL REFERENCES categories(category_id),
-    description  VARCHAR(500) NOT NULL,
-    created_at   TIMESTAMPTZ  NOT NULL DEFAULT now(),
-    updated_at   TIMESTAMPTZ  NOT NULL DEFAULT now(),
-    deleted_at   TIMESTAMPTZ,
+    report_id    UUID         NOT NULL REFERENCES expense_reports(report_id),   -- [ITM-006] 所属レポート
+    tenant_id    UUID         NOT NULL REFERENCES tenants(tenant_id),           -- [TNT-001] テナント分離（冗長保持: RLS 効率）
+    expense_date DATE         NOT NULL,                                         -- [ITM-001] 日付必須
+    amount       INTEGER      NOT NULL,                                         -- [ITM-002] 金額必須（正の整数）
+    category_id  UUID         NOT NULL REFERENCES categories(category_id),      -- [ITM-003] カテゴリ必須
+    description  VARCHAR(500) NOT NULL,                                         -- [ITM-004] 摘要必須
+    created_at   TIMESTAMPTZ  NOT NULL DEFAULT now(),                           -- [DAT-004]
+    updated_at   TIMESTAMPTZ  NOT NULL DEFAULT now(),                           -- [DAT-004]
+    deleted_at   TIMESTAMPTZ,                                                   -- [DAT-002] 論理削除
 
+    -- [ITM-002] 金額は正の整数
     CONSTRAINT expense_items_amount_check
         CHECK (amount > 0)
 );
@@ -322,21 +404,26 @@ CREATE TABLE expense_items (
 ### 4.7 attachments（添付ファイル）
 
 ```sql
+-- [ATT-F01] ファイルアップロード（メタデータ管理）
+-- [ATT-001] 添付ファイルは経費明細に紐づく
+-- [ATT-005] ファイルは S3、メタデータは DB に保存
 CREATE TABLE attachments (
     attachment_id UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
-    item_id       UUID         NOT NULL REFERENCES expense_items(item_id),
-    report_id     UUID         NOT NULL REFERENCES expense_reports(report_id),
-    tenant_id     UUID         NOT NULL REFERENCES tenants(tenant_id),
+    item_id       UUID         NOT NULL REFERENCES expense_items(item_id),      -- [ATT-001] 所属明細
+    report_id     UUID         NOT NULL REFERENCES expense_reports(report_id),   -- 冗長保持
+    tenant_id     UUID         NOT NULL REFERENCES tenants(tenant_id),           -- [TNT-001] テナント分離（冗長保持: RLS + S3パス）
     file_name     VARCHAR(255) NOT NULL,
-    file_size     INTEGER      NOT NULL,
-    mime_type     VARCHAR(50)  NOT NULL,
-    s3_key        VARCHAR(500) NOT NULL,
-    created_at    TIMESTAMPTZ  NOT NULL DEFAULT now(),
-    deleted_at    TIMESTAMPTZ,
+    file_size     INTEGER      NOT NULL,                                         -- [ATT-003] サイズ上限 5MB
+    mime_type     VARCHAR(50)  NOT NULL,                                         -- [ATT-013] MIMEタイプ検証
+    s3_key        VARCHAR(500) NOT NULL,                                         -- [ATT-014] S3パスにテナントIDを含む
+    created_at    TIMESTAMPTZ  NOT NULL DEFAULT now(),                           -- [DAT-004]
+    deleted_at    TIMESTAMPTZ,                                                   -- [DAT-002] 論理削除
 
+    -- [ATT-003] 1ファイルのサイズ上限: 5MB (5 * 1024 * 1024 = 5242880)
     CONSTRAINT attachments_file_size_check
         CHECK (file_size > 0 AND file_size <= 5242880),
 
+    -- [ATT-002] 許可するファイル形式: JPEG, PNG, PDF
     CONSTRAINT attachments_mime_type_check
         CHECK (mime_type IN ('image/jpeg', 'image/png', 'application/pdf'))
 );
@@ -349,13 +436,16 @@ CREATE TABLE attachments (
 ### 4.8 refresh_tokens（リフレッシュトークン）
 
 ```sql
+-- [SEC-003] リフレッシュトークン有効期間: 7日
+-- [SEC-005] ログアウト時にリフレッシュトークンを無効化
+-- [AUTH-F03] トークンリフレッシュ / [AUTH-F04] ログアウト
 CREATE TABLE refresh_tokens (
-    jti        UUID        PRIMARY KEY,
+    jti        UUID        PRIMARY KEY,                         -- JWT の jti クレーム
     user_id    UUID        NOT NULL REFERENCES users(user_id),
-    token_hash VARCHAR(64) NOT NULL,
-    is_revoked BOOLEAN     NOT NULL DEFAULT false,
-    expires_at TIMESTAMPTZ NOT NULL,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    token_hash VARCHAR(64) NOT NULL,                            -- JWT の SHA-256 ハッシュ
+    is_revoked BOOLEAN     NOT NULL DEFAULT false,              -- [SEC-005] 無効化フラグ
+    expires_at TIMESTAMPTZ NOT NULL,                            -- [SEC-003] 有効期限
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()               -- [DAT-004]
 );
 ```
 
@@ -364,13 +454,15 @@ CREATE TABLE refresh_tokens (
 ### 4.9 password_reset_tokens（パスワードリセットトークン）
 
 ```sql
+-- [SEC-006] パスワードリセット: リセットトークン（1時間有効）を発行
+-- [AUTH-F06] パスワードリセット
 CREATE TABLE password_reset_tokens (
     id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id    UUID        NOT NULL REFERENCES users(user_id),
-    token_hash VARCHAR(64) NOT NULL,
-    expires_at TIMESTAMPTZ NOT NULL,
-    used_at    TIMESTAMPTZ,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    token_hash VARCHAR(64) NOT NULL,                            -- トークンの SHA-256 ハッシュ
+    expires_at TIMESTAMPTZ NOT NULL,                            -- [SEC-006] 1時間有効
+    used_at    TIMESTAMPTZ,                                     -- [SEC-006] 1回使用で無効化
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()               -- [DAT-004]
 );
 ```
 
@@ -410,6 +502,7 @@ CREATE TABLE password_reset_tokens (
 MVP の 6 固定カテゴリをシードデータとして投入する。
 
 ```sql
+-- [ITM-005] MVP の固定6カテゴリをシードデータとして投入
 INSERT INTO categories (category_id, tenant_id, code, name_ja, sort_order, is_active) VALUES
     (gen_random_uuid(), NULL, 'transportation',  '交通費',   1, true),
     (gen_random_uuid(), NULL, 'accommodation',   '宿泊費',   2, true),
@@ -437,6 +530,7 @@ ADR-0003 に基づき、2 つの DB ロールを使い分ける。
 | `expense_app` | 業務用接続。通常リクエスト | **適用** |
 
 ```sql
+-- [TNT-004] RLS を適用する業務用ロールとバイパス用オーナーロールの分離
 -- ロール作成
 CREATE ROLE expense_owner WITH LOGIN PASSWORD '...';
 CREATE ROLE expense_app WITH LOGIN PASSWORD '...';
@@ -455,6 +549,8 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA public
 #### tenants
 
 ```sql
+-- [TNT-004] RLS でアプリ層の保証を二重化
+-- [TNT-005] テナント間のデータ参照は一切不可
 ALTER TABLE tenants ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY tenant_isolation_select ON tenants
@@ -472,6 +568,8 @@ CREATE POLICY tenant_isolation_update ON tenants
 #### tenant_memberships
 
 ```sql
+-- [TNT-004] RLS でアプリ層の保証を二重化
+-- [TNT-005] テナント間のデータ参照は一切不可
 ALTER TABLE tenant_memberships ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY tenant_isolation_select ON tenant_memberships
@@ -495,6 +593,8 @@ CREATE POLICY tenant_isolation_delete ON tenant_memberships
 #### expense_reports
 
 ```sql
+-- [TNT-004] RLS でアプリ層の保証を二重化
+-- [TNT-005] テナント間のデータ参照は一切不可
 ALTER TABLE expense_reports ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY tenant_isolation_select ON expense_reports
@@ -518,6 +618,8 @@ CREATE POLICY tenant_isolation_delete ON expense_reports
 #### expense_items
 
 ```sql
+-- [TNT-004] RLS でアプリ層の保証を二重化
+-- [TNT-005] テナント間のデータ参照は一切不可
 ALTER TABLE expense_items ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY tenant_isolation_select ON expense_items
@@ -541,6 +643,8 @@ CREATE POLICY tenant_isolation_delete ON expense_items
 #### attachments
 
 ```sql
+-- [TNT-004] RLS でアプリ層の保証を二重化
+-- [TNT-005] テナント間のデータ参照は一切不可
 ALTER TABLE attachments ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY tenant_isolation_select ON attachments
@@ -555,7 +659,7 @@ CREATE POLICY tenant_isolation_delete ON attachments
     FOR DELETE
     USING (tenant_id = current_setting('app.current_tenant')::uuid);
 
--- 論理削除（deleted_at の設定）用。データ更新ではなく削除フラグの設定に限定
+-- [DAT-002] 論理削除（deleted_at の設定）用。データ更新ではなく削除フラグの設定に限定
 CREATE POLICY tenant_isolation_update ON attachments
     FOR UPDATE
     USING (tenant_id = current_setting('app.current_tenant')::uuid)
@@ -565,6 +669,8 @@ CREATE POLICY tenant_isolation_update ON attachments
 #### categories
 
 ```sql
+-- [TNT-004] RLS でアプリ層の保証を二重化
+-- [ITM-005] グローバルカテゴリ（tenant_id IS NULL）は全テナントから参照可能
 ALTER TABLE categories ENABLE ROW LEVEL SECURITY;
 
 -- グローバルカテゴリ（tenant_id IS NULL）は全テナントから参照可能
@@ -593,7 +699,7 @@ CREATE POLICY categories_select ON categories
 
 ### 7.3 RLS コンテキスト設定フロー
 
-ADR-0003 に基づくコネクション管理フロー。
+ADR-0003 に基づくコネクション管理フロー。[TNT-004] の二重保証を実現するため、リクエストごとにテナントコンテキストを設定する。
 
 ```
 認証済みリクエスト受信
@@ -658,7 +764,8 @@ conn.Release() でプールに返却
 -- PK (tenant_id, user_id) は自動
 -- UNIQUE (user_id) は自動でインデックス作成
 
--- テナント内のメンバー一覧（ロール別）
+-- [WFL-014] テナント内の Approver 存在確認（提出時の事前条件）
+-- [RBC-002] テナント内のメンバー一覧（ロール別）
 CREATE INDEX idx_tenant_memberships_role
     ON tenant_memberships (tenant_id, role);
 ```
@@ -669,7 +776,7 @@ CREATE INDEX idx_tenant_memberships_role
 -- PK (category_id) は自動
 -- categories_global_code_unique, categories_tenant_code_unique は部分ユニークインデックスとして定義済み
 
--- カテゴリ一覧取得（テナント固有 + グローバル）
+-- [ITM-005] カテゴリ一覧取得（テナント固有 + グローバル）
 CREATE INDEX idx_categories_tenant_active
     ON categories (tenant_id, is_active, sort_order);
 ```
@@ -679,32 +786,32 @@ CREATE INDEX idx_categories_tenant_active
 ```sql
 -- PK (report_id) は自動
 
--- テナント内のレポート一覧（ステータス別、作成日時降順）
+-- [RPT-F02] [RPT-F07] テナント内のレポート一覧（ステータス別、作成日時降順）
 CREATE INDEX idx_expense_reports_tenant_status
     ON expense_reports (tenant_id, status, created_at DESC)
     WHERE deleted_at IS NULL;
 
--- テナント内の特定ユーザーのレポート一覧
+-- [RPT-F02] テナント内の特定ユーザーのレポート一覧（自分のレポート一覧）
 CREATE INDEX idx_expense_reports_tenant_user
     ON expense_reports (tenant_id, user_id, created_at DESC)
     WHERE deleted_at IS NULL;
 
--- 承認待ち一覧（Approver 向け: submitted 状態）
+-- [WFL-F04] 承認待ち一覧（Approver 向け: submitted 状態）
 CREATE INDEX idx_expense_reports_tenant_submitted
     ON expense_reports (tenant_id, submitted_at DESC)
     WHERE status = 'submitted' AND deleted_at IS NULL;
 
--- 支払待ち一覧（Accounting 向け: approved 状態）
+-- [WFL-F05] 支払待ち一覧（Accounting 向け: approved 状態）
 CREATE INDEX idx_expense_reports_tenant_approved
     ON expense_reports (tenant_id, approved_at DESC)
     WHERE status = 'approved' AND deleted_at IS NULL;
 
--- ダッシュボード: 月別サマリー（3 ヶ月分集計）
+-- [DASH-005] ダッシュボード: 月別サマリー（N ヶ月分集計）
 CREATE INDEX idx_expense_reports_tenant_period
     ON expense_reports (tenant_id, period_start, period_end)
     WHERE deleted_at IS NULL;
 
--- ダッシュボード: 月別支出サマリー用（paid レポートの period_start 範囲検索）
+-- [DASH-005] ダッシュボード: 月別支出サマリー用（paid レポートの period_start 範囲検索）
 -- dashboard.md §8.6 のクエリ: status = 'paid' AND period_start >= ... で集計する。
 -- 既存の idx_expense_reports_tenant_status は (tenant_id, status, created_at DESC) のため、
 -- status = 'paid' でフィルタ後に period_start の範囲検索を効率的に行えない。
@@ -721,7 +828,7 @@ CREATE INDEX idx_expense_reports_tenant_paid_period
 ```sql
 -- PK (item_id) は自動
 
--- レポートに属する明細一覧
+-- [RPT-F03] レポート詳細取得時の明細一覧
 CREATE INDEX idx_expense_items_report
     ON expense_items (tenant_id, report_id, expense_date)
     WHERE deleted_at IS NULL;
@@ -732,12 +839,12 @@ CREATE INDEX idx_expense_items_report
 ```sql
 -- PK (attachment_id) は自動
 
--- 明細に属する添付一覧
+-- [ATT-F02] 明細に属する添付ファイル一覧取得
 CREATE INDEX idx_attachments_item
     ON attachments (tenant_id, item_id)
     WHERE deleted_at IS NULL;
 
--- レポートに属する全添付一覧
+-- [RPT-F03] レポート詳細取得時の全添付一覧
 CREATE INDEX idx_attachments_report
     ON attachments (tenant_id, report_id)
     WHERE deleted_at IS NULL;
@@ -748,12 +855,12 @@ CREATE INDEX idx_attachments_report
 ```sql
 -- PK (jti) は自動
 
--- ユーザーの有効なリフレッシュトークン検索（ログアウト時の一括無効化）
+-- [SEC-005] ユーザーの有効なリフレッシュトークン検索（ログアウト時の一括無効化）
 CREATE INDEX idx_refresh_tokens_user
     ON refresh_tokens (user_id, is_revoked)
     WHERE is_revoked = false;
 
--- 期限切れトークンの定期削除用
+-- [SEC-003] 期限切れトークンの定期削除用
 CREATE INDEX idx_refresh_tokens_expires
     ON refresh_tokens (expires_at)
     WHERE is_revoked = false;
@@ -764,16 +871,16 @@ CREATE INDEX idx_refresh_tokens_expires
 ```sql
 -- PK (id) は自動
 
--- ユーザーのリセットトークン検索
+-- [AUTH-F06] ユーザーのリセットトークン検索
 CREATE INDEX idx_password_reset_tokens_user
     ON password_reset_tokens (user_id, created_at DESC);
 
--- トークン検証時の検索（token_hash でのルックアップ）
+-- [SEC-006] トークン検証時の検索（token_hash でのルックアップ、1回使用で無効化）
 CREATE INDEX idx_password_reset_tokens_hash
     ON password_reset_tokens (token_hash)
     WHERE used_at IS NULL;
 
--- 期限切れトークンの定期削除用
+-- [SEC-006] 期限切れトークンの定期削除用
 CREATE INDEX idx_password_reset_tokens_expires
     ON password_reset_tokens (expires_at)
     WHERE used_at IS NULL;
@@ -843,28 +950,29 @@ Phase 3 で実装予定。INSERT ONLY 制約を持つテーブル。
 
 ```sql
 -- Phase 3 で追加予定
+-- [DAT-003] 監査ログは INSERT ONLY（更新・削除不可）
 CREATE TABLE audit_logs (
     log_id        UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id     UUID        NOT NULL REFERENCES tenants(tenant_id),
+    tenant_id     UUID        NOT NULL REFERENCES tenants(tenant_id),   -- [TNT-001]
     user_id       UUID        NOT NULL REFERENCES users(user_id),
     action        VARCHAR(50) NOT NULL,
     resource_type VARCHAR(50) NOT NULL,
     resource_id   UUID        NOT NULL,
     changes       JSONB,
-    created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+    created_at    TIMESTAMPTZ NOT NULL DEFAULT now()                    -- [DAT-004]
 
     -- updated_at は意図的に省略（INSERT ONLY）
     -- deleted_at は意図的に省略（削除不可）
 );
 
--- INSERT ONLY 制約: UPDATE / DELETE を禁止するルール
+-- [DAT-003] INSERT ONLY 制約: UPDATE / DELETE を禁止するルール
 CREATE RULE audit_logs_no_update AS
     ON UPDATE TO audit_logs DO INSTEAD NOTHING;
 
 CREATE RULE audit_logs_no_delete AS
     ON DELETE TO audit_logs DO INSTEAD NOTHING;
 
--- RLS ポリシー
+-- [TNT-004] RLS ポリシー
 ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;
 CREATE POLICY tenant_isolation ON audit_logs
     FOR SELECT
@@ -924,3 +1032,4 @@ Phase 3 でテナント固有のカスタムカテゴリに対応する際の拡
 - [x] 上流成果物との差分が記録されているか
 - [x] categories の一意性が部分ユニークインデックスで保証されているか（NULL 安全）
 - [x] attachments の論理削除が RLS 適用下の UPDATE ポリシーで実行される設計か（オーナーロール不要）
+- [x] `domain_model.md` との対応表が含まれているか（エンティティ、値オブジェクト、集約、Phase 3 要素）

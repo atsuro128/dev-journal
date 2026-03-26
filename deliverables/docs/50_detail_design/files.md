@@ -1,5 +1,15 @@
 # 添付ファイル設計
 
+## この文書の役割
+
+| 項目 | 内容 |
+|------|------|
+| 目的 | ファイル保存・取得・削除・検証方式を定義する |
+| 正本情報 | S3 構成、キー設計、署名付き URL 方針、MIME/サイズ検証 |
+| 扱わない内容 | 他機能の画面仕様、認可ロジックの実装詳細（authz.md） |
+| 主な参照元 | `10_requirements/requirements.md`, `50_detail_design/openapi.yaml`, `50_detail_design/authz.md` |
+| 主な参照先 | `60_test/test_cases/attachments.md` |
+
 ## 1. 概要
 
 本書は、経費精算SaaS MVP における添付ファイル（領収書）の保存・取得・削除に関する設計を定義する。

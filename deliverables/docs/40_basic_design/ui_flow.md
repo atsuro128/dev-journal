@@ -1,5 +1,15 @@
 # 画面遷移図
 
+## この文書の役割
+
+| 項目 | 内容 |
+|------|------|
+| 目的 | 画面遷移と認証状態・ロールによる導線を定義する |
+| 正本情報 | 遷移パターン、認証状態別分岐、ロール別導線 |
+| 扱わない内容 | 画面詳細仕様、API エラー詳細 |
+| 主な参照元 | `10_requirements/usecases.md`, `40_basic_design/screens.md` |
+| 主な参照先 | `50_detail_design/screens/*.md`, `60_test/test_cases/*.md` |
+
 ## 1. 概要
 
 本書は、経費精算SaaS MVP の画面遷移を Mermaid 図で定義する。
@@ -11,8 +21,7 @@
 |------------|------|
 | `40_basic_design/screens.md` | 画面一覧・画面ID |
 | `10_requirements/usecases.md` | ユースケース |
-| `10_requirements/workflow.md` | 状態遷移 |
-| `10_requirements/rbac.md` | RBAC 権限マトリクス |
+| `10_requirements/policies.md` | 状態遷移（SS4）、RBAC 権限マトリクス（SS3） |
 
 ---
 

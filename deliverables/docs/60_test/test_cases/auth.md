@@ -1,5 +1,17 @@
 # 認証テストケース
 
+## この文書の役割
+
+| 項目 | 内容 |
+|------|------|
+| 目的 | 認証・認可エンドポイント（/api/auth/*）のテストケースを定義する |
+| 正本情報 | AUTH-F01〜F06 に対応するテストケース一覧 |
+| 扱わない内容 | 認証以外のエンドポイントのテスト、テスト実装コード |
+| 主な参照元 | `50_detail_design/openapi.yaml#/api/auth/*`, `50_detail_design/security.md`, `10_requirements/requirements.md#AUTH-F*` |
+| 主な参照先 | `60_test/traceability.md`, テスト実装（Step 9） |
+
+---
+
 ## 対応ハンドラ
 
 - `auth_handler_test.go`（統合テスト）

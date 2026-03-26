@@ -2,6 +2,13 @@ openapi: 3.0.3
 info:
   title: Expense SaaS API
   description: |
+    ## この文書の役割
+    - 目的: 全 API エンドポイントの正本仕様を定義する
+    - 正本情報: API パス、リクエスト/レスポンス定義、エラーレスポンス、認可条件（x-authz）、要件対応（x-requirements）
+    - 扱わない内容: 認可ロジックの実装詳細（authz.md）、DB スキーマ定義（db_schema.md）、画面仕様（screens/*.md）
+    - 主な参照元: 30_arch/architecture.md, 10_requirements/policies.md, 50_detail_design/authz.md
+    - 主な参照先: 50_detail_design/screens/*.md, 60_test/test_cases/*.md
+
     経費精算SaaS MVP の API 仕様。
     全 API レスポンス（`/api/*`）は `{"data": ...}` ラッパーで返却する。
     `/health` はインフラ用エンドポイントであり、data ラッパーを使用しない。
@@ -53,6 +60,12 @@ paths:
       description: DB 接続を含むサーバーの稼働状態を確認する。認証不要。
       operationId: getHealth
       security: []
+      x-requirements:
+        - NFR-AVAIL-001  # ヘルスチェックエンドポイント（可用性要件）
+      x-authz:
+        roles: []  # 認証不要
+        ownership_required: false
+        tenant_boundary: false
       responses:
         "200":
           description: 正常
@@ -77,6 +90,15 @@ paths:
       description: テナントと Admin ユーザーを同時に新規作成する。
       operationId: signup
       security: []
+      x-requirements:
+        - AUTH-F01  # サインアップ
+        - SEC-001   # メール + パスワード認証
+        - SEC-002   # Argon2id ハッシュ
+        - SEC-010   # パスワード最小長 8文字
+      x-authz:
+        roles: []  # 未認証（認証不要）
+        ownership_required: false
+        tenant_boundary: false
       requestBody:
         required: true
         content:
@@ -141,6 +163,16 @@ paths:
         SEC-011 に基づき、メール形式・パスワード長のバリデーション制約はスキーマに含めない（認証関連の全失敗を 401 に統一するため）。クライアント側で入力バリデーションを実施すること。
       operationId: login
       security: []
+      x-requirements:
+        - AUTH-F02  # ログイン
+        - SEC-001   # メール + パスワード認証
+        - SEC-003   # JWT 有効期間（アクセス15分、リフレッシュ7日）
+        - SEC-004   # RS256 署名
+        - SEC-011   # ユーザー存在推測防止
+      x-authz:
+        roles: []  # 未認証（認証不要）
+        ownership_required: false
+        tenant_boundary: false
       requestBody:
         required: true
         content:
@@ -202,6 +234,13 @@ paths:
         レスポンスには最新の user/tenant 情報を含む（ロール変更等の即時反映のため）。
       operationId: refreshToken
       security: []
+      x-requirements:
+        - AUTH-F03  # トークンリフレッシュ
+        - SEC-003   # JWT 有効期間
+      x-authz:
+        roles: []  # 未認証（リフレッシュトークン認証）
+        ownership_required: false
+        tenant_boundary: false
       requestBody:
         required: true
         content:
@@ -236,6 +275,13 @@ paths:
         アクセストークンが期限切れでもログアウト可能。リクエストボディの refresh_token で認証する。
       operationId: logout
       security: []
+      x-requirements:
+        - AUTH-F04  # ログアウト
+        - SEC-005   # リフレッシュトークン無効化
+      x-authz:
+        roles: []  # 未認証（リフレッシュトークン認証）
+        ownership_required: false
+        tenant_boundary: false
       requestBody:
         required: true
         content:
@@ -279,6 +325,12 @@ paths:
         - 状態条件: なし
         - テナント境界越え: 該当なし（JWT の情報を返却するのみ）
       operationId: getMe
+      x-requirements:
+        - AUTH-F05  # 認証情報取得
+      x-authz:
+        roles: [admin, approver, member, accounting]
+        ownership_required: false
+        tenant_boundary: false  # JWT の情報を返却するのみ
       responses:
         "200":
           description: ユーザー情報
@@ -302,6 +354,14 @@ paths:
         ユーザーの存在に関わらず同一の成功レスポンスを返却する（SEC-011）。
       operationId: requestPasswordReset
       security: []
+      x-requirements:
+        - AUTH-F06  # パスワードリセット
+        - SEC-006   # リセットトークン（1時間有効、1回使用で無効化）
+        - SEC-011   # ユーザー存在推測防止
+      x-authz:
+        roles: []  # 未認証（認証不要）
+        ownership_required: false
+        tenant_boundary: false
       requestBody:
         required: true
         content:
@@ -341,6 +401,14 @@ paths:
       description: リセットトークンを使用して新しいパスワードを設定する。トークンは1回使用で無効化される（SEC-006）。
       operationId: executePasswordReset
       security: []
+      x-requirements:
+        - AUTH-F06  # パスワードリセット
+        - SEC-006   # リセットトークン（1回使用で無効化）
+        - SEC-010   # パスワード最小長 8文字
+      x-authz:
+        roles: []  # 未認証（リセットトークン認証）
+        ownership_required: false
+        tenant_boundary: false
       parameters:
         - name: token
           in: path
@@ -405,6 +473,17 @@ paths:
         - 状態条件: なし
         - テナント境界越え: 該当なし（JWT の tenant_id スコープで自動フィルタ）
       operationId: getDashboard
+      x-requirements:
+        - DASH-F01  # ダッシュボード取得
+        - DASH-001  # Member: 自分の件数表示
+        - DASH-002  # Approver: 承認待ち件数追加
+        - DASH-003  # Accounting: 支払待ち件数追加
+        - DASH-004  # Admin: テナント全体件数
+        - DASH-005  # 月別支出サマリー
+      x-authz:
+        roles: [admin, approver, member, accounting]
+        ownership_required: false
+        tenant_boundary: true  # tenant_id スコープで自動フィルタ
       responses:
         "200":
           description: ダッシュボードデータ
@@ -435,6 +514,12 @@ paths:
         - 状態条件: なし
         - テナント境界越え: 該当なし（カテゴリはグローバルマスタ）
       operationId: listCategories
+      x-requirements:
+        - ITM-005  # カテゴリは固定6種類
+      x-authz:
+        roles: [admin, approver, member, accounting]
+        ownership_required: false
+        tenant_boundary: false  # カテゴリはグローバルマスタ
       responses:
         "200":
           description: カテゴリ一覧
@@ -467,6 +552,13 @@ paths:
         - 状態条件: なし（全状態のレポートを返却）
         - テナント境界越え: 該当なし（JWT の tenant_id + user_id スコープで自動フィルタ）
       operationId: listMyReports
+      x-requirements:
+        - RPT-F02   # レポート一覧取得（自分）
+        - RBC-010   # 所有者のレポートに限定
+      x-authz:
+        roles: [admin, approver, member, accounting]
+        ownership_required: true  # 自分が作成したレポートのみ（user_id フィルタ）
+        tenant_boundary: true
       parameters:
         - $ref: "#/components/parameters/cursor"
         - $ref: "#/components/parameters/limit"
@@ -518,6 +610,18 @@ paths:
         - 状態条件: なし（新規作成は常に draft）
         - テナント境界越え: 該当なし（JWT の tenant_id がレポートに設定される）
       operationId: createReport
+      x-requirements:
+        - RPT-F01   # レポート作成
+        - RPT-001   # タイトル必須
+        - RPT-002   # 対象期間必須
+        - RPT-003   # 開始日 <= 終了日
+        - RPT-010   # 全ロール作成可能
+        - RPT-015   # 再申請は新規レポート
+        - RPT-016   # reference_report_id 保持
+      x-authz:
+        roles: [admin, approver, member, accounting]
+        ownership_required: false  # 作成者が自動的に所有者
+        tenant_boundary: true
       requestBody:
         required: true
         content:
@@ -554,6 +658,13 @@ paths:
         - テナント境界越え: 該当なし（JWT の tenant_id スコープで自動フィルタ）
         - 権限不足（Member, Approver）: 403 FORBIDDEN
       operationId: listAllReports
+      x-requirements:
+        - RPT-F07   # テナント全レポート一覧取得
+        - RBC-013   # Admin: 全レポート閲覧可能
+      x-authz:
+        roles: [admin, accounting]
+        ownership_required: false  # テナント内の全レポートを閲覧可能
+        tenant_boundary: true
       parameters:
         - $ref: "#/components/parameters/cursor"
         - $ref: "#/components/parameters/limit"
@@ -626,6 +737,15 @@ paths:
         - テナント境界越え: 404 RESOURCE_NOT_FOUND
         - 同一テナント内の権限不足: 403 FORBIDDEN
       operationId: getReport
+      x-requirements:
+        - RPT-F03   # レポート詳細取得
+        - RBC-013   # Admin: 全レポート閲覧
+        - RBC-014   # Admin: 自分のレポートのみ申請者操作
+        - RBC-015   # Approver: submitted 全件閲覧
+      x-authz:
+        roles: [admin, approver, member, accounting]
+        ownership_required: false  # ロール別閲覧範囲制限あり（Authorizer で判定）
+        tenant_boundary: true
       parameters:
         - $ref: "#/components/parameters/reportId"
       responses:
@@ -663,6 +783,15 @@ paths:
         - テナント境界越え: 404 RESOURCE_NOT_FOUND
         - 同一テナント内の権限不足（所有者でない）: 403 FORBIDDEN
       operationId: updateReport
+      x-requirements:
+        - RPT-F04   # レポート編集
+        - RPT-011   # draft 状態でのみ編集可能
+        - RPT-012   # 所有者のみ編集可能
+        - RBC-010   # 所有者のレポートに限定
+      x-authz:
+        roles: [admin, approver, member, accounting]
+        ownership_required: true  # 所有者のみ（RBC-010）
+        tenant_boundary: true
       parameters:
         - $ref: "#/components/parameters/reportId"
       requestBody:
@@ -710,6 +839,15 @@ paths:
         - テナント境界越え: 404 RESOURCE_NOT_FOUND
         - 同一テナント内の権限不足（所有者でない）: 403 FORBIDDEN
       operationId: deleteReport
+      x-requirements:
+        - RPT-F05   # レポート削除
+        - RPT-013   # draft 状態でのみ削除可能
+        - RBC-010   # 所有者のレポートに限定
+        - DAT-002   # 論理削除
+      x-authz:
+        roles: [admin, approver, member, accounting]
+        ownership_required: true  # 所有者のみ（RBC-010）
+        tenant_boundary: true
       parameters:
         - $ref: "#/components/parameters/reportId"
       responses:
@@ -753,6 +891,16 @@ paths:
         - テナント境界越え: 404 RESOURCE_NOT_FOUND
         - 同一テナント内の権限不足（所有者でない）: 403 FORBIDDEN
       operationId: submitReport
+      x-requirements:
+        - RPT-F06   # レポート提出
+        - RPT-014   # 明細1件以上必要
+        - WFL-010   # draft -> submitted 遷移
+        - WFL-014   # Approver 1人以上存在
+        - RBC-010   # 所有者のレポートに限定
+      x-authz:
+        roles: [admin, approver, member, accounting]
+        ownership_required: true  # 所有者のみ（RBC-010）
+        tenant_boundary: true
       parameters:
         - $ref: "#/components/parameters/reportId"
       requestBody:
@@ -814,6 +962,18 @@ paths:
         - テナント境界越え: 404 RESOURCE_NOT_FOUND
         - 同一テナント内の権限不足（所有者でない）: 403 FORBIDDEN
       operationId: createItem
+      x-requirements:
+        - ITM-F01   # 明細追加
+        - ITM-001   # 日付必須
+        - ITM-002   # 金額必須（正の整数）
+        - ITM-003   # カテゴリ必須
+        - ITM-004   # 摘要必須
+        - ITM-010   # draft 状態のみ追加可能
+        - RBC-010   # 所有者のレポートに限定
+      x-authz:
+        roles: [admin, approver, member, accounting]
+        ownership_required: true  # 所有者のみ（RBC-010）
+        tenant_boundary: true
       parameters:
         - $ref: "#/components/parameters/reportId"
       requestBody:
@@ -860,6 +1020,14 @@ paths:
         - テナント境界越え: 404 RESOURCE_NOT_FOUND
         - 同一テナント内の権限不足（所有者でない）: 403 FORBIDDEN
       operationId: updateItem
+      x-requirements:
+        - ITM-F02   # 明細編集
+        - ITM-010   # draft 状態のみ編集可能
+        - RBC-010   # 所有者のレポートに限定
+      x-authz:
+        roles: [admin, approver, member, accounting]
+        ownership_required: true  # 所有者のみ（RBC-010）
+        tenant_boundary: true
       parameters:
         - $ref: "#/components/parameters/reportId"
         - $ref: "#/components/parameters/itemId"
@@ -908,6 +1076,14 @@ paths:
         - テナント境界越え: 404 RESOURCE_NOT_FOUND
         - 同一テナント内の権限不足（所有者でない）: 403 FORBIDDEN
       operationId: deleteItem
+      x-requirements:
+        - ITM-F03   # 明細削除
+        - ITM-010   # draft 状態のみ削除可能
+        - RBC-010   # 所有者のレポートに限定
+      x-authz:
+        roles: [admin, approver, member, accounting]
+        ownership_required: true  # 所有者のみ（RBC-010）
+        tenant_boundary: true
       parameters:
         - $ref: "#/components/parameters/reportId"
         - $ref: "#/components/parameters/itemId"
@@ -951,6 +1127,18 @@ paths:
         - 同一テナント内の権限不足（所有者でない）: 403 FORBIDDEN
         - レート制限: 10 req/min/user（429 RATE_LIMIT_EXCEEDED）
       operationId: uploadAttachment
+      x-requirements:
+        - ATT-F01   # ファイルアップロード
+        - ATT-002   # 許可形式: JPEG, PNG, PDF
+        - ATT-003   # サイズ上限 5MB
+        - ATT-013   # MIME タイプ検証
+        - ATT-014   # S3 パスにテナントID含む
+        - ATT-020   # draft 状態のみアップロード可能
+        - RBC-010   # 所有者のレポートに限定
+      x-authz:
+        roles: [admin, approver, member, accounting]
+        ownership_required: true  # 所有者のみ（RBC-010）
+        tenant_boundary: true
       parameters:
         - $ref: "#/components/parameters/reportId"
         - $ref: "#/components/parameters/itemId"
@@ -1033,6 +1221,14 @@ paths:
         - テナント境界越え: 404 RESOURCE_NOT_FOUND
         - 同一テナント内の権限不足: 403 FORBIDDEN
       operationId: listAttachments
+      x-requirements:
+        - ATT-F02   # ファイル一覧取得
+        - ATT-011   # 認可チェック必須
+        - ATT-021   # 閲覧はレポート閲覧権限に準ずる
+      x-authz:
+        roles: [admin, approver, member, accounting]
+        ownership_required: false  # レポート閲覧権限に準ずる（Authorizer で判定）
+        tenant_boundary: true
       parameters:
         - $ref: "#/components/parameters/reportId"
         - $ref: "#/components/parameters/itemId"
@@ -1079,6 +1275,15 @@ paths:
         - テナント境界越え: 404 RESOURCE_NOT_FOUND
         - 同一テナント内の権限不足: 403 FORBIDDEN
       operationId: getAttachmentDownload
+      x-requirements:
+        - ATT-F03   # ファイルダウンロード
+        - ATT-010   # 署名付きURL経由
+        - ATT-011   # 発行前認可チェック必須
+        - ATT-012   # 署名付きURL有効期限 15分
+      x-authz:
+        roles: [admin, approver, member, accounting]
+        ownership_required: false  # レポート閲覧権限に準ずる（Authorizer で判定）
+        tenant_boundary: true
       parameters:
         - $ref: "#/components/parameters/reportId"
         - $ref: "#/components/parameters/itemId"
@@ -1118,6 +1323,14 @@ paths:
         - テナント境界越え: 404 RESOURCE_NOT_FOUND
         - 同一テナント内の権限不足（所有者でない）: 403 FORBIDDEN
       operationId: deleteAttachment
+      x-requirements:
+        - ATT-F04   # ファイル削除
+        - ATT-020   # draft 状態のみ削除可能
+        - RBC-010   # 所有者のレポートに限定
+      x-authz:
+        roles: [admin, approver, member, accounting]
+        ownership_required: true  # 所有者のみ（RBC-010）
+        tenant_boundary: true
       parameters:
         - $ref: "#/components/parameters/reportId"
         - $ref: "#/components/parameters/itemId"
@@ -1160,6 +1373,14 @@ paths:
         - テナント境界越え: 該当なし（JWT の tenant_id スコープで自動フィルタ）
         - 権限不足（Member, Admin, Accounting）: 403 FORBIDDEN
       operationId: listPendingReports
+      x-requirements:
+        - WFL-F04   # 承認待ち一覧
+        - RBC-011   # Approver: 同テナント submitted レポート承認/却下可能
+        - RBC-015   # MVP: 全件承認型
+      x-authz:
+        roles: [approver]
+        ownership_required: false  # テナント内 submitted 全件返却
+        tenant_boundary: true
       parameters:
         - $ref: "#/components/parameters/cursor"
         - $ref: "#/components/parameters/limit"
@@ -1204,6 +1425,15 @@ paths:
         - 権限不足（Member, Admin, Accounting）: 403 FORBIDDEN
         - 自己承認: 403 SELF_APPROVAL_NOT_ALLOWED
       operationId: approveReport
+      x-requirements:
+        - WFL-F01   # 承認
+        - WFL-011   # submitted -> approved 遷移
+        - RBC-011   # Approver: submitted レポート承認可能
+        - RBC-016   # 自己承認禁止
+      x-authz:
+        roles: [approver]
+        ownership_required: false  # 非所有者のみ（自己承認禁止: RBC-016）
+        tenant_boundary: true
       parameters:
         - name: id
           in: path
@@ -1274,6 +1504,15 @@ paths:
         - 権限不足（Member, Admin, Accounting）: 403 FORBIDDEN
         - 自己却下: 403 SELF_APPROVAL_NOT_ALLOWED
       operationId: rejectReport
+      x-requirements:
+        - WFL-F02   # 却下
+        - WFL-012   # submitted -> rejected 遷移（却下理由必須）
+        - RBC-011   # Approver: submitted レポート却下可能
+        - RBC-016   # 自己却下禁止
+      x-authz:
+        roles: [approver]
+        ownership_required: false  # 非所有者のみ（自己却下禁止: RBC-016）
+        tenant_boundary: true
       parameters:
         - name: id
           in: path
@@ -1333,6 +1572,12 @@ paths:
         - テナント境界越え: 該当なし（JWT の tenant_id スコープで自動フィルタ）
         - 権限不足（Member, Approver, Admin）: 403 FORBIDDEN
       operationId: listPayableReports
+      x-requirements:
+        - WFL-F05   # 支払待ち一覧
+      x-authz:
+        roles: [accounting]
+        ownership_required: false  # テナント内 approved 全件返却
+        tenant_boundary: true
       parameters:
         - $ref: "#/components/parameters/cursor"
         - $ref: "#/components/parameters/limit"
@@ -1377,6 +1622,14 @@ paths:
         - 権限不足（Member, Approver, Admin）: 403 FORBIDDEN
         - 自己支払処理: 403 SELF_PAYMENT_NOT_ALLOWED
       operationId: markReportAsPaid
+      x-requirements:
+        - WFL-F03   # 支払完了
+        - WFL-013   # approved -> paid 遷移
+        - RBC-012   # 自己支払処理禁止
+      x-authz:
+        roles: [accounting]
+        ownership_required: false  # 非所有者のみ（自己支払処理禁止: RBC-012）
+        tenant_boundary: true
       parameters:
         - name: id
           in: path
@@ -1444,6 +1697,12 @@ paths:
         - テナント境界越え: 該当なし（JWT の tenant_id で自動特定）
         - 権限不足（Member, Approver, Accounting）: 403 FORBIDDEN
       operationId: getTenant
+      x-requirements:
+        - ADM-F01  # テナント情報取得
+      x-authz:
+        roles: [admin]
+        ownership_required: false
+        tenant_boundary: true  # JWT の tenant_id で自動特定
       responses:
         "200":
           description: テナント情報
@@ -1475,6 +1734,12 @@ paths:
         - テナント境界越え: 該当なし（JWT の tenant_id スコープで自動フィルタ）
         - 権限不足（Member, Approver）: 403 FORBIDDEN
       operationId: listTenantMembers
+      x-requirements:
+        - RPT-F07  # テナント全レポート一覧取得の付随機能（申請者フィルタ用）
+      x-authz:
+        roles: [admin, accounting]
+        ownership_required: false
+        tenant_boundary: true  # tenant_id スコープで自動フィルタ
       responses:
         "200":
           description: メンバー一覧

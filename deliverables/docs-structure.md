@@ -10,13 +10,14 @@ deliverables/
     10_requirements/
       requirements.md              # 機能要件（コア・付随）・非機能要件
       usecases.md                  # 全ロールのユースケース（招待・通知・監査ログ含む）
-      workflow.md                  # 申請〜承認の状態遷移（Mermaid）
-      rbac.md                      # ロール定義と権限マトリクス
+      policies.md                  # ルールID体系、業務ルール、RBAC、状態遷移ルール、エラー使い分け方針
       preliminary/                 # 要件定義の中間成果物（業務分析）
         01_business-overview.md    #   業務概要の整理
         02_actor-analysis.md       #   アクター分析
         03_business-flow.md        #   業務フロー分析
         04_business-rules.md       #   業務ルール整理
+        workflow.md                #   業務フロー（申請〜承認〜精算のフロー定義）
+        rbac.md                    #   RBAC 初期整理（ロール・権限の洗い出し）
 
     20_domain/
       domain_model.md              # 主要エンティティ・集約・不変条件（audit_logs INSERT ONLY 含む）
@@ -44,5 +45,20 @@ deliverables/
 
     60_test/
       test_strategy.md             # 単体 / 統合 / E2E (Playwright) の層別方針
-      test_cases.md                # 重要ケース中心のテストケース
+      traceability.md              # 要件 → テストケースのトレーサビリティマトリクス
+      test_cases/                  # テストケース詳細（機能別）
+        auth.md                    #   認証・認可
+        workflow.md                #   申請ワークフロー
+        items.md                   #   経費明細
+        attachments.md             #   添付ファイル
+        reports.md                 #   経費報告書
+        dashboard.md               #   ダッシュボード
+        tenant.md                  #   テナント管理
+        cross-cutting.md           #   横断的テスト観点
+
+    70_operations/
+      runbook.md                   # 監視アラート一次対応・定常確認・エスカレーション手順
+      release.md                   # リリース前後チェックリスト・デプロイ手順・ロールバック条件
+      backup_restore.md            # バックアップ対象・取得方式・リストア手順・復旧確認
+      env_config.md                # 環境差分・環境変数一覧・シークレット管理方針
 ```

@@ -1,5 +1,15 @@
 # SCR-WFL-001: 承認待ち一覧
 
+## この文書の役割
+
+| 項目 | 内容 |
+|------|------|
+| 目的 | 「承認待ち一覧」画面の詳細仕様を定義する |
+| 正本情報 | 一覧項目、承認/却下操作、API 連携、エラー表示 |
+| 扱わない内容 | 全画面共通の UI ガイドライン（ui-guidelines.md）、画面間の遷移定義（ui_flow.md）、API 詳細定義（openapi.yaml） |
+| 主な参照元 | `40_basic_design/ui_flow.md`, `40_basic_design/screens.md`, `50_detail_design/openapi.yaml`, `50_detail_design/authz.md` |
+| 主な参照先 | `60_test/test_cases/workflow.md` |
+
 ## 1. 基本情報
 
 | 項目 | 内容 |
@@ -18,9 +28,8 @@
 |------------|------|
 | `40_basic_design/screens.md` | 画面一覧・画面ID・共通UIパターン |
 | `10_requirements/usecases.md` | UC-A01 |
-| `10_requirements/workflow.md` | 状態遷移定義 |
+| `10_requirements/policies.md` | 状態遷移定義（SS4）、承認フロー権限（SS3） |
 | `20_domain/state_machine.md` | 遷移 T2/T3 の事前条件・事後条件 |
-| `10_requirements/rbac.md` | 承認フロー権限（§3.3） |
 | `deliverables/docs/01_glossary.md` | 用語集 |
 
 ## 3. アクションの責務分担（screens/report-detail.md との接点）

@@ -1,5 +1,17 @@
 # ワークフローテストケース一覧
 
+## この文書の役割
+
+| 項目 | 内容 |
+|------|------|
+| 目的 | 承認・却下・支払完了エンドポイント（/api/workflow/*）のテストケースを定義する |
+| 正本情報 | WFL-F01〜F05 に対応するテストケース一覧 |
+| 扱わない内容 | テナント横断テスト（→ cross-cutting.md）、レポート CRUD テスト（→ reports.md） |
+| 主な参照元 | `50_detail_design/openapi.yaml#/api/workflow/*`, `20_domain/state_machine.md`, `10_requirements/requirements.md#WFL-F*` |
+| 主な参照先 | `60_test/traceability.md`, テスト実装（Step 9） |
+
+---
+
 ## 概要
 
 本ファイルは `/api/workflow/*` エンドポイント群のテストケースを定義する。

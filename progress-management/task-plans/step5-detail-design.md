@@ -25,11 +25,11 @@
 | T1-04 | `screens/auth-password-reset.md` — パスワードリセット実行 (SCR-AUTH-004) | screens.md, usecases.md (UC-SYS05), requirements.md (SEC-*) | basic-designer | 完了 |
 | T1-05 | `screens/dashboard.md` — ダッシュボード (SCR-DASH-001) | screens.md, usecases.md (UC-SYS04), requirements.md (DASH-*) | basic-designer | 完了 |
 | T1-06 | `screens/report-list.md` — レポート一覧 (SCR-RPT-001) | screens.md, usecases.md (UC-M01), requirements.md (RPT-*) | basic-designer | 完了 |
-| T1-07 | `screens/report-create.md` — レポート作成 (SCR-RPT-002) | screens.md, usecases.md (UC-M02, UC-M09), workflow.md, state_machine.md | basic-designer | 完了 |
+| T1-07 | `screens/report-create.md` — レポート作成 (SCR-RPT-002) | screens.md, usecases.md (UC-M02, UC-M09), policies.md, state_machine.md | basic-designer | 完了 |
 | T1-08 | `screens/report-edit.md` — レポート編集 (SCR-RPT-003) | screens.md, usecases.md (UC-M03), domain_model.md | basic-designer | 完了 |
-| T1-09 | `screens/report-detail.md` — レポート詳細 (SCR-RPT-004) | screens.md, usecases.md (UC-M01〜09), workflow.md, state_machine.md, domain_model.md | basic-designer | 完了 |
-| T1-10 | `screens/workflow-pending.md` — 承認待ち一覧 (SCR-WFL-001) | screens.md, usecases.md (UC-A01〜03), workflow.md | basic-designer | 完了 |
-| T1-11 | `screens/workflow-payable.md` — 支払待ち一覧 (SCR-WFL-002) | screens.md, usecases.md (UC-AC01〜02), workflow.md | basic-designer | 完了 |
+| T1-09 | `screens/report-detail.md` — レポート詳細 (SCR-RPT-004) | screens.md, usecases.md (UC-M01〜09), policies.md, state_machine.md, domain_model.md | basic-designer | 完了 |
+| T1-10 | `screens/workflow-pending.md` — 承認待ち一覧 (SCR-WFL-001) | screens.md, usecases.md (UC-A01〜03), policies.md | basic-designer | 完了 |
+| T1-11 | `screens/workflow-payable.md` — 支払待ち一覧 (SCR-WFL-002) | screens.md, usecases.md (UC-AC01〜02), policies.md | basic-designer | 完了 |
 | T1-12 | `screens/admin-all-reports.md` — テナント全レポート一覧 (SCR-ADM-001) | screens.md, usecases.md (UC-AD01, UC-AC03) | basic-designer | 完了 |
 | T1-13 | `screens/admin-tenant.md` — テナント情報 (SCR-ADM-002) | screens.md, usecases.md (UC-AD02) | basic-designer | 完了 |
 
@@ -56,7 +56,7 @@
 
 | タスク | 成果物 | 入力（主要） | エージェント | 状態 |
 |--------|--------|-------------|------------|------|
-| T2-1 | `openapi.yaml` — OpenAPI 定義 | Phase 1 全成果物 + architecture.md, screens.md, rbac.md, domain_model.md | api-designer | 完了 |
+| T2-1 | `openapi.yaml` — OpenAPI 定義 | Phase 1 全成果物 + architecture.md, screens.md, policies.md, domain_model.md | api-designer | 完了 |
 | T2-R1 | 内部レビュー | — | design-cross-reviewer | 完了 |
 | T2-R2 | codex レビュー | — | codex | 完了 |
 
@@ -66,7 +66,7 @@
 
 | タスク | 成果物 | 入力（主要） | エージェント | 状態 |
 |--------|--------|-------------|------------|------|
-| T3-1 | `authz.md` — 認可設計 + `ui_flow.md` 最終版 | 全成果物 + rbac.md | detail-designer | 完了 |
+| T3-1 | `authz.md` — 認可設計 + `ui_flow.md` 最終版 | 全成果物 + policies.md | detail-designer | 完了 |
 | T3-R1 | 内部レビュー | — | design-cross-reviewer | 完了 |
 | T3-R2 | codex レビュー | — | codex | 完了 |
 

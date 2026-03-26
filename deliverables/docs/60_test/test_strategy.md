@@ -1,5 +1,17 @@
 # テスト戦略
 
+## この文書の役割
+
+| 項目 | 内容 |
+|------|------|
+| 目的 | テストレベル、対象、カバレッジ基準、フィクスチャ方針を定義する |
+| 正本情報 | テストレベル、ツール、フィクスチャ、CI 実行方針 |
+| 扱わない内容 | 個別テストケースの詳細 |
+| 主な参照元 | `50_detail_design/*`, `20_domain/*`, `10_requirements/*` |
+| 主な参照先 | `60_test/test_cases/*.md`, `60_test/traceability.md` |
+
+---
+
 ## 1. 概要
 
 本書は経費精算SaaS MVP のテスト戦略を定義する。テスト設計者・実装者が共通の方針を持ち、下流のテストケース定義（6-B-1〜8）と実装（Step 7）を迷いなく進めるための正本として機能する。
@@ -15,7 +27,7 @@
 | `50_detail_design/files.md` | 添付ファイル設計、署名付きURL認可 |
 | `20_domain/state_machine.md` | 状態遷移（T1〜T5、X1〜X10） |
 | `20_domain/domain_model.md` | エンティティ定義、不変条件 |
-| `10_requirements/rbac.md` | RBACルール（RBC-001〜016） |
+| `10_requirements/policies.md` | RBACルール（RBC-001〜016）（SS3）、業務ルール（SS5）、状態遷移ルール（SS4） |
 | `.claude/rules/testing.md` | テスト方針ルール |
 
 ---

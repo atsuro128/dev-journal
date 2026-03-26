@@ -1,5 +1,15 @@
 # 認可設計
 
+## この文書の役割
+
+| 項目 | 内容 |
+|------|------|
+| 目的 | ロール・所有権・テナント境界を踏まえた認可方式を定義する |
+| 正本情報 | 認可ルール、認可責務、認可実行順序、Authorizer 設計 |
+| 扱わない内容 | JWT 詳細、パスワードハッシュ、レート制限（security.md で定義） |
+| 主な参照元 | `10_requirements/policies.md`, `50_detail_design/openapi.yaml`, `50_detail_design/db_schema.md` |
+| 主な参照先 | `60_test/test_cases/*.md` |
+
 ## 1. 概要
 
 本書は経費精算SaaS MVP における認可（Authorization）の詳細設計を定義する。全エンドポイントに対するロール別アクセス制御、所有権チェック、テナント分離の三つの認可要素を統合し、認可ルールの**正本**として機能する。
@@ -17,9 +27,8 @@
 
 | ドキュメント | 参照内容 |
 |------------|---------|
-| `10_requirements/rbac.md` | RBAC 要件（RBC-001 -- RBC-016）、権限マトリクス |
-| `10_requirements/requirements.md` | 機能要件、テナント分離（TNT-001 -- TNT-006） |
-| `10_requirements/workflow.md` | 状態遷移の実行者・事前条件 |
+| `10_requirements/policies.md` | RBAC 要件（RBC-001 -- RBC-016）、権限マトリクス（SS3）、状態遷移の実行者・事前条件（SS4）、テナント分離（SS6）、業務ルール（SS5） |
+| `10_requirements/requirements.md` | 機能要件 |
 | `30_arch/architecture.md` | ミドルウェアチェーン、エンドポイント一覧（SS5.1） |
 | `50_detail_design/openapi.yaml` | 全エンドポイントの認可条件 |
 | `50_detail_design/db_schema.md` | RLS ポリシー、テーブル定義 |

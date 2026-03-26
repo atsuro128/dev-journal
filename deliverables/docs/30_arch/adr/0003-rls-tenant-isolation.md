@@ -1,5 +1,15 @@
 # ADR-0003: RLS テナント分離
 
+## この文書の役割
+
+| 項目 | 内容 |
+|------|------|
+| 目的 | PostgreSQL RLS によるテナント分離の実現方式の選定根拠を記録する |
+| 正本情報 | RLS 方式の判断対象、選択肢、決定、理由、トレードオフ |
+| 扱わない内容 | マルチテナント方式の選定（ADR-0002 に委譲）、DB スキーマ詳細 |
+| 主な参照元 | `./0002-multi-tenant.md`, `../../20_domain/domain_model.md` |
+| 主な参照先 | `../architecture.md`, `../../50_detail_design/db_schema.md` |
+
 ## ステータス
 承認済
 
@@ -120,3 +130,15 @@ JWT 生成（claims に tenant_id, role を含める）
 - DB マイグレーションに RLS ポリシーの CREATE/ALTER を含める。golang-migrate で管理
 - テナント分離テストは RLS の動作検証を含む（別テナントのデータが見えないことを確認）
 - 管理者用のクロステナントクエリ（将来的な SaaS 運営側の管理画面等）が必要になった場合は、RLS をバイパスする専用ロールを作成する
+
+## 反映先
+
+| 反映先文書 | 反映内容 |
+|-----------|---------|
+| `../architecture.md` §3.2 | ミドルウェアチェーン [7] TenantContext（SET LOCAL app.current_tenant） |
+| `../architecture.md` §3.3 | 認証フロー: RLS バイパスによるログイン時の tenant_memberships 参照 |
+| `../architecture.md` §3.4 | テナント分離の実行フロー（SET LOCAL + RLS の二重保証動作） |
+| `../architecture.md` §8.2 | 非機能要求マッピング: テナント分離の二重保証 |
+| `../../50_detail_design/db_schema.md` §7 | RLS ポリシー（全対象テーブルの ENABLE ROW LEVEL SECURITY、ポリシー定義、2ロール構成） |
+| `../../50_detail_design/db_schema.md` §8 | インデックス戦略（tenant_id を複合インデックスの先頭に配置） |
+| `../../50_detail_design/security.md` §4 | テナント分離実装仕様（RLS コンテキスト設定フロー、2ロール構成、RLS バイパスケース） |

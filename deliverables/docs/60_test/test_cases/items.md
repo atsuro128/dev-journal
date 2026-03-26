@@ -1,5 +1,17 @@
 # 経費明細テストケース一覧（items.md）
 
+## この文書の役割
+
+| 項目 | 内容 |
+|------|------|
+| 目的 | 経費明細 CRUD エンドポイント（/api/reports/{id}/items/*）のテストケースを定義する |
+| 正本情報 | ITM-F01〜F03 に対応するテストケース一覧 |
+| 扱わない内容 | レポート状態遷移テスト（→ reports.md / workflow.md）、テナント横断テスト（→ cross-cutting.md） |
+| 主な参照元 | `50_detail_design/openapi.yaml#/api/reports/{id}/items/*`, `10_requirements/requirements.md#ITM-F*` |
+| 主な参照先 | `60_test/traceability.md`, テスト実装（Step 9） |
+
+---
+
 **テストIDプレフィックス**: `ITM-`
 **対象ハンドラファイル**: `item_handler_test.go`
 

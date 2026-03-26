@@ -1,5 +1,15 @@
 # ADR-0002: マルチテナント方式
 
+## この文書の役割
+
+| 項目 | 内容 |
+|------|------|
+| 目的 | マルチテナントのデータ分離方式の選定根拠を記録する |
+| 正本情報 | テナント分離方式の判断対象、選択肢、決定、理由、トレードオフ |
+| 扱わない内容 | RLS 実装詳細（ADR-0003 に委譲）、アプリケーション層の実装 |
+| 主な参照元 | `../../10_requirements/requirements.md`, `../../20_domain/domain_model.md` |
+| 主な参照先 | `./0003-rls-tenant-isolation.md`, `../architecture.md` |
+
 ## ステータス
 承認済
 
@@ -54,3 +64,14 @@
 - リポジトリ層は全クエリに `WHERE tenant_id = ?` を含む設計が必須（TNT-002）
 - RLS ポリシーの詳細設計は ADR-0003 で定義する
 - テナント境界越えアクセスは 404 Not Found を返却し、リソースの存在を漏洩しない（TNT-006）
+
+## 反映先
+
+| 反映先文書 | 反映内容 |
+|-----------|---------|
+| `../architecture.md` §3.4 | テナント分離の実行フロー（Shared DB + tenant_id の動作詳細） |
+| `../architecture.md` §6.1 | 多層防御 [5] データアクセス層の tenant_id 強制 |
+| `../architecture.md` §8.2 | 非機能要求マッピング: テナント分離の二重保証 |
+| `../../50_detail_design/db_schema.md` §2.1 | テナント分離設計方針（全業務テーブルの tenant_id 付与） |
+| `../../50_detail_design/db_schema.md` §3〜5 | 各テーブル DDL の tenant_id カラム定義 |
+| `../../50_detail_design/security.md` §4 | テナント分離実装仕様（アプリ層 + RLS の二重保証） |
