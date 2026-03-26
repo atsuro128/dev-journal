@@ -592,3 +592,68 @@
 - デプロイ: MVP では手動デプロイのみ
 - ブランチ単位: 「1タスク=1ブランチ」の固定ルールは不適切。原則ベースへの改定を ops-039 で議論
 - レビュー観点拡充: 7項目 → 37項目（6カテゴリ）。Phase 別 + 共通契約で全タスクをカバー
+
+---
+
+## セッション: 2026-03-26 10:17
+
+### ゴール
+- 不要ファイル・ディレクトリの整理とリポジトリ構成の最適化
+
+### 作業ログ
+- **ai-dev-framework/ の整理**
+  - `rules/`（空ディレクトリ）を削除
+  - `scripts/`（中身が空のスタブ3ファイル）を削除
+  - `ai-dev-framework/` 自体は codex 用指示書（agents/）とテンプレート（templates/）の置き場として残す判断
+- **task-plan テンプレート重複の解消**
+  - `ai-dev-framework/templates/task-plan-template.md`（初期版）と `dev-journal/guide/templates/task-plan.md`（進化版）の重複を発見
+  - 初期版を削除、architect エージェント2ファイルの参照先を進化版に修正
+- **guide/ の移動**
+  - `dev-journal/guide/` → `ai-dev-framework/guide/` に移動（AI向け作業指示書はフレームワークの責務）
+  - 全参照パス更新（12ファイル、約50箇所）
+- **templates/ の統合**
+  - `ai-dev-framework/guide/templates/` を `ai-dev-framework/templates/` に統合
+  - work-breakdown 6ファイル + architect 2ファイルの参照パスを修正
+- **issues/ の昇格**
+  - `dev-journal/progress-management/issues/` → `dev-journal/issues/` に昇格
+  - review-findings/ と同階層に揃え、進捗管理から分離
+  - 6ファイルの参照パスを修正
+- **ai-operations/ の移動**
+  - `dev-journal/ai-operations/` → `ai-dev-framework/operations/` に移動
+  - AI運用設計（hooks設計、サブエージェント設計）はフレームワークの責務
+- **archives/ の導入**
+  - `dev-journal/daily-reports/` → `dev-journal/archives/daily-reports/`
+  - `dev-journal/logs/` → `dev-journal/archives/session-logs/`（リネーム）
+  - 普段参照しない過去記録を archives/ に集約
+- **不要な設計メモの削除**
+  - `20_domain-design-decisions.md`（設計書に含まれるべき内容）
+  - `30_arch-multi-tenant-comparison.md`（ADR-002 に取り込み済みの素材）
+- **スキル整理**
+  - `/weekly-review` と `/analyze` を統合 → `/analyze` 1つに（テーマ省略時は週次レビューモード）
+  - 週次レビューの出力先を `dev-journal/archives/weekly-reports/` に変更
+  - `/adr` スキル新規追加（ADR の任意作成）
+  - 全12スキルから未サポートの `allowed-tools` フィールドを削除（GitHub Issue #18837 で未実装と確認）
+- **ADR テンプレート改善**
+  - 各セクションにコメントガイドを追加
+
+### 未完了
+- なし
+
+### ブロッカー
+- なし
+
+### 次にやること
+1. 前回セッションの未完了: review-findings 057/060 の task-plan 反映と再レビュー
+2. ops-039 対応: parallel-branch-operation.md のブランチ単位ルールを改定
+3. 計画レビューゲート通過 → Phase 1 着手
+
+### 学び・気づき
+- `allowed-tools` は SKILL.md のフロントマターとして書けるが実際には強制されない（GitHub Issue #18837, #18737）。ツール制限はプロンプト本文で指示する方が実効性がある
+- テンプレートの重複は自然に発生する。進化版が別の場所に作られ、旧版の参照が残るパターン。定期的にチェックすべき
+- ディレクトリ構成の整理は参照パスの更新が大量に発生するが、grep + replace_all で機械的に対応可能。ログ等の過去記録は修正不要と割り切ることが重要
+
+### 意思決定ログ
+- ai-dev-framework/ は残す: codex 用指示書（agents/）、テンプレート（templates/）、AI向けガイド（guide/）、AI運用設計（operations/）の置き場として機能している。当初の「独立した成果物として訴求」という目的は薄れたが、`.claude/` に置けないファイルの受け皿として必要
+- issues/ の配置: progress-management/ から dev-journal/ 直下に昇格。issue は「進捗管理の一部」ではなく「作業中に発生する問題のトラッキング」であり、review-findings/ と同じライフサイクルで管理するもの
+- スキル統合: /weekly-review と /analyze はソース収集・分析フェーズがほぼ同一。出力フォーマットの違いだけなので、モード切替で1つに統合
+- archives/: 日報・セッションログは引き継ぎ（session-log.md）とは別物で、分析用のアーカイブ。普段の作業で直接触らないため archives/ に下げた
