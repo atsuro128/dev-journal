@@ -212,13 +212,18 @@
 | NFR-PERF-003 | 同時接続ユーザー数 100 | `architecture.md#8.1`, ADR-0002, ADR-0004 | `test_cases/cross-cutting.md#CRS-` | |
 | NFR-PERF-004 | カーソルベースページネーション（デフォルト20件） | `architecture.md#5.3`, `openapi.yaml` | `test_cases/reports.md#RPT-`, `test_cases/cross-cutting.md#CRS-` | |
 
-### 3.2 セキュリティ（SEC-*）
+### 3.2 セキュリティ（NFR-SEC-*）
 
 | 要件ID | 要件概要 | 設計反映先 | テスト反映先 | 備考 |
 |--------|---------|-----------|------------|------|
-| SEC-012 | レート制限（認証済み: 100 req/min/user、未認証: 20 req/min/IP） | `security.md#4.1`, `openapi.yaml#x-ratelimit` | `test_cases/cross-cutting.md#CRS-076〜088` | |
-| SEC-013 | CORS（許可オリジンを明示指定） | `security.md#4.2` | `test_cases/cross-cutting.md#CRS-076〜088` | |
-| SEC-014 | セキュリティヘッダー（HSTS, X-Content-Type-Options, X-Frame-Options） | `security.md#4.3` | `test_cases/cross-cutting.md#CRS-076〜088` | |
+| NFR-SEC-001 | JWT RS256 認証 | `security.md#2.1`, `openapi.yaml#securitySchemes` | `test_cases/auth.md#AUTH-034〜041` | ルールID: SEC-003, SEC-004 |
+| NFR-SEC-002 | パスワード Argon2id ハッシュ、8文字以上 | `security.md#2.2` | `test_cases/auth.md#AUTH-024〜033` | ルールID: SEC-002, SEC-010 |
+| NFR-SEC-003 | テナント分離（アプリ層 + RLS 二重保証） | `db_schema.md#RLS設定`, `authz.md#9` | `test_cases/cross-cutting.md#CRS-001〜020` | ルールID: TNT-001〜005 |
+| NFR-SEC-004 | RBAC 全APIでミドルウェア検証 | `authz.md#3`, `architecture.md#3.2` | `test_cases/cross-cutting.md#CRS-021〜075` | ルールID: RBC-001 |
+| NFR-SEC-005 | レート制限（認証済み: 100 req/min/user、未認証: 20 req/min/IP） | `security.md#4.1`, `openapi.yaml#x-ratelimit` | `test_cases/cross-cutting.md#CRS-076〜088` | ルールID: SEC-012 |
+| NFR-SEC-006 | CORS（許可オリジンを明示指定） | `security.md#4.2` | `test_cases/cross-cutting.md#CRS-076〜088` | ルールID: SEC-013 |
+| NFR-SEC-007 | セキュリティヘッダー（HSTS, X-Content-Type-Options, X-Frame-Options） | `security.md#4.3` | `test_cases/cross-cutting.md#CRS-076〜088` | ルールID: SEC-014 |
+| NFR-SEC-008 | ファイルアップロード MIMEタイプ検証、5MB制限 | `files.md#3`, `openapi.yaml#uploadAttachment` | `test_cases/attachments.md#ATT-` | ルールID: ATT-013, ATT-003 |
 
 ### 3.3 可用性（NFR-AVAIL-*）
 
@@ -228,13 +233,17 @@
 | NFR-AVAIL-002 | ヘルスチェックエンドポイント `/health` | `openapi.yaml#getHealth`, `architecture.md#8.3`, ADR-0005 | `test_cases/cross-cutting.md#CRS-` | |
 | NFR-AVAIL-003 | DB バックアップ RDS 自動バックアップ 7日間保持 | `architecture.md#8.3`, ADR-0004 | - | 運用確認項目 |
 
-### 3.4 データ（DAT-*）
+### 3.4 データ（NFR-DATA-*）
 
 | 要件ID | 要件概要 | 設計反映先 | テスト反映先 | 備考 |
 |--------|---------|-----------|------------|------|
-| DAT-001 | 提出以降のレポートは物理削除不可 | `db_schema.md#expense_reports.deleted_at` | `test_cases/reports.md#RPT-` | |
-| DAT-002 | 論理削除（deleted_at タイムスタンプ方式） | `db_schema.md#全業務テーブル` | `test_cases/reports.md#RPT-045〜052` | |
-| DAT-004 | 全レコードに created_at, updated_at | `db_schema.md#全業務テーブル` | `test_cases/cross-cutting.md#CRS-` | |
+| NFR-DATA-001 | 論理削除（deleted_at タイムスタンプ方式） | `db_schema.md#全業務テーブル` | `test_cases/reports.md#RPT-045〜052` | ルールID: DAT-002 |
+| NFR-DATA-002 | 全レコードに created_at, updated_at | `db_schema.md#全業務テーブル` | `test_cases/cross-cutting.md#CRS-` | ルールID: DAT-004 |
+| NFR-DATA-003 | 提出以降のレポートは物理削除不可 | `db_schema.md#expense_reports.deleted_at` | `test_cases/reports.md#RPT-` | ルールID: DAT-001 |
+| NFR-DATA-004 | MVP監査証跡（改ざんしにくいデータ構造） | `db_schema.md#expense_reports` | `test_cases/reports.md#RPT-` | |
+| NFR-DATA-005 | 日本円（JPY）のみ、整数値 | `db_schema.md#expense_items.amount` | `test_cases/items.md#ITM-` | ルールID: ITM-002 |
+| NFR-DATA-006 | 文字コード UTF-8 | `db_schema.md#CREATE DATABASE` | - | |
+| NFR-DATA-007 | タイムゾーン UTC保存、表示時JST変換 | `architecture.md#4.2` | - | |
 
 ### 3.5 ユーザビリティ（NFR-UX-*）
 
