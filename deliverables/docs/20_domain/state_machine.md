@@ -195,7 +195,7 @@ stateDiagram-v2
 |---|------|------|
 | 1 | deleted_at = now() | 論理削除（DAT-002） |
 | 2 | 関連 ExpenseItem の論理削除 | 連動削除 |
-| 3 | 関連 Attachment の論理削除 | 連動削除（S3 ファイルはバッチ削除検討） |
+| 3 | 関連 Attachment の論理削除 | 連動削除（MVP では S3 ファイルの物理削除は行わない） |
 
 ---
 
