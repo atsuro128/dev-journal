@@ -201,16 +201,50 @@
 
 ---
 
-## 3. 非機能要件トレーサビリティ（主要項目）
+## 3. 非機能要件トレーサビリティ
+
+### 3.1 パフォーマンス（NFR-PERF-*）
 
 | 要件ID | 要件概要 | 設計反映先 | テスト反映先 | 備考 |
 |--------|---------|-----------|------------|------|
-| NFR-AVAIL-001 | ヘルスチェックエンドポイント | `openapi.yaml#getHealth` | `test_cases/cross-cutting.md#CRS-` | |
+| NFR-PERF-001 | API レスポンスタイム p95 500ms 以下 | `architecture.md#8.1`, ADR-0001, ADR-0005 | `test_cases/cross-cutting.md#CRS-` | |
+| NFR-PERF-002 | ファイルアップロード 5秒以下（5MB） | `architecture.md#8.1`, `files.md`, ADR-0004 | `test_cases/attachments.md#ATT-` | |
+| NFR-PERF-003 | 同時接続ユーザー数 100 | `architecture.md#8.1`, ADR-0002, ADR-0004 | `test_cases/cross-cutting.md#CRS-` | |
+| NFR-PERF-004 | カーソルベースページネーション（デフォルト20件） | `architecture.md#5.3`, `openapi.yaml` | `test_cases/reports.md#RPT-`, `test_cases/cross-cutting.md#CRS-` | |
+
+### 3.2 セキュリティ（SEC-*）
+
+| 要件ID | 要件概要 | 設計反映先 | テスト反映先 | 備考 |
+|--------|---------|-----------|------------|------|
 | SEC-012 | レート制限（認証済み: 100 req/min/user、未認証: 20 req/min/IP） | `security.md#4.1`, `openapi.yaml#x-ratelimit` | `test_cases/cross-cutting.md#CRS-076〜088` | |
 | SEC-013 | CORS（許可オリジンを明示指定） | `security.md#4.2` | `test_cases/cross-cutting.md#CRS-076〜088` | |
 | SEC-014 | セキュリティヘッダー（HSTS, X-Content-Type-Options, X-Frame-Options） | `security.md#4.3` | `test_cases/cross-cutting.md#CRS-076〜088` | |
+
+### 3.3 可用性（NFR-AVAIL-*）
+
+| 要件ID | 要件概要 | 設計反映先 | テスト反映先 | 備考 |
+|--------|---------|-----------|------------|------|
+| NFR-AVAIL-001 | 稼働率 99.5% | `architecture.md#8.3`, ADR-0004 | `test_cases/cross-cutting.md#CRS-` | |
+| NFR-AVAIL-002 | ヘルスチェックエンドポイント `/health` | `openapi.yaml#getHealth`, `architecture.md#8.3`, ADR-0005 | `test_cases/cross-cutting.md#CRS-` | |
+| NFR-AVAIL-003 | DB バックアップ RDS 自動バックアップ 7日間保持 | `architecture.md#8.3`, ADR-0004 | - | 運用確認項目 |
+
+### 3.4 データ（DAT-*）
+
+| 要件ID | 要件概要 | 設計反映先 | テスト反映先 | 備考 |
+|--------|---------|-----------|------------|------|
 | DAT-001 | 提出以降のレポートは物理削除不可 | `db_schema.md#expense_reports.deleted_at` | `test_cases/reports.md#RPT-` | |
 | DAT-002 | 論理削除（deleted_at タイムスタンプ方式） | `db_schema.md#全業務テーブル` | `test_cases/reports.md#RPT-045〜052` | |
+| DAT-004 | 全レコードに created_at, updated_at | `db_schema.md#全業務テーブル` | `test_cases/cross-cutting.md#CRS-` | |
+
+### 3.5 ユーザビリティ（NFR-UX-*）
+
+| 要件ID | 要件概要 | 設計反映先 | テスト反映先 | 備考 |
+|--------|---------|-----------|------------|------|
+| NFR-UX-001 | レスポンシブデザイン（PC・タブレット・スマートフォン対応） | `architecture.md#8.5`, ADR-0001（MUI 選定） | `test_cases/cross-cutting.md#CRS-` | |
+| NFR-UX-002 | UI 日本語固定 | `architecture.md#8.5` | `test_cases/cross-cutting.md#CRS-` | |
+| NFR-UX-003 | 操作結果の即時フィードバック | `architecture.md#8.5` | `test_cases/cross-cutting.md#CRS-` | |
+| NFR-UX-004 | クライアントサイドリアルタイムバリデーション | `architecture.md#8.5` | `test_cases/cross-cutting.md#CRS-` | |
+| NFR-UX-005 | API 通信中のローディング表示 | `architecture.md#8.5` | `test_cases/cross-cutting.md#CRS-` | |
 
 ---
 

@@ -33,9 +33,8 @@ Step 1 における以下の正本として扱う。
 
 ### 主な移行元
 
-- `preliminary/workflow.md`（統合済み・アーカイブ）
-- `preliminary/rbac.md`（統合済み・アーカイブ）
-- `preliminary/04_business-rules.md`
+- `../pre_step/03_business-flow.md`
+- `../pre_step/04_business-rules.md`
 
 ---
 
@@ -557,7 +556,7 @@ graph LR
 | ITM-004 | 明細には摘要が必須 |
 | ITM-005 | カテゴリは固定6種類とする |
 | ITM-006 | 明細は必ず1つのレポートに属する |
-| ITM-007 | 明細の日付は対象期間内であることが望ましい（警告レベル） |
+| ITM-007 | 明細の日付が対象期間外の場合、警告を表示するが保存は許可する |
 | ITM-010 | 明細の追加・編集・削除はレポートが `draft` の時のみ可能 |
 | ITM-011 | 明細の操作権限はレポートの操作権限に準ずる |
 
@@ -623,7 +622,7 @@ graph LR
 | ID | ルール |
 |----|--------|
 | DAT-001 | 提出以降のレポートは物理削除不可 |
-| DAT-002 | 削除は論理削除を推奨する |
+| DAT-002 | 削除は論理削除とする（全業務テーブルに deleted_at を付与） |
 | DAT-003 | 監査ログは INSERT ONLY とする（Phase 3） |
 | DAT-004 | 全レコードに `created_at`, `updated_at` を持つ |
 
