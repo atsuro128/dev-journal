@@ -7,6 +7,8 @@
 | 目的 | 監視アラート検知後の一次対応手順と定常運用を定義する |
 | 正本情報 | 障害一次対応手順、切り分け観点、定常確認項目、エスカレーション基準 |
 | 扱わない内容 | 監視閾値・アラーム定義の正本（monitoring.md が正本）、リリース手順（release.md に委譲）、バックアップ・リストア手順（backup_restore.md に委譲） |
+| 主な参照元 | `../50_detail_design/monitoring.md`, `../30_arch/architecture.md` |
+| 主な参照先 | `./release.md`, `./backup_restore.md` |
 
 ### 参照ドキュメント
 

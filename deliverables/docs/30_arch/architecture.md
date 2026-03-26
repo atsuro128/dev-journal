@@ -39,8 +39,8 @@
 | レイヤー | 責務 |
 |---------|------|
 | ミドルウェアチェーン | CORS → SecurityHeaders → RequestID → Logger → RateLimit → Auth（JWT検証） → TenantContext（RLS設定） → RBAC（ロール検証） |
-| ハンドラ層（HTTP Handler） | リクエスト/レスポンスの変換、入力バリデーション、所有権チェック |
-| サービス層（Application Service） | ユースケースの実行、トランザクション管理、集約間の調整 |
+| ハンドラ層（HTTP Handler） | リクエスト/レスポンスの変換、入力バリデーション |
+| サービス層（Application Service） | ユースケースの実行、トランザクション管理、集約間の調整、所有権・ビジネスルール判定（詳細は `authz.md` SS3 で定義） |
 | ドメイン層（Domain） | エンティティ・値オブジェクト、状態遷移の制御（WFL-001）、不変条件の検証、ドメインエラーの生成 |
 | リポジトリ層（Repository） | sqlc 生成コードの利用、tenant_id フィルタの強制（TNT-002, TNT-003）、論理削除の適用（DAT-002） |
 

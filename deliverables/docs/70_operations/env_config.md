@@ -7,6 +7,8 @@
 | 目的 | dev / stg / prod 環境の差分とシークレット管理方針を定義する |
 | 正本情報 | 環境差分一覧、環境変数一覧、シークレット管理方針、ローテーション方針 |
 | 扱わない内容 | JWT 生成・検証の実装方式（security.md に委譲）、インフラリソースの詳細設計（architecture.md に委譲） |
+| 主な参照元 | `../30_arch/architecture.md`, `../50_detail_design/security.md` |
+| 主な参照先 | `./release.md` |
 
 ### 参照ドキュメント
 
