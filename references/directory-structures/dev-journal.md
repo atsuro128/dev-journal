@@ -79,7 +79,7 @@ dev-journal/
 │   ├── parallel-branch-operation.md  # 並列ブランチ運用ガイド
 │   ├── review-input-index.md         # レビュー入力インデックス
 │   ├── templates/
-│   │   └── task-plan.md              # タスク計画テンプレート
+│   │   └── task-plan.md              # タスク計画テンプレート（廃止。ticket-template.md を使用）
 │   └── work-breakdown/              # Step 別作業分解（成果物・完了条件・レビュー観点）
 │       ├── step0-preparation.md
 │       ├── step1-requirements.md
@@ -103,10 +103,10 @@ dev-journal/
 │   │   ├── dashboard.md              # 課題ダッシュボード
 │   │   ├── open/                     # 未解決（4件）
 │   │   └── resolved/                 # 解決済み（多数）
-│   └── task-plans/                   # タスク計画（Step別）
-│       ├── step5-detail-design.md
-│       ├── step6-testing.md
-│       └── step7-foundation.md
+│   └── task-plans/                   # タスク計画（廃止。既存ファイルはアーカイブ）
+│       ├── step5-detail-design.md    # アーカイブ
+│       ├── step6-testing.md          # アーカイブ
+│       └── step7-foundation.md       # アーカイブ
 ├── references/                       # 参照資料
 │   ├── decisions/                    # ADR（意思決定記録）
 │   ├── dev-commands.md

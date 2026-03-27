@@ -17,7 +17,7 @@ ai-dev-framework/
     ├── README-template.md
     ├── issue-template.md
     ├── review-finding-template.md
-    ├── task-plan-template.md
+    ├── ticket-template.md
     ├── task-template.md
     └── work-breakdown-template.md
 ```
