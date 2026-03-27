@@ -11,13 +11,13 @@ deliverables/
       requirements.md              # 機能要件（コア・付随）・非機能要件
       usecases.md                  # 全ロールのユースケース（招待・通知・監査ログ含む）
       policies.md                  # ルールID体系、業務ルール、RBAC、状態遷移ルール、エラー使い分け方針
-      preliminary/                 # 要件定義の中間成果物（業務分析）
-        01_business-overview.md    #   業務概要の整理
-        02_actor-analysis.md       #   アクター分析
-        03_business-flow.md        #   業務フロー分析
-        04_business-rules.md       #   業務ルール整理
-        workflow.md                #   業務フロー（申請〜承認〜精算のフロー定義）
-        rbac.md                    #   RBAC 初期整理（ロール・権限の洗い出し）
+
+    pre_step/                      # 要件定義の中間成果物（業務分析）
+      01_business-overview.md      #   業務概要の整理
+      02_actor-analysis.md         #   アクター分析
+      03_business-flow.md          #   業務フロー分析
+      04_business-rules.md         #   業務ルール整理
+      project_summary.md           #   プロジェクト概要
 
     20_domain/
       domain_model.md              # 主要エンティティ・集約・不変条件（audit_logs INSERT ONLY 含む）
