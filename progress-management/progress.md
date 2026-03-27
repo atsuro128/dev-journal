@@ -21,7 +21,7 @@
 
 | ID | タスク | 担当 | 依存 | 状態 | チケット |
 |----|--------|------|------|------|---------|
-| 8-1 | 開発環境構築 + DB | platform-builder | なし | 完了 | `tickets/step8/8-1-dev-environment.md` |
+| 8-1 | 開発環境構築 + DB | platform-builder | なし | レビュー待ち | `tickets/step8/8-1-dev-environment.md` |
 | 8-2 | バックエンド初期化 | backend-developer | 8-1 | 未着手 | `tickets/step8/8-2-backend-init.md` |
 | 8-3 | フロントエンド初期化 | frontend-developer | なし | 未着手 | `tickets/step8/8-3-frontend-init.md` |
 | 8-4 | 共通ミドルウェア + ヘルスチェック | backend-developer | 8-2 | 未着手 | `tickets/step8/8-4-middleware.md` |
