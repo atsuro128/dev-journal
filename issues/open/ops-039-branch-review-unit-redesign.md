@@ -57,7 +57,17 @@ Step 8〜11（全実装 Step に影響）
 ---
 
 ## 解決内容
-<!-- pending-review へ移動する前に記入 -->
+
+ブランチ運用を再設計し、以下の対応を実施。
+
+1. workflow.md にブランチ運用セクションを追加
+   - worktree は使わない（リポジトリ分離のため機能しない）
+   - 実装エージェントは expense-saas/ 内で直接ブランチ操作
+   - 命名規則: step{N}/{ticket-id}-{説明}
+2. 各 Step の work-breakdown にブランチ戦略を宣言
+   - Step 8, 11: main 直接コミット（逐次作業）
+   - Step 9, 10: 機能ブランチ（並列作業）
+3. レビュー単位: タスク完了ごとに impl-unit-reviewer、Step 完了後に impl-cross-reviewer
 
 ## 解決日
-<!-- YYYY-MM-DD -->
+2026-03-28
