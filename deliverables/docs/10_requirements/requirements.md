@@ -337,7 +337,7 @@
 | DASH-002 | Approver には上記に加え、承認待ち件数を追加表示 |
 | DASH-003 | Accounting には Member 向け情報（下書き・提出中・却下・直近レポート一覧）に加え、支払待ち件数を追加表示 |
 | DASH-004 | Admin にはテナント全体の件数（ステータス別）とメンバー数を表示 |
-| DASH-005 | Approver / Accounting / Admin にテナント全体の直近 N ヶ月の月別支出合計金額を表示する（Approver のスコープを部下限定にする対応は Phase 3） |
+| DASH-005 | Approver / Accounting / Admin にテナント全体の直近 3 ヶ月の月別支出合計金額を表示する（Approver のスコープを部下限定にする対応は Phase 3） |
 
 > 対応ユースケース: `UC-SYS04`
 
