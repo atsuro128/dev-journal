@@ -76,7 +76,6 @@ dev-journal/
 │               └── workflow.md
 ├── guide/                            # プロジェクト進行ガイド
 │   ├── implementation-guide.md
-│   ├── parallel-branch-operation.md  # 並列ブランチ運用ガイド
 │   ├── review-input-index.md         # レビュー入力インデックス
 │   ├── templates/
 │   │   └── task-plan.md              # タスク計画テンプレート（廃止。ticket-template.md を使用）
