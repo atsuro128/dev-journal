@@ -31,7 +31,15 @@ Step 7 の判断ポイント #1 でディレクトリ構成を Go 標準（`cmd/
 ---
 
 ## 解決内容
-<!-- pending-review へ移動する前に記入 -->
+
+Step 8 は前回セッション（3/28）のタスク分解時に既に正しいパスで記述されていた。
+Step 9, 10, 11 に旧パス `apps/` が残っていたため修正:
+
+- step9-test-implementation.md: 4箇所修正（`apps/api/` → `internal/`, `apps/web/` → `frontend/`, `apps/` → ルート）
+- step10-feature-implementation.md: 15箇所修正（同上パターン、全機能タスクの出力パス含む）
+- step11-system-test.md: 1箇所修正
+
+修正後、全 work-breakdown で `apps/` の参照ゼロを確認済み。
 
 ## 解決日
-<!-- YYYY-MM-DD -->
+2026-03-28
