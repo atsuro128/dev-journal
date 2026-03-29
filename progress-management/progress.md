@@ -17,6 +17,16 @@
 | 10 | 機能実装 | 未着手 | - | `ai-dev-framework/guide/work-breakdown/step10-feature-implementation.md` |
 | 11 | システムテスト・UAT | 未着手 | - | `ai-dev-framework/guide/work-breakdown/step11-system-test.md` |
 
+## タスク状態定義
+
+| 状態 | 意味 | 遷移条件 |
+|------|------|----------|
+| 未着手 | 未着手 | — |
+| 作業中 | サブエージェントが作業中 | 依存先が全て `完了` |
+| レビュー待ち | 成果物完成、レビュー未実施 | サブエージェント作業完了 |
+| 修正中 | レビュー指摘を対応中 | レビューで FIX 判定 |
+| 完了 | レビュー LGTM 済み | 品質ゲート PASS |
+
 ## Step 8: 基盤構築 — チケット一覧
 
 | ID | タスク | 担当 | 依存 | 状態 | チケット |
