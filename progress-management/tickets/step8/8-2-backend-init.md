@@ -2,6 +2,7 @@
 
 - 担当: backend-developer
 - 依存: 8-1
+- ブランチ: main 直接
 - 出力先: expense-saas/ (cmd/, internal/, go.mod)
 - テンプレート: なし
 
@@ -9,7 +10,7 @@
 
 | 資料 | パス | 参照箇所 |
 |------|------|----------|
-| アーキテクチャ設計 | deliverables/docs/30_arch/architecture.md | §3.1 ディレクトリ構成 |
+| アーキテクチャ設計 | deliverables/docs/30_arch/architecture.md | §ディレクトリ構成 |
 
 ## 責務
 

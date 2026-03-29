@@ -2,6 +2,7 @@
 
 - 担当: backend-developer
 - 依存: 8-6
+- ブランチ: main 直接
 - 出力先: expense-saas/internal/testutil/
 - テンプレート: なし
 
@@ -9,9 +10,8 @@
 
 | 資料 | パス | 参照箇所 |
 |------|------|----------|
-| アーキテクチャ設計 | deliverables/docs/30_arch/architecture.md | テスト基盤の方針 |
-| DB スキーマ | deliverables/docs/50_detail_design/db_schema.md | テストデータ構造 |
-| テスト戦略 | deliverables/docs/60_testing/ | テスト方針 |
+| アーキテクチャ設計 | deliverables/docs/30_arch/architecture.md | 全体 |
+| DB スキーマ | deliverables/docs/50_detail_design/db_schema.md | 全テーブル |
 
 ## 責務
 

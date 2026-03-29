@@ -2,6 +2,7 @@
 
 - 担当: platform-builder
 - 依存: 8-2, 8-3
+- ブランチ: main 直接
 - 出力先: expense-saas/.github/workflows/
 - テンプレート: なし
 
@@ -9,7 +10,7 @@
 
 | 資料 | パス | 参照箇所 |
 |------|------|----------|
-| アーキテクチャ設計 | deliverables/docs/30_arch/architecture.md | §8 CI/CD パイプライン構成 |
+| アーキテクチャ設計 | deliverables/docs/30_arch/architecture.md | §デプロイ |
 
 ## 責務
 

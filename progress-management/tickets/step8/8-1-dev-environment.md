@@ -2,6 +2,7 @@
 
 - 担当: platform-builder
 - 依存: なし
+- ブランチ: main 直接
 - 出力先: expense-saas/ (docker-compose.yml, Dockerfile, db/migrations/)
 - テンプレート: なし
 
@@ -10,7 +11,7 @@
 | 資料 | パス | 参照箇所 |
 |------|------|----------|
 | DB スキーマ | deliverables/docs/50_detail_design/db_schema.md | 全テーブル DDL |
-| アーキテクチャ設計 | deliverables/docs/30_arch/architecture.md | §2 システム全体構成 |
+| アーキテクチャ設計 | deliverables/docs/30_arch/architecture.md | §インフラ構成 |
 
 ## 責務
 

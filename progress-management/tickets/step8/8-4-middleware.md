@@ -2,6 +2,7 @@
 
 - 担当: backend-developer
 - 依存: 8-2
+- ブランチ: main 直接
 - 出力先: expense-saas/internal/middleware/, expense-saas/internal/handler/health.go
 - テンプレート: なし
 

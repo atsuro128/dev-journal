@@ -2,6 +2,7 @@
 
 - 担当: frontend-developer
 - 依存: 8-3, 8-4
+- ブランチ: main 直接
 - 出力先: expense-saas/frontend/src/api/, expense-saas/frontend/vite.config.ts
 - テンプレート: なし
 
@@ -9,8 +10,8 @@
 
 | 資料 | パス | 参照箇所 |
 |------|------|----------|
-| アーキテクチャ設計 | deliverables/docs/30_arch/architecture.md | §4.0 SPA配信方式, §4.2 認証状態管理 |
-| セキュリティ設計 | deliverables/docs/50_detail_design/security.md | 認証フロー |
+| アーキテクチャ設計 | deliverables/docs/30_arch/architecture.md | §SPA 配信方式 |
+| セキュリティ設計 | deliverables/docs/50_detail_design/security.md | 全体 |
 
 ## 責務
 

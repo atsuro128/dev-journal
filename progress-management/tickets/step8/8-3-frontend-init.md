@@ -2,6 +2,7 @@
 
 - 担当: frontend-developer
 - 依存: なし
+- ブランチ: main 直接
 - 出力先: expense-saas/frontend/
 - テンプレート: なし
 
@@ -9,7 +10,7 @@
 
 | 資料 | パス | 参照箇所 |
 |------|------|----------|
-| アーキテクチャ設計 | deliverables/docs/30_arch/architecture.md | §4.1 ディレクトリ構成 |
+| アーキテクチャ設計 | deliverables/docs/30_arch/architecture.md | §フロントエンド構成 |
 
 ## 責務
 
