@@ -2,7 +2,7 @@
 
 - 担当: platform-builder
 - 依存: 8-2, 8-3
-- ブランチ: main 直接
+- ブランチ: step8/8-8-cicd
 - 出力先: expense-saas/.github/workflows/
 - テンプレート: なし
 

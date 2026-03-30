@@ -2,7 +2,7 @@
 
 - 担当: frontend-developer
 - 依存: なし
-- ブランチ: main 直接
+- ブランチ: main 直接（済）
 - 出力先: expense-saas/frontend/
 - テンプレート: なし
 

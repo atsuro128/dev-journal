@@ -2,7 +2,7 @@
 
 - 担当: frontend-developer
 - 依存: 8-3, 8-4
-- ブランチ: main 直接
+- ブランチ: main 直接（済）
 - 出力先: expense-saas/frontend/src/api/, expense-saas/frontend/vite.config.ts
 - テンプレート: なし
 

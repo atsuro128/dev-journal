@@ -2,7 +2,7 @@
 
 - 担当: backend-developer
 - 依存: 8-4
-- ブランチ: main 直接
+- ブランチ: main 直接（済）
 - 出力先: expense-saas/internal/ (handler, service, domain, repository), expense-saas/frontend/src/api/types.ts
 - テンプレート: なし
 

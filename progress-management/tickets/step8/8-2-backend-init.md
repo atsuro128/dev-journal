@@ -2,7 +2,7 @@
 
 - 担当: backend-developer
 - 依存: 8-1
-- ブランチ: main 直接
+- ブランチ: main 直接（済）
 - 出力先: expense-saas/ (cmd/, internal/, go.mod)
 - テンプレート: なし
 
