@@ -1,6 +1,66 @@
 # 引き継ぎメモ
 
-## セッション: 2026-03-30 19:55
+## セッション: 2026-03-30 23:04
+
+### ゴール
+- 運用プロセスの整備・重複排除・ルール統一
+
+### 作業ログ
+- **CLAUDE.md 整備**
+  - メモリパス追記（autoMemoryDirectory のバグ回避）
+  - 参照先セクション削除（他ファイルで十分参照されている）
+- **project-rules.md と workflow.md の重複排除**
+  - ブランチ運用セクションを project-rules.md から削除し workflow.md に一本化
+- **成果物作成フローの分離**
+  - 設計成果物フロー / PR フローをリポジトリ別で判定するルールを追加（dev-journal → 設計成果物、expense-saas → PR）
+  - PR フローに codex レビューステップを追加
+- **ブランチ戦略の統一**
+  - 「1チケット = 1ブランチ = 1PR = スカッシュマージ」に全 Step で統一
+  - main 直接コミットの選択肢を廃止（step8, step11 含む）
+  - branch-strategy.md、ticket-template.md、各 work-breakdown を更新
+  - Step 8 チケット10件のブランチ記載を更新（完了済み: main 直接（済）、未着手: step8/{ID}-{概要}）
+- **review-findings 072/073 解消**
+  - 072: env_config.md から JWT_PUBLIC_KEY_PREVIOUS の言及を2箇所削除
+  - 073: 対応済み確認のみ
+  - 両件を resolved に移動
+- **計画策定ルールの明文化**
+  - feedback_planning_delegation メモリの内容を workflow.md にルール化
+- **セッションログアーカイブのフラット化**
+  - 日付フォルダ (YYYY-MM-DD/session-log.md) → YYYY-MM-DD.md に変更
+  - session-log-archive.md を日付別ファイルに分割して削除
+  - 関連スキル4件（session-log, daily-report, self-review, analyze）のアーカイブ参照を更新
+- **スキル整理**
+  - review スキル削除（未使用）
+  - review-findings スキルを最新化（codex 再レビュー依頼・コミット手順・PASS ループ明示）
+  - workflow.md のステップ5を /review-findings 参照に簡略化
+
+### 未完了
+- なし
+
+### ブロッカー
+- なし
+
+### 次にやること
+1. 8-7（テスト基盤）着手 — 8-6 完了で依存解消
+2. 8-8（CI/CD パイプライン）— 8-2, 8-3 完了で依存解消
+3. 8-9（開発者ツール）— 8-2, 8-3 完了で依存解消
+4. 8-10（整理）— 依存なし、最後に実施
+5. ops-036（LSP連携）/ ops-047（work-breakdown 分割）— 低優先
+
+### 学び・気づき
+- **ルールの分岐を避ける**: Step 別・作業特性別に分岐するルールは守り切れない。「全 Step 共通: 1チケット=1ブランチ=1PR=スカッシュマージ」のように統一ルールにする
+- **変更の波及先を網羅的に確認する**: ブランチ戦略変更時、workflow.md だけでなく branch-strategy.md・ticket-template.md・各 work-breakdown・チケットまで波及した。ユーザーに指摘されて気づいた箇所もあった
+- **フレームワークの汎用性を意識する**: 特定 Step 専用の記載は NG。リポジトリ別判定のように汎用的な基準を設ける
+
+### 意思決定ログ
+- **フロー判定はリポジトリ別**: 「設計 or 実装」の判断を指揮役に委ねず、編集対象リポジトリ（dev-journal / expense-saas）で機械的に決まるようにした
+- **スカッシュマージに統一**: 1ブランチ連続 PR（マージコミット）も検討したが、ルールの分岐が増える。1チケット1ブランチなら全 Step でスカッシュマージが使える
+- **autoMemoryDirectory のバグ回避**: システムプロンプトにデフォルトパスが表示されるバグがある。CLAUDE.md に正しいパスを明記して回避
+- **review-findings スキルの存続**: workflow のステップ5だけスキル化するのは一貫性がないが、セッションをまたぐ独立エントリーポイントとして機能するため残置
+
+---
+
+## セッション: 2026-03-30 19:55（前回）
 
 ### ゴール
 - Step 8 基盤構築の 8-2 〜 8-6 を可能な限り進める
@@ -71,63 +131,3 @@
 - **078 対応（useAuth 非リアクティブ）**: 対応不要。API クライアント基盤のトークン管理は正常動作しており、React UI のリアクティブ性は Step 10 の UI 実装責務
 - **RateLimitByIP のグローバルチェーン配置**: architecture.md §3.2 の [5] の位置と異なるが、security.md §4.4 に準拠。全リクエストに IP ベース制限を適用し、Auth 前の無効 JWT 大量送信を防止
 - **Repository の TenantContext 接続使用**: queries(ctx, pool) ヘルパーで context からコネクション取得、なければ pool フォールバック。認証不要エンドポイント（ヘルスチェック等）では TenantContext が設定されないため
-
----
-
-## セッション: 2026-03-30 15:14（前回）
-
-### ゴール
-- ops-044 対応（古い参照の除去）
-- 8-1 レビュー実施・完了
-
-### 作業ログ
-- **ops-044 対応（古い参照の除去）**
-  - operations/ 3ファイルは人間向け参照資料のため残置（ユーザー判断）
-  - 削除済み rules ファイルへの参照を除去: AGENTS.md、エージェント定義4件（frontend/backend/test/platform）
-  - 旧エージェント名を修正: step4-basic-design.md（basic-designer→designer、design-unit-reviewer→reviewer）
-  - ディレクトリ構成ドキュメント3件を更新（root-project、ai-dev-framework、dev-journal）
-  - ops-044 resolved
-- **8-1 レビュー実施**
-  - reviewer エージェントで内部レビュー → FIX（B-001: keys/ 未 gitignore、W-002: down migration で owner DROP）
-  - B-001/W-002 修正後、再レビュー → PASS
-  - codex レビュー実行 → sandbox エラー（bwrap が WSL2 で動作しない）
-  - codex sandbox 調査: DevContainer で user namespace 無効のため bubblewrap 不可。`--sandbox danger-full-access` で回避。codex 自身にも確認し、DevContainer の egress firewall が外部サンドボックスとして機能するため妥当と判断
-  - codex-review スキルを `--sandbox danger-full-access` に変更、SECURITY.md に制約と判断根拠を記載
-  - codex レビュー再実行 → FIX（074: docker compose up で全サービスが起動できない）
-  - 074 対応: 選択肢1（8-1 完了条件を db 限定、api/frontend の Dockerfile 責務を 8-2/8-3 に移管）を採用
-  - codex 差し戻し1回目: 8-2/8-3 チケットに責務未反映 → チケット更新
-  - codex 差し戻し2回目: work-breakdown の 8-2/8-3 詳細が未整合 → work-breakdown 更新
-  - codex 差し戻し3回目: 8-1 チケットの出力先に Dockerfile 残存 → 出力先修正
-  - codex LGTM → 074 resolved
-  - 8-1 完了
-- **ワークフロー改善（セッション中の学びから）**
-  - 成果物作成フロー変更: 内部レビュー → codex レビュー → コミット（旧: 内部レビュー → コミット → codex レビュー）
-  - 実行時ルール追加: FIX 判定後は同じレビュー主体で再レビュー必須
-  - 実行時ルール追加: ルール違反に気づいたら再発防止の運用設計修正をセットで提案
-  - 指摘対応フロー明示: 対応完了した指摘は pending-review → ユーザー確認 → resolved
-  - codex-review スキル: トリガー条件を設計文書+実装コードの両方に拡大、コミット前実行可能に変更
-
-### 未完了
-- なし
-
-### ブロッカー
-- なし
-
-### 次にやること
-1. 8-2（バックエンド初期化）着手 — 8-1 完了済みで依存解消
-2. 8-3（フロントエンド初期化）着手 — 依存なし、8-2 と並行可能
-3. 8-10（整理）着手 — 依存なし
-4. ops-036（LSP連携）/ ops-047（work-breakdown 分割）— 低優先
-
-### 学び・気づき
-- **責務を移すなら移管先も同時に更新する**: 8-1 の完了条件を縮小したが 8-2/8-3 のチケット・work-breakdown に受け皿を作らなかった。codex に3回差し戻された
-- **FIX 後の再レビューを省略しない**: reviewer が「差分確認で PASS 可能」と言っても、ルール上は再レビュー必須。ルールの趣旨を理解して従う
-- **ルール違反の指摘で終わらず再発防止まで提案する**: 「違反でした」は問題の認識であって解決ではない。運用設計の修正をセットで出す
-- **codex sandbox の事前検証が必要**: 新しいツール・環境の組み合わせは動作確認してから運用に組み込む
-- **対応方針を選ぶ時は波及範囲を見積もる**: 選択肢1（完了条件修正）は4ファイル波及だが、それは論点が整合性だから自然。選択肢2（プレースホルダー）は責務境界を崩すリスクがあった
-
-### 意思決定ログ
-- **operations/ 3ファイルは残置**: 人間向け参照資料であり AI の自動読み込み対象外。削除ではなく古い参照のみ除去
-- **codex sandbox は danger-full-access で運用**: WSL2 DevContainer で bubblewrap が動作しない。DevContainer の egress firewall（default-deny + allowlist）が外部サンドボックスとして機能するため、公式 docs の想定ユースケース（外部サンドボックス環境）に合致。codex 自身にも確認済み
-- **成果物作成フローで codex レビューをコミット前に移動**: codex はファイルを直接読めるためコミット不要。修正のたびにコミットが増える問題を解消
-- **074 対応は選択肢1（責務移管）**: 選択肢2（プレースホルダー Dockerfile）は 8-1 の「含めない: アプリケーションコード」と矛盾し責務境界が崩れる。4ファイルに波及するのは整合性を取る作業として自然（codex も同意見）
