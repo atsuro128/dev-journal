@@ -1,6 +1,55 @@
 # 引き継ぎメモ
 
-## セッション: 2026-03-29 11:46
+## セッション: 2026-03-30 13:38
+
+### ゴール
+- オープン issue の対応（ops-046, ops-045）
+
+### 作業ログ
+- **ops-046 対応（サブエージェントの不要コンテキスト読み込み）**
+  - `.claude/rules/` の `paths:` 制限がサブエージェントに効くか実機検証 → 効く（implementation-refs.md は designer に読み込まれなかった）
+  - workflow.md は全サブエージェントに読み込まれていることを確認（issue の前提は正しかった）
+  - `paths:` をつけると指揮役のセッション開始手順が機能しなくなるジレンマ → ユーザー提案で「workflow.md をポインタ化し、詳細を別ファイルに退避」方針に決定
+  - `.claude/rules/workflow.md` → `.claude/rules/project-rules.md`（共通ルール、薄い）+ `ai-dev-framework/guide/workflow.md`（指揮役専用）に分割
+  - ブランチ運用は共通ルールに残した（実装エージェントに必要、指揮役のプロンプト経由では保証されないため）
+  - 参照元3ファイル4箇所を更新
+- **ops-045 対応（レビュワーのコンテキスト負荷）**
+  - review-procedure.md を圧縮（111→74行）: work-breakdown と重複する Step 対応表・上流資料マッピング表を削除
+  - レビュー結果の出力先ルールを追加: PR ベースは GitHub PR コメント、ドキュメントベースは review-findings
+  - codex レビューも同様に PR/review-findings の条件分岐を追加
+  - 実装エージェントの完了手順を共通化: 4エージェントの PR 手順重複を `.claude/rules/implementation-workflow.md` に統合
+  - `implementation-refs.md` を `implementation-workflow.md` に統合・削除（work-breakdown/チケットと重複していたため）
+  - review-procedure.md から implementation-refs.md への参照を削除（reviewer は work-breakdown に従うため不要）
+- **ops-047 起票**: work-breakdown をディレクトリ構造に分割して reviewer の読み込み範囲を制御する案（低優先）
+- **AGENTS.md の参照に削除済みファイルへの参照が残っていることを発見**（ops-044 の範囲）
+
+### 未完了
+- なし（全て完了または issue 化済み）
+
+### ブロッカー
+- なし
+
+### 次にやること
+1. ops-044 対応（operations/ 配下文書の改訂 or 削除 + AGENTS.md の古い参照修正）
+2. ops-036 対応（LSP server 連携方針）— 低優先
+3. 8-1 レビュー実施（状態: レビュー待ち）
+4. 8-3（フロントエンド初期化）着手（依存なし）
+5. 8-1 レビュー完了後、8-2（バックエンド初期化）着手
+
+### 学び・気づき
+- **「実現できない」は思考の放棄**: `.claude/rules/` に縛られず、agent.md からの明示的参照など別の仕組みも検討すべきだった。影響が大きくても可能であれば提案する
+- **サブエージェント修正後は Re-read してから Edit**: ops-writer が修正したファイルを古いコンテキストで Edit し、エラーで余計な推論コストが発生した
+- **ops-045 と ops-046 は分けて考える**: 症状（コンテキスト圧迫）は同じだが、原因（仕組みの問題 vs 運用の問題）と対応策は別物
+
+### 意思決定ログ
+- **workflow.md のポインタ化**: 指揮役は最初に workflow.md を読むことで手順を把握する前提。`paths:` では解決できない（ファイルに触る前に読み込まれる必要がある）ため、薄い共通ルール + 指揮役が明示的に読む詳細ファイルに分離
+- **PR ベースのレビューは GitHub PR コメントに統一**: 実装フェーズでは review-findings ローカルファイルは使わない。設計フェーズとの切り替えは reviewer.md のルールで判断
+- **実装共通デリバリー手順の統合**: 4エージェントの PR 手順重複を排除。`paths: ["expense-saas/**/*"]` で自動読み込み、ブランチ欄の条件で main 直接 / 機能ブランチを切り替え
+- **implementation-refs.md は work-breakdown と重複**: 設計成果物の参照先は work-breakdown → チケットの導線で十分。別ファイルとして持つ必要がない
+
+---
+
+## セッション: 2026-03-29 11:46（前回）
 
 ### ゴール
 - ops-043 対応（レビューがスキップされる問題）
@@ -74,44 +123,3 @@
 - **ルールファイルは内容ではなくポインタ**: security-policy.md（144行）を削除し、設計成果物へのポインタ（implementation-refs.md）に置換。コンテキスト圧迫を軽減
 - **チケット入力欄は機械的に転記**: work-breakdown タスク詳細の入力から転記する。指揮役の判断に依存しない
 - **ブランチ運用は1箇所**: branch-strategy.md に統合。workflow.md は基本方針のみ、チケットは命名規則のみ
-
----
-
-## セッション: 2026-03-28 06:27（前回）
-
-### ゴール
-- progress.md チケット一覧形式に拡張
-- Step 8 チケット起票（10タスク）
-- 8-1（開発環境構築 + DB）着手
-- ops-037, ops-039, ops-042 の解消
-
-### 作業ログ
-- **progress.md 拡張**: チケット一覧テーブルを追加、Step 8 を「進行中」に更新
-- **Step 8 チケット起票**: 8-1〜8-10 の10件を `tickets/step8/` に作成
-- **8-1 実装完了**: docker-compose.yml、マイグレーション22ファイル、Makefile、init-db.sh、generate-keys.sh、.env.example を作成・コミット
-- **ops-042 対応（CI/CD）**: architecture.md に §8 CI/CD パイプライン構成として集約。cicd-pipeline.md 削除
-- **ops-037 対応（hooks）**: Claude Code hooks はフォーマット・lint には使わない。AI 固有の運用安全策に限定
-- **ops-039 対応（ブランチ運用）**: worktree 不使用、expense-saas 内で直接ブランチ操作に変更
-
-### 未完了
-- 8-2（バックエンド初期化）、8-3（フロントエンド初期化）
-- progress.md の 8-1 状態更新
-
-### ブロッカー
-- なし
-
-### 次にやること
-1. レビュータスクの設計
-2. 8-2 + 8-3 並列着手
-3. レビュー実施
-
-### 学び・気づき
-- 方針変更時は影響範囲を網羅的にチェックする
-- 例外資料を作らない（正本に書く）
-- 参照チェックは設定ファイルも含めて網羅的に
-
-### 意思決定ログ
-- 例外資料を作らない（CI/CD は architecture.md に集約）
-- Claude Code hooks は AI 固有の運用安全策のみ
-- worktree 不使用（リポジトリ分離構成で機能しない）
-- ブランチ戦略: Step 8/11 は main 直接、Step 9/10 は機能ブランチ
