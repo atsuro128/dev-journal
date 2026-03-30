@@ -4,11 +4,6 @@
 
 ```
 dev-journal/
-├── operations/                    # AI運用設計
-│   ├── overview.md                   # AI運用方針（全体）
-│   ├── hooks-design.md               # Hooks設計資料
-│   ├── subagent-design.md            # サブエージェント設計
-│   └── subagent-workflow.md          # サブエージェントワークフロー
 ├── daily-reports/                    # 作業日報（日付別）
 │   └── YYYY-MM-DD.md
 ├── deliverables/                     # 設計成果物
@@ -74,23 +69,6 @@ dev-journal/
 │               ├── reports.md
 │               ├── tenant.md
 │               └── workflow.md
-├── guide/                            # プロジェクト進行ガイド
-│   ├── implementation-guide.md
-│   ├── review-input-index.md         # レビュー入力インデックス
-│   ├── templates/
-│   │   └── task-plan.md              # タスク計画テンプレート（廃止。ticket-template.md を使用）
-│   └── work-breakdown/              # Step 別作業分解（成果物・完了条件・レビュー観点）
-│       ├── step0-preparation.md
-│       ├── step1-requirements.md
-│       ├── step2-domain.md
-│       ├── step3-architecture.md
-│       ├── step4-basic-design.md
-│       ├── step5-detail-design.md
-│       ├── step6-testing.md
-│       ├── step7-foundation.md
-│       ├── step8-test-implementation.md
-│       ├── step9-feature-implementation.md
-│       └── step10-system-test.md
 ├── logs/                             # ログ
 │   ├── session-log-archive.md        # セッションログアーカイブ
 │   └── YYYY-MM-DD/                   # 過去セッションログ（アーカイブ）

@@ -20,34 +20,22 @@ root-project/
 │   ├── render-squid-config.sh   # Squid 設定レンダリング
 │   └── verify-egress.sh         # Egress 検証
 ├── .claude/                     # Claude Code 設定
-│   ├── agents/                  # サブエージェント手順書（17件）
+│   ├── agents/                  # サブエージェント手順書（8件）
+│   │   ├── architect.md
 │   │   ├── backend-developer.md
-│   │   ├── basic-designer.md
-│   │   ├── db-designer.md
-│   │   ├── design-architect.md
-│   │   ├── design-cross-reviewer.md
-│   │   ├── design-unit-reviewer.md
-│   │   ├── detail-designer.md
+│   │   ├── designer.md
 │   │   ├── frontend-developer.md
-│   │   ├── impl-architect.md
-│   │   ├── impl-cross-reviewer.md
-│   │   ├── impl-unit-reviewer.md
 │   │   ├── ops-writer.md
-│   │   ├── planner.md
 │   │   ├── platform-builder.md
-│   │   ├── test-designer.md
-│   │   ├── test-implementer.md
-│   │   └── test-reviewer.md
+│   │   ├── reviewer.md
+│   │   └── test-implementer.md
 │   ├── hooks/                   # Hooks スクリプト
 │   │   └── edit-scope-check.py
 │   ├── memory/                  # 永続メモリ
 │   │   └── .gitkeep
 │   ├── rules/                   # ルール（自動ロード）
-│   │   ├── architecture.md
-│   │   ├── coding-standards.md
-│   │   ├── security-policy.md
-│   │   ├── testing.md
-│   │   └── workflow.md
+│   │   ├── implementation-workflow.md
+│   │   └── project-rules.md
 │   ├── skills/                  # スキル定義
 │   │   ├── analyze/
 │   │   ├── audit-context/
