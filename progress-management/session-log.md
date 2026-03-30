@@ -1,6 +1,80 @@
 # 引き継ぎメモ
 
-## セッション: 2026-03-30 15:14
+## セッション: 2026-03-30 19:55
+
+### ゴール
+- Step 8 基盤構築の 8-2 〜 8-6 を可能な限り進める
+
+### 作業ログ
+- **8-2（バックエンド初期化）**
+  - architect で計画策定 → backend-developer で実装
+  - 内部レビュー FIX: pool.Close() 二重呼び出し、/server .gitignore 漏れ → 修正 → PASS
+  - codex レビュー FIX: 075（JWT鍵供給方法が未固定 — volumes 削除で keys/ がコンテナに届かない）→ docker-compose.yml に keys/ read-only マウント追加 + JWT パスをコンテナ内パスに修正 → .env.example も合わせて修正（1回差し戻し）→ PASS
+  - codex 076（go.mod 依存不足）→ 対応不要理由をファイルに記載し pending-review → codex 差し戻し（チケットと成果物の不一致未解消）→ チケット責務欄を修正して委譲先を明示 → resolved
+  - 8-2 完了
+- **8-3（フロントエンド初期化）**
+  - architect で計画策定（8-2 実装中に並行）→ frontend-developer で実装
+  - 内部レビュー PASS（warning: vite-env.d.ts 未作成、info: tsbuildinfo gitignore）
+  - codex レビュー PASS（同じ2点、品質ゲートに影響なし）
+  - vite-env.d.ts 追加 + .gitignore に *.tsbuildinfo 追加（レビュー指摘の軽微対応）
+  - 8-3 完了
+- **8-4（共通ミドルウェア + ヘルスチェック）**
+  - architect で計画策定 → backend-developer で実装（12ファイル）
+  - 内部レビュー FIX: blocker 1件（SQL インジェクション — tenant.go で fmt.Sprintf）+ warning 4件 → 修正 → PASS
+  - codex レビュー FAIL: blocker 2件
+    - 認証必須ルートに Auth 前のレート制限なし → RateLimitByIP をグローバルチェーンに移動
+    - Logger が auth/tenant の tenant_id/user_id を取得できない → mutable RequestInfo パターン導入
+  - codex 再レビュー（1回目は expense-saas/ にアクセスできず失敗、再実行で成功）→ PASS
+  - 8-4 完了
+- **8-5（FE-BE連携）**
+  - architect で計画策定 → frontend-developer で実装
+  - 内部レビュー FIX: blocker 3件（login レスポンスの data ラッパー未考慮、doRefresh も同様、AuthUser 型が openapi と不一致）+ warning 1件（204 No Content 未対応）→ 修正 → PASS
+  - codex レビュー FIX: 077（FormData stringify）、078（useAuth 非リアクティブ）、079（ERROR_CODES 不完全）
+    - 077: api.post/put で FormData チェック追加 → resolved
+    - 078: 対応不要（API クライアント基盤は正常動作。React リアクティブ性は Step 10 の UI 責務）→ codex が妥当と判断 → resolved
+    - 079: security.md 全エラーコード追加 → resolved
+  - 8-5 完了
+- **8-6（コード生成・スケルトン）**
+  - architect で計画策定（5フェーズ、約40ファイル）
+  - backend-developer で実装（1回目がトークン上限で停止、Phase A + Phase B 途中まで。2回目で残り全て完了）
+  - 内部レビュー FIX: blocker 2件（sqlcクエリフィルタ不足、楽観的ロック未反映）+ warning 5件 → 修正 → 再レビューで B-1a（submitter_id フィルタ漏れ）+ W-6（from/to が created_at ベース）残存 → 修正 → PASS
+  - codex レビュー FIX: 080（Repository が TenantContext 接続を使わず RLS バイパス）、081（Service interface フィルタ未露出）、082（Workflow updated_at なし）、083（applicant_name フィルタ未反映）→ 修正 → PASS
+  - 8-6 完了
+- **メモリ保存先の修正**
+  - /home/node/.claude/ → /root-project/.claude/memory/ に移動（コンテナリビルドで消えるため）
+  - settings.local.json に autoMemoryDirectory 設定追加
+
+### 未完了
+- なし
+
+### ブロッカー
+- なし
+
+### 次にやること
+1. 8-7（テスト基盤）着手 — 8-6 完了で依存解消
+2. 8-8（CI/CD パイプライン）— 8-2, 8-3 完了で依存解消
+3. 8-9（開発者ツール）— 8-2, 8-3 完了で依存解消
+4. 8-10（整理）— 依存なし、最後に実施
+5. ops-036（LSP連携）/ ops-047（work-breakdown 分割）— 低優先
+
+### 学び・気づき
+- **計画策定は architect に委譲する**: 指揮役が入力資料を読んで理解しようとすると対話が止まる
+- **review-findings は起票者（codex/reviewer）が最終判定する**: 指揮役が独断でクローズしない。対応不要でも理由を記載 → pending-review → 同じレビュー主体に判断を委ねる
+- **codex の指摘を品質ゲート基準で批判的に評価する**: 形式的な指摘（チケット記述と成果物の不一致だが下流に影響なし）には押し返すべきだった。076 は余計なチケット修正を生んだ
+- **環境変数を変更したら全定義箇所を同時更新**: docker-compose.yml の JWT パスを修正したが .env.example を忘れ codex に差し戻し
+- **codex の実行環境**: dev-journal/ から実行すると expense-saas/ が見えないことがある。root-project/ から実行すること
+- **メモリはプロジェクトディレクトリに保存**: DevContainer ではコンテナリビルドで /home/node/ が消える。settings.local.json の autoMemoryDirectory で設定
+
+### 意思決定ログ
+- **8-2〜8-6 は直列実行**: work-breakdown の「逐次作業」方針に従い、main 直接コミットで直列に進めた。依存関係上は一部並行可能だが、docker-compose.yml 等の共有ファイル競合を回避
+- **076 対応（go.mod 依存不足）**: 対応不要が妥当だったが、codex に差し戻されてチケット修正で対応。Go の仕組み上 import しない依存は go mod tidy で消えるため、後続タスクで自然に追加される
+- **078 対応（useAuth 非リアクティブ）**: 対応不要。API クライアント基盤のトークン管理は正常動作しており、React UI のリアクティブ性は Step 10 の UI 実装責務
+- **RateLimitByIP のグローバルチェーン配置**: architecture.md §3.2 の [5] の位置と異なるが、security.md §4.4 に準拠。全リクエストに IP ベース制限を適用し、Auth 前の無効 JWT 大量送信を防止
+- **Repository の TenantContext 接続使用**: queries(ctx, pool) ヘルパーで context からコネクション取得、なければ pool フォールバック。認証不要エンドポイント（ヘルスチェック等）では TenantContext が設定されないため
+
+---
+
+## セッション: 2026-03-30 15:14（前回）
 
 ### ゴール
 - ops-044 対応（古い参照の除去）
@@ -57,52 +131,3 @@
 - **codex sandbox は danger-full-access で運用**: WSL2 DevContainer で bubblewrap が動作しない。DevContainer の egress firewall（default-deny + allowlist）が外部サンドボックスとして機能するため、公式 docs の想定ユースケース（外部サンドボックス環境）に合致。codex 自身にも確認済み
 - **成果物作成フローで codex レビューをコミット前に移動**: codex はファイルを直接読めるためコミット不要。修正のたびにコミットが増える問題を解消
 - **074 対応は選択肢1（責務移管）**: 選択肢2（プレースホルダー Dockerfile）は 8-1 の「含めない: アプリケーションコード」と矛盾し責務境界が崩れる。4ファイルに波及するのは整合性を取る作業として自然（codex も同意見）
-
----
-
-## セッション: 2026-03-30 13:38（前回）
-
-### ゴール
-- オープン issue の対応（ops-046, ops-045）
-
-### 作業ログ
-- **ops-046 対応（サブエージェントの不要コンテキスト読み込み）**
-  - `.claude/rules/` の `paths:` 制限がサブエージェントに効くか実機検証 → 効く（implementation-refs.md は designer に読み込まれなかった）
-  - workflow.md は全サブエージェントに読み込まれていることを確認（issue の前提は正しかった）
-  - `paths:` をつけると指揮役のセッション開始手順が機能しなくなるジレンマ → ユーザー提案で「workflow.md をポインタ化し、詳細を別ファイルに退避」方針に決定
-  - `.claude/rules/workflow.md` → `.claude/rules/project-rules.md`（共通ルール、薄い）+ `ai-dev-framework/guide/workflow.md`（指揮役専用）に分割
-  - ブランチ運用は共通ルールに残した（実装エージェントに必要、指揮役のプロンプト経由では保証されないため）
-  - 参照元3ファイル4箇所を更新
-- **ops-045 対応（レビュワーのコンテキスト負荷）**
-  - review-procedure.md を圧縮（111→74行）: work-breakdown と重複する Step 対応表・上流資料マッピング表を削除
-  - レビュー結果の出力先ルールを追加: PR ベースは GitHub PR コメント、ドキュメントベースは review-findings
-  - codex レビューも同様に PR/review-findings の条件分岐を追加
-  - 実装エージェントの完了手順を共通化: 4エージェントの PR 手順重複を `.claude/rules/implementation-workflow.md` に統合
-  - `implementation-refs.md` を `implementation-workflow.md` に統合・削除（work-breakdown/チケットと重複していたため）
-  - review-procedure.md から implementation-refs.md への参照を削除（reviewer は work-breakdown に従うため不要）
-- **ops-047 起票**: work-breakdown をディレクトリ構造に分割して reviewer の読み込み範囲を制御する案（低優先）
-- **AGENTS.md の参照に削除済みファイルへの参照が残っていることを発見**（ops-044 の範囲）
-
-### 未完了
-- なし（全て完了または issue 化済み）
-
-### ブロッカー
-- なし
-
-### 次にやること
-1. ops-044 対応（operations/ 配下文書の改訂 or 削除 + AGENTS.md の古い参照修正）
-2. ops-036 対応（LSP server 連携方針）— 低優先
-3. 8-1 レビュー実施（状態: レビュー待ち）
-4. 8-3（フロントエンド初期化）着手（依存なし）
-5. 8-1 レビュー完了後、8-2（バックエンド初期化）着手
-
-### 学び・気づき
-- **「実現できない」は思考の放棄**: `.claude/rules/` に縛られず、agent.md からの明示的参照など別の仕組みも検討すべきだった。影響が大きくても可能であれば提案する
-- **サブエージェント修正後は Re-read してから Edit**: ops-writer が修正したファイルを古いコンテキストで Edit し、エラーで余計な推論コストが発生した
-- **ops-045 と ops-046 は分けて考える**: 症状（コンテキスト圧迫）は同じだが、原因（仕組みの問題 vs 運用の問題）と対応策は別物
-
-### 意思決定ログ
-- **workflow.md のポインタ化**: 指揮役は最初に workflow.md を読むことで手順を把握する前提。`paths:` では解決できない（ファイルに触る前に読み込まれる必要がある）ため、薄い共通ルール + 指揮役が明示的に読む詳細ファイルに分離
-- **PR ベースのレビューは GitHub PR コメントに統一**: 実装フェーズでは review-findings ローカルファイルは使わない。設計フェーズとの切り替えは reviewer.md のルールで判断
-- **実装共通デリバリー手順の統合**: 4エージェントの PR 手順重複を排除。`paths: ["expense-saas/**/*"]` で自動読み込み、ブランチ欄の条件で main 直接 / 機能ブランチを切り替え
-- **implementation-refs.md は work-breakdown と重複**: 設計成果物の参照先は work-breakdown → チケットの導線で十分。別ファイルとして持つ必要がない
