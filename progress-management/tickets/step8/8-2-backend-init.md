@@ -18,9 +18,11 @@
 - レイヤー構造のディレクトリ作成（internal/handler, service, domain, repository）
 - 環境変数・設定管理（internal/config/）— DB接続情報、認証鍵パス、CORS許可オリジン、ログレベル
 - go.mod 初期化、必要な依存追加（chi, pgx, golang-migrate, golang-jwt, validator）
+- api 用 Dockerfile の作成（docker-compose.yml の api サービスが起動可能になる）
 - 含めない: ミドルウェア実装（8-4）、ハンドラ実装（8-6）
 
 ## 完了条件
 
 - go build が通る
 - ディレクトリ構成が architecture.md §3.1 と一致する
+- docker compose up で api サービスが起動する

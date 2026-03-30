@@ -19,9 +19,11 @@
 - MUI テーマ設定
 - react-router 基本設定
 - TanStack Query 基本設定
+- frontend 用 Dockerfile.dev の作成（docker-compose.yml の frontend サービスを有効化し起動可能にする）
 - 含めない: API クライアント実装（8-5）、ページコンポーネント実装（Step 10）
 
 ## 完了条件
 
 - npm run build が通る
 - ディレクトリ構成が architecture.md §4.1 と一致する
+- docker compose up で frontend サービスが起動する

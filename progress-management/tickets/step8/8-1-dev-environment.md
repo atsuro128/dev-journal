@@ -3,7 +3,7 @@
 - 担当: platform-builder
 - 依存: なし
 - ブランチ: main 直接
-- 出力先: expense-saas/ (docker-compose.yml, Dockerfile, db/migrations/)
+- 出力先: expense-saas/ (docker-compose.yml, db/migrations/, scripts/)
 - テンプレート: なし
 
 ## 入力
@@ -15,7 +15,7 @@
 
 ## 責務
 
-- コンテナ構成（PostgreSQL、Go API サーバー、フロントエンド開発サーバー）の docker-compose.yml
+- コンテナ構成（PostgreSQL + API・フロントエンドのサービス定義枠）の docker-compose.yml
 - db_schema.md に基づく全テーブルの DDL マイグレーション（golang-migrate 形式）
 - テナント分離設定（RLS ポリシー、app_user ロール、owner ロール）
 - DB ロール・権限作成
@@ -25,7 +25,7 @@
 
 ## 完了条件
 
-- docker compose up で全サービスが起動する
+- docker compose up で db サービスが起動する（api・frontend は 8-2/8-3 完了後に起動可能になる）
 - マイグレーションが正常終了する
 - RLS ポリシーが適用されている
 - 初期データが投入されている
