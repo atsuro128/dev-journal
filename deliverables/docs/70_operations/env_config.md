@@ -103,8 +103,6 @@
 | `JWT_REFRESH_TOKEN_EXPIRY` | リフレッシュトークン有効期間 | duration | `7d` | `7d` | `7d` |
 | `JWT_ISSUER` | JWT 発行者（iss クレーム） | string | `expense-saas` | `expense-saas` | `expense-saas` |
 
-> **Note**: `JWT_PUBLIC_KEY_PREVIOUS`（旧公開鍵）は Phase 3 の鍵ローテーション実装時に追加予定。MVP では単一鍵ペアで運用する。
-
 ### 4.4 S3 / オブジェクトストレージ
 
 | 変数名 | 説明 | 型 | dev | stg | prod |
@@ -179,8 +177,6 @@
   "JWT_PUBLIC_KEY": "-----BEGIN PUBLIC KEY-----\n...\n-----END PUBLIC KEY-----"
 }
 ```
-
-> **Note**: Phase 3 で鍵ローテーションを実装する際に `JWT_PUBLIC_KEY_PREVIOUS` を追加する。
 
 ### 5.3 ECS タスク定義でのシークレット参照
 
