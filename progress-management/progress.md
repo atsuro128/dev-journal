@@ -12,7 +12,7 @@
 | 5 | 詳細設計（API・DB・認可・セキュリティ） | 完了 | 2026-03-23 | `ai-dev-framework/guide/work-breakdown/step5-detail-design.md` |
 | 6 | テスト設計 | 完了 | 2026-03-23 | `ai-dev-framework/guide/work-breakdown/step6-testing.md` |
 | 7 | 運用設計 | 完了 | 2026-03-26 | `ai-dev-framework/guide/work-breakdown/step7-operations.md` |
-| 8 | 基盤構築 | 進行中 | - | `ai-dev-framework/guide/work-breakdown/step8-foundation.md` |
+| 8 | 基盤構築 | 完了 | 2026-03-31 | `ai-dev-framework/guide/work-breakdown/step8-foundation.md` |
 | 9 | テストコード実装 | 未着手 | - | `ai-dev-framework/guide/work-breakdown/step9-test-implementation.md` |
 | 10 | 機能実装 | 未着手 | - | `ai-dev-framework/guide/work-breakdown/step10-feature-implementation.md` |
 | 11 | システムテスト・UAT | 未着手 | - | `ai-dev-framework/guide/work-breakdown/step11-system-test.md` |
@@ -37,10 +37,10 @@
 | 8-4 | 共通ミドルウェア + ヘルスチェック | backend-developer | 8-2 | 完了 | `tickets/step8/8-4-middleware.md` |
 | 8-5 | FE-BE 連携 | frontend-developer | 8-3, 8-4 | 完了 | `tickets/step8/8-5-fe-be-integration.md` |
 | 8-6 | コード生成・スケルトン | backend-developer | 8-4 | 完了 | `tickets/step8/8-6-skeleton.md` |
-| 8-7 | テスト基盤 | backend-developer | 8-6 | 未着手 | `tickets/step8/8-7-test-infra.md` |
-| 8-8 | CI/CD パイプライン | platform-builder | 8-2, 8-3 | 未着手 | `tickets/step8/8-8-cicd.md` |
-| 8-9 | 開発者ツール | platform-builder | 8-2, 8-3 | 未着手 | `tickets/step8/8-9-dev-tools.md` |
-| 8-10 | 整理 | platform-builder | なし | 未着手 | `tickets/step8/8-10-cleanup.md` |
+| 8-7 | テスト基盤 | backend-developer | 8-6 | 完了 | `tickets/step8/8-7-test-infra.md` |
+| 8-8 | CI/CD パイプライン | platform-builder | 8-2, 8-3 | 完了 | `tickets/step8/8-8-cicd.md` |
+| 8-9 | 開発者ツール | platform-builder | 8-2, 8-3 | 完了 | `tickets/step8/8-9-dev-tools.md` |
+| 8-10 | 整理 | platform-builder | なし | 完了 | `tickets/step8/8-10-cleanup.md` |
 
 ## 課題・ブロッカー
 `issues/open/` を参照。
