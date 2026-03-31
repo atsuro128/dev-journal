@@ -19,3 +19,10 @@
 ## 修正方針案
 - 最低 1 本でも Vitest テストを追加し、`npx vitest run` が成功する状態にする。
 - もし Step 8 時点で frontend test を未着手扱いにするなら、architecture.md / work-breakdown / CI 定義を同時に修正し、Step 8 の完了条件と矛盾しないようにする。
+
+## 解決内容
+- `frontend/src/test/App.test.tsx` にスモークテストを追加し `vitest run` が成功する状態にした
+- `frontend/tsconfig.json` に `exclude: ["src/test"]` を追加し、テストファイルが `tsc -b` ビルドに含まれないようにした
+
+## 解決日
+2026-03-31

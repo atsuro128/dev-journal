@@ -18,3 +18,12 @@
 ## 修正方針案
 - ops-037 に合わせて、format は git hook、lint は CI に寄せ、Claude Code hooks には AI 固有の安全策だけを残す。
 - もしプロジェクト方針を変更して Claude hook を使うなら、ops-037 とチケット定義を更新した上で、実際に有効化される設定ファイルまでコミットする。
+
+## 解決内容
+- ops-037 に準拠し、format を git pre-commit hook（`.githooks/pre-commit`）に移行
+- Claude Code hook の format/lint 実装を削除、settings.json の PostToolUse を除去
+- Makefile に `setup` ターゲット追加（`git config core.hooksPath .githooks`）
+- 8-9 チケット記述を ops-037 準拠に更新
+
+## 解決日
+2026-03-31
