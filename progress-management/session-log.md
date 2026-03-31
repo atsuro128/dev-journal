@@ -17,6 +17,11 @@
   - `session-start SKILL.md` 軽量化（113行→48行）: フローコピー削除、メモリ読み込み削除、冗長な例の短縮
   - `feedback_always_read_workflow.md` 削除（rules/ でガードするため不要）
 - **project-rules.md の検討**: Lead専用ルールが2つ混在しているが、8項目程度のノイズは許容範囲として現状維持
+- **コンテキスト査定（/audit-context）**: 自動読み込み対象を全て評価
+  - 不整合2件修正: CLAUDE.md の古い記述、implementation-workflow.md の廃止済み「main 直接」セクション
+  - 重複メモリ削除: `feedback_planning_delegation.md`（workflow.md にルール化済み）
+  - メモリ短縮: `feedback_no_emoji_in_pr.md`（12行→3行）
+  - 低頻度スキル6個の description を1行に圧縮（daily-report, analyze, self-review, adr, check-structure, audit-context）
 
 ### 未完了
 - なし
@@ -26,8 +31,7 @@
 
 ### 次にやること
 1. Step 9（テストコード実装）の着手 — Step 8 全成果物が揃っている
-2. `/audit-context` でスキル description の棚卸し — 11スキルの description が毎セッションロードされている。使用頻度の低いものを短縮すれば推論コスト削減
-3. ops-036（LSP連携）/ ops-047（work-breakdown 分割）— 低優先
+2. ops-036（LSP連携）/ ops-047（work-breakdown 分割）— 低優先
 
 ### 学び・気づき
 - **Web情報より実機テストを信頼する**: 「カスタムエージェントはフレッシュコンテキスト」という情報は誤りだった。ユーザーが過去のテスト結果を覚えていて修正できた
