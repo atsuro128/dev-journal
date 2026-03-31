@@ -3,7 +3,7 @@
 - 担当: platform-builder
 - 依存: 8-2, 8-3
 - ブランチ: step8/8-9-dev-tools
-- 出力先: expense-saas/.claude/hooks/ (Claude Code hooks設定)
+- 出力先: expense-saas/.githooks/ (git pre-commit hook設定)
 - テンプレート: なし
 
 ## 入力
@@ -12,12 +12,12 @@
 
 ## 責務
 
-- コード変更後の自動 format（Go: gofmt/goimports, TS: prettier）
-- 変更前の軽量 lint（Go: go vet, TS: eslint）
-- 判断ポイント: 対象ツール、失敗時挙動（警告 vs ブロック）、CI との重複許容範囲
-- 含めない: CI パイプライン（8-8）
-- 参考: ops-037（hooks 運用 issue）の判断を反映する
+- コミット時の自動 format（Go: gofmt, TS: prettier）を git pre-commit hook で実行
+- lint は CI（GitHub Actions）で実行するため、ここでは対象外
+- Claude Code hooks は AI 固有安全策（edit-scope-check.py）のみとし、format/lint は含めない
+- 含めない: CI パイプライン（8-8）、lint（CI 担当）
+- ops-037（hooks 運用 issue）の判断を反映済み
 
 ## 完了条件
 
-- コード変更時に自動 format と軽量 lint が実行される
+- コミット時に自動 format が実行される（lint は CI で実行済み）
