@@ -1,6 +1,66 @@
 # 引き継ぎメモ
 
-## セッション: 2026-03-31 19:44
+## セッション: 2026-04-01 08:40
+
+### ゴール
+- Step 8 の成果物をユーザーが確認・理解する
+
+### 作業ログ
+- **Step 8 成果物確認**
+  - `.github/PULL_REQUEST_TEMPLATE.md` — 中身空、成果物外。削除せず保留
+  - `.github/workflows/ci.yml` / `deploy.yml` — CI/デプロイパイプライン確認。deploy.yml は ci.yml とジョブがコピペで二重
+  - PR #2, #4 が CI 失敗のままマージされていた問題を発見 → 現在の master では解消済み
+  - `.claude/` — 不要、削除
+  - `.claude/worktrees/` — 不要、削除
+- **PR フロー改善: CI 監視ステップ追加**
+  - `workflow.md` の PR フローに手順 3（CI 監視）を追加。指揮役が `gh run watch` をバックグラウンドで実行し、失敗時は実装担当に修正指示（最大2回）
+- **issue 起票 2件**
+  - `039-environment-config-missing-in-architecture` — architecture.md に環境構成（開発/ステージング/本番）の定義が欠落。テンプレート・work-breakdown の修正も必要
+  - `ops-048-work-breakdown-not-referenced-at-session-start` — セッション開始時に work-breakdown を参照する手順がない。完了条件未検証のまま Step 完了扱いになるリスク
+- **Step 11 work-breakdown 更新**
+  - 11-A（デプロイ環境構築）を新規追加、既存タスクを B/C/D にずらし
+  - 上流成果物に運用設計・deploy.yml を追加
+  - ただしデプロイ先（ステージング/本番）は issue 039 の環境構成定義待ち
+- **docker compose up 起動確認**
+  - `.dockerignore` が欠落していてビルド失敗 → 追加して解消
+  - ホスト側 PowerShell から `docker compose up --build` で全サービス（db, db-test, api, frontend）起動確認
+  - ヘルスチェック（`/health`）OK、フロントエンド表示 OK
+- **VSCode タスク整備**
+  - `.vscode/tasks.json` + `.vscode/launch.json` を root-project に作成
+  - 「Docker: 起動 + ブラウザ」— build + ヘルスチェック待機 + ブラウザ自動オープン
+  - 「Docker: 停止」— Ctrl+C 時に `docker compose down` が自動実行される `finally` 付きスクリプト
+  - 「Setup: 初回セットアップ」— .env コピー + JWT 鍵生成（Docker 経由）
+- **成果物の学習（ユーザー向け説明）**
+  - JWT 認証（秘密鍵/公開鍵）の仕組み、RSA とハッシュの違い
+  - Docker / docker-compose の役割、マルチステージビルド、キャッシュの仕組み
+  - DB のロール分離（expense_owner / expense_app）と RLS の関係
+
+### 未完了
+- Step 8 成果物確認の残り: `Dockerfile`, `frontend/Dockerfile.dev`, バックエンド（`cmd/`, `internal/`, `server/`, `db/`）, フロントエンド（`frontend/`）, `Makefile`
+
+### ブロッカー
+- なし
+
+### 次にやること
+1. Step 8 成果物確認の続き（Dockerfile, バックエンド, フロントエンド, Makefile）
+2. 確認完了後、issue 039（環境構成定義）/ ops-048（work-breakdown 参照手順）の対応判断
+3. Step 9（テストコード実装）着手
+
+### 学び・気づき
+- **Step 8 の完了条件が実際に検証されていなかった**: `docker compose up` で起動確認が完了条件にあったが、Dev Container 内に Docker がなく未検証のままマージ。`.dockerignore` 欠落でビルド自体が失敗する状態だった
+- **docker compose up の確認はホスト側で行う**: Dev Container に Docker を入れるのはセキュリティリスク（AI エージェントがホスト Docker を操作可能になる）。ホスト側ターミナルで実行する運用が正しい
+- **ユーザーが技術を理解する時間を大切にする**: JWT、RSA、Docker など初見の概念が多く、丁寧な説明が必要だった
+
+### 意思決定ログ
+- **CI 監視の責務は指揮役**: サブエージェントに CI 待機させるのではなく、指揮役が `gh run watch` をバックグラウンドで実行。サブエージェントは実装に集中
+- **デプロイ環境構築は Step 11-A**: Step 11 の最初のタスクとして追加。ただしデプロイ先はステージングが基本（本番で直接テストしない）。詳細は issue 039 で確定
+- **Dev Container に Docker-in-Docker は入れない**: Codex の助言に従い、セキュリティ優先でホスト側実行の運用
+- **VSCode タスクは root-project 直下に配置**: expense-saas 内ではなく root-project/.vscode/ に置き、`cwd` で expense-saas を指定
+- **PULL_REQUEST_TEMPLATE.md / generate-keys.sh は削除しない**: ユーザー判断で保留
+
+---
+
+## セッション: 2026-03-31 19:44（前回）
 
 ### ゴール
 - session-start スキルの二重管理・推論コスト問題を解決する
@@ -41,61 +101,3 @@
 - **禁止事項と手順詳細の分離**: 不可逆な違反（codexレビュー前マージ等）は rules/ で自動ロード、フロー手順の詳細は guide/workflow.md に残して session-start スキルで Read する方式。サブエージェントへのノイズを最小限に抑えつつ致命的違反をガード
 - **メモリ読み込みステップの削除**: MEMORY.md は自動ロードされることを実機テストで確認。スキル内で重複して Read する必要なし
 - **project-rules.md は現状維持**: Lead専用ルール2項目の混在は許容。分割するとファイル管理コストが増え、8項目程度のノイズは実害がない
-
----
-
-## セッション: 2026-03-31 19:13（前回）
-
-### ゴール
-- Step 8 残り（8-7, 8-8, 8-9, 8-10）を完了させる
-
-### 作業ログ
-- **8-7（テスト基盤）/ 8-8（CI/CD）/ 8-9（開発者ツール）を並行実装**
-  - architect エージェント3つを並行で起動し計画策定
-  - FE ツールの責務分担を議論（vitest/eslint→8-8、prettier→8-9）
-  - 8-8 の CI/CD 判断ポイントをユーザーと対話で決定（staticcheck-action、ブランチ保護含む、ci.yml/deploy.yml 分離）
-  - 実装エージェントを worktree 隔離で並行起動 → Bash 権限問題で全エージェント停止
-  - 手動でブランチ分離・ビルド確認・コミットを実施
-- **内部レビュー → codex レビュー**
-  - 内部レビュー3件並行実行、全 PASS（warning 数件を修正）
-  - codex レビュー FIX: 4件（084: FE テスト不在、085: Attachment ファクトリ不足、086: E2E/smoke 枠なし、087: ops-037 との矛盾）
-  - 087 は Claude hook → git pre-commit hook に全面修正（ops-037 準拠）
-  - 修正後 codex 再レビュー（1回目で 084 tsconfig 除外漏れ指摘、2回目で全件 PASS）
-- **8-10（整理）**
-  - 不要ディレクトリ削除、.gitignore/.env.example 整備
-  - codex レビュー FIX: 088（API_PORT 欠落）→ 復元 → 再レビュー PASS
-  - PR #4 マージ
-- **プロセス改善**
-  - session-start スキル新規作成（ワークフロー読み込み + 作業計画策定を強制）
-  - codex PR レビュー手順書（pr-review-procedure.md）新規作成
-  - AGENTS.md に PR レビュー振り分け追加
-  - workflow.md に architect 入力資料ルール追加
-  - settings.json: git * 許可、PostToolUse 削除
-  - 独立ロードマップをメモリに記録
-
-### 未完了
-- なし（Step 8 全チケット完了）
-
-### ブロッカー
-- **settings.json の変更がセッション中に反映されない**: `git push` の許可追加がセッション再起動まで有効にならなかった
-- **codex 環境の docker 未インストール**: 統合テスト検証は CI に委ねる方針で問題なし
-
-### 次にやること
-1. `/session-start` を実行してセッション開始（新スキルの動作確認を兼ねる）
-2. Step 9（テストコード実装）の着手 — Step 8 の全成果物が揃っている
-3. ops-036（LSP連携）/ ops-047（work-breakdown 分割）— 低優先
-
-### 学び・気づき
-- **workflow.md を読まないと手順飛ばしが起きる**: codex レビュー前にマージ、PR 前に内部レビューなど複数違反。session-start スキルで強制化した
-- **サブエージェントの Bash 権限は事前確認が必須**: npm install, go get, rm 等は許可リストにないとバックグラウンドで停止する
-- **codex レビューは1チケット1レビュー**: 複数まとめて投げると精度が落ちる
-- **architect に上流 issue を入力資料として渡す**: 8-9 で ops-037 を渡さず、矛盾した計画が通ってしまった
-- **指揮役にも作業計画が必要**: サブエージェントには architect の計画があるが、指揮役は即興で動いていた。session-start スキルに計画策定を組み込んだ
-- **worktree は expense-saas に対して正常に機能しない**: workflow.md に既に記載があったが読んでいなかった
-
-### 意思決定ログ
-- **8-9 の実装方式**: ops-037 に従い git pre-commit hook（gofmt + prettier）で format。Claude Code hooks は AI 安全策（edit-scope-check.py）のみ
-- **ブランチ保護**: 8-8 のスコープに含めて即時設定。architecture.md の「Step 8 は許可」を削除
-- **E2E/smoke ジョブ**: コメントアウトではなく `if: false` の実ジョブとして定義
-- **settings.json 権限整理**: git 系は `Bash(git *)` に統合、`git push --force` のみ deny。npm install / go get / rm は都度承認
-- **PR フロー**: codex は `gh pr review` で PR にコメントすべき。pr-review-procedure.md を新規作成
