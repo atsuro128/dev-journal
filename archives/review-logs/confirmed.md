@@ -17,8 +17,3 @@
 - [2026-04-02] `cmd/server/main.go` ステップ 5: JWT Verifier 初期化（RS256、非 fatal → issue 052 で必須化予定）
 - [2026-04-02] `cmd/server/main.go` ステップ 6: バックグラウンド Context（レートリミッター掃除用、トークンバケット方式）
 - [2026-04-02] `cmd/server/main.go` ステップ 7: DI（Repository → Authorizer → Service → Handler）— 途中
-- [2026-04-02] `internal/config/config.go` — 環境変数読み込み、必須/任意の区別
-- [2026-04-02] `internal/pkg/jwt/jwt.go` — RS256 署名検証、Claims 構造体
-- [2026-04-02] `internal/middleware/` 全ファイル — CORS, SecurityHeaders, RequestID, Logger, Auth, TenantContext, RBAC, RateLimit, Response, Context
-- [2026-04-02] `internal/repository/postgres/user_repo.go` — Repository 実装パターンの確認
-- [2026-04-02] `internal/domain/entity.go` — User 構造体の確認
