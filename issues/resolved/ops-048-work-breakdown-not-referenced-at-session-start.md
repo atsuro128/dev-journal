@@ -37,7 +37,10 @@ workflow.md のセッション開始手順に、作業中の Step の work-break
 ---
 
 ## 解決内容
-<!-- pending-review へ移動する前に記入 -->
+
+session-start スキル（`.claude/skills/session-start/SKILL.md`）にステップ3「作業中 Step の work-breakdown 確認」を追加。progress.md で進行中の Step を特定し、該当 work-breakdown を読んで完了条件・品質ゲートを把握する手順を組み込んだ。
+
+workflow.md への追加は不要と判断。session-start スキルが workflow.md を読む構造のため、スキル側に責務を寄せた。
 
 ## 解決日
-<!-- YYYY-MM-DD -->
+2026-04-03
