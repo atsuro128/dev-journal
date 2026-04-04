@@ -6,7 +6,7 @@
 |------|------|
 | 目的 | システム全体の構造と共通方式を定義する |
 | 正本情報 | レイヤ責務、認証/認可の通し方、URL 方針、テナント分離方式、非機能実現方針 |
-| 扱わない内容 | 判断理由の詳細（ADR に委譲）、図の正本（diagrams.md に委譲）、機能別詳細設計 |
+| 扱わない内容 | 判断理由の詳細（ADR に委譲）、代替案比較表・採否理由（ADR に委譲）、図表現全般（Mermaid・ASCII・ブロック図。diagrams.md に委譲）、機能別詳細設計 |
 | 主な参照元 | `../10_requirements/requirements.md`, `../10_requirements/policies.md`, `../20_domain/*`, `./adr/*.md` |
 | 主な参照先 | `./diagrams.md`, `../50_detail_design/*`, `../70_operations/*` |
 

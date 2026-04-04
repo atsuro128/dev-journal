@@ -186,22 +186,7 @@ graph TD
 
 ## 5. 状態遷移図
 
-> 対応: [architecture.md](architecture.md) は本図を参照（状態遷移の定義は `20_domain/domain_model.md` 7 が正本）
-
-```mermaid
-stateDiagram-v2
-    [*] --> draft: レポート作成
-
-    draft --> submitted: 提出 (T1)<br/>Member/Approver/Admin<br/>条件: 明細1件以上
-
-    submitted --> approved: 承認 (T2)<br/>Approver<br/>条件: 自己承認禁止
-    submitted --> rejected: 却下 (T3)<br/>Approver<br/>条件: 却下理由必須
-
-    approved --> paid: 支払完了 (T4)<br/>Accounting
-
-    rejected --> [*]: 終端状態<br/>再申請は新規レポート
-    paid --> [*]: 終端状態
-```
+状態遷移図の正本は [state_machine.md](../20_domain/state_machine.md) を参照。
 
 ---
 
