@@ -1,6 +1,59 @@
 # 引き継ぎメモ
 
-## セッション: 2026-04-04 19:45
+## セッション: 2026-04-05 00:04
+
+### ゴール
+- issue 036（LSP サーバー統合）の動作検証・クローズ
+- issue 049（コメント言語方針）の方針決定・既存コメント日本語化・クローズ
+
+### 作業ログ
+- **issue 036（LSP サーバー統合）** — resolved
+  - gopls: documentSymbol, hover 正常動作を確認
+  - vtsls: `spawn vtsls ENOENT` — `@vtsls/language-server` が未インストールだった
+  - `@vtsls/language-server` をグローバルインストール後、documentSymbol 正常動作を確認
+  - Dockerfile を修正: `typescript-language-server` を削除し `@vtsls/language-server` に置き換え
+  - issue を resolved に移動、コミット完了
+- **issue 049（コメント日本語化）** — resolved
+  - ユーザーと方針を合意: 全コメント日本語（godoc/JSDoc 含む）、エラーメッセージ・ログは英語維持
+  - コーディング規約の置き場について議論: `.claude/rules/implementation-workflow.md` に追加（`expense-saas/**/*` スコープ）
+  - 4つのサブエージェントで並列変換:
+    1. Go domain/config/cmd/jwt（9ファイル）
+    2. Go handler/middleware（20ファイル）
+    3. Go service/repo/testutil（30ファイル）
+    4. Frontend TS/TSX（21ファイル中、変更は constants.ts のみ）
+  - 自己レビューで jwt.go のエラーメッセージ3箇所と main.go の slog.Warn 2箇所が誤って日本語化されていたのを発見・修正
+  - go build / go vet エラーなし確認
+  - 3リポジトリにコミット完了
+- **ops-056（成果物のテンプレート準拠修正）** — ユーザーが対応済み
+
+### 未完了
+- ops-055: work-breakdown テンプレートと実ファイルの構造不整合
+- ops-047: work-breakdown ディレクトリ構成
+- ops-050: 受け渡し契約の冗長性
+- 050: JWT 署名アルゴリズム
+- 052: JWT 鍵ファイル必須化
+
+### ブロッカー
+なし
+
+### 次にやること
+1. Step 9（テストコード実装）着手 — チケット起票から
+2. ops issue の優先度判断（055, 047, 050 は Step 9 をブロックしない）
+3. issue 050, 052（JWT 関連）は Step 9 or Step 10 で対応可
+
+### 学び・気づき
+- **サブエージェントはコメント以外も変える**: エラーメッセージ文字列やログメッセージをコメントと混同して日本語化した。コミット前の diff レビューで `// ` 以外の変更行を抽出するチェックが有効だった
+- **コーディング規約の置き場は expense-saas スコープのルールファイル**: ai-dev-framework ではなく `.claude/rules/implementation-workflow.md`（paths: expense-saas/**/*）が正しい
+
+### 意思決定ログ
+- **コメント言語は全日本語**: ユーザーは日本企業向けポートフォリオを想定。経験のないプログラム言語でコメントまで英語は負担が大きい
+- **エラーメッセージ・ログは英語維持**: コメントとコードリテラルは区別する
+- **sqlcgen/ は変換対象外**: sqlc 自動生成コードのため
+- **typescript-language-server は不要**: vtsls プラグインが TypeScript LSP を担うため、重複する typescript-language-server を Dockerfile から削除
+
+---
+
+## セッション: 2026-04-04 19:45（前回）
 
 ### ゴール
 - issue 036（LSP サーバー統合）の動作検証・完了
@@ -66,66 +119,3 @@
 - **成果物 ADR からステータス・日付を削除**: git 履歴で追える情報。references/decisions/ 用の ADR-template.md にはステータス・日付を残す（用途が違う）
 - **workflow.md に成果物テンプレート参照を追加**: チケット方式・非チケット方式の両方で docs-v2 テンプレートへの導線を担保
 - **jq は環境にインストール済み**: Dockerfile L28 で jq をインストール済み。worktree hooks で使用中。以前「入っていない」と言われたのは誤り
-
----
-
-## セッション: 2026-04-03 14:50（前回）
-
-### ゴール
-- issue 対応セッション（039, ops-048, 053, 036）
-
-### 作業ログ
-- **issue 039（環境構成の定義が欠落）** — resolved
-  - 議論の結果、環境構成は architecture.md ではなく ADR-0004 の責務と判断
-  - ADR-0004 にポートフォリオ対応セクション追加（実務: Fargate、ポートフォリオ: EC2 無料枠）
-  - env_config.md, release.md にポートフォリオ対応注記追加
-  - step3 の完了条件・レビュー観点から architecture.md への環境構成要求を削除し ADR に移動
-  - step5, step7, step11 の上流入力・受け渡しを修正
-  - codex レビュー4回実施。FAIL条件の解釈違いで平行線になり、PASS 扱いで決着
-- **ops-050（受け渡し契約の冗長性）** — 起票のみ
-  - 039 対応中に「次 Step への受け渡し契約」と「上流入力」の二重管理問題を発見
-  - step5 の受け渡し契約に step3 の成果物が「渡すもの」として載っている不正確さも発見
-- **ops-048（session-start で work-breakdown 未参照）** — resolved
-  - session-start スキルにステップ3「作業中 Step の work-breakdown 確認」を追加
-  - workflow.md への追加は不要と判断（スキルが workflow.md を読む構造のため）
-- **issue 053（非機能テストカバレッジ不足）** — resolved
-  - test_strategy.md に「MVP スコープ外の非機能テスト」テーブルを追加
-  - やらないテスト・理由・リスクを明記。テスト追加や work-breakdown 変更は不要と判断
-- **issue テンプレートにブロッカーフィールド追加**
-- **issue 036（LSP サーバー統合）** — 着手中
-  - gopls（既存）、typescript-language-server をインストール
-  - settings.json に `ENABLE_LSP_TOOL=1` を追加
-  - Dockerfile に両 LSP サーバーのインストールを追加（リビルド対策）
-  - 動作検証は次回セッション（settings.json の env は起動時読み込みのため）
-- **issue 051（スケーラビリティのトレードオフ）** — 未着手
-  - architect が計画を出したが、セクション追加はテンプレート修正も必要との指摘あり
-  - 既存セクション内への注記追記で済ませる方向で検討中
-
-### 未完了
-- issue 036: LSP の動作検証 + 方針ドキュメント作成 + コミット
-- issue 051: 対応方針の確定と実施
-- issue 049: コメント言語（日本語/英語）の方針未決定。ユーザーのキャリア目標に依存
-
-### ブロッカー
-- 036: LSP 動作検証は次回セッション起動後でないとできない
-- 049: ユーザーの目標設定が未確定のため保留
-
-### 次にやること
-1. セッション起動後に LSP 動作検証（`ENABLE_LSP_TOOL=1` が効いているか確認）
-2. 036 の方針ドキュメント作成・コミット・クローズ
-3. 051 の対応（architecture.md のテナント分離セクション内に注記追記）
-4. 049 の方針決定（ユーザーと相談）
-5. Step 9（テストコード実装）着手
-
-### 学び・気づき
-- **codex レビューは平行線になることがある**: FAIL 条件の解釈違いで4回レビューした。明確に対応不要と判断したら、理由を説明して打ち切るべき
-- **issue のスコープは最初に全体を把握すべき**: 039 で提案1だけ対応しようとして、2,3,4 も必要と指摘された。テンプレート修正まで含めて考える
-- **波及範囲の確認を怠らない**: step3 を直したら step5, step7 にも旧前提が残っていた。codex が発見してくれたが、自分で grep すべきだった
-
-### 意思決定ログ
-- **環境構成は ADR の責務**: architecture.md のテンプレートに環境構成がないことから、環境構成は ADR-0004 に置くのが正しいと判断
-- **ポートフォリオでは EC2 無料枠を使う**: Fargate は月 $15〜。EC2 t3.micro なら12ヶ月無料。ADR-0004 に実務想定とポートフォリオ実装の対比テーブルを追加
-- **受け渡し契約セクションは冗長**: 上流入力と同じ情報の二重管理。廃止を検討（ops-050）
-- **品質ゲートの FAIL 条件はファイル指定なし**: Step 全体の判定なので、ADR に環境構成があれば FAIL にならない
-- **コメント言語は目標次第**: 日本案件なら全日本語、外資なら英語。ユーザーの目標が未確定のため保留
-- **LSP は ENABLE_LSP_TOOL=1 で有効化**: Claude Code のネイティブ LSP サポートを利用。Dockerfile にも追加してリビルド対策済み
