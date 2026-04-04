@@ -20,7 +20,7 @@
 |------------|------|
 | `adr/0001-tech-stack.md` | 技術スタック・主要ライブラリの選定理由 |
 | `adr/0002-multi-tenant.md` | マルチテナント方式（Shared DB + tenant_id） |
-| `adr/0003-rls-tenant-isolation.md` | RLS テナント分離の詳細設計 |
+| `adr/0003-rls-tenant-isolation.md` | RLS テナント分離方式の判断根拠 |
 | `adr/0004-infra.md` | インフラ構成（ECS Fargate / RDS / S3） |
 | `adr/0005-monitoring-logging.md` | 監視・ログ戦略 |
 | `20_domain/domain_model.md` | ドメインモデル・集約・不変条件 |
@@ -182,6 +182,8 @@ expense-saas/
     他テナントのリソースへのアクセス → 404 Not Found（TNT-006）
     → リソースの存在自体を漏洩しない
 ```
+
+> **RLS 方式のトレードオフ**: コネクションプール上限、RDS Proxy との相性、リードレプリカ非対応、集計クエリの性能など既知の限界とスケール時の対応方針は [ADR-0003](adr/0003-rls-tenant-isolation.md) §スケール時の既知の限界 を参照。
 
 ### 3.5 エラーハンドリング
 
