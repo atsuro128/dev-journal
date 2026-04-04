@@ -10,13 +10,7 @@
 | 主な参照元 | `../../10_requirements/requirements.md`, `./0004-infra.md` |
 | 主な参照先 | `../architecture.md`, `../../50_detail_design/monitoring.md`, `../../70_operations/*` |
 
-## ステータス
-承認済
-
-## 日付
-2026-03-16
-
-## 背景（ペイン）
+## 背景
 - 本番環境で問題発生時に原因を特定できる仕組みが必要
 - 非機能要件: API p95 500ms以下（requirements.md §4.1）、稼働率 99.5%（§4.3）、ヘルスチェックエンドポイント（§4.3）
 - ADR-0004 で AWS（ECS Fargate + RDS）を採用しており、監視基盤はAWSサービスとの親和性が重要
@@ -187,9 +181,9 @@ MVP ではメール通知。将来的に Slack/PagerDuty 連携を検討。
 |-----------|---------|
 | `../architecture.md` §7 | 監視・ログ方針サマリー（slog → JSON → CloudWatch、ヘルスチェック、アラート） |
 | `../architecture.md` §3.2 | ミドルウェアチェーン [3] RequestID、[4] Logger の責務定義 |
-| `../architecture.md` §8.1 | 非機能要求マッピング: p95 メトリクス閾値 |
-| `../architecture.md` §8.3 | 非機能要求マッピング: ヘルスチェック定義 |
+| `../architecture.md` §9.1 | 非機能要求マッピング: p95 メトリクス閾値 |
+| `../architecture.md` §9.3 | 非機能要求マッピング: ヘルスチェック定義 |
 | `../../50_detail_design/monitoring.md` §2 | 構造化ログ設計（slog JSONHandler、標準フィールド定義、ログレベル方針） |
 | `../../50_detail_design/monitoring.md` §5 | メトリクスフィルタ・CloudWatch Alarm 設計（閾値、名前空間の正式化） |
 | `../../50_detail_design/monitoring.md` §7 | ヘルスチェック実装仕様（エンドポイント詳細、ALB 設定） |
-| `../../50_detail_design/monitoring.md` §8 | アラート通知設計（SNS トピック、通知フロー） |
+| `../../50_detail_design/monitoring.md` §6 | アラート通知設計（SNS トピック、通知フロー） |

@@ -10,13 +10,7 @@
 | 主な参照元 | `./0002-multi-tenant.md`, `../../20_domain/domain_model.md` |
 | 主な参照先 | `../architecture.md`, `../../50_detail_design/db_schema.md` |
 
-## ステータス
-承認済
-
-## 日付
-2026-03-16
-
-## 背景（ペイン）
+## 背景
 - ADR-0002 で Shared DB + tenant_id 方式を採用した
 - アプリケーション層の `WHERE tenant_id = ?` だけではバグや実装漏れによるテナント越えを防げない
 - 要件 TNT-004「PostgreSQL RLS でアプリ層の保証を二重化」を実現する具体的な方式を決定する必要がある
@@ -44,71 +38,20 @@
 ## 決定
 **案A: SET app.current_tenant（セッション変数方式）** を採用し、アプリケーション層の WHERE tenant_id との二重保証とする。
 
-### RLS ポリシーの適用対象
+### 決定の要点
 
-| テーブル | tenant_id | RLS 適用 | 備考 |
-|----------|-----------|----------|------|
-| tenants | tenant_id (PK) | Yes | 自テナント情報のみ参照可 |
-| tenant_memberships | tenant_id | Yes | 自テナントのメンバーのみ参照可 |
-| expense_reports | tenant_id | Yes | テナント分離の中核 |
-| expense_items | tenant_id | Yes | 冗長保持により JOIN 不要で RLS 適用 |
-| attachments | tenant_id | Yes | 冗長保持により JOIN 不要で RLS 適用 |
-| users | (なし) | No | tenant_id を持たない。TenantMembership 経由でアクセス制御 |
+- tenant_id を持つ全業務テーブル（tenants, tenant_memberships, expense_reports, expense_items, attachments）に RLS を適用。users テーブルは tenant_id を持たないため対象外
+- `SET LOCAL` によりトランザクションスコープでテナントコンテキストを設定し、COMMIT/ROLLBACK で自動リセット
+- テーブルオーナーロール（マイグレーション + 認証用）と業務用ロール（通常リクエスト用）の2ロール構成。認証エンドポイントはオーナーロールで RLS をバイパス
 
-### RLS ポリシー設計
+### 設計仕様の反映先
 
-```sql
--- 基本パターン（全対象テーブルに適用）
-ALTER TABLE expense_reports ENABLE ROW LEVEL SECURITY;
--- FORCE ROW LEVEL SECURITY は使用しない（テーブルオーナーの RLS バイパスを許可）
-
-CREATE POLICY tenant_isolation ON expense_reports
-    USING (tenant_id = current_setting('app.current_tenant')::uuid);
-```
-
-- `ENABLE ROW LEVEL SECURITY`: テーブルオーナー以外に RLS を有効化
-- `FORCE ROW LEVEL SECURITY` は **使用しない**: テーブルオーナーロールは認証処理（ログイン・サインアップ）での `tenant_memberships` 参照に必要なため、RLS をバイパスできる状態を維持する。業務用ロール（アプリケーション接続）には `ENABLE` のみで RLS が適用される
-- ポリシーは `USING` 句のみ（SELECT/UPDATE/DELETE に適用）。INSERT 時は `WITH CHECK` も同一条件で適用
-- **DB ロールの分離**: テーブルオーナーロール（マイグレーション + 認証用）と業務用ロール（通常リクエスト用）の2ロール構成
-
-### コネクション管理フロー（認証済みリクエスト）
-
-```
-リクエスト受信
-  ↓
-JWT claims から tenant_id を取得（ミドルウェア）
-  ↓
-pool.Acquire() で専用コネクションを取得 ← ★ リクエスト単位で固定
-  ↓
-BEGIN + SET LOCAL app.current_tenant = '{tenant_id}'
-  ← ★ SET LOCAL はトランザクション内でのみ有効（COMMIT/ROLLBACK で自動リセット）
-  ↓
-ビジネスロジック実行（全クエリが同一コネクション・同一トランザクション内で実行）
-  ↓
-COMMIT or ROLLBACK  ← ★ SET LOCAL は自動的にリセットされる
-  ↓
-conn.Release() でコネクションをプールに返却
-```
-
-**接続固定の保証方式**: Go の `pgxpool.Pool.Acquire()` でリクエスト単位にコネクションを固定し、`context.Context` 経由で handler → service → repository に伝播する。`SET LOCAL` はトランザクションスコープなので、COMMIT/ROLLBACK 後に自動リセットされ、`RESET` 漏れのリスクを排除する。
-
-### 認証エンドポイントの RLS バイパス
-
-ログイン・サインアップ等の認証エンドポイントでは、JWT が未発行のため `app.current_tenant` を設定できない。`tenant_memberships`（RLS 適用対象）から `role, tenant_id` を取得する必要があるため、以下の方式で RLS をバイパスする。
-
-```
-[ログイン / サインアップ]
-  ↓
-users テーブルから user 取得（RLS 非適用）
-  ↓
-tenant_memberships から role, tenant_id 取得
-  ← ★ RLS バイパス: テーブルオーナーロール（マイグレーション用）で直接参照
-  ← user_id での絞り込みにより、該当ユーザーの所属テナントのみ取得
-  ↓
-JWT 生成（claims に tenant_id, role を含める）
-```
-
-**バイパス方式**: 認証処理専用に、RLS が適用されない DB ロール（テーブルオーナー）の接続を使用する。このロールは認証サービス内でのみ使用し、業務用リポジトリ層には公開しない。`FORCE ROW LEVEL SECURITY` はテーブルオーナーには適用しないことで、認証時の参照を許可する。
+| 詳細 | 反映先 |
+|------|--------|
+| RLS ポリシー SQL・適用対象テーブル | `../../50_detail_design/db_schema.md` §7 |
+| コネクション管理フロー・接続固定方式 | `../architecture.md` §3.2, §3.4 |
+| 認証バイパス・2ロール構成 | `../../50_detail_design/security.md` §3, `../../50_detail_design/db_schema.md` §7.4 |
+| テナント分離フロー図 | `../diagrams.md` §4 |
 
 ## 理由
 1. **二重保証の実現**: アプリ層（リポジトリの WHERE tenant_id）+ DB層（RLS）で、どちらかに漏れがあっても他方で防止。セキュリティの深層防御の原則に合致
@@ -150,7 +93,7 @@ JWT 生成（claims に tenant_id, role を含める）
 | `../architecture.md` §3.2 | ミドルウェアチェーン [7] TenantContext（SET LOCAL app.current_tenant） |
 | `../architecture.md` §3.3 | 認証フロー: RLS バイパスによるログイン時の tenant_memberships 参照 |
 | `../architecture.md` §3.4 | テナント分離の実行フロー（SET LOCAL + RLS の二重保証動作） |
-| `../architecture.md` §8.2 | 非機能要求マッピング: テナント分離の二重保証 |
+| `../architecture.md` §9.2 | 非機能要求マッピング: テナント分離の二重保証 |
 | `../../50_detail_design/db_schema.md` §7 | RLS ポリシー（全対象テーブルの ENABLE ROW LEVEL SECURITY、ポリシー定義、2ロール構成） |
 | `../../50_detail_design/db_schema.md` §8 | インデックス戦略（tenant_id を複合インデックスの先頭に配置） |
-| `../../50_detail_design/security.md` §4 | テナント分離実装仕様（RLS コンテキスト設定フロー、2ロール構成、RLS バイパスケース） |
+| `../../50_detail_design/security.md` §3 | テナント分離実装仕様（RLS コンテキスト設定フロー、2ロール構成、RLS バイパスケース） |

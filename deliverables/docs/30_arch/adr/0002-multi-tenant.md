@@ -10,13 +10,7 @@
 | 主な参照元 | `../../10_requirements/requirements.md`, `../../20_domain/domain_model.md` |
 | 主な参照先 | `./0003-rls-tenant-isolation.md`, `../architecture.md` |
 
-## ステータス
-承認済
-
-## 日付
-2026-03-16
-
-## 背景（ペイン）
+## 背景
 - 経費精算SaaS はマルチテナント（複数企業が同一システムを利用）で提供する
 - テナント間のデータ分離は最重要の不変条件（TNT-005: テナント間のデータ参照は一切不可）
 - ドメインモデルでは Tenant を起点にすべての業務エンティティ（ExpenseReport, ExpenseItem, Attachment）が tenant_id を保持する構造になっている
@@ -71,7 +65,7 @@
 |-----------|---------|
 | `../architecture.md` §3.4 | テナント分離の実行フロー（Shared DB + tenant_id の動作詳細） |
 | `../architecture.md` §6.1 | 多層防御 [5] データアクセス層の tenant_id 強制 |
-| `../architecture.md` §8.2 | 非機能要求マッピング: テナント分離の二重保証 |
+| `../architecture.md` §9.2 | 非機能要求マッピング: テナント分離の二重保証 |
 | `../../50_detail_design/db_schema.md` §2.1 | テナント分離設計方針（全業務テーブルの tenant_id 付与） |
 | `../../50_detail_design/db_schema.md` §3〜5 | 各テーブル DDL の tenant_id カラム定義 |
-| `../../50_detail_design/security.md` §4 | テナント分離実装仕様（アプリ層 + RLS の二重保証） |
+| `../../50_detail_design/security.md` §3 | テナント分離実装仕様（アプリ層 + RLS の二重保証） |

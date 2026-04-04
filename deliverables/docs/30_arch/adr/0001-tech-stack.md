@@ -10,13 +10,7 @@
 | 主な参照元 | `../../10_requirements/requirements.md` |
 | 主な参照先 | `../architecture.md`, `../diagrams.md` |
 
-## ステータス
-承認済
-
-## 日付
-2026-03-16
-
-## 背景（ペイン）
+## 背景
 - マルチテナント型経費精算SaaS の MVP を構築するにあたり、バックエンド・フロントエンド・データベース・主要ライブラリの技術選定が必要
 - 選定にあたっては、非機能要件（API p95 500ms以下、同時接続100ユーザー）、セキュリティ要件（JWT RS256、Argon2id、RLS）、およびチームの技術的親和性を考慮する必要がある
 
@@ -110,9 +104,9 @@
 | `../architecture.md` §2 | レイヤー構成（Go + Chi + sqlc）、ミドルウェアチェーン |
 | `../architecture.md` §3 | バックエンドディレクトリ構成、ライブラリ配置 |
 | `../architecture.md` §4 | フロントエンドディレクトリ構成（React + Vite + MUI + TanStack Query） |
-| `../architecture.md` §8.1 | 非機能要求マッピング: Go によるパフォーマンス目標達成 |
-| `../architecture.md` §8.2 | 非機能要求マッピング: golang-jwt, argon2id のセキュリティ要件対応 |
+| `../architecture.md` §9.1 | 非機能要求マッピング: Go によるパフォーマンス目標達成 |
+| `../architecture.md` §9.2 | 非機能要求マッピング: golang-jwt, argon2id のセキュリティ要件対応 |
 | `../../50_detail_design/security.md` §2.1 | JWT 実装詳細（golang-jwt/jwt ライブラリ使用） |
-| `../../50_detail_design/security.md` §3 | パスワードハッシュ実装（alexedwards/argon2id ライブラリ使用） |
+| `../../50_detail_design/security.md` §2.2 | パスワードハッシュ実装（alexedwards/argon2id ライブラリ使用） |
 | `../../50_detail_design/db_schema.md` §2 | 型マッピング・設計方針（PostgreSQL + sqlc 前提） |
 | `../../50_detail_design/ui-guidelines.md` §1 | MUI デザインガイドライン（MUI 選定に基づく） |

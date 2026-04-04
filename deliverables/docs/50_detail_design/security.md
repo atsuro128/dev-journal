@@ -21,7 +21,7 @@
 | `10_requirements/requirements.md` SS4.2 | セキュリティ要件（SEC-*, TNT-*） |
 | `30_arch/architecture.md` SS6 | セキュリティアーキテクチャ、ミドルウェアチェーン |
 | `30_arch/adr/0001-tech-stack.md` | JWT ライブラリ（golang-jwt/jwt）、パスワードハッシュライブラリ（alexedwards/argon2id） |
-| `30_arch/adr/0003-rls-tenant-isolation.md` | RLS テナント分離の詳細設計 |
+| `30_arch/adr/0003-rls-tenant-isolation.md` | RLS テナント分離方式の判断根拠 |
 | `.claude/rules/security-policy.md` | セキュリティポリシー全体 |
 | `10_requirements/policies.md` | RBAC（SS3）+ テナント分離（SS6）+ 認可チェックフロー（SS3.9） |
 | `deliverables/docs/01_glossary.md` | 用語集 |

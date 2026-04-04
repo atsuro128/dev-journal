@@ -165,23 +165,9 @@ expense-saas/
 
 二重保証の動作を示す。
 
-```
-[1] ミドルウェア（TenantContext）
-    JWT claims から tenant_id を取得（DB問い合わせ不要）
-    Acquire conn + BEGIN + SET LOCAL app.current_tenant = 'tenant-uuid'
+TenantContext ミドルウェアが JWT claims から tenant_id を取得し、`SET LOCAL app.current_tenant` でコネクションにテナントを紐付ける。リポジトリ層は sqlc 生成クエリで `WHERE tenant_id = $1` を明示的に付与し、RLS ポリシーがセーフティネットとして WHERE 句の漏れを防ぐ。他テナントのリソースへのアクセスは 404 Not Found を返し、リソースの存在自体を漏洩しない（TNT-006）。
 
-[2] リポジトリ層
-    クエリに WHERE tenant_id = $1 を含める（sqlc で生成）
-    → アプリケーション層での明示的なフィルタ
-
-[3] DB 層（RLS）
-    RLS ポリシー: tenant_id = current_setting('app.current_tenant')::uuid
-    → [2] の WHERE 句が万一漏れても、RLS が行を非表示にする
-
-[4] エラー時の振る舞い
-    他テナントのリソースへのアクセス → 404 Not Found（TNT-006）
-    → リソースの存在自体を漏洩しない
-```
+フロー図は [diagrams.md](diagrams.md) §4 テナント分離フロー を参照。
 
 > **RLS 方式のトレードオフ**: コネクションプール上限、RDS Proxy との相性、リードレプリカ非対応、集計クエリの性能など既知の限界とスケール時の対応方針は [ADR-0003](adr/0003-rls-tenant-isolation.md) §スケール時の既知の限界 を参照。
 
@@ -224,24 +210,11 @@ expense-saas/
 
 ### 4.0 SPA 配信方式
 
-MVP では **Go コンテナに Vite build 成果物を同梱**して配信する。
+MVP では **Go コンテナに Vite build 成果物を同梱**して配信する。SPA 配信方式の選定理由は [ADR-0004](adr/0004-infra.md) を参照。
 
-| 方式 | 採用 | 理由 |
-|------|------|------|
-| Go embed で同一コンテナから配信 | **採用** | コンテナ1つで完結、デプロイが最もシンプル、MVP に最適 |
-| S3 + CloudFront | 不採用 | CDN 設定・CORS・キャッシュ制御の追加コスト。将来的なスケール時に移行 |
-| フロントエンド専用コンテナ | 不採用 | コンテナ管理が2倍。MVP では過剰 |
+Vite でビルドした静的ファイル（`dist/`）を `go:embed` で Go バイナリに埋め込む。リクエストルーティングは `/api/*` を Go API ハンドラ、`/health` をヘルスチェック、それ以外を埋め込み静的ファイル（SPA fallback: `index.html`）に振り分ける。
 
-```
-[ビルド]
-  Vite build → dist/ に静的ファイル生成
-  Go build  → go:embed で dist/ をバイナリに埋め込み
-
-[リクエストルーティング]
-  /api/*     → Go API ハンドラ
-  /health    → ヘルスチェックハンドラ
-  /*         → 埋め込み静的ファイル（SPA fallback: index.html）
-```
+配信フロー図は [diagrams.md](diagrams.md) §6 デプロイ・配信 を参照。
 
 ### 4.1 ディレクトリ構成（計画）
 

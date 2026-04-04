@@ -10,13 +10,7 @@
 | 主な参照元 | `../../10_requirements/requirements.md` |
 | 主な参照先 | `../architecture.md`, `../diagrams.md`, `../../70_operations/*` |
 
-## ステータス
-承認済
-
-## 日付
-2026-03-16
-
-## 背景（ペイン）
+## 背景
 - 経費精算SaaS の本番環境インフラを選定する必要がある
 - 非機能要件: 稼働率 99.5%（requirements.md §4.3）、同時接続100ユーザー（§4.1）、API p95 500ms以下（§4.1）
 - 添付ファイル（領収書）のオブジェクトストレージが必要（ATT-014: S3パスにテナントIDを含む）
@@ -79,6 +73,14 @@
 | IaC | Terraform | AWS プロバイダーで全リソース管理 |
 | CI/CD | GitHub Actions | lint → test → build → deploy のパイプライン |
 
+### SPA 配信方式
+
+| 方式 | 採用 | 理由 |
+|------|------|------|
+| Go embed で同一コンテナから配信 | **採用** | コンテナ1つで完結、デプロイが最もシンプル、MVP に最適 |
+| S3 + CloudFront | 不採用 | CDN 設定・CORS・キャッシュ制御の追加コストが発生する。将来スケール時に移行 |
+| フロントエンド専用コンテナ | 不採用 | コンテナ管理コストが2倍になり、MVP では過剰 |
+
 ### 環境構成
 
 | 環境 | 用途 | 構成 |
@@ -134,7 +136,7 @@
 |-----------|---------|
 | `../architecture.md` §2 | システム全体構成（ALB → ECS Fargate → RDS + S3） |
 | `../architecture.md` §4.0 | SPA 配信方式（Go embed で同一コンテナから配信） |
-| `../architecture.md` §8.1 | 非機能要求マッピング: Fargate スペックによる同時接続対応 |
-| `../architecture.md` §8.3 | 非機能要求マッピング: 稼働率 99.5%（Single-AZ リスク受容）、RDS バックアップ |
+| `../architecture.md` §9.1 | 非機能要求マッピング: Fargate スペックによる同時接続対応 |
+| `../architecture.md` §9.3 | 非機能要求マッピング: 稼働率 99.5%（Single-AZ リスク受容）、RDS バックアップ |
 | `../../50_detail_design/files.md` §2 | S3 バケット構成（バケット命名、リージョン、暗号化、署名付き URL） |
 | `../../50_detail_design/monitoring.md` §1 | 監視基盤の選定（CloudWatch、ECS/RDS メトリクス自動収集） |
