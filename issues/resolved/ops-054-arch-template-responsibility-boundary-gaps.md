@@ -71,7 +71,13 @@ step3-architecture.md（work-breakdown）は責務境界を十分に定義して
 ---
 
 ## 解決内容
-<!-- pending-review へ移動する前に記入 -->
+テンプレート・ガイド・成果物を一括修正:
+- ADR テンプレート5ファイル→1ファイルに統合、責務境界ルール追加
+- architecture.md/diagrams.md テンプレートを成果物ベースに再整備
+- workflow.md に成果物テンプレート参照の共通導線追加
+- step3〜6 のテンプレート参照・プロセスセクション整理
+- 成果物: ADR-0003 設計仕様移動、比較表・ASCII 図の差し替え、forward reference 修正
+- 既存成果物のテンプレート準拠残件は ops-056 に分離
 
 ## 解決日
-<!-- YYYY-MM-DD -->
+2026-04-04
