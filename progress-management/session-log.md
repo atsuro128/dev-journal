@@ -1,6 +1,43 @@
 # 引き継ぎメモ
 
-## セッション: 2026-04-05 11:24
+## セッション: 2026-04-05 11:58
+
+### ゴール
+- PostToolUse(Agent) ワークツリー自動クリーンアップフックの動作検証
+
+### 作業ログ
+- `git worktree list` でクリーンな初期状態を確認（main ワークツリーのみ）
+- settings.json と agent-worktree-cleanup.sh の内容を確認
+- テスト用サブエージェントを `isolation: worktree` で起動し、何もせず終了させた
+- 直後に `git worktree list` を確認 → ワークツリーが自動削除されていることを確認
+- `.claude/worktrees/` ディレクトリも空であることを確認
+- デバッグ用コードの残存チェック → なし
+- PostToolUse ワークアラウンド有効を確認、コミット完了（`4b4505d`）
+
+### 未完了
+- ops-055: work-breakdown テンプレートと実ファイルの構造不整合
+- ops-047: work-breakdown ディレクトリ構成
+- ops-050: 受け渡し契約の冗長性
+- 050: JWT 署名アルゴリズム
+- 052: JWT 鍵ファイル必須化
+
+### ブロッカー
+なし
+
+### 次にやること
+1. Step 9（テストコード実装）着手 — チケット起票から
+2. ops issue の優先度判断（055, 047, 050 は Step 9 をブロックしない）
+3. issue 050, 052（JWT 関連）は Step 9 or Step 10 で対応可
+
+### 学び・気づき
+- **PostToolUse(Agent) フックでワークツリークリーンアップが機能する**: WorktreeRemove フック未発火バグ（anthropics/claude-code#28363）のワークアラウンドとして有効。`isolation` フィールドの有無で worktree 未使用エージェントへの影響もなし
+
+### 意思決定ログ
+- **WorktreeRemove フックは残置**: 本体バグ修正後に活用可能なため削除しない。実質的なクリーンアップは PostToolUse が担う構成
+
+---
+
+## セッション: 2026-04-05 11:24（前回）
 
 ### ゴール
 - issue 036（LSP サーバー統合）の動作検証・クローズ
@@ -50,56 +87,3 @@
 - **LSP 統合は見送り**: サブエージェントに LSP ツールが渡らない仕様制約のため。Claude Code 側の対応を待って再検討
 - **コメント言語は全日本語**: ユーザーは日本企業向けポートフォリオを想定。エラーメッセージ・ログは英語維持
 - **sqlcgen/ は変換対象外**: sqlc 自動生成コードのため
-
----
-
-## セッション: 2026-04-05 00:04（前回）
-
-### ゴール
-- issue 036（LSP サーバー統合）の動作検証・クローズ
-- issue 049（コメント言語方針）の方針決定・既存コメント日本語化・クローズ
-
-### 作業ログ
-- **issue 036（LSP サーバー統合）** — resolved
-  - gopls: documentSymbol, hover 正常動作を確認
-  - vtsls: `spawn vtsls ENOENT` — `@vtsls/language-server` が未インストールだった
-  - `@vtsls/language-server` をグローバルインストール後、documentSymbol 正常動作を確認
-  - Dockerfile を修正: `typescript-language-server` を削除し `@vtsls/language-server` に置き換え
-  - issue を resolved に移動、コミット完了
-- **issue 049（コメント日本語化）** — resolved
-  - ユーザーと方針を合意: 全コメント日本語（godoc/JSDoc 含む）、エラーメッセージ・ログは英語維持
-  - コーディング規約の置き場について議論: `.claude/rules/implementation-workflow.md` に追加（`expense-saas/**/*` スコープ）
-  - 4つのサブエージェントで並列変換:
-    1. Go domain/config/cmd/jwt（9ファイル）
-    2. Go handler/middleware（20ファイル）
-    3. Go service/repo/testutil（30ファイル）
-    4. Frontend TS/TSX（21ファイル中、変更は constants.ts のみ）
-  - 自己レビューで jwt.go のエラーメッセージ3箇所と main.go の slog.Warn 2箇所が誤って日本語化されていたのを発見・修正
-  - go build / go vet エラーなし確認
-  - 3リポジトリにコミット完了
-- **ops-056（成果物のテンプレート準拠修正）** — ユーザーが対応済み
-
-### 未完了
-- ops-055: work-breakdown テンプレートと実ファイルの構造不整合
-- ops-047: work-breakdown ディレクトリ構成
-- ops-050: 受け渡し契約の冗長性
-- 050: JWT 署名アルゴリズム
-- 052: JWT 鍵ファイル必須化
-
-### ブロッカー
-なし
-
-### 次にやること
-1. Step 9（テストコード実装）着手 — チケット起票から
-2. ops issue の優先度判断（055, 047, 050 は Step 9 をブロックしない）
-3. issue 050, 052（JWT 関連）は Step 9 or Step 10 で対応可
-
-### 学び・気づき
-- **サブエージェントはコメント以外も変える**: エラーメッセージ文字列やログメッセージをコメントと混同して日本語化した。コミット前の diff レビューで `// ` 以外の変更行を抽出するチェックが有効だった
-- **コーディング規約の置き場は expense-saas スコープのルールファイル**: ai-dev-framework ではなく `.claude/rules/implementation-workflow.md`（paths: expense-saas/**/*）が正しい
-
-### 意思決定ログ
-- **コメント言語は全日本語**: ユーザーは日本企業向けポートフォリオを想定。経験のないプログラム言語でコメントまで英語は負担が大きい
-- **エラーメッセージ・ログは英語維持**: コメントとコードリテラルは区別する
-- **sqlcgen/ は変換対象外**: sqlc 自動生成コードのため
-- **typescript-language-server は不要**: vtsls プラグインが TypeScript LSP を担うため、重複する typescript-language-server を Dockerfile から削除
