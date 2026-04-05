@@ -43,5 +43,18 @@
 | 8-9 | 開発者ツール | platform-builder | 8-2, 8-3 | 完了 | `tickets/step8/8-9-dev-tools.md` |
 | 8-10 | 整理 | platform-builder | なし | 完了 | `tickets/step8/8-10-cleanup.md` |
 
+## Step 5.5: UI コンポーネント設計 — チケット一覧
+
+| ID | タスク | 担当 | 依存 | 状態 | チケット |
+|----|--------|------|------|------|---------|
+| 5.5-A | 共通コンポーネント設計 | designer | なし | 未着手 | `tickets/step5.5/5.5-A-common-components.md` |
+| 5.5-B | 状態管理方針策定 | designer | なし | 未着手 | `tickets/step5.5/5.5-B-state-management.md` |
+| 5.5-C-1 | 画面別コンポーネント設計（認証系） | designer | 5.5-A, 5.5-B | 未着手 | `tickets/step5.5/5.5-C-1-auth-components.md` |
+| 5.5-C-2 | 画面別コンポーネント設計（ダッシュボード） | designer | 5.5-A, 5.5-B | 未着手 | `tickets/step5.5/5.5-C-2-dashboard-components.md` |
+| 5.5-C-3 | 画面別コンポーネント設計（レポート系） | designer | 5.5-A, 5.5-B | 未着手 | `tickets/step5.5/5.5-C-3-report-components.md` |
+| 5.5-C-4 | 画面別コンポーネント設計（ワークフロー系） | designer | 5.5-A, 5.5-B | 未着手 | `tickets/step5.5/5.5-C-4-workflow-components.md` |
+| 5.5-C-5 | 画面別コンポーネント設計（管理系） | designer | 5.5-A, 5.5-B | 未着手 | `tickets/step5.5/5.5-C-5-admin-components.md` |
+| 5.5-D | 横断レビュー | reviewer | 5.5-C-1〜5 | 未着手 | `tickets/step5.5/5.5-D-cross-review.md` |
+
 ## 課題・ブロッカー
 `issues/open/` を参照。
