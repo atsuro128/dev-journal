@@ -37,7 +37,11 @@ Step 8（基盤構築）
 ---
 
 ## 解決内容
-<!-- pending-review へ移動する前に記入 -->
+
+`JWT_PRIVATE_KEY_PATH` と `JWT_PUBLIC_KEY_PATH` を必須環境変数に変更。
+
+- `internal/config/config.go`: 未設定時にエラーを返すバリデーションを追加
+- `cmd/server/main.go`: JWT Verifier 初期化失敗時に Warn → Error + `os.Exit(1)` に変更。nil チェック分岐を削除
 
 ## 解決日
-<!-- YYYY-MM-DD -->
+2026-04-05
