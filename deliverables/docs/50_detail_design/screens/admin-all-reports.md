@@ -68,7 +68,8 @@
 │          │ │ ...                                           │ │
 │          │ └──────────────────────────────────────────────┘ │
 │          │                                                  │
-│          │ [さらに読み込む]                                    │
+│          │ [ページネーションコントロール]                       │
+│          │  < 1 2 3 ... 8 9 10 >                              │
 └──────────┴──────────────────────────────────────────────────┘
 ```
 
@@ -106,11 +107,12 @@
 
 ## 6. ページネーション
 
-- カーソルベースページネーション（`screens.md` §4.9 準拠）
+- オフセットベースページネーション（`screens.md` §4.9 準拠）
 - デフォルト 20件/ページ
-- テーブル下部に「さらに読み込む」ボタンを表示
-- 読み込み可能なデータが残っている場合のみボタンを表示
-- API: `GET /api/reports/all?cursor=xxx&limit=20&status=...&from=...&to=...&submitter_id=...`
+- テーブル下部にページネーションコントロール（ページ番号 + 前へ/次へボタン）を表示
+- 現在のページ番号をハイライト表示し、総ページ数が多い場合は省略表示（例: 1 2 3 ... 8 9 10）
+- API: `GET /api/reports/all?page=1&per_page=20&status=...&from=...&to=...&submitter_id=...`
+- フィルタ変更時に page を 1 にリセットする
 
 ## 7. 空状態
 
@@ -126,7 +128,7 @@
 
 - 初回読み込み時: テーブル行のスケルトンUI（`screens.md` §4.5 準拠）
 - フィルタ変更時: テーブル領域にスケルトンUIを表示
-- 「さらに読み込む」ボタン押下時: ボタンを disabled にしスピナーを表示
+- ページ切替時: テーブル領域にスケルトンUIを表示
 
 ## 9. エラー表示
 
@@ -167,8 +169,8 @@
 
 | パラメータ | 型 | 必須 | 説明 |
 |-----------|-----|------|------|
-| cursor | string | 任意 | ページネーションカーソル。初回リクエスト時は省略 |
-| limit | integer | 任意 | 取得件数。デフォルト 20、最大 100 |
+| page | integer | 任意 | ページ番号（デフォルト 1） |
+| per_page | integer | 任意 | 1ページあたりの取得件数（デフォルト 20、最大 100） |
 | status | string | 任意 | ステータスフィルタ。`draft`, `submitted`, `approved`, `rejected`, `paid` のいずれか |
 | from | string (date) | 任意 | 対象期間の開始日（`YYYY-MM-DD` 形式） |
 | to | string (date) | 任意 | 対象期間の終了日（`YYYY-MM-DD` 形式） |
@@ -193,8 +195,10 @@
     }
   ],
   "pagination": {
-    "next_cursor": "xxx",
-    "has_more": true
+    "current_page": 1,
+    "per_page": 20,
+    "total_count": 45,
+    "total_pages": 3
   }
 }
 ```
@@ -243,16 +247,18 @@ sequenceDiagram
     participant R as リポジトリ
     participant DB as DB
 
-    F->>H: GET /api/reports/all?status=...&from=...&to=...&submitter_id=...&cursor=...&limit=20
+    F->>H: GET /api/reports/all?status=...&from=...&to=...&submitter_id=...&page=1&per_page=20
     Note right of H: JWT検証（Authミドルウェア）<br/>Admin or Accountingロール検証（RBACミドルウェア）<br/>TenantContext設定（RLS）
-    H->>H: クエリパラメータのバリデーション<br/>status: enum / from,to: date / limit: 1-100
-    H->>S: ListAllReports(tenantID, filters)
-    S->>R: FindAllReports(tenantID, filters, cursor, limit+1)
-    R->>DB: SELECT er.id, er.title, er.total_amount,<br/>er.status, er.submitted_at, er.created_at,<br/>u.id, u.name<br/>FROM expense_reports er JOIN users u ON er.user_id = u.user_id<br/>WHERE er.tenant_id=? AND er.deleted_at IS NULL<br/>[AND er.status=?]<br/>[AND er.user_id=?]<br/>[AND er.period_start >= ?]<br/>[AND er.period_end <= ?]<br/>ORDER BY er.submitted_at DESC NULLS LAST, er.created_at DESC, er.id DESC<br/>LIMIT 21
-    Note right of DB: report-list.md との違い:<br/>user_idフィルタなし（テナント全体）<br/>submitter_idフィルタあり<br/>LIMIT N+1 で has_more を判定
-    DB-->>R: rows（最大21件）
-    R->>R: len(rows) > limit の場合<br/>has_more=true, 末尾行を除外<br/>最終行の (submitted_at, id) を next_cursor に設定
-    R-->>S: reports + pagination
+    H->>H: クエリパラメータのバリデーション<br/>status: enum / from,to: date / per_page: 1-100 / page: 1以上
+    H->>S: ListAllReports(tenantID, filters, page, perPage)
+    S->>R: FindAllReports(tenantID, filters, page, perPage)
+    R->>DB: SELECT COUNT(*)<br/>FROM expense_reports er<br/>WHERE er.tenant_id=? AND er.deleted_at IS NULL<br/>[AND er.status=?]<br/>[AND er.user_id=?]<br/>[AND er.period_start >= ?]<br/>[AND er.period_end <= ?]
+    DB-->>R: total_count
+    R->>DB: SELECT er.id, er.title, er.total_amount,<br/>er.status, er.submitted_at, er.created_at,<br/>u.id, u.name<br/>FROM expense_reports er JOIN users u ON er.user_id = u.user_id<br/>WHERE er.tenant_id=? AND er.deleted_at IS NULL<br/>[AND er.status=?]<br/>[AND er.user_id=?]<br/>[AND er.period_start >= ?]<br/>[AND er.period_end <= ?]<br/>ORDER BY er.submitted_at DESC NULLS LAST, er.created_at DESC, er.id DESC<br/>LIMIT per_page OFFSET (page-1)*per_page
+    Note right of DB: report-list.md との違い:<br/>user_idフィルタなし（テナント全体）<br/>submitter_idフィルタあり
+    DB-->>R: rows
+    R->>R: total_pages = ceil(total_count / per_page)
+    R-->>S: reports + pagination{current_page, per_page, total_count, total_pages}
     S-->>H: ListAllReportsResponse
     H-->>F: 200 OK
 
@@ -276,7 +282,7 @@ sequenceDiagram
 - [x] SCR-ADM-001 が Admin と Accounting の両方からアクセス可能であることが明記されているか
 - [x] Admin はレポート閲覧のみで、編集・承認・却下が不可であることが明記されているか
 - [x] 管理一覧からレポート詳細（SCR-RPT-004）へのナビゲーションが定義されているか
-- [x] 共通UIパターン（ステータスバッジ、ページネーション、空状態、ローディング、エラー表示）が screens.md §4 に準拠しているか
+- [x] 共通UIパターン（ステータスバッジ、ページネーション（オフセットベース）、空状態、ローディング、エラー表示）が screens.md §4 に準拠しているか
 - [x] 用語が glossary.md に準拠しているか（提出/却下/再申請/支払完了）
 - [x] テナント境界越えは 404（403 ではない）の原則に従っているか
 - [x] 申請者フィルタのデータ取得に `GET /api/tenant/members` が使用されることが明記されているか

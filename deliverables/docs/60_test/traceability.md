@@ -210,7 +210,7 @@
 | NFR-PERF-001 | API レスポンスタイム p95 500ms 以下 | `architecture.md#8.1`, ADR-0001, ADR-0005 | `test_cases/cross-cutting.md#CRS-083〜087` | |
 | NFR-PERF-002 | ファイルアップロード 5秒以下（5MB） | `architecture.md#8.1`, `files.md`, ADR-0004 | `test_cases/cross-cutting.md#CRS-088` | |
 | NFR-PERF-003 | 同時接続ユーザー数 100 | `architecture.md#8.1`, ADR-0002, ADR-0004 | - | 本格負荷テストは MVP スコープ外。CRS-083〜088 の軽量スモークテストで代替 |
-| NFR-PERF-004 | カーソルベースページネーション（デフォルト20件） | `architecture.md#5.3`, `openapi.yaml` | `test_cases/reports.md#RPT-001〜003`, `test_cases/workflow.md#WFL-005, WFL-046` | |
+| NFR-PERF-004 | オフセットベースページネーション（デフォルト20件） | `architecture.md#5.3`, `openapi.yaml` | `test_cases/reports.md#RPT-001〜003`, `test_cases/workflow.md#WFL-005, WFL-046` | |
 
 ### 3.2 セキュリティ（NFR-SEC-*）
 

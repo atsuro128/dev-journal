@@ -144,8 +144,8 @@ interface LoginInput {
 
 // useMyReports
 interface ReportListParams {
-  cursor?: string;
-  limit?: number;
+  page?: number;
+  per_page?: number;
   status?: ReportStatus;
   from?: string;   // YYYY-MM-DD
   to?: string;     // YYYY-MM-DD
@@ -158,8 +158,8 @@ interface ReportListParams {
 
 // useAllReports
 interface AllReportListParams {
-  cursor?: string;
-  limit?: number;
+  page?: number;
+  per_page?: number;
   status?: ReportStatus;
   from?: string;         // YYYY-MM-DD
   to?: string;           // YYYY-MM-DD
@@ -169,16 +169,16 @@ interface AllReportListParams {
 
 // usePendingReports
 interface PendingReportListParams {
-  cursor?: string;
-  limit?: number;
+  page?: number;
+  per_page?: number;
   applicant_name?: string;
 }
 // 出力: ApiListResponse<PendingReport>
 
 // usePayableReports
 interface PayableReportListParams {
-  cursor?: string;
-  limit?: number;
+  page?: number;
+  per_page?: number;
   applicant_name?: string;
 }
 // 出力: ApiListResponse<PayableReport>

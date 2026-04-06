@@ -66,7 +66,8 @@
 │          │ │ │ ...  │ ...  │ ...  │ ...  │  →   │     │ │
 │          │ │ └──────┴──────┴──────┴──────┴──────┘     │ │
 │          │ ├──────────────────────────────────────────┤ │
-│          │ │ [さらに読み込む]                             │ │
+│          │ │ [ページネーションコントロール]                │ │
+│          │ │  < 1 2 3 ... 8 9 10 >                       │ │
 │          │ └──────────────────────────────────────────┘ │
 │          │                                              │
 │          │ ※ 空状態: 「承認待ちのレポートはありません。」    │
@@ -113,11 +114,12 @@ Approver 自身が作成したレポートが submitted 状態で一覧に含ま
 
 | 項目 | 仕様 |
 |------|------|
-| 方式 | カーソルベースページネーション |
+| 方式 | オフセットベースページネーション（screens.md §4.9 準拠） |
 | 1ページあたりの件数 | デフォルト 20 件 |
-| 「さらに読み込む」ボタン | 次ページが存在する場合（`has_more: true`）のみ表示 |
-| API パラメータ | `cursor`（前回レスポンスの `next_cursor`）、`limit`（デフォルト 20、最大 100） |
+| ページネーションコントロール | ページ番号 + 前へ/次へボタン。現在のページ番号をハイライト。総ページ数が多い場合は省略表示（例: 1 2 3 ... 8 9 10） |
+| API パラメータ | `page`（デフォルト 1）、`per_page`（デフォルト 20、最大 100） |
 | ソート順 | 提出日の降順（新しい提出が上位に表示） |
+| フィルタ変更時 | page を 1 にリセットする |
 
 ## 8. 件数表示
 
@@ -141,7 +143,7 @@ Approver 自身が作成したレポートが submitted 状態で一覧に含ま
 | 状態 | 表示 |
 |------|------|
 | 初回読み込み中 | テーブル行のスケルトン UI（5行分） |
-| 「さらに読み込む」クリック後 | ボタンを disabled + スピナー表示、テーブル末尾にスケルトン行追加 |
+| ページ切替時 | テーブル領域にスケルトンUIを表示 |
 
 ## 11. エラー表示
 
@@ -235,8 +237,8 @@ Approver 自身が作成したレポートが submitted 状態で一覧に含ま
 
 | パラメータ | 型 | 必須 | 説明 |
 |-----------|-----|------|------|
-| cursor | String | 任意 | 前回レスポンスの next_cursor |
-| limit | Integer | 任意 | 取得件数（デフォルト 20、最大 100） |
+| page | Integer | 任意 | ページ番号（デフォルト 1） |
+| per_page | Integer | 任意 | 1ページあたりの取得件数（デフォルト 20、最大 100） |
 | applicant_name | String | 任意 | 申請者名部分一致フィルタ |
 
 レスポンス:
@@ -257,8 +259,10 @@ Approver 自身が作成したレポートが submitted 状態で一覧に含ま
     }
   ],
   "pagination": {
-    "next_cursor": "...",
-    "has_more": true
+    "current_page": 1,
+    "per_page": 20,
+    "total_count": 15,
+    "total_pages": 1
   }
 }
 ```
@@ -287,20 +291,22 @@ sequenceDiagram
     participant R as リポジトリ
     participant DB as DB
 
-    F->>H: GET /api/workflow/pending?cursor=...&limit=20&applicant_name=...
+    F->>H: GET /api/workflow/pending?page=1&per_page=20&applicant_name=...
     Note right of H: JWT検証（Authミドルウェア）<br/>Approverロール検証（RBACミドルウェア）<br/>TenantContext設定（RLS）
-    H->>H: クエリパラメータのバリデーション<br/>limit: 1-100 / applicant_name: string
-    H->>S: ListPendingReports(tenantID, approverUserID, filters)
-    S->>R: FindPendingReports(tenantID, approverUserID, filters, cursor, limit+1)
-    R->>DB: SELECT er.id, er.title, er.total_amount,<br/>er.submitted_at, u.id, u.name<br/>FROM expense_reports er JOIN users u ON er.user_id = u.user_id<br/>WHERE er.tenant_id=? AND er.status='submitted'<br/>AND er.deleted_at IS NULL<br/>[AND u.name LIKE ?]<br/>[AND (er.submitted_at, er.id) < (?, ?)]<br/>ORDER BY er.submitted_at DESC, er.id DESC<br/>LIMIT 21
-    Note right of DB: RBC-016: 自己レポートは is_own_report フラグで表示、<br/>承認ボタンを非活性化<br/>LIMIT N+1 で has_more を判定
-    DB-->>R: rows（最大21件）
-    R->>R: len(rows) > limit の場合<br/>has_more=true, 末尾行を除外<br/>最終行の (submitted_at, id) を next_cursor に設定
-    R-->>S: reports + pagination
+    H->>H: クエリパラメータのバリデーション<br/>per_page: 1-100 / page: 1以上 / applicant_name: string
+    H->>S: ListPendingReports(tenantID, approverUserID, filters, page, perPage)
+    S->>R: FindPendingReports(tenantID, approverUserID, filters, page, perPage)
+    R->>DB: SELECT COUNT(*)<br/>FROM expense_reports er JOIN users u ON er.user_id = u.user_id<br/>WHERE er.tenant_id=? AND er.status='submitted'<br/>AND er.deleted_at IS NULL<br/>[AND u.name LIKE ?]
+    DB-->>R: total_count
+    R->>DB: SELECT er.id, er.title, er.total_amount,<br/>er.submitted_at, u.id, u.name<br/>FROM expense_reports er JOIN users u ON er.user_id = u.user_id<br/>WHERE er.tenant_id=? AND er.status='submitted'<br/>AND er.deleted_at IS NULL<br/>[AND u.name LIKE ?]<br/>ORDER BY er.submitted_at DESC, er.id DESC<br/>LIMIT per_page OFFSET (page-1)*per_page
+    Note right of DB: RBC-016: 自己レポートは is_own_report フラグで表示、<br/>承認ボタンを非活性化
+    DB-->>R: rows
+    R->>R: total_pages = ceil(total_count / per_page)
+    R-->>S: reports + pagination{current_page, per_page, total_count, total_pages}
     S->>S: 各レポートに is_own_report フラグを付与<br/>is_own_report: (er.user_id == approverUserID)
     S-->>H: ListPendingReportsResponse
     H-->>F: 200 OK
-    Note left of F: has_more=true の場合<br/>「さらに読み込む」ボタンを表示<br/>押下時に next_cursor を付与して再リクエスト
+    Note left of F: ページネーションコントロールを表示<br/>current_page をハイライト<br/>ページ番号クリックで該当ページを再リクエスト
 ```
 
 ---
@@ -312,7 +318,7 @@ sequenceDiagram
 - [x] 承認/却下のアクション自体は SCR-RPT-004 で行う旨が明確に記載されているか
 - [x] 自己承認禁止の表示ルールが定義されているか（一覧から除外しない + 「自分」ラベル + SCR-RPT-004 でボタン非表示）
 - [x] policies.md SS3.5 の権限マトリクスと一致しているか（Approver のみ承認待ち）
-- [x] ページネーション仕様が screens.md §4.9 と一致しているか（カーソルベース、20件/ページ、「さらに読み込む」）
+- [x] ページネーション仕様が screens.md §4.9 と一致しているか（オフセットベース、20件/ページ、ページネーションコントロール）
 - [x] 空状態メッセージが screens.md §4.7 と一致しているか
 - [x] エラー表示が screens.md §4.4 と一致しているか
 - [x] ローディング仕様が screens.md §4.5 と一致しているか

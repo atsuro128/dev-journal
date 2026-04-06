@@ -61,7 +61,7 @@
 | WFL-002 | 統合 | handler | 正常系 | WFL-F04 | openapi.yaml#listPendingReports | `TestListPendingReports_IncludesOwnReport` | Test Approver 本人が作成した submitted レポートがDB上に存在する状態でリクエスト | 200 OK。自分のレポートも一覧に含まれ、`is_own_report: true` が設定されている |
 | WFL-003 | 統合 | handler | 正常系 | WFL-F04 | openapi.yaml#listPendingReports | `TestListPendingReports_ExcludesNonSubmitted` | テナントA に draft / approved / rejected / paid 状態のレポートのみ存在する | 200 OK。`data` が空配列 `[]` |
 | WFL-004 | 統合 | handler | 正常系 | WFL-F04 | openapi.yaml#listPendingReports | `TestListPendingReports_FilterByApplicantName` | クエリパラメータ `applicant_name=Test` を指定してリクエスト | 200 OK。申請者名が部分一致するレポートのみ返る |
-| WFL-005 | 統合 | handler | 正常系 | WFL-F04, NFR-PERF-004 | openapi.yaml#listPendingReports | `TestListPendingReports_Pagination` | `limit=1` かつ submitted レポートが2件以上存在する状態でリクエスト | 200 OK。`data` の件数が1件。`pagination.next_cursor` が返る |
+| WFL-005 | 統合 | handler | 正常系 | WFL-F04, NFR-PERF-004 | openapi.yaml#listPendingReports | `TestListPendingReports_Pagination` | `per_page=1` かつ submitted レポートが2件以上存在する状態でリクエスト | 200 OK。`data` の件数が1件。`pagination.total_pages >= 2` |
 | WFL-006 | 統合 | handler | 認可 | RBAC-F01, RBC-001 | openapi.yaml#listPendingReports, authz.md#3 | `TestListPendingReports_Forbidden_Member` | Member ロールのユーザーで認証してリクエスト | 403 FORBIDDEN |
 | WFL-007 | 統合 | handler | 認可 | RBAC-F01, RBC-001 | openapi.yaml#listPendingReports, authz.md#3 | `TestListPendingReports_Forbidden_Admin` | Admin ロールのユーザーで認証してリクエスト | 403 FORBIDDEN |
 | WFL-008 | 統合 | handler | 認可 | RBAC-F01, RBC-001 | openapi.yaml#listPendingReports, authz.md#3 | `TestListPendingReports_Forbidden_Accounting` | Accounting ロールのユーザーで認証してリクエスト | 403 FORBIDDEN |
@@ -171,7 +171,7 @@
 | WFL-043 | 統合 | handler | 正常系 | WFL-F05 | openapi.yaml#listPayableReports | `TestListPayableReports_IncludesOwnReport` | Test Accounting 本人が作成した approved レポートがDB上に存在する状態でリクエスト | 200 OK。自分のレポートも一覧に含まれ、`is_own_report: true` が設定されている |
 | WFL-044 | 統合 | handler | 正常系 | WFL-F05 | openapi.yaml#listPayableReports | `TestListPayableReports_ExcludesNonApproved` | テナントA に draft / submitted / rejected / paid 状態のレポートのみ存在する | 200 OK。`data` が空配列 `[]` |
 | WFL-045 | 統合 | handler | 正常系 | WFL-F05 | openapi.yaml#listPayableReports | `TestListPayableReports_FilterByApplicantName` | クエリパラメータ `applicant_name=Test` を指定してリクエスト | 200 OK。申請者名が部分一致するレポートのみ返る |
-| WFL-046 | 統合 | handler | 正常系 | WFL-F05, NFR-PERF-004 | openapi.yaml#listPayableReports | `TestListPayableReports_Pagination` | `limit=1` かつ approved レポートが2件以上存在する状態でリクエスト | 200 OK。`data` の件数が1件。`pagination.next_cursor` が返る |
+| WFL-046 | 統合 | handler | 正常系 | WFL-F05, NFR-PERF-004 | openapi.yaml#listPayableReports | `TestListPayableReports_Pagination` | `per_page=1` かつ approved レポートが2件以上存在する状態でリクエスト | 200 OK。`data` の件数が1件。`pagination.total_pages >= 2` |
 | WFL-047 | 統合 | handler | 認可 | RBAC-F01, RBC-001 | openapi.yaml#listPayableReports, authz.md#3 | `TestListPayableReports_Forbidden_Member` | Member で認証 | 403 FORBIDDEN |
 | WFL-048 | 統合 | handler | 認可 | RBAC-F01, RBC-001 | openapi.yaml#listPayableReports, authz.md#3 | `TestListPayableReports_Forbidden_Approver` | Approver で認証 | 403 FORBIDDEN |
 | WFL-049 | 統合 | handler | 認可 | RBAC-F01, RBC-001 | openapi.yaml#listPayableReports, authz.md#3 | `TestListPayableReports_Forbidden_Admin` | Admin で認証 | 403 FORBIDDEN |

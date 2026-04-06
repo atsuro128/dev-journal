@@ -264,6 +264,26 @@ interface AppToastProps {
 }
 ```
 
+### AppPagination
+
+- 配置: `components/ui/AppPagination.tsx`
+- ベース MUI コンポーネント: `Pagination`
+- 責務: ページネーションコントロールの統一表示（`screens.md` &sect;4.9 準拠）。ページ番号 + 前へ/次へボタンを表示し、現在のページ番号をハイライトする。総ページ数が多い場合は省略表示する（例: 1 2 3 ... 8 9 10）
+- 使用箇所: SCR-RPT-001, SCR-ADM-001, SCR-WFL-001, SCR-WFL-002
+
+```typescript
+interface AppPaginationProps {
+  /** 現在のページ番号 */
+  currentPage: number;
+  /** 総ページ数 */
+  totalPages: number;
+  /** ページ変更時のコールバック */
+  onPageChange: (page: number) => void;
+  /** 無効化（ローディング中など） */
+  disabled?: boolean;
+}
+```
+
 ### StatusChip
 
 - 配置: `components/ui/StatusChip.tsx`
@@ -355,6 +375,7 @@ interface AppBreadcrumbsProps {
 | AuthLayout | ○ | ○ | ○ | ○ | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | AppHeader | --- | --- | --- | --- | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ |
 | AppSidebar | --- | --- | --- | --- | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ |
+| AppPagination | --- | --- | --- | --- | --- | ○ | --- | --- | --- | ○ | ○ | ○ | --- |
 | AppDataGrid | --- | --- | --- | --- | --- | ○ | --- | --- | ○ | ○ | ○ | ○ | --- |
 | AppTextField | ○ | ○ | ○ | ○ | --- | --- | ○ | ○ | ○ | ○ | ○ | --- | --- |
 | AppSelect | --- | --- | --- | --- | --- | ○ | --- | --- | ○ | --- | --- | ○ | --- |
@@ -372,6 +393,7 @@ interface AppBreadcrumbsProps {
 
 - **AppLayout**: 全認証済み画面（9画面）で使用。AppHeader と AppSidebar を内部で統合する
 - **AuthLayout**: 全未認証画面（4画面）で使用。AppHeader / AppSidebar は含まない
+- **AppPagination**: 一覧画面（SCR-RPT-001, SCR-ADM-001, SCR-WFL-001, SCR-WFL-002）でオフセットベースページネーションコントロールを表示する
 - **AppTextField**: 認証画面のフォーム入力、レポート作成・編集のタイトル入力、明細スライドパネルの摘要入力、承認待ち・支払待ち一覧の申請者名フィルタで使用
 - **AppSelect**: レポート一覧・テナント全レポート一覧のステータスフィルタ、テナント全レポート一覧の申請者フィルタ、明細スライドパネルのカテゴリ選択で使用
 - **AppDatePicker**: レポート一覧の期間フィルタ、レポート作成・編集の対象期間、明細スライドパネルの日付入力、テナント全レポート一覧の期間フィルタで使用
@@ -389,6 +411,7 @@ frontend/src/components/
 │   ├── AppHeader.tsx      # ヘッダー（AppBar ラッパー）
 │   └── AppSidebar.tsx     # サイドナビゲーション（Drawer ラッパー）
 ├── ui/                    # 共通 UI コンポーネント
+│   ├── AppPagination.tsx  # ページネーションコントロール（Pagination ラッパー）
 │   ├── AppDataGrid.tsx    # DataGrid ラッパー
 │   ├── AppTextField.tsx   # TextField ラッパー
 │   ├── AppSelect.tsx      # Select ラッパー
@@ -415,7 +438,7 @@ frontend/src/components/
 - [x] 配置先ディレクトリが明示されているか
 - [x] openapi.yaml のレスポンス型と Props 型が整合しているか（ReportStatus, UserSummary, ToastSeverity 等）
 - [x] authz.md のロール別表示制御が Props に反映されているか（AppSidebar.role, AppHeader.user.role）
-- [x] screens.md &sect;4 の共通UIパターン（エラー表示、ローディング、空状態、確認ダイアログ、ステータスバッジ、ページネーション）が全てカバーされているか
+- [x] screens.md &sect;4 の共通UIパターン（エラー表示、ローディング、空状態、確認ダイアログ、ステータスバッジ、ページネーション（AppPagination: オフセットベース））が全てカバーされているか
 - [x] 用語が glossary.md に準拠しているか（提出/却下/再申請/支払完了）
 - [x] 既存スケルトン（`expense-saas/frontend/src/components/`）のディレクトリ構成と整合しているか
 - [x] 画面固有のコンポーネントを含めていないか（5.5-C-* で定義）

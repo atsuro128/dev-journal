@@ -14,7 +14,7 @@ info:
     `/health` はインフラ用エンドポイントであり、data ラッパーを使用しない。
     エラーレスポンスは `{"error": {"code": "...", "message": "...", "details": [...]}}` 形式。
     エラーコード一覧の正本は security.md §8.4 を参照。
-    ページネーションはカーソルベース。一覧系は `{"data": [...], "pagination": {"next_cursor": "...", "has_more": true}}` 形式。
+    ページネーションはオフセットベース。一覧系は `{"data": [...], "pagination": {"current_page": 1, "per_page": 20, "total_count": 100, "total_pages": 5}}` 形式。
     全ての日時フィールドは ISO 8601 UTC 形式（末尾 `Z`）で返却・受理する（例: `2026-03-22T10:30:00Z`）。タイムゾーンオフセット付き表記は使用しない。フロントエンドはユーザーのローカルタイムゾーンに変換して表示すること。
   version: 1.0.0
   contact:
@@ -544,7 +544,7 @@ paths:
       tags: [reports]
       summary: 自分のレポート一覧
       description: |
-        現在のユーザーが作成した経費レポートの一覧を取得する。カーソルベースページネーション対応。
+        現在のユーザーが作成した経費レポートの一覧を取得する。オフセットベースページネーション対応。
 
         認可条件:
         - 許可ロール: Member, Approver, Admin, Accounting
@@ -560,8 +560,8 @@ paths:
         ownership_required: true  # 自分が作成したレポートのみ（user_id フィルタ）
         tenant_boundary: true
       parameters:
-        - $ref: "#/components/parameters/cursor"
-        - $ref: "#/components/parameters/limit"
+        - $ref: "#/components/parameters/page"
+        - $ref: "#/components/parameters/per_page"
         - name: status
           in: query
           description: ステータスフィルタ
@@ -666,8 +666,8 @@ paths:
         ownership_required: false  # テナント内の全レポートを閲覧可能
         tenant_boundary: true
       parameters:
-        - $ref: "#/components/parameters/cursor"
-        - $ref: "#/components/parameters/limit"
+        - $ref: "#/components/parameters/page"
+        - $ref: "#/components/parameters/per_page"
         - name: status
           in: query
           description: ステータスフィルタ
@@ -1382,8 +1382,8 @@ paths:
         ownership_required: false  # テナント内 submitted 全件返却
         tenant_boundary: true
       parameters:
-        - $ref: "#/components/parameters/cursor"
-        - $ref: "#/components/parameters/limit"
+        - $ref: "#/components/parameters/page"
+        - $ref: "#/components/parameters/per_page"
         - name: applicant_name
           in: query
           description: 申請者名部分一致フィルタ
@@ -1579,8 +1579,8 @@ paths:
         ownership_required: false  # テナント内 approved 全件返却
         tenant_boundary: true
       parameters:
-        - $ref: "#/components/parameters/cursor"
-        - $ref: "#/components/parameters/limit"
+        - $ref: "#/components/parameters/page"
+        - $ref: "#/components/parameters/per_page"
         - name: applicant_name
           in: query
           description: 申請者名部分一致フィルタ
@@ -2362,14 +2362,24 @@ components:
     # --- Common ---
     Pagination:
       type: object
-      required: [has_more]
+      required: [current_page, per_page, total_count, total_pages]
       properties:
-        next_cursor:
-          type: string
-          description: 次ページのカーソル値（has_more が true の場合に存在）
-        has_more:
-          type: boolean
-          description: 次ページの存在有無
+        current_page:
+          type: integer
+          description: 現在のページ番号
+          example: 1
+        per_page:
+          type: integer
+          description: 1ページあたりの件数
+          example: 20
+        total_count:
+          type: integer
+          description: 総件数
+          example: 45
+        total_pages:
+          type: integer
+          description: 総ページ数
+          example: 3
 
     UserSummary:
       type: object
@@ -2462,17 +2472,19 @@ components:
         type: string
         format: uuid
 
-    cursor:
-      name: cursor
+    page:
+      name: page
       in: query
-      description: ページネーションカーソル（前回レスポンスの next_cursor）
+      description: ページ番号（デフォルト 1）
       schema:
-        type: string
+        type: integer
+        minimum: 1
+        default: 1
 
-    limit:
-      name: limit
+    per_page:
+      name: per_page
       in: query
-      description: 取得件数（デフォルト 20、最大 100）
+      description: 1ページあたりの取得件数（デフォルト 20、最大 100）
       schema:
         type: integer
         minimum: 1

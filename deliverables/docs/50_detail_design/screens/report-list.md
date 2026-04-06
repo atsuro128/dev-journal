@@ -56,7 +56,8 @@
 |          | | ...  | ...  | ...  | badge  | ...  |      |
 |          | +------+------+------+--------+------+      |
 |          |                                             |
-|          | [さらに読み込む]  <-- has_more 時のみ表示     |
+|          | [ページネーションコントロール]               |
+|          |  < 1 2 3 ... 8 9 10 >                     |
 +----------+-------------------------------------------+
 ```
 
@@ -101,10 +102,11 @@
 
 ## 5. ページネーション
 
-- カーソルベース、デフォルト 20件/ページ（screens.md 4.9 準拠）
-- 一覧末尾に「さらに読み込む」ボタンを配置
-- `has_more: true` の場合のみボタンを表示
-- ボタン押下で次ページを取得し、既存リストの末尾に追加
+- オフセットベース、デフォルト 20件/ページ（screens.md 4.9 準拠）
+- 一覧末尾にページネーションコントロール（ページ番号 + 前へ/次へボタン）を配置
+- 現在のページ番号をハイライト表示し、総ページ数が多い場合は省略表示（例: 1 2 3 ... 8 9 10）
+- API パラメータ: `page`（デフォルト 1）、`per_page`（デフォルト 20、最大 100）
+- フィルタ変更時に page を 1 にリセットする
 
 ---
 
@@ -130,7 +132,7 @@
 ## 8. ローディング
 
 - 初回読み込み: テーブル行のスケルトンUI（screens.md 4.5 準拠）
-- 追加読み込み: 「さらに読み込む」ボタンにスピナーを表示
+- ページ切替時: テーブル領域にスケルトンUIを表示
 
 ---
 
@@ -174,8 +176,8 @@
 | status | String | 任意 | ステータスフィルタ（`draft`, `submitted`, `approved`, `rejected`, `paid`） |
 | from | String (date) | 任意 | 対象期間の開始日（`YYYY-MM-DD`） |
 | to | String (date) | 任意 | 対象期間の終了日（`YYYY-MM-DD`） |
-| cursor | String | 任意 | 前回レスポンスの next_cursor |
-| limit | Integer | 任意 | 取得件数（デフォルト 20、最大 100） |
+| page | Integer | 任意 | ページ番号（デフォルト 1） |
+| per_page | Integer | 任意 | 1ページあたりの取得件数（デフォルト 20、最大 100） |
 
 #### レスポンス（200 OK）
 
@@ -195,8 +197,10 @@
     }
   ],
   "pagination": {
-    "next_cursor": "...",
-    "has_more": true
+    "current_page": 1,
+    "per_page": 20,
+    "total_count": 45,
+    "total_pages": 3
   }
 }
 ```
@@ -231,20 +235,21 @@ sequenceDiagram
     participant R as リポジトリ
     participant DB as DB
 
-    F->>H: GET /api/reports?status=...&from=...&to=...&cursor=...&limit=20
-    Note right of F: ページ表示時 / フィルタ変更時に呼び出し
+    F->>H: GET /api/reports?status=...&from=...&to=...&page=1&per_page=20
+    Note right of F: ページ表示時 / フィルタ変更時に呼び出し<br/>フィルタ変更時は page=1 にリセット
     Note right of H: JWT検証（Authミドルウェア）<br/>TenantContext設定（RLS）
-    H->>H: クエリパラメータのバリデーション<br/>status: enum / from,to: date / limit: 1-100
-    H->>S: ListReports(tenantID, userID, filters)
-    S->>R: FindReports(tenantID, userID, filters, cursor, limit+1)
-    R->>DB: SELECT id, title, period_start, period_end,<br/>status, total_amount, submitted_at,<br/>created_at, updated_at<br/>FROM expense_reports<br/>WHERE tenant_id=? AND user_id=?<br/>AND deleted_at IS NULL<br/>[AND status=?]<br/>[AND period_start >= ?]<br/>[AND period_end <= ?]<br/>[AND (created_at, id) < (cursor_ts, cursor_id)]<br/>ORDER BY created_at DESC, id DESC<br/>LIMIT 21
-    Note right of DB: LIMIT N+1 で取得し<br/>N+1件目の有無で<br/>has_more を判定
-    DB-->>R: rows（最大21件）
-    R->>R: len(rows) > limit の場合<br/>has_more=true, 末尾行を除外<br/>最終行の (created_at, id) を next_cursor に設定
-    R-->>S: reports + pagination
+    H->>H: クエリパラメータのバリデーション<br/>status: enum / from,to: date / per_page: 1-100 / page: 1以上
+    H->>S: ListReports(tenantID, userID, filters, page, perPage)
+    S->>R: FindReports(tenantID, userID, filters, page, perPage)
+    R->>DB: SELECT COUNT(*)<br/>FROM expense_reports<br/>WHERE tenant_id=? AND user_id=?<br/>AND deleted_at IS NULL<br/>[AND status=?]<br/>[AND period_start >= ?]<br/>[AND period_end <= ?]
+    DB-->>R: total_count
+    R->>DB: SELECT id, title, period_start, period_end,<br/>status, total_amount, submitted_at,<br/>created_at, updated_at<br/>FROM expense_reports<br/>WHERE tenant_id=? AND user_id=?<br/>AND deleted_at IS NULL<br/>[AND status=?]<br/>[AND period_start >= ?]<br/>[AND period_end <= ?]<br/>ORDER BY created_at DESC, id DESC<br/>LIMIT per_page OFFSET (page-1)*per_page
+    DB-->>R: rows
+    R->>R: total_pages = ceil(total_count / per_page)
+    R-->>S: reports + pagination{current_page, per_page, total_count, total_pages}
     S-->>H: ListReportsResponse
     H-->>F: 200 OK
-    Note left of F: has_more=true の場合<br/>「さらに読み込む」ボタンを表示<br/>押下時に next_cursor を付与して再リクエスト
+    Note left of F: ページネーションコントロールを表示<br/>current_page をハイライト<br/>ページ番号クリックで該当ページを再リクエスト
 ```
 
 ---

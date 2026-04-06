@@ -156,7 +156,7 @@ draft → submitted → approved → paid
 - RESTful 設計、リソース名は複数形（`/expense-reports`, `/users`）
 - レスポンス形式: JSON
 - 日時: ISO 8601（UTC）
-- ページネーション: カーソルベース（`?cursor=xxx&limit=20`）
+- ページネーション: オフセットベース（`?page=1&per_page=20`）
 - API バージョニング: URL パス方式（`/api/v1/...`）
 
 ### エラーレスポンス形式

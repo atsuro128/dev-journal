@@ -67,5 +67,5 @@
 | DB アクセスライブラリ | データベースアクセスライブラリ。具体的なツールは Step 3 で選定（sqlc / pgx 等） |
 | 署名付きURL | Presigned URL。S3 上のファイルに一時的なアクセスを許可する URL。発行前に認可チェック必須 |
 | 監査ログ | Audit Log。誰が・いつ・何を変更したかの記録。INSERT ONLY（更新・削除不可） |
-| カーソルベースページネーション | Cursor-based Pagination。`?cursor=xxx&limit=20` 形式のページネーション |
+| オフセットベースページネーション | Offset-based Pagination。`?page=1&per_page=20` 形式のページネーション |
 | ADR | Architecture Decision Record。技術選定の判断理由を記録するドキュメント形式 |
