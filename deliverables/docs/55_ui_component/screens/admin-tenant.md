@@ -54,20 +54,11 @@ TenantPage
 
 ### PageTitle
 
-- 配置: `components/ui/PageTitle.tsx`（admin-all-reports.md と共通）
+- 配置: `components/ui/PageTitle.tsx`
 - 責務: ページタイトルを Typography で表示する
 - 対応セクション: `50_detail_design/screens/admin-tenant.md` &sect;5（ページタイトル）
 
-```typescript
-interface PageTitleProps {
-  /** ページタイトルテキスト */
-  title: string;
-}
-```
-
-| Props | 型 | 必須 | 説明 | データソース |
-|-------|---|------|------|------------|
-| `title` | `string` | Yes | ページタイトル（「テナント情報」） | 固定値 |
+Props 型定義は `common-components.md §PageTitle` を参照。
 
 ### TenantInfoCard
 

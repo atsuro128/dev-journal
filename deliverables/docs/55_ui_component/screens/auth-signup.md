@@ -81,19 +81,7 @@ interface SignupFormProps {
 - 責務: フォーム上部にエラーメッセージを Alert コンポーネントで表示する。メッセージが null の場合は非表示。認証画面ではトースト通知を使用しないため、API エラー表示はこのコンポーネントが担う
 - 対応セクション: `50_detail_design/screens/auth-signup.md` &sect;2.2, &sect;6
 
-```typescript
-interface FormAlertProps {
-  /** 表示するエラーメッセージ。null の場合は非表示 */
-  message: string | null;
-  /** Alert の severity（デフォルト: 'error'） */
-  severity?: 'error' | 'warning' | 'info' | 'success';
-}
-```
-
-| Props | 型 | 必須 | 説明 | データソース |
-|-------|---|------|------|------------|
-| `message` | `string \| null` | Yes | エラーメッセージ | 親コンポーネント |
-| `severity` | `'error' \| 'warning' \| 'info' \| 'success'` | No | Alert の種別 | 固定値 |
+Props 型定義は `common-components.md §FormAlert` を参照。
 
 ### SubmitButton
 
@@ -101,27 +89,7 @@ interface FormAlertProps {
 - 責務: フォーム送信ボタン。送信中は disabled + スピナー表示。認証画面・業務画面で共通利用する
 - 対応セクション: `50_detail_design/screens/auth-signup.md` &sect;2.3
 
-```typescript
-interface SubmitButtonProps {
-  /** ボタンのラベルテキスト */
-  label: string;
-  /** 送信中フラグ（true の場合 disabled + スピナー表示） */
-  loading: boolean;
-  /** ボタンの type 属性（デフォルト: 'submit'） */
-  type?: 'submit' | 'button';
-  /** ボタンの MUI color（デフォルト: 'primary'） */
-  color?: 'primary' | 'error' | 'success' | 'secondary';
-  /** ボタンの variant（デフォルト: 'contained'） */
-  variant?: 'contained' | 'outlined' | 'text';
-  /** フル幅表示（デフォルト: true） */
-  fullWidth?: boolean;
-}
-```
-
-| Props | 型 | 必須 | 説明 | データソース |
-|-------|---|------|------|------------|
-| `label` | `string` | Yes | ボタンテキスト | 固定値（「サインアップ」） |
-| `loading` | `boolean` | Yes | 送信中フラグ | useSignup Hook の isPending |
+Props 型定義は `common-components.md §SubmitButton` を参照。
 
 ### AuthNavLinks
 
@@ -129,25 +97,7 @@ interface SubmitButtonProps {
 - 責務: 認証画面下部のナビゲーションリンクを表示する。画面ごとに表示するリンクが異なるため、links 配列を受け取る
 - 対応セクション: `50_detail_design/screens/auth-signup.md` &sect;8
 
-```typescript
-interface AuthNavLink {
-  /** リンクの前に表示する説明テキスト */
-  prefix: string;
-  /** リンクテキスト */
-  label: string;
-  /** 遷移先パス */
-  to: string;
-}
-
-interface AuthNavLinksProps {
-  /** 表示するリンクの配列 */
-  links: AuthNavLink[];
-}
-```
-
-| Props | 型 | 必須 | 説明 | データソース |
-|-------|---|------|------|------------|
-| `links` | `AuthNavLink[]` | Yes | ナビゲーションリンクの配列 | 固定値 |
+Props 型定義は `common-components.md §AuthNavLinks` を参照。
 
 ---
 

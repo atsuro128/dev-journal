@@ -61,20 +61,11 @@ AllReportsPage
 
 ### PageTitle
 
-- 配置: `components/ui/PageTitle.tsx`（他画面と共通利用可能）
+- 配置: `components/ui/PageTitle.tsx`
 - 責務: ページタイトルを Typography で表示する
 - 対応セクション: `50_detail_design/screens/admin-all-reports.md` &sect;5（ページタイトル）
 
-```typescript
-interface PageTitleProps {
-  /** ページタイトルテキスト */
-  title: string;
-}
-```
-
-| Props | 型 | 必須 | 説明 | データソース |
-|-------|---|------|------|------------|
-| `title` | `string` | Yes | ページタイトル（「全レポート」） | 固定値 |
+Props 型定義は `common-components.md §PageTitle` を参照。
 
 ### AllReportsFilterBar
 

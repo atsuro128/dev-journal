@@ -39,7 +39,7 @@ ReportCreatePage
             │   ├── AppDatePicker（← common-components.md）[開始日]
             │   └── AppDatePicker（← common-components.md）[終了日]
             └── ReportFormActions
-                ├── SubmitButton（← auth-login.md と共通）[作成する]
+                ├── SubmitButton（← common-components.md）[作成する]
                 └── CancelButton
 ```
 
@@ -63,60 +63,15 @@ ReportCreatePage
 - 責務: レポートのタイトル・対象期間を入力するフォーム。React Hook Form + Zod（reportCreateSchema / reportUpdateSchema）でクライアントサイドバリデーションを行い、送信時に onSubmit コールバックを呼び出す。API エラーはフォーム上部の FormAlert に表示する。レポート作成画面（SCR-RPT-002）とレポート編集画面（SCR-RPT-003）で共有される
 - 対応セクション: `50_detail_design/screens/report-create.md` &sect;3, &sect;4, &sect;5
 
-```typescript
-interface ReportFormValues {
-  /** レポートタイトル */
-  title: string;
-  /** 対象期間開始日（YYYY-MM-DD 形式） */
-  periodStart: string;
-  /** 対象期間終了日（YYYY-MM-DD 形式） */
-  periodEnd: string;
-}
-
-interface ReportFormProps {
-  /** フォーム送信時のコールバック */
-  onSubmit: (data: ReportFormValues) => void;
-  /** キャンセルボタン押下時のコールバック */
-  onCancel: () => void;
-  /** API エラーメッセージ（フォーム上部に Alert 表示） */
-  apiError: string | null;
-  /** 送信中フラグ（ボタン・入力フィールドの disabled 制御） */
-  isPending: boolean;
-  /** 送信ボタンのラベルテキスト */
-  submitLabel: string;
-  /** フォームの初期値（編集時・再申請時にプリフィル） */
-  defaultValues?: ReportFormValues;
-}
-```
-
-| Props | 型 | 必須 | 説明 | データソース |
-|-------|---|------|------|------------|
-| `onSubmit` | `(data: ReportFormValues) => void` | Yes | バリデーション通過後の送信コールバック | ReportCreatePage / ReportEditPage |
-| `onCancel` | `() => void` | Yes | キャンセルボタン押下時のコールバック | ReportCreatePage / ReportEditPage（navigate 呼び出し） |
-| `apiError` | `string \| null` | Yes | API エラーメッセージ | useCreateReport / useUpdateReport Hook の error |
-| `isPending` | `boolean` | Yes | ミューテーション実行中フラグ | useCreateReport / useUpdateReport Hook の isPending |
-| `submitLabel` | `string` | Yes | 送信ボタンのラベル（「作成する」/「保存する」） | 固定値 |
-| `defaultValues` | `ReportFormValues` | No | フォーム初期値（再申請時・編集時） | useReport Hook の data / 親コンポーネント |
+Props 型定義は `common-components.md §ReportForm` を参照。
 
 ### FormAlert
 
-- 配置: `components/ui/FormAlert.tsx`（auth-login.md と共通）
+- 配置: `components/ui/FormAlert.tsx`
 - 責務: フォーム上部にエラーメッセージを Alert コンポーネントで表示する。メッセージが null の場合は非表示
 - 対応セクション: `50_detail_design/screens/report-create.md` &sect;5
 
-```typescript
-interface FormAlertProps {
-  /** 表示するエラーメッセージ。null の場合は非表示 */
-  message: string | null;
-  /** Alert の severity（デフォルト: 'error'） */
-  severity?: 'error' | 'warning' | 'info' | 'success';
-}
-```
-
-| Props | 型 | 必須 | 説明 | データソース |
-|-------|---|------|------|------------|
-| `message` | `string \| null` | Yes | エラーメッセージ | 親コンポーネント |
-| `severity` | `'error' \| 'warning' \| 'info' \| 'success'` | No | Alert の種別 | 固定値 |
+Props 型定義は `common-components.md §FormAlert` を参照。
 
 ### ReportPeriodField
 
@@ -124,25 +79,7 @@ interface FormAlertProps {
 - 責務: 対象期間の開始日・終了日を横並びに配置し、「~」の区切りテキストを表示する。各日付ピッカーは React Hook Form の Controller 経由で制御される
 - 対応セクション: `50_detail_design/screens/report-create.md` &sect;3
 
-```typescript
-interface ReportPeriodFieldProps {
-  /** React Hook Form の control インスタンス */
-  control: Control<ReportFormValues>;
-  /** 開始日のエラーメッセージ */
-  periodStartError?: string;
-  /** 終了日のエラーメッセージ */
-  periodEndError?: string;
-  /** 無効化フラグ */
-  disabled?: boolean;
-}
-```
-
-| Props | 型 | 必須 | 説明 | データソース |
-|-------|---|------|------|------------|
-| `control` | `Control<ReportFormValues>` | Yes | React Hook Form の control | ReportForm |
-| `periodStartError` | `string` | No | 開始日のバリデーションエラー | React Hook Form の formState.errors |
-| `periodEndError` | `string` | No | 終了日のバリデーションエラー | React Hook Form の formState.errors |
-| `disabled` | `boolean` | No | 送信中の無効化 | ReportForm の isPending |
+Props 型定義は `common-components.md §ReportPeriodField` を参照。
 
 ### ReportFormActions
 
@@ -150,22 +87,7 @@ interface ReportPeriodFieldProps {
 - 責務: フォーム下部のアクションボタン群（キャンセル・送信）を右寄せで配置する
 - 対応セクション: `50_detail_design/screens/report-create.md` &sect;6
 
-```typescript
-interface ReportFormActionsProps {
-  /** 送信ボタンのラベルテキスト */
-  submitLabel: string;
-  /** 送信中フラグ（送信ボタンを disabled + スピナー表示） */
-  loading: boolean;
-  /** キャンセルボタン押下時のコールバック */
-  onCancel: () => void;
-}
-```
-
-| Props | 型 | 必須 | 説明 | データソース |
-|-------|---|------|------|------------|
-| `submitLabel` | `string` | Yes | 送信ボタンのラベル | 親コンポーネント |
-| `loading` | `boolean` | Yes | 送信中フラグ | ReportForm の isPending |
-| `onCancel` | `() => void` | Yes | キャンセルコールバック | ReportForm の onCancel |
+Props 型定義は `common-components.md §ReportFormActions` を参照。
 
 ---
 

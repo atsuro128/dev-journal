@@ -49,7 +49,7 @@ ReportDetailPage
         │   └── EmptyState（← common-components.md）[明細0件時]
         ├── ItemSlidePanel
         │   ├── ItemForm
-        │   │   ├── FormAlert（← auth-login.md / auth-signup.md と共通）[apiError 表示]
+        │   │   ├── FormAlert（← common-components.md）[apiError 表示]
         │   │   ├── AppDatePicker（← common-components.md）[日付]
         │   │   ├── AppTextField（← common-components.md）[金額]
         │   │   ├── AppSelect（← common-components.md）[カテゴリ]
@@ -440,7 +440,7 @@ interface ItemSlidePanelProps {
 ### ItemForm
 
 - 配置: `pages/reports/ItemForm.tsx`
-- 責務: 明細の入力フォーム。React Hook Form + Zod（itemCreateSchema / itemUpdateSchema）でバリデーションを行う。閲覧モードでは全フィールドを readonly にする。追加モードでは「保存して続けて追加」ボタンも表示する。API エラー（useCreateItem / useUpdateItem の error）はフォーム上部の FormAlert コンポーネント（auth-login.md / auth-signup.md と共通の `components/ui/FormAlert.tsx`）で表示する
+- 責務: 明細の入力フォーム。React Hook Form + Zod（itemCreateSchema / itemUpdateSchema）でバリデーションを行う。閲覧モードでは全フィールドを readonly にする。追加モードでは「保存して続けて追加」ボタンも表示する。API エラー（useCreateItem / useUpdateItem の error）はフォーム上部の FormAlert コンポーネント（common-components.md §FormAlert、`components/ui/FormAlert.tsx`）で表示する
 - 対応セクション: `50_detail_design/screens/report-detail.md` &sect;6
 
 ```typescript
@@ -733,7 +733,7 @@ AttachmentArea → AttachmentList → onDelete(attachmentId)
 | `AppDataGrid`（← common-components.md） | ItemTable 内の明細テーブル | columns: 日付・金額・カテゴリ・摘要・添付数・操作 |
 | `EmptyState`（← common-components.md） | ItemListSection 内の明細 0 件時 | message: 所有者 AND draft の場合「明細はまだ追加されていません。「明細追加」から経費を登録してください。」、それ以外「明細はまだ追加されていません。」 |
 | `EmptyState`（← common-components.md） | ReportDetailPage 内の 404 Not Found 時 | message: 「指定されたデータが見つかりません。」、action: { label: 'レポート一覧に戻る', onClick: navigate('/reports') }。他コンテンツ（ReportInfoCard 等）は非表示 |
-| `FormAlert`（← auth-login.md / auth-signup.md と共通） | ItemForm 内の API エラー表示 | message: apiError（useCreateItem / useUpdateItem の error）、severity: 'error'。フォーム上部に配置 |
+| `FormAlert`（← common-components.md） | ItemForm 内の API エラー表示 | message: apiError（useCreateItem / useUpdateItem の error）、severity: 'error'。フォーム上部に配置 |
 | `ConfirmDialog`（← common-components.md） | レポートの提出・削除・承認・却下・支払完了の各確認ダイアログ | open, title, message, confirmLabel, confirmColor, inputField（却下時: 必須テキストエリア、承認時: 任意テキストエリア） |
 | `AppTextField`（← common-components.md） | ItemForm 内の金額・摘要入力 | 金額: type="number"、摘要: multiline |
 | `AppSelect`（← common-components.md） | ItemForm 内のカテゴリ選択 | options: useCategories から取得した 6 カテゴリ |

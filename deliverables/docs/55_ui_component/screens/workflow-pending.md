@@ -162,57 +162,27 @@ interface PendingReportTableProps {
 
 ### SelfLabel
 
-- 配置: `components/ui/SelfLabel.tsx`（workflow-payable.md と共通）
+- 配置: `components/ui/SelfLabel.tsx`
 - 責務: 自分が作成したレポートであることを示す「自分」ラベルを Chip で表示する。申請者名の横に配置する。`is_own_report` フラグが true の場合のみ表示する
 - 対応セクション: `50_detail_design/screens/workflow-pending.md` &sect;5（自己承認禁止の表示ルール）
 
-```typescript
-interface SelfLabelProps {
-  /** 自分のレポートかどうか（true の場合のみラベル表示） */
-  isOwnReport: boolean;
-}
-```
-
-| Props | 型 | 必須 | 説明 | データソース |
-|-------|---|------|------|------------|
-| `isOwnReport` | `boolean` | Yes | 自分が作成したレポートか | API レスポンス `is_own_report` |
+Props 型定義は `common-components.md §SelfLabel` を参照。
 
 ### FilterResetButton
 
-- 配置: `components/ui/FilterResetButton.tsx`（workflow-payable.md と共通）
+- 配置: `components/ui/FilterResetButton.tsx`
 - 責務: フィルタ条件をリセットするボタン。フィルタが適用されている場合にのみ有効化される
 - 対応セクション: `50_detail_design/screens/workflow-pending.md` &sect;6
 
-```typescript
-interface FilterResetButtonProps {
-  /** リセットコールバック */
-  onReset: () => void;
-  /** フィルタが適用中かどうか（false の場合 disabled） */
-  isFiltered: boolean;
-}
-```
-
-| Props | 型 | 必須 | 説明 | データソース |
-|-------|---|------|------|------------|
-| `onReset` | `() => void` | Yes | フィルタリセットコールバック | PendingFilterBar |
-| `isFiltered` | `boolean` | Yes | フィルタ適用中フラグ | PendingFilterBar |
+Props 型定義は `common-components.md §FilterResetButton` を参照。
 
 ### PageTitle
 
-- 配置: `components/ui/PageTitle.tsx`（他の一覧画面と共通）
+- 配置: `components/ui/PageTitle.tsx`
 - 責務: ページタイトル（「承認待ち一覧」）を表示する Typography コンポーネント
 - 対応セクション: `50_detail_design/screens/workflow-pending.md` &sect;4
 
-```typescript
-interface PageTitleProps {
-  /** タイトルテキスト */
-  title: string;
-}
-```
-
-| Props | 型 | 必須 | 説明 | データソース |
-|-------|---|------|------|------------|
-| `title` | `string` | Yes | ページタイトル | 固定値（「承認待ち一覧」） |
+Props 型定義は `common-components.md §PageTitle` を参照。
 
 ---
 

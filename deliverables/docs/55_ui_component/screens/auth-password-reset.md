@@ -100,77 +100,27 @@ interface PasswordResetFormProps {
 
 ### FormAlert
 
-- 配置: `components/ui/FormAlert.tsx`（auth-signup.md と共通）
+- 配置: `components/ui/FormAlert.tsx`
 - 責務: フォーム上部にエラーメッセージを Alert コンポーネントで表示する。メッセージが null の場合は非表示
 - 対応セクション: `50_detail_design/screens/auth-password-reset.md` &sect;2.2, &sect;6
 
-```typescript
-interface FormAlertProps {
-  /** 表示するエラーメッセージ。null の場合は非表示 */
-  message: string | null;
-  /** Alert の severity（デフォルト: 'error'） */
-  severity?: 'error' | 'warning' | 'info' | 'success';
-}
-```
-
-| Props | 型 | 必須 | 説明 | データソース |
-|-------|---|------|------|------------|
-| `message` | `string \| null` | Yes | エラーメッセージ | 親コンポーネント |
-| `severity` | `'error' \| 'warning' \| 'info' \| 'success'` | No | Alert の種別 | 固定値 |
+Props 型定義は `common-components.md §FormAlert` を参照。
 
 ### SubmitButton
 
-- 配置: `components/ui/SubmitButton.tsx`（auth-signup.md と共通）
+- 配置: `components/ui/SubmitButton.tsx`
 - 責務: フォーム送信ボタン。送信中は disabled + スピナー表示
 - 対応セクション: `50_detail_design/screens/auth-password-reset.md` &sect;2.3
 
-```typescript
-interface SubmitButtonProps {
-  /** ボタンのラベルテキスト */
-  label: string;
-  /** 送信中フラグ（true の場合 disabled + スピナー表示） */
-  loading: boolean;
-  /** ボタンの type 属性（デフォルト: 'submit'） */
-  type?: 'submit' | 'button';
-  /** ボタンの MUI color（デフォルト: 'primary'） */
-  color?: 'primary' | 'error' | 'success' | 'secondary';
-  /** ボタンの variant（デフォルト: 'contained'） */
-  variant?: 'contained' | 'outlined' | 'text';
-  /** フル幅表示（デフォルト: true） */
-  fullWidth?: boolean;
-}
-```
-
-| Props | 型 | 必須 | 説明 | データソース |
-|-------|---|------|------|------------|
-| `label` | `string` | Yes | ボタンテキスト | 固定値（「パスワードを変更」） |
-| `loading` | `boolean` | Yes | 送信中フラグ | useExecutePasswordReset Hook の isPending |
+Props 型定義は `common-components.md §SubmitButton` を参照。
 
 ### AuthNavLinks
 
-- 配置: `pages/auth/AuthNavLinks.tsx`（auth-signup.md と共通）
+- 配置: `pages/auth/AuthNavLinks.tsx`
 - 責務: 認証画面下部のナビゲーションリンクを表示する。フォーム表示状態でのみ表示する
 - 対応セクション: `50_detail_design/screens/auth-password-reset.md` &sect;9
 
-```typescript
-interface AuthNavLink {
-  /** リンクの前に表示する説明テキスト */
-  prefix: string;
-  /** リンクテキスト */
-  label: string;
-  /** 遷移先パス */
-  to: string;
-}
-
-interface AuthNavLinksProps {
-  /** 表示するリンクの配列 */
-  links: AuthNavLink[];
-}
-```
-
-| Props | 型 | 必須 | 説明 | データソース |
-|-------|---|------|------|------------|
-| `links` | `AuthNavLink[]` | Yes | ナビゲーションリンクの配列 | 固定値 |
+Props 型定義は `common-components.md §AuthNavLinks` を参照。
 
 ---
 

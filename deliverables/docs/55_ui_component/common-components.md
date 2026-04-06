@@ -365,6 +365,176 @@ interface AppBreadcrumbsProps {
 }
 ```
 
+### PageTitle
+
+- 配置: `components/ui/PageTitle.tsx`
+- 責務: ページタイトルを Typography で表示する
+- 使用箇所: SCR-WFL-001, SCR-WFL-002, SCR-ADM-001, SCR-ADM-002
+
+```typescript
+interface PageTitleProps {
+  /** ページタイトルテキスト */
+  title: string;
+}
+```
+
+### FormAlert
+
+- 配置: `components/ui/FormAlert.tsx`
+- 責務: フォーム上部にエラーメッセージを Alert コンポーネントで表示する。メッセージが null の場合は非表示。認証画面ではトースト通知を使用しないため、API エラー表示はこのコンポーネントが担う
+- 使用箇所: SCR-AUTH-001, SCR-AUTH-002, SCR-AUTH-003, SCR-AUTH-004, SCR-RPT-002, SCR-RPT-003, SCR-RPT-004
+
+```typescript
+interface FormAlertProps {
+  /** 表示するエラーメッセージ。null の場合は非表示 */
+  message: string | null;
+  /** Alert の severity（デフォルト: 'error'） */
+  severity?: 'error' | 'warning' | 'info' | 'success';
+}
+```
+
+### SubmitButton
+
+- 配置: `components/ui/SubmitButton.tsx`
+- 責務: フォーム送信ボタン。送信中は disabled + スピナー表示。認証画面・業務画面で共通利用する
+- 使用箇所: SCR-AUTH-001, SCR-AUTH-002, SCR-AUTH-003, SCR-AUTH-004, SCR-RPT-002, SCR-RPT-003
+
+```typescript
+interface SubmitButtonProps {
+  /** ボタンのラベルテキスト */
+  label: string;
+  /** 送信中フラグ（true の場合 disabled + スピナー表示） */
+  loading: boolean;
+  /** ボタンの type 属性（デフォルト: 'submit'） */
+  type?: 'submit' | 'button';
+  /** ボタンの MUI color（デフォルト: 'primary'） */
+  color?: 'primary' | 'error' | 'success' | 'secondary';
+  /** ボタンの variant（デフォルト: 'contained'） */
+  variant?: 'contained' | 'outlined' | 'text';
+  /** フル幅表示（デフォルト: true） */
+  fullWidth?: boolean;
+}
+```
+
+### SelfLabel
+
+- 配置: `components/ui/SelfLabel.tsx`
+- 責務: 自分が作成したレポートであることを示す「自分」ラベルを Chip で表示する。申請者名の横に配置する。`is_own_report` フラグが true の場合のみ表示する
+- 使用箇所: SCR-WFL-001, SCR-WFL-002
+
+```typescript
+interface SelfLabelProps {
+  /** 自分のレポートかどうか（true の場合のみラベル表示） */
+  isOwnReport: boolean;
+}
+```
+
+### FilterResetButton
+
+- 配置: `components/ui/FilterResetButton.tsx`
+- 責務: フィルタ条件をリセットするボタン。フィルタが適用されている場合にのみ有効化される
+- 使用箇所: SCR-WFL-001, SCR-WFL-002
+
+```typescript
+interface FilterResetButtonProps {
+  /** リセットコールバック */
+  onReset: () => void;
+  /** フィルタが適用中かどうか（false の場合 disabled） */
+  isFiltered: boolean;
+}
+```
+
+### AuthNavLinks
+
+- 配置: `pages/auth/AuthNavLinks.tsx`
+- 責務: 認証画面下部のナビゲーションリンクを表示する。画面ごとに表示するリンクが異なるため、links 配列を受け取る
+- 使用箇所: SCR-AUTH-001, SCR-AUTH-002, SCR-AUTH-003, SCR-AUTH-004
+- 注記: 認証画面専用のため `pages/auth/` に配置
+
+```typescript
+interface AuthNavLink {
+  /** リンクの前に表示する説明テキスト */
+  prefix: string;
+  /** リンクテキスト */
+  label: string;
+  /** 遷移先パス */
+  to: string;
+}
+
+interface AuthNavLinksProps {
+  /** 表示するリンクの配列 */
+  links: AuthNavLink[];
+}
+```
+
+### ReportForm
+
+- 配置: `components/report/ReportForm.tsx`
+- 責務: レポートのタイトル・対象期間を入力するフォーム。React Hook Form + Zod（reportCreateSchema / reportUpdateSchema）でクライアントサイドバリデーションを行い、送信時に onSubmit コールバックを呼び出す。API エラーはフォーム上部の FormAlert に表示する。レポート作成画面（SCR-RPT-002）とレポート編集画面（SCR-RPT-003）で共有される
+- 使用箇所: SCR-RPT-002, SCR-RPT-003
+
+```typescript
+interface ReportFormValues {
+  /** レポートタイトル */
+  title: string;
+  /** 対象期間開始日（YYYY-MM-DD 形式） */
+  periodStart: string;
+  /** 対象期間終了日（YYYY-MM-DD 形式） */
+  periodEnd: string;
+}
+
+interface ReportFormProps {
+  /** フォーム送信時のコールバック */
+  onSubmit: (data: ReportFormValues) => void;
+  /** キャンセルボタン押下時のコールバック */
+  onCancel: () => void;
+  /** API エラーメッセージ（フォーム上部に Alert 表示） */
+  apiError: string | null;
+  /** 送信中フラグ（ボタン・入力フィールドの disabled 制御） */
+  isPending: boolean;
+  /** 送信ボタンのラベルテキスト */
+  submitLabel: string;
+  /** フォームの初期値（編集時・再申請時にプリフィル） */
+  defaultValues?: ReportFormValues;
+}
+```
+
+### ReportPeriodField
+
+- 配置: `components/report/ReportPeriodField.tsx`
+- 責務: 対象期間の開始日・終了日を横並びに配置し、「~」の区切りテキストを表示する。各日付ピッカーは React Hook Form の Controller 経由で制御される
+- 使用箇所: SCR-RPT-002, SCR-RPT-003
+
+```typescript
+interface ReportPeriodFieldProps {
+  /** React Hook Form の control インスタンス */
+  control: Control<ReportFormValues>;
+  /** 開始日のエラーメッセージ */
+  periodStartError?: string;
+  /** 終了日のエラーメッセージ */
+  periodEndError?: string;
+  /** 無効化フラグ */
+  disabled?: boolean;
+}
+```
+
+### ReportFormActions
+
+- 配置: `components/report/ReportFormActions.tsx`
+- 責務: フォーム下部のアクションボタン群（キャンセル・送信）を右寄せで配置する
+- 使用箇所: SCR-RPT-002, SCR-RPT-003
+
+```typescript
+interface ReportFormActionsProps {
+  /** 送信ボタンのラベルテキスト */
+  submitLabel: string;
+  /** 送信中フラグ（送信ボタンを disabled + スピナー表示） */
+  loading: boolean;
+  /** キャンセルボタン押下時のコールバック */
+  onCancel: () => void;
+}
+```
+
 ---
 
 ## 4. 使用箇所マトリクス
@@ -386,6 +556,15 @@ interface AppBreadcrumbsProps {
 | EmptyState | --- | --- | --- | --- | ○ | ○ | --- | --- | ○ | ○ | ○ | ○ | --- |
 | PageSkeleton | --- | --- | --- | --- | ○ | ○ | --- | ○ | ○ | ○ | ○ | ○ | ○ |
 | AppBreadcrumbs | --- | --- | --- | --- | --- | --- | ○ | ○ | ○ | --- | --- | --- | --- |
+| PageTitle | --- | --- | --- | --- | --- | --- | --- | --- | --- | ○ | ○ | ○ | ○ |
+| FormAlert | ○ | ○ | ○ | ○ | --- | --- | ○ | ○ | ○ | --- | --- | --- | --- |
+| SubmitButton | ○ | ○ | ○ | ○ | --- | --- | ○ | ○ | --- | --- | --- | --- | --- |
+| SelfLabel | --- | --- | --- | --- | --- | --- | --- | --- | --- | ○ | ○ | --- | --- |
+| FilterResetButton | --- | --- | --- | --- | --- | --- | --- | --- | --- | ○ | ○ | --- | --- |
+| AuthNavLinks | ○ | ○ | ○ | ○ | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ReportForm | --- | --- | --- | --- | --- | --- | ○ | ○ | --- | --- | --- | --- | --- |
+| ReportPeriodField | --- | --- | --- | --- | --- | --- | ○ | ○ | --- | --- | --- | --- | --- |
+| ReportFormActions | --- | --- | --- | --- | --- | --- | ○ | ○ | --- | --- | --- | --- | --- |
 
 凡例: ○ = 使用する / --- = 使用しない
 
@@ -398,6 +577,13 @@ interface AppBreadcrumbsProps {
 - **AppSelect**: レポート一覧・テナント全レポート一覧のステータスフィルタ、テナント全レポート一覧の申請者フィルタ、明細スライドパネルのカテゴリ選択で使用
 - **AppDatePicker**: レポート一覧の期間フィルタ、レポート作成・編集の対象期間、明細スライドパネルの日付入力、テナント全レポート一覧の期間フィルタで使用
 - **ConfirmDialog**: レポート詳細画面のみで使用するが、提出・削除・承認・却下・支払完了・明細削除・添付削除の7種類の確認操作を担うため共通コンポーネントとして定義
+- **PageTitle**: 承認待ち一覧・支払待ち一覧・テナント全レポート一覧・テナント情報の各画面でページタイトルを統一表示する
+- **FormAlert**: 認証画面（4画面）とレポート作成・編集・詳細画面でフォーム上部のエラー表示を統一する。認証画面ではトースト通知を使用しないため、API エラー表示はこのコンポーネントが担う
+- **SubmitButton**: 認証画面（4画面）とレポート作成・編集画面でフォーム送信ボタンの挙動（送信中 disabled + スピナー）を統一する
+- **SelfLabel**: 承認待ち一覧・支払待ち一覧で自己レポートを識別する「自分」ラベルを表示する
+- **FilterResetButton**: 承認待ち一覧・支払待ち一覧でフィルタリセットボタンを表示する
+- **AuthNavLinks**: 認証画面（4画面）で画面下部のナビゲーションリンクを表示する。認証画面専用のため `pages/auth/` に配置
+- **ReportForm**: レポート作成画面とレポート編集画面で共通利用するフォームコンポーネント。ReportPeriodField と ReportFormActions を内部に含む
 
 ---
 
@@ -421,9 +607,18 @@ frontend/src/components/
 │   ├── StatusChip.tsx     # ステータスバッジ
 │   ├── EmptyState.tsx     # 空状態メッセージ
 │   ├── PageSkeleton.tsx   # ローディングスケルトン
-│   └── AppBreadcrumbs.tsx # パンくずナビゲーション
-└── report/                # 画面固有コンポーネント（5.5-C-* で定義）
-    └── ...
+│   ├── AppBreadcrumbs.tsx # パンくずナビゲーション
+│   ├── PageTitle.tsx      # ページタイトル
+│   ├── FormAlert.tsx      # フォーム上部エラーアラート
+│   ├── SubmitButton.tsx   # フォーム送信ボタン
+│   ├── SelfLabel.tsx      # 自己レポート識別ラベル
+│   └── FilterResetButton.tsx # フィルタリセットボタン
+├── report/                # レポート関連共通コンポーネント
+│   ├── ReportForm.tsx         # レポート作成・編集フォーム
+│   ├── ReportPeriodField.tsx  # 対象期間入力フィールド
+│   └── ReportFormActions.tsx  # フォームアクションボタン群
+└── (pages/auth/)          # 認証画面専用コンポーネント
+    └── AuthNavLinks.tsx   # 認証画面ナビゲーションリンク
 ```
 
 既存スケルトン（`expense-saas/frontend/src/components/`）の `layout/`, `ui/`, `report/` ディレクトリ構成と整合している。
@@ -442,3 +637,4 @@ frontend/src/components/
 - [x] 用語が glossary.md に準拠しているか（提出/却下/再申請/支払完了）
 - [x] 既存スケルトン（`expense-saas/frontend/src/components/`）のディレクトリ構成と整合しているか
 - [x] 画面固有のコンポーネントを含めていないか（5.5-C-* で定義）
+- [x] 複数画面で共有するコンポーネント（PageTitle, FormAlert, SubmitButton, SelfLabel, FilterResetButton, AuthNavLinks, ReportForm, ReportPeriodField, ReportFormActions）が全て収録されているか
