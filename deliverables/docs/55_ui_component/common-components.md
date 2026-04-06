@@ -242,8 +242,9 @@ interface ConfirmDialogProps {
 ### AppToast
 
 - 配置: `components/ui/AppToast.tsx`
-- 責務: 操作結果の通知を Snackbar + Alert で統一表示する（`ui-guidelines.md` &sect;8 準拠）。表示位置は画面下部中央、成功通知は5秒で自動非表示、エラー通知は手動で閉じる
+- 責務: 操作結果の通知を Snackbar + Alert で統一表示する（`ui-guidelines.md` &sect;8 準拠）。表示位置は画面上部中央（`anchorOrigin={{ vertical: 'top', horizontal: 'center' }}`）、成功通知は5秒で自動非表示、エラー通知は手動で閉じる
 - 使用箇所: SCR-DASH-001, SCR-RPT-001, SCR-RPT-002, SCR-RPT-003, SCR-RPT-004, SCR-WFL-001, SCR-WFL-002, SCR-ADM-001, SCR-ADM-002
+- **AuthLayout 配下は対象外**: 認証画面（SCR-AUTH-001〜004）ではトースト通知を使用しない。認証失敗・レート制限・サーバーエラーはすべてフォーム上部の Alert コンポーネントで表示する（各認証画面仕様の §S1〜S3 準拠、`state-management.md` §6 のエラー分類と整合）。AuthLayout がヘッダーを持たず画面中央にフォームカードのみを配置するレイアウトであるため、フォーム直上のインラインアラートが適切である
 
 ```typescript
 /** トースト通知の種別（ui-guidelines.md §8 準拠） */

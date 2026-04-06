@@ -373,8 +373,10 @@ interface PayableReportListParams {
 | バリデーションエラー | 422 | VALIDATION_ERROR | ミューテーション `onError` | フォームフィールドにエラー反映 |
 | 業務ルール違反 | 422 | INVALID_STATE_TRANSITION, REPORT_NOT_EDITABLE 等 | ミューテーション `onError` | Snackbar（エラー）+ 画面更新 |
 | ファイルサイズ超過 | 413 | FILE_TOO_LARGE | ミューテーション `onError` | Snackbar（エラー） |
-| レート制限 | 429 | RATE_LIMIT_EXCEEDED | ミューテーション `onError` | Snackbar（警告） |
-| サーバーエラー | 500 | INTERNAL_ERROR | グローバルハンドラ | Snackbar（エラー） |
+| レート制限 | 429 | RATE_LIMIT_EXCEEDED | ミューテーション `onError` | Snackbar（警告）※1 |
+| サーバーエラー | 500 | INTERNAL_ERROR | グローバルハンドラ | Snackbar（エラー）※1 |
+
+※1 **AuthLayout 配下の例外**: 認証画面（SCR-AUTH-001〜004）では Snackbar を使用せず、フォーム上部の Alert で表示する（各認証画面仕様 §S1〜S3 準拠、`common-components.md` AppToast の AuthLayout 除外規定と整合）
 
 ### グローバルエラーハンドラ
 
