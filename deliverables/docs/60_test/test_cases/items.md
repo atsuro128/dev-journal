@@ -348,3 +348,216 @@ const (
     CategoryFoodID           = "ffffffff-0002-0002-0002-000000000002"
 )
 ```
+
+---
+
+## 10. FE テストケース
+
+本セクションは `55_ui_component/screens/report-detail.md` の明細関連コンポーネント（ItemListSection, ItemListHeader, ItemTable, ItemSlidePanel, ItemForm）と、関連する状態管理 Hook（useCreateItem, useUpdateItem, useDeleteItem, useCategories）のテストケースを定義する。
+
+**テストIDプレフィックス**: `ITM-FE-`（001 から連番）
+
+**対象テストファイル**: `src/__tests__/pages/reports/Item*.test.tsx`, `src/__tests__/hooks/useItems.test.tsx`, `src/__tests__/hooks/useCategories.test.tsx`
+
+**責務境界**:
+- 添付ファイル関連コンポーネント（AttachmentArea, AttachmentList, AttachmentUploader）は `attachments.md` に記載する。本ファイルには書かない。
+- 共通コンポーネント（AppDataGrid, EmptyState, FormAlert, AppTextField, AppSelect, AppDatePicker）の単体テストは `common-components.md` に記載する。本ファイルでは Props 経由の統合的な動作のみ検証する。
+- レポート詳細ページ全体のテスト（ReportDetailPage）は `reports.md` に記載する。
+
+### 参照設計書
+
+- `55_ui_component/screens/report-detail.md` -- ItemListSection, ItemListHeader, ItemTable, ItemSlidePanel, ItemForm
+- `55_ui_component/state-management.md` -- useCreateItem, useUpdateItem, useDeleteItem, useCategories
+- `55_ui_component/common-components.md` -- FormAlert
+- `50_detail_design/screens/report-detail.md` -- バリデーションルール V1-V7
+
+### FE フィクスチャ参照
+
+| 参照名 | 値 | 用途 |
+|---|---|---|
+| `mockItems` | `ExpenseItem[]`（2件以上） | ItemTable / ItemListSection の描画テスト |
+| `mockEmptyItems` | `[]` | 空状態テスト |
+| `mockCategories` | `[{ value: '<UUID>', label: '交通費' }, ...]`（6件） | ItemForm のカテゴリ選択肢 |
+| `mockItem` | `ExpenseItem`（amount: 1000, category: 'transportation', description: 'タクシー代'） | 編集・閲覧モードの初期値 |
+
+### 10.1 ItemListSection
+
+| テストID | テストレベル | 対象コンポーネント | 対象 Props / Hook | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---|---|---|---|---|---|---|---|---|---|
+| ITM-FE-001 | 単体 | ItemListSection | items: ExpenseItem[] | 正常系 | ITM-F01 | 55_ui_component/screens/report-detail.md §ItemListSection | `renders_item_list_section_with_items` | items=mockItems（2件）, isOwner=true, status='draft' | セクションが描画され、ItemListHeader と ItemTable が表示される |
+| ITM-FE-002 | 単体 | ItemListSection | items: ExpenseItem[] | 正常系 | ITM-F01 | 55_ui_component/screens/report-detail.md §ItemListSection | `renders_empty_state_when_no_items_owner_draft` | items=[], isOwner=true, status='draft' | EmptyState が「明細はまだ追加されていません。「明細追加」から経費を登録してください。」メッセージで表示される |
+| ITM-FE-003 | 単体 | ItemListSection | items: ExpenseItem[] | 正常系 | ITM-F01 | 55_ui_component/screens/report-detail.md §ItemListSection | `renders_empty_state_when_no_items_non_owner` | items=[], isOwner=false, status='draft' | EmptyState が「明細はまだ追加されていません。」メッセージで表示される（所有者向けのガイド文言なし） |
+| ITM-FE-004 | 単体 | ItemListSection | items: ExpenseItem[] | 正常系 | ITM-F01 | 55_ui_component/screens/report-detail.md §ItemListSection | `renders_empty_state_when_no_items_non_draft` | items=[], isOwner=true, status='submitted' | EmptyState が「明細はまだ追加されていません。」メッセージで表示される（draft 以外では操作ガイドなし） |
+
+### 10.2 ItemListHeader
+
+| テストID | テストレベル | 対象コンポーネント | 対象 Props / Hook | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---|---|---|---|---|---|---|---|---|---|
+| ITM-FE-005 | 単体 | ItemListHeader | itemCount: number | 正常系 | ITM-F01 | 55_ui_component/screens/report-detail.md §ItemListHeader | `renders_item_count_in_header` | itemCount=3, canAddItem=true | 「明細一覧（3件）」のような見出しテキストが表示される |
+| ITM-FE-006 | 単体 | ItemListHeader | itemCount: number | 正常系 | ITM-F01 | 55_ui_component/screens/report-detail.md §ItemListHeader | `renders_zero_item_count` | itemCount=0, canAddItem=true | 「明細一覧（0件）」のような見出しテキストが表示される |
+| ITM-FE-007 | 単体 | ItemListHeader | canAddItem: boolean | 正常系 | ITM-F01 | 55_ui_component/screens/report-detail.md §ItemListHeader | `shows_add_button_when_canAddItem_true` | canAddItem=true | 「明細追加」ボタンが表示される |
+| ITM-FE-008 | 単体 | ItemListHeader | canAddItem: boolean | 正常系 | ITM-010 | 55_ui_component/screens/report-detail.md §ItemListHeader | `hides_add_button_when_canAddItem_false` | canAddItem=false | 「明細追加」ボタンが表示されない |
+| ITM-FE-009 | 単体 | ItemListHeader | onAddItem: () => void | 正常系 | ITM-F01 | 55_ui_component/screens/report-detail.md §ItemListHeader | `calls_onAddItem_when_add_button_clicked` | canAddItem=true, onAddItem=jest.fn() | 「明細追加」ボタンをクリックすると onAddItem が呼ばれる |
+
+### 10.3 ItemTable
+
+| テストID | テストレベル | 対象コンポーネント | 対象 Props / Hook | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---|---|---|---|---|---|---|---|---|---|
+| ITM-FE-010 | 単体 | ItemTable | items: ExpenseItem[] | 正常系 | ITM-F01 | 55_ui_component/screens/report-detail.md §ItemTable | `renders_all_columns` | items=mockItems, canEditItems=true | 日付・金額・カテゴリ・摘要・添付数・操作の各カラムが表示される |
+| ITM-FE-011 | 単体 | ItemTable | items: ExpenseItem[] | 正常系 | ITM-002 | 55_ui_component/screens/report-detail.md §ItemTable | `formats_amount_as_currency` | items=[{ amount: 12345, ... }], canEditItems=false | 金額カラムに通貨フォーマット（例: "12,345" や "¥12,345"）で表示される |
+| ITM-FE-012 | 単体 | ItemTable | canEditItems: boolean | 正常系 | ITM-010 | 55_ui_component/screens/report-detail.md §ItemTable | `shows_action_column_when_canEditItems_true` | canEditItems=true | 操作列（編集・削除ボタン）が表示される |
+| ITM-FE-013 | 単体 | ItemTable | canEditItems: boolean | 正常系 | ITM-010 | 55_ui_component/screens/report-detail.md §ItemTable | `hides_action_column_when_canEditItems_false` | canEditItems=false | 操作列が表示されない |
+| ITM-FE-014 | 単体 | ItemTable | onItemClick: (itemId: string) => void | 正常系 | ITM-F01 | 55_ui_component/screens/report-detail.md §ItemTable | `calls_onItemClick_when_row_clicked` | onItemClick=jest.fn(), items=mockItems | 明細行をクリックすると onItemClick が該当 itemId で呼ばれる |
+| ITM-FE-015 | 単体 | ItemTable | onEditItem: (itemId: string) => void | 正常系 | ITM-F02 | 55_ui_component/screens/report-detail.md §ItemTable | `calls_onEditItem_when_edit_button_clicked` | canEditItems=true, onEditItem=jest.fn() | 編集ボタンをクリックすると onEditItem が該当 itemId で呼ばれる |
+| ITM-FE-016 | 単体 | ItemTable | onDeleteItem: (itemId: string) => void | 正常系 | ITM-F03 | 55_ui_component/screens/report-detail.md §ItemTable | `calls_onDeleteItem_when_delete_button_clicked` | canEditItems=true, onDeleteItem=jest.fn() | 削除ボタンをクリックすると onDeleteItem が該当 itemId で呼ばれる |
+| ITM-FE-017 | 単体 | ItemTable | onEditItem / onDeleteItem | 正常系 | ITM-F02, ITM-F03 | 55_ui_component/screens/report-detail.md §ItemTable | `edit_button_does_not_trigger_row_click` | canEditItems=true, onItemClick=jest.fn(), onEditItem=jest.fn() | 編集ボタンクリック時に onItemClick は呼ばれない（イベント伝播の停止） |
+
+### 10.4 ItemSlidePanel
+
+| テストID | テストレベル | 対象コンポーネント | 対象 Props / Hook | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---|---|---|---|---|---|---|---|---|---|
+| ITM-FE-018 | 単体 | ItemSlidePanel | open: boolean | 正常系 | ITM-F01 | 55_ui_component/screens/report-detail.md §ItemSlidePanel | `renders_panel_when_open_true` | open=true, mode='add' | スライドパネルが表示される |
+| ITM-FE-019 | 単体 | ItemSlidePanel | open: boolean | 正常系 | ITM-F01 | 55_ui_component/screens/report-detail.md §ItemSlidePanel | `hides_panel_when_open_false` | open=false | スライドパネルが表示されない |
+| ITM-FE-020 | 単体 | ItemSlidePanel | mode: PanelMode | 正常系 | ITM-F01 | 55_ui_component/screens/report-detail.md §ItemSlidePanel | `renders_add_mode_title` | open=true, mode='add', item=null | パネルタイトルが追加モードの表記（例: 「明細追加」）で表示される |
+| ITM-FE-021 | 単体 | ItemSlidePanel | mode: PanelMode | 正常系 | ITM-F02 | 55_ui_component/screens/report-detail.md §ItemSlidePanel | `renders_edit_mode_title` | open=true, mode='edit', item=mockItem | パネルタイトルが編集モードの表記（例: 「明細編集」）で表示される |
+| ITM-FE-022 | 単体 | ItemSlidePanel | mode: PanelMode | 正常系 | ITM-F01 | 55_ui_component/screens/report-detail.md §ItemSlidePanel | `renders_view_mode_title` | open=true, mode='view', item=mockItem | パネルタイトルが閲覧モードの表記（例: 「明細詳細」）で表示される |
+| ITM-FE-023 | 単体 | ItemSlidePanel | mode: PanelMode | 正常系 | ITM-F01 | 55_ui_component/screens/report-detail.md §ItemSlidePanel | `view_mode_renders_readonly_form` | open=true, mode='view', item=mockItem | ItemForm が mode='view' で描画され、フォームフィールドが readonly になる |
+| ITM-FE-024 | 単体 | ItemSlidePanel | item: ExpenseItem / null | 正常系 | ITM-F02 | 55_ui_component/screens/report-detail.md §ItemSlidePanel | `passes_default_values_in_edit_mode` | open=true, mode='edit', item=mockItem | ItemForm に mockItem の値が defaultValues として渡される |
+| ITM-FE-025 | 単体 | ItemSlidePanel | onClose: () => void | 正常系 | ITM-F01 | 55_ui_component/screens/report-detail.md §ItemSlidePanel | `calls_onClose_when_close_button_clicked` | open=true, onClose=jest.fn() | パネルの閉じるボタンをクリックすると onClose が呼ばれる |
+
+### 10.5 ItemForm -- バリデーション
+
+| テストID | テストレベル | 対象コンポーネント | 対象 Props / Hook | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---|---|---|---|---|---|---|---|---|---|
+| ITM-FE-026 | 単体 | ItemForm | mode: PanelMode | 正常系 | ITM-F01 | 55_ui_component/screens/report-detail.md §ItemForm | `renders_all_form_fields_in_add_mode` | mode='add', categories=mockCategories | 日付・金額・カテゴリ・摘要の各フィールドが入力可能な状態で表示される |
+| ITM-FE-027 | 単体 | ItemForm | mode: PanelMode | 正常系 | ITM-F01 | 55_ui_component/screens/report-detail.md §ItemForm | `renders_all_fields_readonly_in_view_mode` | mode='view', categories=mockCategories, defaultValues=mockItem | 全フィールドが readonly で表示される |
+| ITM-FE-028 | 単体 | ItemForm | - | 異常系（V1） | ITM-001 | 55_ui_component/screens/report-detail.md §ItemForm | `shows_validation_error_when_date_empty` | mode='add'。日付を未入力で保存ボタン押下 | 「日付を入力してください」のバリデーションエラーが表示される |
+| ITM-FE-029 | 単体 | ItemForm | - | 異常系（V2） | ITM-002 | 55_ui_component/screens/report-detail.md §ItemForm | `shows_validation_error_when_amount_empty` | mode='add'。金額を未入力で保存ボタン押下 | 「金額を入力してください」のバリデーションエラーが表示される |
+| ITM-FE-030 | 単体 | ItemForm | - | 異常系（V3） | ITM-002 | 55_ui_component/screens/report-detail.md §ItemForm | `shows_validation_error_when_amount_negative` | mode='add'。金額に -100 を入力 | 「正の金額を入力してください」のバリデーションエラーが表示される |
+| ITM-FE-031 | 単体 | ItemForm | - | 異常系（V3） | ITM-002 | 55_ui_component/screens/report-detail.md §ItemForm | `shows_validation_error_when_amount_zero` | mode='add'。金額に 0 を入力 | 「正の金額を入力してください」のバリデーションエラーが表示される |
+| ITM-FE-032 | 単体 | ItemForm | - | 異常系（V4） | ITM-002 | 55_ui_component/screens/report-detail.md §ItemForm | `shows_validation_error_when_amount_decimal` | mode='add'。金額に 100.5 を入力 | 「円単位の整数で入力してください」のバリデーションエラーが表示される |
+| ITM-FE-033 | 単体 | ItemForm | - | 異常系（V5） | ITM-003 | 55_ui_component/screens/report-detail.md §ItemForm | `shows_validation_error_when_category_not_selected` | mode='add'。カテゴリを未選択で保存ボタン押下 | 「カテゴリを選択してください」のバリデーションエラーが表示される |
+| ITM-FE-034 | 単体 | ItemForm | - | 異常系（V6） | ITM-004 | 55_ui_component/screens/report-detail.md §ItemForm | `shows_validation_error_when_description_empty` | mode='add'。摘要を未入力で保存ボタン押下 | 「摘要を入力してください」のバリデーションエラーが表示される |
+| ITM-FE-035 | 単体 | ItemForm | - | 異常系（V7） | ITM-004 | 55_ui_component/screens/report-detail.md §ItemForm | `shows_validation_error_when_description_exceeds_500` | mode='add'。摘要に 501 文字の文字列を入力 | 「摘要は500文字以内で入力してください」のバリデーションエラーが表示される |
+| ITM-FE-036 | 単体 | ItemForm | - | 境界値（V7） | ITM-004 | 55_ui_component/screens/report-detail.md §ItemForm | `allows_description_with_500_characters` | mode='add'。摘要に 500 文字の文字列を入力して保存ボタン押下 | バリデーションエラーが表示されない（500 文字は許容） |
+
+### 10.6 ItemForm -- 送信・エラー表示
+
+| テストID | テストレベル | 対象コンポーネント | 対象 Props / Hook | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---|---|---|---|---|---|---|---|---|---|
+| ITM-FE-037 | 単体 | ItemForm | onSubmit: (data: ItemFormValues) => void | 正常系 | ITM-F01 | 55_ui_component/screens/report-detail.md §ItemForm | `calls_onSubmit_with_valid_data` | mode='add'。全フィールドに有効値を入力して保存ボタン押下 | onSubmit が ItemFormValues 型のデータで呼ばれる（expenseDate, amount, categoryId, description を含む） |
+| ITM-FE-038 | 単体 | ItemForm | onSubmit: (data: ItemFormValues) => void | 正常系 | ITM-F02 | 55_ui_component/screens/report-detail.md §ItemForm | `calls_onSubmit_with_edited_data` | mode='edit', defaultValues=mockItem。金額を 2000 に変更して保存ボタン押下 | onSubmit が更新後の ItemFormValues で呼ばれる（amount=2000） |
+| ITM-FE-039 | 単体 | ItemForm | onSaveAndContinue: (data: ItemFormValues) => void | 正常系 | ITM-F01 | 55_ui_component/screens/report-detail.md §ItemForm | `shows_save_and_continue_button_in_add_mode` | mode='add' | 「保存して続けて追加」ボタンが表示される |
+| ITM-FE-040 | 単体 | ItemForm | onSaveAndContinue: (data: ItemFormValues) => void | 正常系 | ITM-F01 | 55_ui_component/screens/report-detail.md §ItemForm | `calls_onSaveAndContinue_with_valid_data` | mode='add', onSaveAndContinue=jest.fn()。全フィールド有効値入力後「保存して続けて追加」押下 | onSaveAndContinue が ItemFormValues で呼ばれる |
+| ITM-FE-041 | 単体 | ItemForm | onSaveAndContinue: (data: ItemFormValues) => void | 正常系 | ITM-F02 | 55_ui_component/screens/report-detail.md §ItemForm | `hides_save_and_continue_button_in_edit_mode` | mode='edit', defaultValues=mockItem | 「保存して続けて追加」ボタンが表示されない |
+| ITM-FE-042 | 単体 | ItemForm | onCancel: () => void | 正常系 | ITM-F01 | 55_ui_component/screens/report-detail.md §ItemForm | `calls_onCancel_when_cancel_button_clicked` | mode='add', onCancel=jest.fn() | キャンセルボタン押下で onCancel が呼ばれる |
+| ITM-FE-043 | 単体 | ItemForm | apiError: string / null | 異常系 | ITM-F01 | 55_ui_component/screens/report-detail.md §ItemForm | `shows_api_error_in_form_alert` | mode='add', apiError='サーバーエラーが発生しました' | フォーム上部に FormAlert が severity='error' で表示され、エラーメッセージが表示される |
+| ITM-FE-044 | 単体 | ItemForm | apiError: string / null | 正常系 | ITM-F01 | 55_ui_component/screens/report-detail.md §ItemForm | `hides_form_alert_when_apiError_null` | mode='add', apiError=null | FormAlert が表示されない |
+| ITM-FE-045 | 単体 | ItemForm | isPending: boolean | 正常系 | ITM-F01 | 55_ui_component/screens/report-detail.md §ItemForm | `disables_submit_button_when_isPending_true` | mode='add', isPending=true | 保存ボタンが disabled になる |
+| ITM-FE-046 | 単体 | ItemForm | isPending: boolean | 正常系 | ITM-F01 | 55_ui_component/screens/report-detail.md §ItemForm | `does_not_call_onSubmit_when_isPending_true` | mode='add', isPending=true。保存ボタン押下を試みる | onSubmit が呼ばれない |
+| ITM-FE-047 | 単体 | ItemForm | categories: Array<{ value: string; label: string }> | 正常系 | ITM-005 | 55_ui_component/screens/report-detail.md §ItemForm | `renders_category_options_from_props` | mode='add', categories=mockCategories（6件） | カテゴリドロップダウンに 6 件の選択肢が表示される |
+
+### 10.7 Hook テスト -- useCreateItem
+
+| テストID | テストレベル | 対象コンポーネント | 対象 Props / Hook | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---|---|---|---|---|---|---|---|---|---|
+| ITM-FE-048 | 単体 | - | useCreateItem | 正常系 | ITM-F01 | 55_ui_component/state-management.md §useCreateItem | `useCreateItem_success_returns_created_item` | MSW で POST /api/reports/:id/items を 201 でモック。mutate({ reportId, expenseDate, amount, categoryId, description }) を呼び出し | data に作成された明細データが含まれる。isPending が false に戻る |
+| ITM-FE-049 | 単体 | - | useCreateItem | 正常系 | ITM-F01 | 55_ui_component/state-management.md §useCreateItem | `useCreateItem_success_invalidates_report_detail_cache` | MSW で 201 をモック。mutate 成功後 | queryClient.invalidateQueries が ['reports', 'detail', reportId] で呼ばれる |
+| ITM-FE-050 | 単体 | - | useCreateItem | 異常系 | ITM-F01 | 55_ui_component/state-management.md §useCreateItem | `useCreateItem_failure_returns_api_error` | MSW で POST を 422 VALIDATION_ERROR でモック | error に ApiClientError が設定される。isPending が false に戻る |
+
+### 10.8 Hook テスト -- useUpdateItem
+
+| テストID | テストレベル | 対象コンポーネント | 対象 Props / Hook | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---|---|---|---|---|---|---|---|---|---|
+| ITM-FE-051 | 単体 | - | useUpdateItem | 正常系 | ITM-F02 | 55_ui_component/state-management.md §useUpdateItem | `useUpdateItem_success_returns_updated_item` | MSW で PUT /api/reports/:id/items/:itemId を 200 でモック。mutate({ reportId, itemId, ...updateData }) を呼び出し | data に更新後の明細データが含まれる |
+| ITM-FE-052 | 単体 | - | useUpdateItem | 正常系 | ITM-F02 | 55_ui_component/state-management.md §useUpdateItem | `useUpdateItem_success_invalidates_report_detail_cache` | MSW で 200 をモック。mutate 成功後 | queryClient.invalidateQueries が ['reports', 'detail', reportId] で呼ばれる |
+| ITM-FE-053 | 単体 | - | useUpdateItem | 異常系 | ITM-F02 | 55_ui_component/state-management.md §useUpdateItem | `useUpdateItem_failure_conflict_returns_error` | MSW で PUT を 409 CONFLICT でモック | error に ApiClientError（409 Conflict）が設定される |
+
+### 10.9 Hook テスト -- useDeleteItem
+
+| テストID | テストレベル | 対象コンポーネント | 対象 Props / Hook | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---|---|---|---|---|---|---|---|---|---|
+| ITM-FE-054 | 単体 | - | useDeleteItem | 正常系 | ITM-F03 | 55_ui_component/state-management.md §useDeleteItem | `useDeleteItem_success_returns_void` | MSW で DELETE /api/reports/:id/items/:itemId を 204 でモック。mutate({ reportId, itemId }) を呼び出し | 正常終了。isPending が false に戻る |
+| ITM-FE-055 | 単体 | - | useDeleteItem | 正常系 | ITM-F03 | 55_ui_component/state-management.md §useDeleteItem | `useDeleteItem_success_invalidates_report_detail_cache` | MSW で 204 をモック。mutate 成功後 | queryClient.invalidateQueries が ['reports', 'detail', reportId] で呼ばれる |
+| ITM-FE-056 | 単体 | - | useDeleteItem | 異常系 | ITM-F03 | 55_ui_component/state-management.md §useDeleteItem | `useDeleteItem_failure_returns_api_error` | MSW で DELETE を 404 RESOURCE_NOT_FOUND でモック | error に ApiClientError が設定される |
+
+### 10.10 Hook テスト -- useCategories
+
+| テストID | テストレベル | 対象コンポーネント | 対象 Props / Hook | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---|---|---|---|---|---|---|---|---|---|
+| ITM-FE-057 | 単体 | - | useCategories | 正常系 | ITM-005 | 55_ui_component/state-management.md §useCategories | `useCategories_success_returns_category_list` | MSW で GET /api/categories を 200 でモック（6件） | data に 6 件のカテゴリ配列が含まれる |
+| ITM-FE-058 | 単体 | - | useCategories | 正常系 | ITM-005 | 55_ui_component/state-management.md §useCategories | `useCategories_uses_infinite_stale_time` | MSW で 200 をモック。2 回目のレンダリング | 2 回目の API 呼び出しが発生しない（staleTime: Infinity によりキャッシュが有効） |
+| ITM-FE-059 | 単体 | - | useCategories | 異常系 | ITM-005 | 55_ui_component/state-management.md §useCategories | `useCategories_failure_returns_error` | MSW で GET /api/categories を 500 でモック | error が設定され、data は undefined |
+
+---
+
+## 11. FE ドメイン不変条件サマリー
+
+本ファイルの FE テストケースがカバーする不変条件・バリデーションルールの対応表。
+
+| 不変条件 / ルールID | 内容 | カバーするテストID |
+|---|---|---|
+| V1 | 日付は空でないこと | ITM-FE-028 |
+| V2 | 金額は空でないこと | ITM-FE-029 |
+| V3 | 金額は正の整数であること | ITM-FE-030, ITM-FE-031 |
+| V4 | 金額は整数であること（小数不可） | ITM-FE-032 |
+| V5 | カテゴリは選択されていること | ITM-FE-033 |
+| V6 | 摘要は空でないこと | ITM-FE-034 |
+| V7 | 摘要は 500 文字以内 | ITM-FE-035, ITM-FE-036 |
+| ITM-010 | draft 以外での明細操作 UI 非表示 | ITM-FE-004, ITM-FE-008, ITM-FE-013 |
+| ITM-005 | カテゴリは固定 6 種類 | ITM-FE-047, ITM-FE-057 |
+
+---
+
+## 12. FE 実装ガイド
+
+### 12.1 テストファイル配置
+
+```
+expense-saas/
+  frontend/
+    src/
+      __tests__/
+        pages/
+          reports/
+            ItemListSection.test.tsx   -- ITM-FE-001 ~ 004
+            ItemListHeader.test.tsx    -- ITM-FE-005 ~ 009
+            ItemTable.test.tsx         -- ITM-FE-010 ~ 017
+            ItemSlidePanel.test.tsx    -- ITM-FE-018 ~ 025
+            ItemForm.test.tsx          -- ITM-FE-026 ~ 047
+        hooks/
+          useItems.test.tsx            -- ITM-FE-048 ~ 056
+          useCategories.test.tsx       -- ITM-FE-057 ~ 059
+```
+
+### 12.2 テスト実行コマンド
+
+```bash
+# 明細コンポーネントテスト
+npx vitest run src/__tests__/pages/reports/Item*.test.tsx
+
+# 明細 Hook テスト
+npx vitest run src/__tests__/hooks/useItems.test.tsx src/__tests__/hooks/useCategories.test.tsx
+
+# 全 FE 明細テスト
+npx vitest run --reporter=verbose src/__tests__/pages/reports/Item* src/__tests__/hooks/useItems* src/__tests__/hooks/useCategories*
+```
+
+### 12.3 テスト記述ガイド
+
+**コンポーネントテスト**:
+- `@testing-library/react` の `render` / `screen` / `userEvent` を使用する
+- Props のモックは各テストで明示的に指定する。コールバック Props は `vi.fn()` でモックする
+- 共通コンポーネント（AppDataGrid, FormAlert 等）は実物を使用し、モックしない
+
+**Hook テスト**:
+- `@testing-library/react` の `renderHook` を使用する
+- API モックは MSW（Mock Service Worker）で定義する
+- TanStack Query の `QueryClient` はテストごとに新規作成し、`QueryClientProvider` でラップする
+- キャッシュ無効化の検証は `queryClient.getQueryState` または `queryClient.isFetching` で確認する
+
+### 12.4 フィクスチャの注意事項
+
+- テストデータに機密情報を含めない
+- テナント ID は単一テナント（テナント A）のみ使用し、テナント間の混在を避ける
+- カテゴリデータは固定 6 種類のマスタデータとしてモックする

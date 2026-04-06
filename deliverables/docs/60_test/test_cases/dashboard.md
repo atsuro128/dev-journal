@@ -245,3 +245,262 @@ for i := 1; i < len(categories); i++ {
 - DSH-018: テナント分離（クロステナント集計汚染の防止）
 - DSH-019: カテゴリ一覧の基本動作
 - DSH-025: カテゴリ一覧の認証保護
+
+---
+
+## FE テストケース
+
+FE テストケースは `55_ui_component/screens/dashboard.md` のコンポーネント単位・Props 単位で導出する。
+
+### 対応対象
+
+- 対応画面: SCR-DASH-001（ダッシュボード）
+- 対応コンポーネント設計: `55_ui_component/screens/dashboard.md`
+- 参照設計書:
+  - `55_ui_component/screens/dashboard.md`
+  - `55_ui_component/common-components.md`
+  - `55_ui_component/state-management.md`（useDashboard, useCurrentUser）
+
+### FE フィクスチャ参照
+
+| 参照名 | 値 | 用途 |
+|---|---|---|
+| `mockMemberUser` | `{ role: 'member', name: 'Test Member' }` | useCurrentUser のモック（Member ロール） |
+| `mockApproverUser` | `{ role: 'approver', name: 'Test Approver' }` | useCurrentUser のモック（Approver ロール） |
+| `mockAccountingUser` | `{ role: 'accounting', name: 'Test Accounting' }` | useCurrentUser のモック（Accounting ロール） |
+| `mockAdminUser` | `{ role: 'admin', name: 'Test Admin' }` | useCurrentUser のモック（Admin ロール） |
+| `mockDashboardMember` | `{ my_draft_count: 2, my_submitted_count: 1, my_rejected_count: 1, recent_reports: [...] }` | useDashboard のモック（Member レスポンス） |
+| `mockDashboardApprover` | `{ ...mockDashboardMember, pending_approval_count: 3, monthly_summary: [...] }` | useDashboard のモック（Approver レスポンス） |
+| `mockDashboardAccounting` | `{ ...mockDashboardMember, pending_payment_count: 2, monthly_summary: [...] }` | useDashboard のモック（Accounting レスポンス） |
+| `mockDashboardAdmin` | `{ tenant_draft_count: 5, tenant_submitted_count: 3, tenant_approved_count: 2, tenant_rejected_count: 1, tenant_paid_count: 4, tenant_member_count: 10, monthly_summary: [...] }` | useDashboard のモック（Admin レスポンス） |
+| `mockRecentReports` | 5件の `RecentReport` 配列 | RecentReportList の描画検証用 |
+| `mockMonthlySummary` | `[{ yearMonth: '2026-04', totalAmount: 150000 }, { yearMonth: '2026-03', totalAmount: 120000 }, { yearMonth: '2026-02', totalAmount: 80000 }]` | MonthlySummaryTable の描画検証用 |
+
+テストID プレフィックス: `DSH-FE-`
+
+---
+
+### DashboardPage -- ロール別表示分岐テスト
+
+| テストID | テストレベル | 対象コンポーネント | 対象 Props / Hook | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---|---|---|---|---|---|---|---|---|---|
+| DSH-FE-001 | 単体 | DashboardPage | useCurrentUser (role: member) | 正常系 | DASH-F01, DASH-001 | 55_ui_component/screens/dashboard.md §DashboardPage | `test_DashboardPage_Member_ShowsMyReportCountCards` | useCurrentUser が `{ role: 'member' }` を返す。useDashboard が mockDashboardMember を返す | MyReportCountCards（下書き・提出中・却下）が表示される。TenantStatusCards / MonthlySummaryTable が表示されない |
+| DSH-FE-002 | 単体 | DashboardPage | useCurrentUser (role: member) | 正常系 | DASH-F01, DASH-001 | 55_ui_component/screens/dashboard.md §DashboardPage | `test_DashboardPage_Member_ShowsRecentReportList` | useCurrentUser が `{ role: 'member' }` を返す。useDashboard が mockDashboardMember を返す | RecentReportList が表示される。承認待ちカード / 支払待ちカードが表示されない |
+| DSH-FE-003 | 単体 | DashboardPage | useCurrentUser (role: approver) | 正常系 | DASH-F01, DASH-002 | 55_ui_component/screens/dashboard.md §DashboardPage | `test_DashboardPage_Approver_ShowsPendingApproval` | useCurrentUser が `{ role: 'approver' }` を返す。useDashboard が mockDashboardApprover を返す | MyReportCountCards + 承認待ちカード + MonthlySummaryTable + RecentReportList が表示される。支払待ちカード / TenantStatusCards が表示されない |
+| DSH-FE-004 | 単体 | DashboardPage | useCurrentUser (role: accounting) | 正常系 | DASH-F01, DASH-003 | 55_ui_component/screens/dashboard.md §DashboardPage | `test_DashboardPage_Accounting_ShowsPendingPayment` | useCurrentUser が `{ role: 'accounting' }` を返す。useDashboard が mockDashboardAccounting を返す | MyReportCountCards + 支払待ちカード + MonthlySummaryTable + RecentReportList が表示される。承認待ちカード / TenantStatusCards が表示されない |
+| DSH-FE-005 | 単体 | DashboardPage | useCurrentUser (role: admin) | 正常系 | DASH-F01, DASH-004 | 55_ui_component/screens/dashboard.md §DashboardPage | `test_DashboardPage_Admin_ShowsTenantStatusCards` | useCurrentUser が `{ role: 'admin' }` を返す。useDashboard が mockDashboardAdmin を返す | TenantStatusCards + メンバー数カード + MonthlySummaryTable が表示される。MyReportCountCards / RecentReportList / 承認待ちカード / 支払待ちカードが表示されない |
+
+---
+
+### DashboardPage -- ローディング・エラー表示テスト
+
+| テストID | テストレベル | 対象コンポーネント | 対象 Props / Hook | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---|---|---|---|---|---|---|---|---|---|
+| DSH-FE-006 | 単体 | DashboardPage | useDashboard (isLoading) | 正常系 | DASH-F01 | 55_ui_component/screens/dashboard.md §DashboardPage | `test_DashboardPage_Loading_ShowsPageSkeleton` | useDashboard が `{ isLoading: true, data: undefined }` を返す | PageSkeleton（variant="card"）が表示される。カウントカード・テーブル等のコンテンツが表示されない |
+| DSH-FE-007 | 単体 | DashboardPage | useDashboard (error) | 異常系 | DASH-F01 | 55_ui_component/screens/dashboard.md §DashboardPage | `test_DashboardPage_Error_ShowsAppToast` | useDashboard が `{ error: { status: 500, code: 'INTERNAL_ERROR', message: 'サーバーエラーが発生しました' } }` を返す | AppToast が severity="error" で表示される。エラーメッセージが画面上に表示される |
+
+---
+
+### CountCard -- Props 描画テスト
+
+| テストID | テストレベル | 対象コンポーネント | 対象 Props / Hook | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---|---|---|---|---|---|---|---|---|---|
+| DSH-FE-008 | 単体 | CountCard | label: string, count: number | 正常系 | DASH-F01 | 55_ui_component/screens/dashboard.md §CountCard | `test_CountCard_RendersLabelAndCount` | `<CountCard label="下書き" count={5} />` | 「下書き」ラベルと「5」件数が表示される。単位「件」がデフォルトで表示される |
+| DSH-FE-009 | 単体 | CountCard | href: string | 正常系 | DASH-F01 | 55_ui_component/screens/dashboard.md §CountCard | `test_CountCard_WithHref_RendersAsLink` | `<CountCard label="下書き" count={3} href="/reports?status=draft" />` | カードがリンクとしてレンダリングされ、クリックで `/reports?status=draft` に遷移する |
+| DSH-FE-010 | 単体 | CountCard | href なし | 正常系 | DASH-F01 | 55_ui_component/screens/dashboard.md §CountCard | `test_CountCard_WithoutHref_NotClickable` | `<CountCard label="メンバー数" count={10} />` | カードがリンクとしてレンダリングされない。クリックしても遷移しない |
+| DSH-FE-011 | 単体 | CountCard | count: 0 | 正常系 | DASH-F01 | 55_ui_component/screens/dashboard.md §CountCard | `test_CountCard_ZeroCount_StillDisplayed` | `<CountCard label="却下" count={0} />` | 件数 0 でもカードが表示され、「0」が表示される |
+| DSH-FE-012 | 単体 | CountCard | showBadge: boolean | 正常系 | DASH-F01 | 55_ui_component/screens/dashboard.md §CountCard | `test_CountCard_ShowBadge_WhenCountPositive` | `<CountCard label="承認待ち" count={3} showBadge={true} />` | 要対応バッジ（赤丸）が表示される |
+| DSH-FE-013 | 単体 | CountCard | showBadge: boolean, count: 0 | 正常系 | DASH-F01 | 55_ui_component/screens/dashboard.md §CountCard | `test_CountCard_ShowBadge_NotShownWhenZero` | `<CountCard label="承認待ち" count={0} showBadge={true} />` | showBadge が true でも count が 0 の場合、バッジが表示されない（count >= 1 のときのみ表示） |
+| DSH-FE-014 | 単体 | CountCard | accentColor: string | 正常系 | DASH-F01 | 55_ui_component/screens/dashboard.md §CountCard | `test_CountCard_AccentColor_Applied` | `<CountCard label="承認済み" count={2} accentColor="success" />` | アクセントカラー success が視覚的に適用される |
+| DSH-FE-015 | 単体 | CountCard | unit: string | 正常系 | DASH-F01, DASH-004 | 55_ui_component/screens/dashboard.md §CountCard | `test_CountCard_CustomUnit_DisplaysPerson` | `<CountCard label="メンバー数" count={10} unit="人" />` | 単位が「人」で表示される（デフォルトの「件」ではない） |
+
+---
+
+### MyReportCountCards -- 描画テスト
+
+| テストID | テストレベル | 対象コンポーネント | 対象 Props / Hook | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---|---|---|---|---|---|---|---|---|---|
+| DSH-FE-016 | 単体 | MyReportCountCards | draftCount, submittedCount, rejectedCount | 正常系 | DASH-F01, DASH-001 | 55_ui_component/screens/dashboard.md §MyReportCountCards | `test_MyReportCountCards_RendersThreeCards` | `<MyReportCountCards draftCount={2} submittedCount={1} rejectedCount={1} />` | 「下書き: 2」「提出中: 1」「却下: 1」の 3 枚の CountCard が表示される |
+| DSH-FE-017 | 単体 | MyReportCountCards | draftCount: 0, submittedCount: 0, rejectedCount: 0 | 正常系 | DASH-F01, DASH-001 | 55_ui_component/screens/dashboard.md §MyReportCountCards | `test_MyReportCountCards_AllZero_StillDisplayed` | `<MyReportCountCards draftCount={0} submittedCount={0} rejectedCount={0} />` | 全件数 0 でも 3 枚のカードが表示される |
+| DSH-FE-018 | 単体 | MyReportCountCards | href（各カード） | 正常系 | DASH-F01 | 55_ui_component/screens/dashboard.md §MyReportCountCards | `test_MyReportCountCards_CardLinks_NavigateToReportList` | `<MyReportCountCards draftCount={2} submittedCount={1} rejectedCount={1} />` | 下書きカードのクリックで `/reports?status=draft` に遷移する。提出中カードは `/reports?status=submitted`、却下カードは `/reports?status=rejected` に遷移する |
+
+---
+
+### TenantStatusCards -- 描画テスト
+
+| テストID | テストレベル | 対象コンポーネント | 対象 Props / Hook | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---|---|---|---|---|---|---|---|---|---|
+| DSH-FE-019 | 単体 | TenantStatusCards | draftCount, submittedCount, approvedCount, rejectedCount, paidCount | 正常系 | DASH-F01, DASH-004 | 55_ui_component/screens/dashboard.md §TenantStatusCards | `test_TenantStatusCards_RendersFiveCards` | `<TenantStatusCards draftCount={5} submittedCount={3} approvedCount={2} rejectedCount={1} paidCount={4} />` | 「下書き: 5」「提出済み: 3」「承認済み: 2」「却下: 1」「支払済み: 4」の 5 枚の CountCard が表示される |
+| DSH-FE-020 | 単体 | TenantStatusCards | accentColor（各カード） | 正常系 | DASH-F01, DASH-004 | 55_ui_component/screens/dashboard.md §TenantStatusCards | `test_TenantStatusCards_AccentColors_MatchStatus` | `<TenantStatusCards draftCount={1} submittedCount={1} approvedCount={1} rejectedCount={1} paidCount={1} />` | 各カードにステータスに対応するアクセントカラーが適用される（default / info / success / error / secondary） |
+| DSH-FE-021 | 単体 | TenantStatusCards | href（各カード） | 正常系 | DASH-F01, DASH-004 | 55_ui_component/screens/dashboard.md §TenantStatusCards | `test_TenantStatusCards_CardLinks_NavigateToAdminReportList` | `<TenantStatusCards draftCount={1} submittedCount={1} approvedCount={1} rejectedCount={1} paidCount={1} />` | 各カードクリックで SCR-ADM-001（管理者レポート一覧）にステータスフィルタ付きで遷移する |
+
+---
+
+### MonthlySummaryTable -- 描画テスト
+
+| テストID | テストレベル | 対象コンポーネント | 対象 Props / Hook | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---|---|---|---|---|---|---|---|---|---|
+| DSH-FE-022 | 単体 | MonthlySummaryTable | items: MonthlySummaryItem[] (3件) | 正常系 | DASH-F01, DASH-005 | 55_ui_component/screens/dashboard.md §MonthlySummaryTable | `test_MonthlySummaryTable_RendersThreeMonths` | `<MonthlySummaryTable items={mockMonthlySummary} />`（3件の月別データ） | 3 行のテーブルが表示される。年月カラムと金額カラムが存在する |
+| DSH-FE-023 | 単体 | MonthlySummaryTable | items[].totalAmount | 正常系 | DASH-F01, DASH-005 | 55_ui_component/screens/dashboard.md §MonthlySummaryTable | `test_MonthlySummaryTable_AmountFormat_YenWithComma` | `<MonthlySummaryTable items={[{ yearMonth: '2026-04', totalAmount: 150000 }]} />` | 金額が「¥150,000」形式で表示される（¥ プレフィックス + 3桁カンマ区切り） |
+| DSH-FE-024 | 単体 | MonthlySummaryTable | items[].yearMonth | 正常系 | DASH-F01, DASH-005 | 55_ui_component/screens/dashboard.md §MonthlySummaryTable | `test_MonthlySummaryTable_YearMonthFormat` | `<MonthlySummaryTable items={[{ yearMonth: '2026-04', totalAmount: 100000 }]} />` | 年月が「2026年4月」形式で表示される |
+| DSH-FE-025 | 単体 | MonthlySummaryTable | items の順序 | 正常系 | DASH-F01, DASH-005 | 55_ui_component/screens/dashboard.md §MonthlySummaryTable | `test_MonthlySummaryTable_DescendingOrder` | `<MonthlySummaryTable items={mockMonthlySummary} />`（2026-04, 2026-03, 2026-02 の順） | 最新月（2026年4月）が最上行に表示される（降順） |
+| DSH-FE-026 | 単体 | MonthlySummaryTable | items: [] (空配列) | 正常系 | DASH-F01, DASH-005 | 55_ui_component/screens/dashboard.md §MonthlySummaryTable | `test_MonthlySummaryTable_EmptyItems_ShowsZero` | `<MonthlySummaryTable items={[]} />` | データが存在しない旨が表示される、またはテーブルが空行で表示される |
+
+---
+
+### RecentReportList -- 描画テスト
+
+| テストID | テストレベル | 対象コンポーネント | 対象 Props / Hook | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---|---|---|---|---|---|---|---|---|---|
+| DSH-FE-027 | 単体 | RecentReportList | reports: RecentReport[] (5件) | 正常系 | DASH-F01, DASH-001 | 55_ui_component/screens/dashboard.md §RecentReportList | `test_RecentReportList_RendersFiveReports` | `<RecentReportList reports={mockRecentReports} />`（5件） | 5 件のレポート行が表示される |
+| DSH-FE-028 | 単体 | RecentReportList | reports: [] (空配列) | 正常系 | DASH-F01, DASH-001 | 55_ui_component/screens/dashboard.md §RecentReportList | `test_RecentReportList_Empty_ShowsEmptyState` | `<RecentReportList reports={[]} />` | EmptyState コンポーネントが表示される。メッセージ「経費レポートはまだありません。レポートを作成して経費精算を始めましょう。」が表示される |
+| DSH-FE-029 | 単体 | RecentReportList | ViewAllLink | 正常系 | DASH-F01 | 55_ui_component/screens/dashboard.md §RecentReportList | `test_RecentReportList_ViewAllLink_NavigatesToReports` | `<RecentReportList reports={mockRecentReports} />` | 「すべてのレポートを見る」リンクが表示され、クリックで `/reports` に遷移する |
+
+---
+
+### RecentReportRow -- 描画テスト
+
+| テストID | テストレベル | 対象コンポーネント | 対象 Props / Hook | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---|---|---|---|---|---|---|---|---|---|
+| DSH-FE-030 | 単体 | RecentReportRow | title, id | 正常系 | DASH-F01 | 55_ui_component/screens/dashboard.md §RecentReportRow | `test_RecentReportRow_TitleLink_NavigatesToDetail` | `<RecentReportRow id="uuid-001" title="4月交通費" periodStart="2026-04-01" periodEnd="2026-04-30" totalAmount={15000} status="draft" />` | タイトル「4月交通費」がリンクとして表示され、クリックで `/reports/uuid-001`（SCR-RPT-004）に遷移する |
+| DSH-FE-031 | 単体 | RecentReportRow | periodStart, periodEnd | 正常系 | DASH-F01 | 55_ui_component/screens/dashboard.md §RecentReportRow | `test_RecentReportRow_PeriodFormat` | `<RecentReportRow id="uuid-001" title="テスト" periodStart="2026-04-01" periodEnd="2026-04-30" totalAmount={10000} status="draft" />` | 対象期間が表示される（例: 「2026/04/01 - 2026/04/30」） |
+| DSH-FE-032 | 単体 | RecentReportRow | totalAmount | 正常系 | DASH-F01 | 55_ui_component/screens/dashboard.md §RecentReportRow | `test_RecentReportRow_AmountFormat_YenWithComma` | `<RecentReportRow id="uuid-001" title="テスト" periodStart="2026-04-01" periodEnd="2026-04-30" totalAmount={150000} status="draft" />` | 合計金額が「¥150,000」形式で表示される |
+| DSH-FE-033 | 単体 | RecentReportRow | status | 正常系 | DASH-F01 | 55_ui_component/screens/dashboard.md §RecentReportRow | `test_RecentReportRow_StatusChip_Rendered` | `<RecentReportRow id="uuid-001" title="テスト" periodStart="2026-04-01" periodEnd="2026-04-30" totalAmount={10000} status="submitted" />` | StatusChip コンポーネントが status="submitted" で描画され、「提出済み」と表示される |
+
+---
+
+### useDashboard Hook -- テスト
+
+| テストID | テストレベル | 対象コンポーネント | 対象 Props / Hook | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---|---|---|---|---|---|---|---|---|---|
+| DSH-FE-034 | 単体 | - | useDashboard | 正常系 | DASH-F01 | 55_ui_component/state-management.md §useDashboard | `test_useDashboard_FetchesData` | useDashboard を呼び出す。MSW で `GET /api/dashboard` が 200 を返すようモック設定 | `data` に DashboardResponse が格納される。`isLoading` が false になる |
+| DSH-FE-035 | 単体 | - | useDashboard | 異常系 | DASH-F01 | 55_ui_component/state-management.md §useDashboard | `test_useDashboard_Error_SetsErrorState` | useDashboard を呼び出す。MSW で `GET /api/dashboard` が 500 を返すようモック設定 | `error` が設定される。`data` が undefined である |
+| DSH-FE-036 | 単体 | - | useDashboard | 正常系 | DASH-F01 | 55_ui_component/state-management.md §useDashboard | `test_useDashboard_Cache_StaleTime60s` | useDashboard を連続で 2 回呼び出す（60秒以内）。MSW で `GET /api/dashboard` のリクエスト回数を記録 | API 呼び出しが 1 回のみ発生する（staleTime: 60秒のキャッシュが有効） |
+
+---
+
+### useCurrentUser Hook -- テスト
+
+| テストID | テストレベル | 対象コンポーネント | 対象 Props / Hook | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---|---|---|---|---|---|---|---|---|---|
+| DSH-FE-037 | 単体 | - | useCurrentUser | 正常系 | DASH-F01 | 55_ui_component/state-management.md §useCurrentUser | `test_useCurrentUser_FetchesUserInfo` | useCurrentUser を呼び出す。MSW で `GET /api/auth/me` が `{ name: 'Test', role: 'member' }` を返すようモック設定 | `data` に AuthUser が格納される。`role` が `'member'` である |
+| DSH-FE-038 | 単体 | - | useCurrentUser | 異常系 | DASH-F01 | 55_ui_component/state-management.md §useCurrentUser | `test_useCurrentUser_Error_UnauthenticatedRedirect` | useCurrentUser を呼び出す。MSW で `GET /api/auth/me` が 401 を返すようモック設定 | エラーが設定される。ログイン画面へのリダイレクトが発生する（api/client.ts のリフレッシュフロー経由） |
+
+---
+
+### FE テストケース -- 実装ガイド
+
+#### テストファイルの配置
+
+```
+expense-saas/
+  src/
+    pages/dashboard/__tests__/
+      DashboardPage.test.tsx        # DSH-FE-001〜DSH-FE-007
+    components/dashboard/__tests__/
+      CountCard.test.tsx             # DSH-FE-008〜DSH-FE-015
+      MyReportCountCards.test.tsx     # DSH-FE-016〜DSH-FE-018
+      TenantStatusCards.test.tsx      # DSH-FE-019〜DSH-FE-021
+      MonthlySummaryTable.test.tsx    # DSH-FE-022〜DSH-FE-026
+      RecentReportList.test.tsx       # DSH-FE-027〜DSH-FE-029
+      RecentReportRow.test.tsx        # DSH-FE-030〜DSH-FE-033
+    hooks/__tests__/
+      useDashboard.test.ts           # DSH-FE-034〜DSH-FE-036
+      useCurrentUser.test.ts         # DSH-FE-037〜DSH-FE-038
+```
+
+#### テストツール
+
+- **テストランナー**: Vitest
+- **レンダリング**: @testing-library/react（`render`, `screen`, `within`）
+- **イベントシミュレーション**: @testing-library/user-event
+- **API モック**: MSW (Mock Service Worker)
+- **ルーティングモック**: `MemoryRouter`（react-router-dom）でラップ
+- **Hook テスト**: `renderHook`（@testing-library/react）+ QueryClientProvider
+
+#### DashboardPage テストのセットアップ
+
+DashboardPage はルートコンポーネントのため、`useDashboard` と `useCurrentUser` をモック化してレンダリングする。
+
+```typescript
+// DashboardPage.test.tsx（擬似コード）
+vi.mock('@/hooks/useDashboard');
+vi.mock('@/hooks/useCurrentUser');
+
+const renderDashboard = (role: string, dashboardData: DashboardResponse) => {
+  (useCurrentUser as Mock).mockReturnValue({
+    data: { data: { role, name: 'Test User' } },
+    isLoading: false,
+  });
+  (useDashboard as Mock).mockReturnValue({
+    data: { data: dashboardData },
+    isLoading: false,
+    error: null,
+  });
+  return render(
+    <MemoryRouter>
+      <QueryClientProvider client={new QueryClient()}>
+        <DashboardPage />
+      </QueryClientProvider>
+    </MemoryRouter>
+  );
+};
+```
+
+#### CountCard の遷移先テスト
+
+```typescript
+// CountCard.test.tsx（擬似コード）
+test('href が指定されている場合、リンクとしてレンダリングされる', () => {
+  render(
+    <MemoryRouter>
+      <CountCard label="下書き" count={3} href="/reports?status=draft" />
+    </MemoryRouter>
+  );
+  const link = screen.getByRole('link', { name: /下書き/ });
+  expect(link).toHaveAttribute('href', '/reports?status=draft');
+});
+```
+
+#### Hook テストのセットアップ
+
+```typescript
+// useDashboard.test.ts（擬似コード）
+const wrapper = ({ children }: { children: React.ReactNode }) => (
+  <QueryClientProvider client={new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  })}>
+    {children}
+  </QueryClientProvider>
+);
+
+test('API からダッシュボードデータを取得する', async () => {
+  server.use(
+    http.get('/api/dashboard', () => {
+      return HttpResponse.json({ data: mockDashboardMember });
+    })
+  );
+  const { result } = renderHook(() => useDashboard(), { wrapper });
+  await waitFor(() => expect(result.current.isSuccess).toBe(true));
+  expect(result.current.data?.data).toEqual(mockDashboardMember);
+});
+```
+
+---
+
+### FE テストケース -- 優先度
+
+| 優先度 | テストID |
+|--------|---------|
+| 高（必須） | DSH-FE-001, DSH-FE-003, DSH-FE-004, DSH-FE-005, DSH-FE-006, DSH-FE-007, DSH-FE-008, DSH-FE-016, DSH-FE-027, DSH-FE-028, DSH-FE-034 |
+| 中 | DSH-FE-002, DSH-FE-009, DSH-FE-011, DSH-FE-012, DSH-FE-017, DSH-FE-018, DSH-FE-019, DSH-FE-022, DSH-FE-023, DSH-FE-029, DSH-FE-030, DSH-FE-035, DSH-FE-037 |
+| 低（ベストエフォート） | DSH-FE-010, DSH-FE-013, DSH-FE-014, DSH-FE-015, DSH-FE-020, DSH-FE-021, DSH-FE-024, DSH-FE-025, DSH-FE-026, DSH-FE-031, DSH-FE-032, DSH-FE-033, DSH-FE-036, DSH-FE-038 |
+
+**優先度「高」の選定理由**:
+
+- DSH-FE-001 / DSH-FE-003 / DSH-FE-004 / DSH-FE-005: ロール別表示分岐はダッシュボード画面の核心機能。4 ロール全パターンの表示制御を保証する
+- DSH-FE-006 / DSH-FE-007: ローディング状態とエラー表示はユーザー体験の基盤。スケルトン表示とエラートーストの動作を保証する
+- DSH-FE-008: CountCard はダッシュボード画面で最も多用される基本コンポーネント。label / count の基本描画を保証する
+- DSH-FE-016: MyReportCountCards は Member / Approver / Accounting の 3 ロールで表示される主要セクション。3 枚のカード描画を保証する
+- DSH-FE-027 / DSH-FE-028: RecentReportList のデータ有無による描画分岐（5件表示 / EmptyState）を保証する
+- DSH-FE-034: useDashboard Hook は画面全体のデータ取得基盤。API 呼び出しとデータ格納を保証する

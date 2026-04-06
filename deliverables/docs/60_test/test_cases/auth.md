@@ -202,3 +202,231 @@
 | AUTH-078 | 統合 | handler | セキュリティ | SEC-004 | security.md#2.1 | `TestAuth_InvalidAlgorithm` | none アルゴリズム（`"alg": "none"`）のトークンを Authorization ヘッダーに設定して GET /api/auth/me | 401。`error.code = INVALID_TOKEN`（alg 混乱攻撃の防止） |
 | AUTH-079 | 統合 | handler | セキュリティ | SEC-004 | security.md#2.1 | `TestAuth_InvalidIssuer` | `iss: "other-service"` で生成されたトークンを Authorization ヘッダーに設定して GET /api/auth/me | 401。`error.code = INVALID_TOKEN` |
 | AUTH-080 | 統合 | handler | 正常系 | AUTH-F01, AUTH-F02, AUTH-F03, AUTH-F04, AUTH-F06 | openapi.yaml#signup, openapi.yaml#login, openapi.yaml#refreshToken, openapi.yaml#logout, openapi.yaml#requestPasswordReset | `TestAuth_AuthEndpointsPubliclyAccessible` | signup, login, refresh, logout, password-reset の各エンドポイントに Authorization ヘッダーなしでリクエスト | 各エンドポイントが 401 を返さないこと（認証不要エンドポイントであること） |
+
+---
+
+### 4. FE テストケース
+
+FE テストケースは `55_ui_component/screens/*.md` の §9 テスト追跡用設計識別子に列挙された全コンポーネント・Hook を網羅する。
+
+参照設計書:
+- `55_ui_component/screens/auth-login.md`
+- `55_ui_component/screens/auth-signup.md`
+- `55_ui_component/screens/auth-password-reset-request.md`
+- `55_ui_component/screens/auth-password-reset.md`
+- `55_ui_component/common-components.md`
+- `55_ui_component/state-management.md`
+
+共通コンポーネント（FormAlert, SubmitButton, AuthNavLinks）は複数画面で共有されるため、コンポーネント単体テストとして1回ずつ定義する。各画面固有のコンポーネントは画面単位で定義する。
+
+#### 4.1 共通コンポーネント
+
+##### FormAlert
+
+| テストID | テストレベル | 対象コンポーネント | 対象 Props / Hook | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---|---|---|---|---|---|---|---|---|---|
+| AUTH-FE-001 | 単体 | FormAlert | `message: string \| null` | 正常系 | - | `55_ui_component/screens/auth-login.md §FormAlert` | `test_FormAlert_renders_error_message` | `message="メールアドレスまたはパスワードが正しくありません"`, `severity="error"` | Alert コンポーネントが表示され、指定メッセージが描画されること |
+| AUTH-FE-002 | 単体 | FormAlert | `message: null` | 正常系 | - | `55_ui_component/screens/auth-login.md §FormAlert` | `test_FormAlert_hidden_when_message_null` | `message=null` | Alert コンポーネントが DOM に存在しないこと |
+| AUTH-FE-003 | 単体 | FormAlert | `severity: 'warning'` | 正常系 | - | `55_ui_component/screens/auth-login.md §FormAlert` | `test_FormAlert_renders_with_custom_severity` | `message="しばらく待ってから再試行してください"`, `severity="warning"` | Alert が warning の見た目で描画されること |
+
+##### SubmitButton
+
+| テストID | テストレベル | 対象コンポーネント | 対象 Props / Hook | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---|---|---|---|---|---|---|---|---|---|
+| AUTH-FE-004 | 単体 | SubmitButton | `label: string, loading: false` | 正常系 | - | `55_ui_component/screens/auth-login.md §SubmitButton` | `test_SubmitButton_renders_label` | `label="ログイン"`, `loading=false` | ボタンテキストが「ログイン」で、ボタンが有効（disabled ではない）であること |
+| AUTH-FE-005 | 単体 | SubmitButton | `loading: true` | 正常系 | - | `55_ui_component/screens/auth-login.md §SubmitButton` | `test_SubmitButton_disabled_with_spinner_when_loading` | `label="ログイン"`, `loading=true` | ボタンが disabled であり、スピナー（CircularProgress）が表示されること |
+
+##### AuthNavLinks
+
+| テストID | テストレベル | 対象コンポーネント | 対象 Props / Hook | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---|---|---|---|---|---|---|---|---|---|
+| AUTH-FE-006 | 単体 | AuthNavLinks | `links: AuthNavLink[]` | 正常系 | - | `55_ui_component/screens/auth-login.md §AuthNavLinks` | `test_AuthNavLinks_renders_links` | `links=[{ prefix: "アカウントをお持ちでない方は", label: "新規登録", to: "/signup" }, { prefix: "パスワードを忘れた方は", label: "パスワードリセット", to: "/password-reset" }]` | 各リンクの prefix テキスト・リンクテキスト・href が正しく描画されること |
+| AUTH-FE-007 | 単体 | AuthNavLinks | `links: AuthNavLink[]`（単一リンク） | 正常系 | - | `55_ui_component/screens/auth-signup.md §AuthNavLinks` | `test_AuthNavLinks_renders_single_link` | `links=[{ prefix: "既にアカウントをお持ちの方は", label: "ログイン", to: "/login" }]` | 1 件のリンクのみが描画されること |
+
+#### 4.2 ログイン画面（SCR-AUTH-002）
+
+##### LoginPage
+
+| テストID | テストレベル | 対象コンポーネント | 対象 Props / Hook | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---|---|---|---|---|---|---|---|---|---|
+| AUTH-FE-008 | 単体 | LoginPage | useLogin（成功） | 正常系 | AUTH-F02 | `55_ui_component/screens/auth-login.md §LoginPage` | `test_LoginPage_success_saves_tokens_and_redirects` | 前提: useLogin をモック。フォームに有効な email/password を入力して送信。useLogin が `{ access_token, refresh_token }` を返す | AuthStore に setTokens が呼ばれ、ダッシュボード（/dashboard）に遷移すること |
+| AUTH-FE-009 | 単体 | LoginPage | useLogin（成功 + リダイレクト元あり） | 正常系 | AUTH-F02 | `55_ui_component/screens/auth-login.md §LoginPage` | `test_LoginPage_success_redirects_to_original_path` | 前提: React Router の location.state に `{ from: "/reports" }` を設定。ログイン成功 | リダイレクト元の `/reports` に遷移すること |
+| AUTH-FE-010 | 単体 | LoginPage | useLogin（401 エラー） | 異常系 | AUTH-F02, SEC-011 | `55_ui_component/screens/auth-login.md §LoginPage` | `test_LoginPage_auth_error_displays_unified_message` | 前提: useLogin が 401 INVALID_CREDENTIALS エラーを返す | LoginForm の apiError に SEC-011 準拠の統一メッセージ「メールアドレスまたはパスワードが正しくありません」が伝播されること |
+| AUTH-FE-011 | 単体 | LoginPage | useLogin（429 エラー） | 異常系 | AUTH-F02 | `55_ui_component/screens/auth-login.md §LoginPage` | `test_LoginPage_rate_limit_error` | 前提: useLogin が 429 RATE_LIMIT_EXCEEDED エラーを返す | apiError にレート制限エラーメッセージが設定されること |
+| AUTH-FE-012 | 単体 | LoginPage | useLogin（500 エラー） | 異常系 | AUTH-F02 | `55_ui_component/screens/auth-login.md §LoginPage` | `test_LoginPage_server_error` | 前提: useLogin が 500 INTERNAL_ERROR エラーを返す | apiError にサーバーエラーメッセージが設定されること |
+| AUTH-FE-013 | 単体 | LoginPage | AuthLayout（認証済みリダイレクト） | 認可 | AUTH-F02 | `55_ui_component/screens/auth-login.md §LoginPage` | `test_LoginPage_redirects_when_authenticated` | 前提: useAuth が `{ isAuthenticated: true }` を返す | ダッシュボード（/dashboard）にリダイレクトされること |
+
+##### LoginForm
+
+| テストID | テストレベル | 対象コンポーネント | 対象 Props / Hook | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---|---|---|---|---|---|---|---|---|---|
+| AUTH-FE-014 | 単体 | LoginForm | `onSubmit, apiError: null, isPending: false` | 正常系 | AUTH-F02 | `55_ui_component/screens/auth-login.md §LoginForm` | `test_LoginForm_renders_email_and_password_fields` | `apiError=null`, `isPending=false` | メールアドレスとパスワードの入力フィールド、ログインボタンが描画されること |
+| AUTH-FE-015 | 単体 | LoginForm | `onSubmit`（有効な入力） | 正常系 | AUTH-F02 | `55_ui_component/screens/auth-login.md §LoginForm` | `test_LoginForm_calls_onSubmit_with_valid_input` | email: `"user@example.com"`, password: `"TestPass1!"` を入力して送信 | `onSubmit` が `{ email: "user@example.com", password: "TestPass1!" }` で呼ばれること |
+| AUTH-FE-016 | 単体 | LoginForm | loginSchema（email 空） | 異常系 | AUTH-F02 | `55_ui_component/screens/auth-login.md §LoginForm` | `test_LoginForm_validation_email_required` | email を空のまま送信 | メールアドレスフィールドに必須エラーが表示されること。`onSubmit` が呼ばれないこと |
+| AUTH-FE-017 | 単体 | LoginForm | loginSchema（email 形式不正） | 異常系 | AUTH-F02 | `55_ui_component/screens/auth-login.md §LoginForm` | `test_LoginForm_validation_email_invalid_format` | email: `"not-an-email"` を入力して送信 | メールアドレスフィールドに形式エラーが表示されること。`onSubmit` が呼ばれないこと |
+| AUTH-FE-018 | 単体 | LoginForm | loginSchema（password 空） | 異常系 | AUTH-F02 | `55_ui_component/screens/auth-login.md §LoginForm` | `test_LoginForm_validation_password_required` | password を空のまま送信 | パスワードフィールドに必須エラーが表示されること。`onSubmit` が呼ばれないこと |
+| AUTH-FE-019 | 単体 | LoginForm | `apiError: string` | 異常系 | AUTH-F02, SEC-011 | `55_ui_component/screens/auth-login.md §LoginForm` | `test_LoginForm_displays_api_error_in_FormAlert` | `apiError="メールアドレスまたはパスワードが正しくありません"` | フォーム上部に FormAlert でエラーメッセージが表示されること |
+| AUTH-FE-020 | 単体 | LoginForm | `isPending: true` | 正常系 | AUTH-F02 | `55_ui_component/screens/auth-login.md §LoginForm` | `test_LoginForm_disables_fields_when_pending` | `isPending=true` | メールアドレスフィールド、パスワードフィールド、送信ボタンが全て disabled であること |
+
+##### useLogin Hook
+
+| テストID | テストレベル | 対象コンポーネント | 対象 Props / Hook | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---|---|---|---|---|---|---|---|---|---|
+| AUTH-FE-021 | 単体 | - | useLogin | 正常系 | AUTH-F02 | `55_ui_component/state-management.md §useLogin` | `test_useLogin_calls_api_and_returns_tokens` | 前提: POST /api/auth/login を MSW でモック（200 + `{ access_token, refresh_token }`）。入力: `{ email: "user@example.com", password: "TestPass1!" }` | mutateAsync が AuthTokens を返すこと |
+| AUTH-FE-022 | 単体 | - | useLogin | 異常系 | AUTH-F02, SEC-011 | `55_ui_component/state-management.md §useLogin` | `test_useLogin_handles_401_invalid_credentials` | 前提: POST /api/auth/login を MSW でモック（401 + `{ code: "INVALID_CREDENTIALS" }`） | エラーが ApiClientError で、SEC-011 に準拠した統一エラーメッセージに変換できること |
+| AUTH-FE-023 | 単体 | - | useLogin | 異常系 | AUTH-F02 | `55_ui_component/state-management.md §useLogin` | `test_useLogin_handles_429_rate_limit` | 前提: POST /api/auth/login を MSW でモック（429 + `{ code: "RATE_LIMIT_EXCEEDED" }`） | エラーが ApiClientError で、レート制限メッセージに変換できること |
+| AUTH-FE-024 | 単体 | - | useLogin | 正常系 | AUTH-F02 | `55_ui_component/state-management.md §useLogin` | `test_useLogin_saves_tokens_to_AuthStore` | 前提: POST /api/auth/login を MSW でモック（200 成功）。onSuccess で setTokens を呼ぶことを確認 | AuthStore.setTokens が access_token と refresh_token で呼ばれること |
+
+#### 4.3 サインアップ画面（SCR-AUTH-001）
+
+##### SignupPage
+
+| テストID | テストレベル | 対象コンポーネント | 対象 Props / Hook | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---|---|---|---|---|---|---|---|---|---|
+| AUTH-FE-025 | 単体 | SignupPage | useSignup（成功） | 正常系 | AUTH-F01 | `55_ui_component/screens/auth-signup.md §SignupPage` | `test_SignupPage_success_saves_tokens_and_redirects` | 前提: useSignup をモック。フォームに有効な入力値を設定して送信。useSignup が `{ access_token, refresh_token }` を返す | AuthStore に setTokens が呼ばれ、ダッシュボード（/dashboard）に遷移すること |
+| AUTH-FE-026 | 単体 | SignupPage | useSignup（409 エラー） | 異常系 | AUTH-F01 | `55_ui_component/screens/auth-signup.md §SignupPage` | `test_SignupPage_duplicate_email_error` | 前提: useSignup が 409 EMAIL_ALREADY_EXISTS エラーを返す | apiError にメールアドレス重複エラーメッセージが設定されること |
+| AUTH-FE-027 | 単体 | SignupPage | useSignup（429 エラー） | 異常系 | AUTH-F01 | `55_ui_component/screens/auth-signup.md §SignupPage` | `test_SignupPage_rate_limit_error` | 前提: useSignup が 429 RATE_LIMIT_EXCEEDED エラーを返す | apiError にレート制限エラーメッセージが設定されること |
+| AUTH-FE-028 | 単体 | SignupPage | useSignup（500 エラー） | 異常系 | AUTH-F01 | `55_ui_component/screens/auth-signup.md §SignupPage` | `test_SignupPage_server_error` | 前提: useSignup が 500 INTERNAL_ERROR エラーを返す | apiError にサーバーエラーメッセージが設定されること |
+| AUTH-FE-029 | 単体 | SignupPage | AuthLayout（認証済みリダイレクト） | 認可 | AUTH-F01 | `55_ui_component/screens/auth-signup.md §SignupPage` | `test_SignupPage_redirects_when_authenticated` | 前提: useAuth が `{ isAuthenticated: true }` を返す | ダッシュボード（/dashboard）にリダイレクトされること |
+
+##### SignupForm
+
+| テストID | テストレベル | 対象コンポーネント | 対象 Props / Hook | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---|---|---|---|---|---|---|---|---|---|
+| AUTH-FE-030 | 単体 | SignupForm | `onSubmit, apiError: null, isPending: false` | 正常系 | AUTH-F01 | `55_ui_component/screens/auth-signup.md §SignupForm` | `test_SignupForm_renders_all_fields` | `apiError=null`, `isPending=false` | 会社名、ユーザー名、メールアドレス、パスワードの入力フィールドと送信ボタンが描画されること |
+| AUTH-FE-031 | 単体 | SignupForm | `onSubmit`（有効な入力） | 正常系 | AUTH-F01 | `55_ui_component/screens/auth-signup.md §SignupForm` | `test_SignupForm_calls_onSubmit_with_valid_input` | company_name: `"Test Corp"`, user_name: `"Test User"`, email: `"new@example.com"`, password: `"TestPass1!"` を入力して送信 | `onSubmit` が正しい SignupInput で呼ばれること |
+| AUTH-FE-032 | 単体 | SignupForm | signupSchema（company_name 空） | 異常系 | AUTH-F01 | `55_ui_component/screens/auth-signup.md §SignupForm` | `test_SignupForm_validation_company_name_required` | company_name を空のまま送信 | 会社名フィールドに必須エラーが表示されること。`onSubmit` が呼ばれないこと |
+| AUTH-FE-033 | 単体 | SignupForm | signupSchema（company_name 201 文字） | 境界値 | AUTH-F01 | `55_ui_component/screens/auth-signup.md §SignupForm` | `test_SignupForm_validation_company_name_too_long` | company_name に 201 文字の文字列を入力して送信 | 会社名フィールドに文字数超過エラーが表示されること |
+| AUTH-FE-034 | 単体 | SignupForm | signupSchema（user_name 空） | 異常系 | AUTH-F01 | `55_ui_component/screens/auth-signup.md §SignupForm` | `test_SignupForm_validation_user_name_required` | user_name を空のまま送信 | ユーザー名フィールドに必須エラーが表示されること |
+| AUTH-FE-035 | 単体 | SignupForm | signupSchema（email 形式不正） | 異常系 | AUTH-F01 | `55_ui_component/screens/auth-signup.md §SignupForm` | `test_SignupForm_validation_email_invalid_format` | email: `"not-an-email"` を入力して送信 | メールアドレスフィールドに形式エラーが表示されること |
+| AUTH-FE-036 | 単体 | SignupForm | signupSchema（password 7 文字） | 境界値 | AUTH-F01, SEC-010 | `55_ui_component/screens/auth-signup.md §SignupForm` | `test_SignupForm_validation_password_too_short` | password: `"Short1!"` (7 文字) を入力して送信 | パスワードフィールドに最小長エラーが表示されること |
+| AUTH-FE-037 | 単体 | SignupForm | signupSchema（password 129 文字） | 境界値 | AUTH-F01 | `55_ui_component/screens/auth-signup.md §SignupForm` | `test_SignupForm_validation_password_too_long` | password に 129 文字の文字列を入力して送信 | パスワードフィールドに文字数超過エラーが表示されること |
+| AUTH-FE-038 | 単体 | SignupForm | `apiError: string` | 異常系 | AUTH-F01 | `55_ui_component/screens/auth-signup.md §SignupForm` | `test_SignupForm_displays_api_error_in_FormAlert` | `apiError="このメールアドレスは既に登録されています"` | フォーム上部に FormAlert でエラーメッセージが表示されること |
+| AUTH-FE-039 | 単体 | SignupForm | `isPending: true` | 正常系 | AUTH-F01 | `55_ui_component/screens/auth-signup.md §SignupForm` | `test_SignupForm_disables_fields_when_pending` | `isPending=true` | 全入力フィールドと送信ボタンが disabled であること |
+
+##### useSignup Hook
+
+| テストID | テストレベル | 対象コンポーネント | 対象 Props / Hook | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---|---|---|---|---|---|---|---|---|---|
+| AUTH-FE-040 | 単体 | - | useSignup | 正常系 | AUTH-F01 | `55_ui_component/state-management.md §useSignup` | `test_useSignup_calls_api_and_returns_tokens` | 前提: POST /api/auth/signup を MSW でモック（201 + `{ access_token, refresh_token }`）。入力: 有効な SignupInput | mutateAsync が AuthTokens を返すこと |
+| AUTH-FE-041 | 単体 | - | useSignup | 異常系 | AUTH-F01 | `55_ui_component/state-management.md §useSignup` | `test_useSignup_handles_409_email_exists` | 前提: POST /api/auth/signup を MSW でモック（409 + `{ code: "EMAIL_ALREADY_EXISTS" }`） | エラーが ApiClientError で、エラーコードが EMAIL_ALREADY_EXISTS であること |
+| AUTH-FE-042 | 単体 | - | useSignup | 正常系 | AUTH-F01 | `55_ui_component/state-management.md §useSignup` | `test_useSignup_saves_tokens_to_AuthStore` | 前提: POST /api/auth/signup を MSW でモック（201 成功）。onSuccess で setTokens を呼ぶことを確認 | AuthStore.setTokens が access_token と refresh_token で呼ばれること |
+
+#### 4.4 パスワードリセット要求画面（SCR-AUTH-003）
+
+##### PasswordResetRequestPage
+
+| テストID | テストレベル | 対象コンポーネント | 対象 Props / Hook | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---|---|---|---|---|---|---|---|---|---|
+| AUTH-FE-043 | 単体 | PasswordResetRequestPage | useRequestPasswordReset（成功） | 正常系 | AUTH-F06, SEC-011 | `55_ui_component/screens/auth-password-reset-request.md §PasswordResetRequestPage` | `test_PasswordResetRequestPage_success_shows_complete` | 前提: useRequestPasswordReset をモック（成功）。フォームに有効な email を入力して送信 | isSubmitted が true に切り替わり、PasswordResetRequestComplete が表示され、PasswordResetRequestForm が非表示になること |
+| AUTH-FE-044 | 単体 | PasswordResetRequestPage | useRequestPasswordReset（500 エラー） | 異常系 | AUTH-F06 | `55_ui_component/screens/auth-password-reset-request.md §PasswordResetRequestPage` | `test_PasswordResetRequestPage_server_error` | 前提: useRequestPasswordReset が 500 INTERNAL_ERROR エラーを返す | apiError にサーバーエラーメッセージが設定され、フォームが表示されたままであること |
+| AUTH-FE-045 | 単体 | PasswordResetRequestPage | useRequestPasswordReset（429 エラー） | 異常系 | AUTH-F06 | `55_ui_component/screens/auth-password-reset-request.md §PasswordResetRequestPage` | `test_PasswordResetRequestPage_rate_limit_error` | 前提: useRequestPasswordReset が 429 RATE_LIMIT_EXCEEDED エラーを返す | apiError にレート制限エラーメッセージが設定されること |
+| AUTH-FE-046 | 単体 | PasswordResetRequestPage | AuthLayout（認証済みリダイレクト） | 認可 | AUTH-F06 | `55_ui_component/screens/auth-password-reset-request.md §PasswordResetRequestPage` | `test_PasswordResetRequestPage_redirects_when_authenticated` | 前提: useAuth が `{ isAuthenticated: true }` を返す | ダッシュボード（/dashboard）にリダイレクトされること |
+| AUTH-FE-047 | 単体 | PasswordResetRequestPage | 表示状態の切替 | 正常系 | AUTH-F06 | `55_ui_component/screens/auth-password-reset-request.md §PasswordResetRequestPage` | `test_PasswordResetRequestPage_initial_state_shows_form` | 初期表示 | PasswordResetRequestForm が表示され、PasswordResetRequestComplete が非表示であること |
+
+##### PasswordResetRequestForm
+
+| テストID | テストレベル | 対象コンポーネント | 対象 Props / Hook | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---|---|---|---|---|---|---|---|---|---|
+| AUTH-FE-048 | 単体 | PasswordResetRequestForm | `onSubmit, apiError: null, isPending: false` | 正常系 | AUTH-F06 | `55_ui_component/screens/auth-password-reset-request.md §PasswordResetRequestForm` | `test_PasswordResetRequestForm_renders_email_field` | `apiError=null`, `isPending=false` | メールアドレス入力フィールドと送信ボタンが描画されること |
+| AUTH-FE-049 | 単体 | PasswordResetRequestForm | `onSubmit`（有効な入力） | 正常系 | AUTH-F06 | `55_ui_component/screens/auth-password-reset-request.md §PasswordResetRequestForm` | `test_PasswordResetRequestForm_calls_onSubmit_with_valid_email` | email: `"user@example.com"` を入力して送信 | `onSubmit` が `{ email: "user@example.com" }` で呼ばれること |
+| AUTH-FE-050 | 単体 | PasswordResetRequestForm | passwordResetRequestSchema（email 空） | 異常系 | AUTH-F06 | `55_ui_component/screens/auth-password-reset-request.md §PasswordResetRequestForm` | `test_PasswordResetRequestForm_validation_email_required` | email を空のまま送信 | メールアドレスフィールドに必須エラーが表示されること。`onSubmit` が呼ばれないこと |
+| AUTH-FE-051 | 単体 | PasswordResetRequestForm | passwordResetRequestSchema（email 形式不正） | 異常系 | AUTH-F06 | `55_ui_component/screens/auth-password-reset-request.md §PasswordResetRequestForm` | `test_PasswordResetRequestForm_validation_email_invalid` | email: `"not-valid"` を入力して送信 | メールアドレスフィールドに形式エラーが表示されること |
+| AUTH-FE-052 | 単体 | PasswordResetRequestForm | `apiError: string` | 異常系 | AUTH-F06 | `55_ui_component/screens/auth-password-reset-request.md §PasswordResetRequestForm` | `test_PasswordResetRequestForm_displays_api_error` | `apiError="サーバーエラーが発生しました"` | フォーム上部に FormAlert でエラーメッセージが表示されること |
+| AUTH-FE-053 | 単体 | PasswordResetRequestForm | `isPending: true` | 正常系 | AUTH-F06 | `55_ui_component/screens/auth-password-reset-request.md §PasswordResetRequestForm` | `test_PasswordResetRequestForm_disables_fields_when_pending` | `isPending=true` | メールアドレスフィールドと送信ボタンが disabled であること |
+
+##### PasswordResetRequestComplete
+
+| テストID | テストレベル | 対象コンポーネント | 対象 Props / Hook | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---|---|---|---|---|---|---|---|---|---|
+| AUTH-FE-054 | 単体 | PasswordResetRequestComplete | Props なし | 正常系 | AUTH-F06, SEC-011 | `55_ui_component/screens/auth-password-reset-request.md §PasswordResetRequestComplete` | `test_PasswordResetRequestComplete_renders_message` | コンポーネントを描画 | 送信完了メッセージ（メール送信案内）と迷惑メールフォルダの注意書きが表示されること |
+
+##### useRequestPasswordReset Hook
+
+| テストID | テストレベル | 対象コンポーネント | 対象 Props / Hook | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---|---|---|---|---|---|---|---|---|---|
+| AUTH-FE-055 | 単体 | - | useRequestPasswordReset | 正常系 | AUTH-F06 | `55_ui_component/state-management.md §useRequestPasswordReset` | `test_useRequestPasswordReset_calls_api_and_succeeds` | 前提: POST /api/auth/password-reset を MSW でモック（200 + `{ message: "..." }`）。入力: `{ email: "user@example.com" }` | mutateAsync が成功し、レスポンスに message が含まれること |
+| AUTH-FE-056 | 単体 | - | useRequestPasswordReset | 異常系 | AUTH-F06 | `55_ui_component/state-management.md §useRequestPasswordReset` | `test_useRequestPasswordReset_handles_500_error` | 前提: POST /api/auth/password-reset を MSW でモック（500 + `{ code: "INTERNAL_ERROR" }`） | エラーが ApiClientError であること |
+
+#### 4.5 パスワードリセット実行画面（SCR-AUTH-004）
+
+##### PasswordResetPage
+
+| テストID | テストレベル | 対象コンポーネント | 対象 Props / Hook | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---|---|---|---|---|---|---|---|---|---|
+| AUTH-FE-057 | 単体 | PasswordResetPage | useExecutePasswordReset（成功） | 正常系 | AUTH-F06 | `55_ui_component/screens/auth-password-reset.md §PasswordResetPage` | `test_PasswordResetPage_success_shows_complete` | 前提: URL パラメータ `:token` に有効なトークンを設定。useExecutePasswordReset をモック（成功）。フォームに有効なパスワードを入力して送信 | viewState が 'complete' に切り替わり、PasswordResetComplete が表示されること |
+| AUTH-FE-058 | 単体 | PasswordResetPage | useExecutePasswordReset（INVALID_TOKEN エラー） | 異常系 | AUTH-F06 | `55_ui_component/screens/auth-password-reset.md §PasswordResetPage` | `test_PasswordResetPage_invalid_token_shows_error_view` | 前提: useExecutePasswordReset が INVALID_TOKEN エラーを返す | viewState が 'token-invalid' に切り替わり、PasswordResetTokenInvalid が表示されること |
+| AUTH-FE-059 | 単体 | PasswordResetPage | useExecutePasswordReset（500 エラー） | 異常系 | AUTH-F06 | `55_ui_component/screens/auth-password-reset.md §PasswordResetPage` | `test_PasswordResetPage_server_error` | 前提: useExecutePasswordReset が 500 INTERNAL_ERROR エラーを返す | apiError にサーバーエラーメッセージが設定され、フォーム表示状態が維持されること |
+| AUTH-FE-060 | 単体 | PasswordResetPage | useExecutePasswordReset（429 エラー） | 異常系 | AUTH-F06 | `55_ui_component/screens/auth-password-reset.md §PasswordResetPage` | `test_PasswordResetPage_rate_limit_error` | 前提: useExecutePasswordReset が 429 RATE_LIMIT_EXCEEDED エラーを返す | apiError にレート制限エラーメッセージが設定されること |
+| AUTH-FE-061 | 単体 | PasswordResetPage | AuthLayout（認証済みリダイレクト） | 認可 | AUTH-F06 | `55_ui_component/screens/auth-password-reset.md §PasswordResetPage` | `test_PasswordResetPage_redirects_when_authenticated` | 前提: useAuth が `{ isAuthenticated: true }` を返す | ダッシュボード（/dashboard）にリダイレクトされること |
+| AUTH-FE-062 | 単体 | PasswordResetPage | URL パラメータ取得 | 正常系 | AUTH-F06 | `55_ui_component/screens/auth-password-reset.md §PasswordResetPage` | `test_PasswordResetPage_extracts_token_from_url` | 前提: URL が `/password-reset/abc123token` | URL パラメータからトークン `abc123token` が取得され、useExecutePasswordReset の引数に含まれること |
+| AUTH-FE-063 | 単体 | PasswordResetPage | 表示状態の切替 | 正常系 | AUTH-F06 | `55_ui_component/screens/auth-password-reset.md §PasswordResetPage` | `test_PasswordResetPage_initial_state_shows_form` | 初期表示 | PasswordResetForm と AuthNavLinks が表示され、PasswordResetComplete と PasswordResetTokenInvalid が非表示であること |
+
+##### PasswordResetForm
+
+| テストID | テストレベル | 対象コンポーネント | 対象 Props / Hook | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---|---|---|---|---|---|---|---|---|---|
+| AUTH-FE-064 | 単体 | PasswordResetForm | `onSubmit, apiError: null, isPending: false` | 正常系 | AUTH-F06 | `55_ui_component/screens/auth-password-reset.md §PasswordResetForm` | `test_PasswordResetForm_renders_password_fields` | `apiError=null`, `isPending=false` | 新しいパスワードと確認用パスワードの入力フィールド、送信ボタンが描画されること |
+| AUTH-FE-065 | 単体 | PasswordResetForm | `onSubmit`（有効な入力） | 正常系 | AUTH-F06 | `55_ui_component/screens/auth-password-reset.md §PasswordResetForm` | `test_PasswordResetForm_calls_onSubmit_with_valid_input` | new_password: `"NewPass1!"`, confirm_password: `"NewPass1!"` を入力して送信 | `onSubmit` が `{ new_password: "NewPass1!" }` で呼ばれること（confirm_password は API に送信しない） |
+| AUTH-FE-066 | 単体 | PasswordResetForm | passwordResetSchema（new_password 空） | 異常系 | AUTH-F06 | `55_ui_component/screens/auth-password-reset.md §PasswordResetForm` | `test_PasswordResetForm_validation_password_required` | new_password を空のまま送信 | パスワードフィールドに必須エラーが表示されること |
+| AUTH-FE-067 | 単体 | PasswordResetForm | passwordResetSchema（new_password 7 文字） | 境界値 | AUTH-F06, SEC-010 | `55_ui_component/screens/auth-password-reset.md §PasswordResetForm` | `test_PasswordResetForm_validation_password_too_short` | new_password: `"Short1!"` (7 文字), confirm_password: `"Short1!"` を入力して送信 | パスワードフィールドに最小長エラーが表示されること |
+| AUTH-FE-068 | 単体 | PasswordResetForm | passwordResetSchema（パスワード不一致） | 異常系 | AUTH-F06 | `55_ui_component/screens/auth-password-reset.md §PasswordResetForm` | `test_PasswordResetForm_validation_password_mismatch` | new_password: `"NewPass1!"`, confirm_password: `"DiffPass1!"` を入力して送信 | 確認用パスワードフィールドにパスワード不一致エラーが表示されること |
+| AUTH-FE-069 | 単体 | PasswordResetForm | `apiError: string` | 異常系 | AUTH-F06 | `55_ui_component/screens/auth-password-reset.md §PasswordResetForm` | `test_PasswordResetForm_displays_api_error` | `apiError="サーバーエラーが発生しました"` | フォーム上部に FormAlert でエラーメッセージが表示されること |
+| AUTH-FE-070 | 単体 | PasswordResetForm | `isPending: true` | 正常系 | AUTH-F06 | `55_ui_component/screens/auth-password-reset.md §PasswordResetForm` | `test_PasswordResetForm_disables_fields_when_pending` | `isPending=true` | 全入力フィールドと送信ボタンが disabled であること |
+
+##### PasswordResetComplete
+
+| テストID | テストレベル | 対象コンポーネント | 対象 Props / Hook | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---|---|---|---|---|---|---|---|---|---|
+| AUTH-FE-071 | 単体 | PasswordResetComplete | Props なし | 正常系 | AUTH-F06 | `55_ui_component/screens/auth-password-reset.md §PasswordResetComplete` | `test_PasswordResetComplete_renders_message_and_link` | コンポーネントを描画 | パスワード変更完了メッセージが表示され、「ログイン画面へ」ボタン（リンク先: /login）が描画されること |
+
+##### PasswordResetTokenInvalid
+
+| テストID | テストレベル | 対象コンポーネント | 対象 Props / Hook | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---|---|---|---|---|---|---|---|---|---|
+| AUTH-FE-072 | 単体 | PasswordResetTokenInvalid | Props なし | 異常系 | AUTH-F06 | `55_ui_component/screens/auth-password-reset.md §PasswordResetTokenInvalid` | `test_PasswordResetTokenInvalid_renders_message_and_link` | コンポーネントを描画 | トークン無効・期限切れメッセージが表示され、「パスワードリセット画面へ」ボタン（リンク先: /password-reset）が描画されること |
+
+##### useExecutePasswordReset Hook
+
+| テストID | テストレベル | 対象コンポーネント | 対象 Props / Hook | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---|---|---|---|---|---|---|---|---|---|
+| AUTH-FE-073 | 単体 | - | useExecutePasswordReset | 正常系 | AUTH-F06 | `55_ui_component/state-management.md §useExecutePasswordReset` | `test_useExecutePasswordReset_calls_api_and_succeeds` | 前提: PUT /api/auth/password-reset/:token を MSW でモック（200 + `{ message: "..." }`）。入力: `{ token: "valid-token", new_password: "NewPass1!" }` | mutateAsync が成功し、レスポンスに message が含まれること |
+| AUTH-FE-074 | 単体 | - | useExecutePasswordReset | 異常系 | AUTH-F06 | `55_ui_component/state-management.md §useExecutePasswordReset` | `test_useExecutePasswordReset_handles_invalid_token` | 前提: PUT /api/auth/password-reset/:token を MSW でモック（422 + `{ code: "INVALID_TOKEN" }`） | エラーが ApiClientError で、エラーコードが INVALID_TOKEN であること |
+| AUTH-FE-075 | 単体 | - | useExecutePasswordReset | 異常系 | AUTH-F06 | `55_ui_component/state-management.md §useExecutePasswordReset` | `test_useExecutePasswordReset_handles_expired_token` | 前提: PUT /api/auth/password-reset/:token を MSW でモック（422 + `{ code: "INVALID_TOKEN" }`、期限切れトークン） | エラーが ApiClientError で、エラーコードが INVALID_TOKEN であること |
+| AUTH-FE-076 | 単体 | - | useExecutePasswordReset | 異常系 | AUTH-F06 | `55_ui_component/state-management.md §useExecutePasswordReset` | `test_useExecutePasswordReset_handles_500_error` | 前提: PUT /api/auth/password-reset/:token を MSW でモック（500 + `{ code: "INTERNAL_ERROR" }`） | エラーが ApiClientError であること |
+
+---
+
+### 5. FE テストケース網羅性チェック
+
+§9 テスト追跡用設計識別子の全コンポーネント・Hook に対するテストケースのカバー状況を確認する。
+
+| 設計識別子 | テストケース ID 範囲 | カバー状況 |
+|-----------|---------------------|-----------|
+| `auth-login.md §LoginPage` | AUTH-FE-008〜013 | OK |
+| `auth-login.md §LoginForm` | AUTH-FE-014〜020 | OK |
+| `auth-login.md §FormAlert` | AUTH-FE-001〜003 | OK（共通コンポーネントとして定義） |
+| `auth-login.md §SubmitButton` | AUTH-FE-004〜005 | OK（共通コンポーネントとして定義） |
+| `auth-login.md §AuthNavLinks` | AUTH-FE-006〜007 | OK（共通コンポーネントとして定義） |
+| `state-management.md §useLogin` | AUTH-FE-021〜024 | OK |
+| `auth-signup.md §SignupPage` | AUTH-FE-025〜029 | OK |
+| `auth-signup.md §SignupForm` | AUTH-FE-030〜039 | OK |
+| `auth-signup.md §FormAlert` | AUTH-FE-001〜003 | OK（共通コンポーネントとして定義） |
+| `auth-signup.md §SubmitButton` | AUTH-FE-004〜005 | OK（共通コンポーネントとして定義） |
+| `auth-signup.md §AuthNavLinks` | AUTH-FE-006〜007 | OK（共通コンポーネントとして定義） |
+| `state-management.md §useSignup` | AUTH-FE-040〜042 | OK |
+| `auth-password-reset-request.md §PasswordResetRequestPage` | AUTH-FE-043〜047 | OK |
+| `auth-password-reset-request.md §PasswordResetRequestForm` | AUTH-FE-048〜053 | OK |
+| `auth-password-reset-request.md §PasswordResetRequestComplete` | AUTH-FE-054 | OK |
+| `auth-password-reset-request.md §FormAlert` | AUTH-FE-001〜003 | OK（共通コンポーネントとして定義） |
+| `auth-password-reset-request.md §SubmitButton` | AUTH-FE-004〜005 | OK（共通コンポーネントとして定義） |
+| `auth-password-reset-request.md §AuthNavLinks` | AUTH-FE-006〜007 | OK（共通コンポーネントとして定義） |
+| `state-management.md §useRequestPasswordReset` | AUTH-FE-055〜056 | OK |
+| `auth-password-reset.md §PasswordResetPage` | AUTH-FE-057〜063 | OK |
+| `auth-password-reset.md §PasswordResetForm` | AUTH-FE-064〜070 | OK |
+| `auth-password-reset.md §PasswordResetComplete` | AUTH-FE-071 | OK |
+| `auth-password-reset.md §PasswordResetTokenInvalid` | AUTH-FE-072 | OK |
+| `auth-password-reset.md §FormAlert` | AUTH-FE-001〜003 | OK（共通コンポーネントとして定義） |
+| `auth-password-reset.md §SubmitButton` | AUTH-FE-004〜005 | OK（共通コンポーネントとして定義） |
+| `auth-password-reset.md §AuthNavLinks` | AUTH-FE-006〜007 | OK（共通コンポーネントとして定義） |
+| `state-management.md §useExecutePasswordReset` | AUTH-FE-073〜076 | OK |

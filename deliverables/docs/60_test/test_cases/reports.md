@@ -244,6 +244,8 @@ T2（approve）・T3（reject）・T4（pay）の統合テストは `workflow.md
 
 ## テストID一覧（サマリー）
 
+### BE テストID一覧
+
 | 範囲 | テストID範囲 | 件数 |
 |------|------------|------|
 | listMyReports（RBAC・基本動作） | RPT-001〜RPT-007 | 7 |
@@ -258,7 +260,29 @@ T2（approve）・T3（reject）・T4（pay）の統合テストは `workflow.md
 | submitReport ドメイン単体（T1） | RPT-065〜RPT-072 | 8 |
 | 禁止遷移 X1〜X10 ドメイン単体 | RPT-073〜RPT-082 | 10 |
 | 許可遷移 T2〜T4 ドメイン単体 | RPT-083〜RPT-090 | 8 |
-| **合計** | **RPT-001〜RPT-090** | **90** |
+| **BE 合計** | **RPT-001〜RPT-090** | **90** |
+
+### FE テストID一覧
+
+| 範囲 | テストID範囲 | 件数 |
+|------|------------|------|
+| レポート一覧画面 コンポーネント | RPT-FE-001〜RPT-FE-020 | 20 |
+| レポート一覧画面 Hook（useMyReports） | RPT-FE-021〜RPT-FE-023 | 3 |
+| レポート作成画面 コンポーネント | RPT-FE-024〜RPT-FE-045 | 22 |
+| レポート作成画面 Hook（useCreateReport） | RPT-FE-046〜RPT-FE-049 | 4 |
+| レポート編集画面 コンポーネント | RPT-FE-050〜RPT-FE-058 | 9 |
+| レポート編集画面 Hook（useReport, useUpdateReport） | RPT-FE-059〜RPT-FE-063 | 5 |
+| レポート詳細画面 レポート閲覧・操作コンポーネント | RPT-FE-064〜RPT-FE-096 | 33 |
+| レポート詳細画面 Hook（useSubmitReport, useDeleteReport） | RPT-FE-097〜RPT-FE-102 | 6 |
+| **FE 合計** | **RPT-FE-001〜RPT-FE-102** | **102** |
+
+### 全体合計
+
+| 区分 | 件数 |
+|------|------|
+| BE テストケース | 90 |
+| FE テストケース | 102 |
+| **総合計** | **192** |
 
 ---
 
@@ -350,4 +374,285 @@ go test ./internal/handler/... -v -tags=integration -run TestSubmitReport
 
 # 全テスト一括実行
 go test ./... -tags=integration
+```
+
+---
+
+### FE テストケース
+
+FE テストケースは `55_ui_component/screens/*.md` のコンポーネント単位・Props 単位で導出する。
+
+**設計識別子の規約**: 「対応設計ID」欄には `55_ui_component/screens/{screen-name}.md §{ComponentName}` の形式で記載する。Hook のテストの場合は `55_ui_component/state-management.md §{useHookName}` の形式で記載する。
+
+#### FE-1. レポート一覧画面（SCR-RPT-001）
+
+| テストID | テストレベル | 対象コンポーネント | 対象 Props / Hook | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---|---|---|---|---|---|---|---|---|---|
+| RPT-FE-001 | 単体 | ReportListPage | useMyReports | 正常系 | RPT-F02 | 55_ui_component/screens/report-list.md §ReportListPage | `test_ReportListPage_renders_report_list` | useMyReports が 3 件のレポートデータを返す | ReportListHeader, ReportListFilter, ReportListTable, AppPagination が描画される |
+| RPT-FE-002 | 単体 | ReportListPage | useMyReports | 正常系 | RPT-F02 | 55_ui_component/screens/report-list.md §ReportListPage | `test_ReportListPage_restores_filters_from_url` | URL クエリパラメータ `?status=draft&from=2026-03-01&to=2026-03-31` が設定されている | ReportListFilter にフィルタ値が反映される。useMyReports にフィルタパラメータが渡される |
+| RPT-FE-003 | 単体 | ReportListPage | useMyReports | 正常系 | RPT-F02 | 55_ui_component/screens/report-list.md §ReportListPage | `test_ReportListPage_resets_page_on_filter_change` | ページ 2 を表示中にステータスフィルタを変更 | URL クエリパラメータの page が 1 にリセットされる |
+| RPT-FE-004 | 単体 | ReportListPage | onRowClick: (reportId: string) => void | 正常系 | RPT-F03 | 55_ui_component/screens/report-list.md §ReportListPage | `test_ReportListPage_navigates_to_detail_on_row_click` | テーブル行をクリック（reportId = "test-id-001"） | `/reports/test-id-001` に遷移する |
+| RPT-FE-005 | 単体 | ReportListPage | onCreateReport: () => void | 正常系 | RPT-F01 | 55_ui_component/screens/report-list.md §ReportListPage | `test_ReportListPage_navigates_to_create` | レポート作成ボタンをクリック | `/reports/new` に遷移する |
+| RPT-FE-006 | 単体 | ReportListPage | useMyReports | 正常系 | RPT-F02 | 55_ui_component/screens/report-list.md §ReportListPage | `test_ReportListPage_shows_skeleton_while_loading` | useMyReports の isLoading が true | PageSkeleton（variant: 'table'）が表示される |
+| RPT-FE-007 | 単体 | ReportListPage | useMyReports | 異常系 | RPT-F02 | 55_ui_component/screens/report-list.md §ReportListPage | `test_ReportListPage_shows_toast_on_api_error` | useMyReports がエラーを返す | AppToast（severity: 'error'）が表示される |
+| RPT-FE-008 | 単体 | ReportListHeader | onCreateReport: () => void | 正常系 | RPT-F02 | 55_ui_component/screens/report-list.md §ReportListHeader | `test_ReportListHeader_renders_title_and_button` | onCreateReport コールバックを渡す | 「マイレポート」タイトルと「+ レポート作成」ボタンが描画される |
+| RPT-FE-009 | 単体 | ReportListHeader | onCreateReport: () => void | 正常系 | RPT-F01 | 55_ui_component/screens/report-list.md §ReportListHeader | `test_ReportListHeader_calls_onCreateReport` | 「+ レポート作成」ボタンをクリック | onCreateReport コールバックが呼び出される |
+| RPT-FE-010 | 単体 | CreateReportButton | onClick: () => void | 正常系 | RPT-F01 | 55_ui_component/screens/report-list.md §CreateReportButton | `test_CreateReportButton_renders_and_calls_onClick` | onClick コールバックを渡してボタンをクリック | ボタンが描画され onClick コールバックが呼び出される |
+| RPT-FE-011 | 単体 | ReportListFilter | values: ReportListFilterValues | 正常系 | RPT-F02 | 55_ui_component/screens/report-list.md §ReportListFilter | `test_ReportListFilter_renders_filter_controls` | values = { status: '', from: '', to: '' } | ステータスフィルタ（AppSelect）と日付ピッカー（AppDatePicker x 2）が描画される |
+| RPT-FE-012 | 単体 | ReportListFilter | onFilterChange: (values: ReportListFilterValues) => void | 正常系 | RPT-F02 | 55_ui_component/screens/report-list.md §ReportListFilter | `test_ReportListFilter_calls_onFilterChange_on_status` | ステータスフィルタで「下書き」を選択 | onFilterChange が { status: 'draft', from: '', to: '' } で呼び出される |
+| RPT-FE-013 | 単体 | ReportListFilter | onFilterChange: (values: ReportListFilterValues) => void | 正常系 | RPT-F02 | 55_ui_component/screens/report-list.md §ReportListFilter | `test_ReportListFilter_calls_onFilterChange_on_date` | 開始日に「2026-03-01」を入力 | onFilterChange が from: '2026-03-01' を含む値で呼び出される（デバウンス後） |
+| RPT-FE-014 | 単体 | ReportListFilter | values: ReportListFilterValues | 正常系 | RPT-F02 | 55_ui_component/screens/report-list.md §ReportListFilter | `test_ReportListFilter_shows_status_options` | ステータスフィルタのドロップダウンを開く | 「全て」「下書き」「提出済み」「承認済み」「却下」「支払済み」の選択肢が表示される |
+| RPT-FE-015 | 単体 | ReportListTable | reports: ReportListItem[] | 正常系 | RPT-F02 | 55_ui_component/screens/report-list.md §ReportListTable | `test_ReportListTable_renders_columns` | reports に 2 件のデータを渡す | タイトル・対象期間・合計金額・ステータス・作成日カラムが描画される |
+| RPT-FE-016 | 単体 | ReportListTable | reports: ReportListItem[] | 正常系 | RPT-F02 | 55_ui_component/screens/report-list.md §ReportListTable | `test_ReportListTable_formats_amount_with_commas` | reports に totalAmount: 1234567 のデータを渡す | 金額が「1,234,567」と 3 桁カンマ区切りで表示される |
+| RPT-FE-017 | 単体 | ReportListTable | reports: ReportListItem[] | 正常系 | RPT-F02 | 55_ui_component/screens/report-list.md §ReportListTable | `test_ReportListTable_renders_status_chip` | reports に status: 'submitted' のデータを渡す | StatusChip が「提出済み」として描画される |
+| RPT-FE-018 | 単体 | ReportListTable | onRowClick: (reportId: string) => void | 正常系 | RPT-F03 | 55_ui_component/screens/report-list.md §ReportListTable | `test_ReportListTable_calls_onRowClick` | 行をクリック | onRowClick がクリックした行の reportId で呼び出される |
+| RPT-FE-019 | 単体 | ReportListTable | reports: ReportListItem[], onCreateReport: () => void | 正常系 | RPT-F02 | 55_ui_component/screens/report-list.md §ReportListTable | `test_ReportListTable_shows_empty_state` | reports = []（0 件） | EmptyState が「経費レポートはまだありません。レポートを作成して経費精算を始めましょう。」メッセージとレポート作成ボタンで表示される |
+| RPT-FE-020 | 単体 | ReportListTable | loading: boolean | 正常系 | RPT-F02 | 55_ui_component/screens/report-list.md §ReportListTable | `test_ReportListTable_passes_loading_to_grid` | loading = true | AppDataGrid に loading = true が渡される |
+| RPT-FE-021 | 単体 | useMyReports | useMyReports | 正常系 | RPT-F02 | 55_ui_component/state-management.md §useMyReports | `test_useMyReports_fetches_data` | params = { page: 1, per_page: 20 } | GET /api/reports?page=1&per_page=20 を呼び出し、data にレポート一覧、pagination に件数情報が格納される |
+| RPT-FE-022 | 単体 | useMyReports | useMyReports | 正常系 | RPT-F02 | 55_ui_component/state-management.md §useMyReports | `test_useMyReports_sends_filter_params` | params = { status: 'draft', from: '2026-03-01', to: '2026-03-31' } | GET /api/reports?status=draft&from=2026-03-01&to=2026-03-31 が送信される |
+| RPT-FE-023 | 単体 | useMyReports | useMyReports | 異常系 | RPT-F02 | 55_ui_component/state-management.md §useMyReports | `test_useMyReports_handles_error` | API が 500 エラーを返す | isError = true、error にエラー情報が格納される |
+
+---
+
+#### FE-2. レポート作成画面（SCR-RPT-002）
+
+| テストID | テストレベル | 対象コンポーネント | 対象 Props / Hook | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---|---|---|---|---|---|---|---|---|---|
+| RPT-FE-024 | 単体 | ReportCreatePage | useCreateReport | 正常系 | RPT-F01 | 55_ui_component/screens/report-create.md §ReportCreatePage | `test_ReportCreatePage_submit_success_navigates_to_detail` | フォームに有効な値を入力して送信。useCreateReport が成功（id: "new-id-001"）を返す | `/reports/new-id-001` に遷移する |
+| RPT-FE-025 | 単体 | ReportCreatePage | useCreateReport | 異常系 | RPT-F01 | 55_ui_component/screens/report-create.md §ReportCreatePage | `test_ReportCreatePage_submit_error_shows_alert` | useCreateReport がサーバーエラーを返す | ReportForm に apiError が渡され FormAlert にエラーメッセージが表示される |
+| RPT-FE-026 | 単体 | ReportCreatePage | useReport | 正常系 | RPT-F01, RPT-015 | 55_ui_component/screens/report-create.md §ReportCreatePage | `test_ReportCreatePage_prefills_from_ref` | URL パラメータ `?ref=rejected-report-id`。useReport が元レポートデータ（title, periodStart, periodEnd）を返す | ReportForm の defaultValues に元レポートのデータがプリフィルされる |
+| RPT-FE-027 | 単体 | ReportCreatePage | onCancel: () => void | 正常系 | RPT-F01 | 55_ui_component/screens/report-create.md §ReportCreatePage | `test_ReportCreatePage_cancel_navigates_to_list` | キャンセルボタンをクリック | `/reports` に遷移する |
+| RPT-FE-028 | 単体 | ReportForm | onSubmit: (data: ReportFormValues) => void | 正常系 | RPT-F01 | 55_ui_component/screens/report-create.md §ReportForm | `test_ReportForm_submits_valid_data` | title = "出張費 3月"、periodStart = "2026-03-01"、periodEnd = "2026-03-31" を入力して送信 | onSubmit が { title: "出張費 3月", periodStart: "2026-03-01", periodEnd: "2026-03-31" } で呼び出される |
+| RPT-FE-029 | 単体 | ReportForm | onSubmit: (data: ReportFormValues) => void | 異常系 | RPT-F01, RPT-001 | 55_ui_component/screens/report-create.md §ReportForm | `test_ReportForm_validates_empty_title` | title = "" で送信 | バリデーションエラー表示。onSubmit は呼び出されない |
+| RPT-FE-030 | 単体 | ReportForm | onSubmit: (data: ReportFormValues) => void | 異常系 | RPT-F01, RPT-002 | 55_ui_component/screens/report-create.md §ReportForm | `test_ReportForm_validates_title_max_length` | title = 101 文字の文字列で送信 | バリデーションエラー表示。onSubmit は呼び出されない |
+| RPT-FE-031 | 単体 | ReportForm | onSubmit: (data: ReportFormValues) => void | 異常系 | RPT-F01, RPT-003 | 55_ui_component/screens/report-create.md §ReportForm | `test_ReportForm_validates_period_range` | periodStart = "2026-03-31"、periodEnd = "2026-03-01"（終了が開始より前）で送信 | バリデーションエラー表示。onSubmit は呼び出されない |
+| RPT-FE-032 | 単体 | ReportForm | onSubmit: (data: ReportFormValues) => void | 異常系 | RPT-F01 | 55_ui_component/screens/report-create.md §ReportForm | `test_ReportForm_validates_empty_period_start` | periodStart = "" で送信 | バリデーションエラー表示。onSubmit は呼び出されない |
+| RPT-FE-033 | 単体 | ReportForm | onSubmit: (data: ReportFormValues) => void | 異常系 | RPT-F01 | 55_ui_component/screens/report-create.md §ReportForm | `test_ReportForm_validates_empty_period_end` | periodEnd = "" で送信 | バリデーションエラー表示。onSubmit は呼び出されない |
+| RPT-FE-034 | 単体 | ReportForm | isPending: boolean | 正常系 | RPT-F01 | 55_ui_component/screens/report-create.md §ReportForm | `test_ReportForm_disables_fields_when_pending` | isPending = true | 全入力フィールドと送信ボタンが disabled になる |
+| RPT-FE-035 | 単体 | ReportForm | apiError: string \| null | 正常系 | RPT-F01 | 55_ui_component/screens/report-create.md §ReportForm | `test_ReportForm_shows_api_error` | apiError = "サーバーエラーが発生しました" | FormAlert にエラーメッセージが表示される |
+| RPT-FE-036 | 単体 | ReportForm | defaultValues: ReportFormValues | 正常系 | RPT-F01, RPT-015 | 55_ui_component/screens/report-create.md §ReportForm | `test_ReportForm_prefills_default_values` | defaultValues = { title: "元レポート", periodStart: "2026-03-01", periodEnd: "2026-03-31" } | フォームフィールドに defaultValues の値がプリフィルされる |
+| RPT-FE-037 | 単体 | FormAlert | message: string \| null | 正常系 | RPT-F01 | 55_ui_component/screens/report-create.md §FormAlert | `test_FormAlert_renders_message` | message = "エラーが発生しました" | Alert コンポーネントにメッセージが表示される |
+| RPT-FE-038 | 単体 | FormAlert | message: string \| null | 正常系 | RPT-F01 | 55_ui_component/screens/report-create.md §FormAlert | `test_FormAlert_hidden_when_null` | message = null | コンポーネントが描画されない（非表示） |
+| RPT-FE-039 | 単体 | ReportPeriodField | control: Control, periodStartError?: string, periodEndError?: string | 正常系 | RPT-F01 | 55_ui_component/screens/report-create.md §ReportPeriodField | `test_ReportPeriodField_renders_date_pickers` | React Hook Form の control を渡す | 開始日・終了日の AppDatePicker と「~」区切りテキストが描画される |
+| RPT-FE-040 | 単体 | ReportPeriodField | periodStartError?: string | 異常系 | RPT-F01 | 55_ui_component/screens/report-create.md §ReportPeriodField | `test_ReportPeriodField_shows_start_error` | periodStartError = "開始日は必須です" | 開始日の AppDatePicker にエラーメッセージが表示される |
+| RPT-FE-041 | 単体 | ReportPeriodField | periodEndError?: string | 異常系 | RPT-F01 | 55_ui_component/screens/report-create.md §ReportPeriodField | `test_ReportPeriodField_shows_end_error` | periodEndError = "終了日は開始日以降にしてください" | 終了日の AppDatePicker にエラーメッセージが表示される |
+| RPT-FE-042 | 単体 | ReportPeriodField | disabled?: boolean | 正常系 | RPT-F01 | 55_ui_component/screens/report-create.md §ReportPeriodField | `test_ReportPeriodField_disables_pickers` | disabled = true | 両方の AppDatePicker が disabled になる |
+| RPT-FE-043 | 単体 | ReportFormActions | submitLabel: string, loading: boolean, onCancel: () => void | 正常系 | RPT-F01 | 55_ui_component/screens/report-create.md §ReportFormActions | `test_ReportFormActions_renders_buttons` | submitLabel = "作成する"、loading = false | 「作成する」送信ボタンと「キャンセル」ボタンが描画される |
+| RPT-FE-044 | 単体 | ReportFormActions | loading: boolean | 正常系 | RPT-F01 | 55_ui_component/screens/report-create.md §ReportFormActions | `test_ReportFormActions_shows_loading` | loading = true | 送信ボタンが disabled + スピナー表示になる |
+| RPT-FE-045 | 単体 | ReportFormActions | onCancel: () => void | 正常系 | RPT-F01 | 55_ui_component/screens/report-create.md §ReportFormActions | `test_ReportFormActions_calls_onCancel` | キャンセルボタンをクリック | onCancel コールバックが呼び出される |
+| RPT-FE-046 | 単体 | useCreateReport | useCreateReport | 正常系 | RPT-F01 | 55_ui_component/state-management.md §useCreateReport | `test_useCreateReport_calls_api` | mutate({ title: "テスト", periodStart: "2026-03-01", periodEnd: "2026-03-31" }) | POST /api/reports が呼び出され、data に作成されたレポートが格納される |
+| RPT-FE-047 | 単体 | useCreateReport | useCreateReport | 正常系 | RPT-F01, RPT-015 | 55_ui_component/state-management.md §useCreateReport | `test_useCreateReport_sends_reference_id` | mutate に reference_report_id を含むリクエスト | POST /api/reports のリクエストボディに reference_report_id が含まれる |
+| RPT-FE-048 | 単体 | useCreateReport | useCreateReport | 正常系 | RPT-F01 | 55_ui_component/state-management.md §useCreateReport | `test_useCreateReport_invalidates_cache` | ミューテーション成功後 | レポート一覧のクエリキャッシュが無効化される |
+| RPT-FE-049 | 単体 | useCreateReport | useCreateReport | 異常系 | RPT-F01 | 55_ui_component/state-management.md §useCreateReport | `test_useCreateReport_handles_validation_error` | API が 422 VALIDATION_ERROR を返す | isError = true、error にバリデーションエラー情報が格納される |
+
+---
+
+#### FE-3. レポート編集画面（SCR-RPT-003）
+
+| テストID | テストレベル | 対象コンポーネント | 対象 Props / Hook | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---|---|---|---|---|---|---|---|---|---|
+| RPT-FE-050 | 単体 | ReportEditPage | useReport, useUpdateReport | 正常系 | RPT-F04 | 55_ui_component/screens/report-edit.md §ReportEditPage | `test_ReportEditPage_prefills_existing_data` | useReport が既存レポート（title: "既存タイトル", periodStart: "2026-03-01", periodEnd: "2026-03-31", status: "draft"）を返す | ReportForm に defaultValues として既存データがプリフィルされる |
+| RPT-FE-051 | 単体 | ReportEditPage | useUpdateReport | 正常系 | RPT-F04 | 55_ui_component/screens/report-edit.md §ReportEditPage | `test_ReportEditPage_save_success_navigates_to_detail` | フォームに有効な値を入力して送信。useUpdateReport が成功を返す | `/reports/:id` に遷移する |
+| RPT-FE-052 | 単体 | ReportEditPage | useReport | 認可 | RPT-F04, RPT-012 | 55_ui_component/screens/report-edit.md §ReportEditPage | `test_ReportEditPage_redirects_when_not_found` | useReport が 404 エラーを返す | `/reports` にリダイレクトされトーストが表示される |
+| RPT-FE-053 | 単体 | ReportEditPage | useReport, useCurrentUser | 認可 | RPT-F04, RPT-012 | 55_ui_component/screens/report-edit.md §ReportEditPage | `test_ReportEditPage_shows_403_when_not_owner` | useReport がレポートを返す（submitter.id != currentUser.id） | 403 トーストが表示される |
+| RPT-FE-054 | 単体 | ReportEditPage | useReport | 認可 | RPT-F04, RPT-011 | 55_ui_component/screens/report-edit.md §ReportEditPage | `test_ReportEditPage_redirects_when_not_draft` | useReport が status: "submitted" のレポートを返す | `/reports/:id` にリダイレクトされトーストが表示される |
+| RPT-FE-055 | 単体 | ReportEditPage | useUpdateReport | 異常系 | RPT-F04 | 55_ui_component/screens/report-edit.md §ReportEditPage | `test_ReportEditPage_handles_409_conflict` | useUpdateReport が 409 CONFLICT を返す | FormAlert に「他のユーザーがこのレポートを更新しました。ページを再読み込みしてください。」が表示される |
+| RPT-FE-056 | 単体 | ReportEditPage | onCancel: () => void | 正常系 | RPT-F04 | 55_ui_component/screens/report-edit.md §ReportEditPage | `test_ReportEditPage_cancel_navigates_to_detail` | キャンセルボタンをクリック | `/reports/:id` に遷移する |
+| RPT-FE-057 | 単体 | ReportEditPage | useReport | 正常系 | RPT-F04 | 55_ui_component/screens/report-edit.md §ReportEditPage | `test_ReportEditPage_shows_skeleton_while_loading` | useReport の isLoading が true | PageSkeleton（variant: 'form'）が表示される |
+| RPT-FE-058 | 単体 | ReportForm | submitLabel: string | 正常系 | RPT-F04 | 55_ui_component/screens/report-edit.md §ReportForm | `test_ReportForm_renders_save_label` | submitLabel = "保存する" | 送信ボタンのラベルが「保存する」と表示される |
+| RPT-FE-059 | 単体 | useReport | useReport | 正常系 | RPT-F03 | 55_ui_component/state-management.md §useReport | `test_useReport_fetches_data` | reportId = "test-report-id" | GET /api/reports/test-report-id を呼び出し、data にレポート詳細が格納される |
+| RPT-FE-060 | 単体 | useReport | useReport | 異常系 | RPT-F03 | 55_ui_component/state-management.md §useReport | `test_useReport_handles_404` | API が 404 RESOURCE_NOT_FOUND を返す | isError = true、error に 404 エラー情報が格納される |
+| RPT-FE-061 | 単体 | useUpdateReport | useUpdateReport | 正常系 | RPT-F04 | 55_ui_component/state-management.md §useUpdateReport | `test_useUpdateReport_sends_updated_at` | mutate({ id: "test-id", title: "更新", periodStart: "2026-03-01", periodEnd: "2026-03-31", updated_at: "2026-03-01T00:00:00Z" }) | PUT /api/reports/test-id のリクエストボディに updated_at が含まれる |
+| RPT-FE-062 | 単体 | useUpdateReport | useUpdateReport | 正常系 | RPT-F04 | 55_ui_component/state-management.md §useUpdateReport | `test_useUpdateReport_invalidates_cache` | ミューテーション成功後 | レポート詳細・一覧のクエリキャッシュが無効化される |
+| RPT-FE-063 | 単体 | useUpdateReport | useUpdateReport | 異常系 | RPT-F04 | 55_ui_component/state-management.md §useUpdateReport | `test_useUpdateReport_handles_409_conflict` | API が 409 CONFLICT を返す | isError = true、error に 409 コンフリクト情報が格納される |
+
+---
+
+#### FE-4. レポート詳細画面（SCR-RPT-004）-- レポート閲覧・操作コンポーネント
+
+| テストID | テストレベル | 対象コンポーネント | 対象 Props / Hook | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---|---|---|---|---|---|---|---|---|---|
+| RPT-FE-064 | 単体 | ReportDetailPage | useReport | 正常系 | RPT-F03 | 55_ui_component/screens/report-detail.md §ReportDetailPage | `test_ReportDetailPage_renders_report_detail` | useReport が draft 状態のレポート詳細データを返す | ReportInfoCard, ReportActionBar が描画される |
+| RPT-FE-065 | 単体 | ReportDetailPage | useReport | 正常系 | RPT-F03 | 55_ui_component/screens/report-detail.md §ReportDetailPage | `test_ReportDetailPage_shows_skeleton_while_loading` | useReport の isLoading が true | PageSkeleton が表示される |
+| RPT-FE-066 | 単体 | ReportDetailPage | useReport | 異常系 | RPT-F03 | 55_ui_component/screens/report-detail.md §ReportDetailPage | `test_ReportDetailPage_shows_not_found` | useReport が 404 を返す | 「指定されたデータが見つかりません。」メッセージとレポート一覧へのリンクが表示される |
+| RPT-FE-067 | 単体 | ReportDetailPage | useSubmitReport | 正常系 | RPT-F06 | 55_ui_component/screens/report-detail.md §ReportDetailPage | `test_ReportDetailPage_submit_dialog_confirm` | 提出ボタン押下後、確認ダイアログで「はい」を選択 | useSubmitReport が実行され、成功後にレポートデータが更新される |
+| RPT-FE-068 | 単体 | ReportDetailPage | useDeleteReport | 正常系 | RPT-F05 | 55_ui_component/screens/report-detail.md §ReportDetailPage | `test_ReportDetailPage_delete_dialog_confirm` | 削除ボタン押下後、確認ダイアログで「はい」を選択 | useDeleteReport が実行され、成功後に `/reports` に遷移する |
+| RPT-FE-069 | 単体 | ReportDetailPage | ConfirmDialog | 正常系 | RPT-F06 | 55_ui_component/screens/report-detail.md §ReportDetailPage | `test_ReportDetailPage_dialog_cancel` | 提出確認ダイアログで「キャンセル」を選択 | ダイアログが閉じ、ミューテーションは実行されない |
+| RPT-FE-070 | 単体 | ReportInfoCard | report: ExpenseReportDetail | 正常系 | RPT-F03 | 55_ui_component/screens/report-detail.md §ReportInfoCard | `test_ReportInfoCard_renders_basic_and_workflow` | report にレポート詳細データを渡す | ReportBasicInfo と ReportWorkflowInfo が描画される |
+| RPT-FE-071 | 単体 | ReportBasicInfo | title: string, status: ReportStatus | 正常系 | RPT-F03 | 55_ui_component/screens/report-detail.md §ReportBasicInfo | `test_ReportBasicInfo_renders_all_fields` | title = "出張費", status = "draft", periodStart = "2026-03-01", periodEnd = "2026-03-31", totalAmount = 50000, submitterName = "テスト太郎", createdAt = "2026-03-01T00:00:00Z" | タイトル、StatusChip（下書き）、対象期間、合計金額（50,000）、作成者名、作成日が描画される |
+| RPT-FE-072 | 単体 | ReportBasicInfo | totalAmount: number | 正常系 | RPT-F03 | 55_ui_component/screens/report-detail.md §ReportBasicInfo | `test_ReportBasicInfo_formats_amount` | totalAmount = 1234567 | 金額が「1,234,567」と 3 桁カンマ区切りで表示される |
+| RPT-FE-073 | 単体 | ReportWorkflowInfo | status: ReportStatus | 正常系 | RPT-F03 | 55_ui_component/screens/report-detail.md §ReportWorkflowInfo | `test_ReportWorkflowInfo_draft_no_workflow_fields` | status = "draft"、他の全ワークフロー Props は null | ワークフロー関連項目（提出日・承認情報・却下情報・支払情報）が非表示 |
+| RPT-FE-074 | 単体 | ReportWorkflowInfo | status: ReportStatus, submittedAt: string \| null | 正常系 | RPT-F03 | 55_ui_component/screens/report-detail.md §ReportWorkflowInfo | `test_ReportWorkflowInfo_submitted_shows_submitted_at` | status = "submitted"、submittedAt = "2026-03-15T10:00:00Z" | 提出日が表示される |
+| RPT-FE-075 | 単体 | ReportWorkflowInfo | status: ReportStatus, approverName: string \| null, approvedAt: string \| null, approvalComment: string \| null | 正常系 | RPT-F03 | 55_ui_component/screens/report-detail.md §ReportWorkflowInfo | `test_ReportWorkflowInfo_approved_shows_approval_info` | status = "approved"、approverName = "承認者太郎"、approvedAt = "2026-03-16T10:00:00Z"、approvalComment = "問題ありません" | 承認者名、承認日、承認コメントが表示される |
+| RPT-FE-076 | 単体 | ReportWorkflowInfo | status: ReportStatus, rejectorName: string \| null, rejectedAt: string \| null, rejectionReason: string \| null | 正常系 | RPT-F03 | 55_ui_component/screens/report-detail.md §ReportWorkflowInfo | `test_ReportWorkflowInfo_rejected_shows_rejection_info` | status = "rejected"、rejectorName = "承認者次郎"、rejectedAt = "2026-03-16T10:00:00Z"、rejectionReason = "領収書が不足しています" | 却下者名、却下日、却下理由が表示される。却下理由は赤色背景で目立って表示される |
+| RPT-FE-077 | 単体 | ReportWorkflowInfo | status: ReportStatus, paidByName: string \| null, paidAt: string \| null | 正常系 | RPT-F03 | 55_ui_component/screens/report-detail.md §ReportWorkflowInfo | `test_ReportWorkflowInfo_paid_shows_payment_info` | status = "paid"、paidByName = "経理花子"、paidAt = "2026-03-20T10:00:00Z" | 支払処理者名と支払完了日が表示される |
+| RPT-FE-078 | 単体 | ReportWorkflowInfo | approvalComment: string \| null | 正常系 | RPT-F03 | 55_ui_component/screens/report-detail.md §ReportWorkflowInfo | `test_ReportWorkflowInfo_no_comment_hides_field` | status = "approved"、approvalComment = null | 承認コメント欄が非表示 |
+| RPT-FE-079 | 単体 | ReportReferenceLink | referenceReportId: string \| null, referenceReportTitle: string \| null | 正常系 | RPT-F03, RPT-016 | 55_ui_component/screens/report-detail.md §ReportReferenceLink | `test_ReportReferenceLink_renders_link` | referenceReportId = "ref-report-id"、referenceReportTitle = "元レポート" | `/reports/ref-report-id` へのリンクが「元レポート」テキストで描画される |
+| RPT-FE-080 | 単体 | ReportReferenceLink | referenceReportId: string \| null | 正常系 | RPT-F03 | 55_ui_component/screens/report-detail.md §ReportReferenceLink | `test_ReportReferenceLink_hidden_when_null` | referenceReportId = null | コンポーネントが描画されない（非表示） |
+| RPT-FE-081 | 単体 | ReportActionBar | status: ReportStatus, isOwner: boolean, currentUserRole: string | 正常系 | RPT-F03 | 55_ui_component/screens/report-detail.md §ReportActionBar | `test_ReportActionBar_draft_owner_shows_owner_actions` | status = "draft"、isOwner = true、currentUserRole = "member" | OwnerActions が描画される（編集・提出・削除ボタン）。WorkflowActions は描画されない |
+| RPT-FE-082 | 単体 | ReportActionBar | status: ReportStatus, isOwner: boolean, currentUserRole: string | 正常系 | RPT-F03 | 55_ui_component/screens/report-detail.md §ReportActionBar | `test_ReportActionBar_submitted_non_owner_approver` | status = "submitted"、isOwner = false、currentUserRole = "approver" | WorkflowActions が描画される（承認・却下ボタン）。OwnerActions は描画されない |
+| RPT-FE-083 | 単体 | ReportActionBar | status: ReportStatus, isOwner: boolean, currentUserRole: string | 認可 | RPT-F03 | 55_ui_component/screens/report-detail.md §ReportActionBar | `test_ReportActionBar_submitted_owner_no_workflow_actions` | status = "submitted"、isOwner = true、currentUserRole = "approver" | WorkflowActions が描画されない（自己承認禁止: RBC-016） |
+| RPT-FE-084 | 単体 | ReportActionBar | status: ReportStatus, isOwner: boolean, currentUserRole: string | 正常系 | RPT-F03 | 55_ui_component/screens/report-detail.md §ReportActionBar | `test_ReportActionBar_rejected_owner_shows_resubmit` | status = "rejected"、isOwner = true、currentUserRole = "member" | OwnerActions が描画され再申請ボタンが含まれる |
+| RPT-FE-085 | 単体 | ReportActionBar | status: ReportStatus, isOwner: boolean, currentUserRole: string | 正常系 | RPT-F03 | 55_ui_component/screens/report-detail.md §ReportActionBar | `test_ReportActionBar_approved_non_owner_accounting` | status = "approved"、isOwner = false、currentUserRole = "accounting" | WorkflowActions が描画される（支払完了ボタン） |
+| RPT-FE-086 | 単体 | ReportActionBar | status: ReportStatus | 正常系 | RPT-F03 | 55_ui_component/screens/report-detail.md §ReportActionBar | `test_ReportActionBar_paid_no_actions` | status = "paid" | OwnerActions も WorkflowActions も描画されない（終端状態） |
+| RPT-FE-087 | 単体 | ReportActionBar | pendingAction: string \| null | 正常系 | RPT-F06 | 55_ui_component/screens/report-detail.md §ReportActionBar | `test_ReportActionBar_pending_disables_buttons` | pendingAction = "submit" | 提出ボタンが disabled + スピナー表示。他のボタンも disabled |
+| RPT-FE-088 | 単体 | OwnerActions | status: ReportStatus | 正常系 | RPT-F03 | 55_ui_component/screens/report-detail.md §OwnerActions | `test_OwnerActions_draft_shows_edit_submit_delete` | status = "draft"、itemCount = 1 | 編集・提出・削除ボタンが表示される |
+| RPT-FE-089 | 単体 | OwnerActions | status: ReportStatus, itemCount: number | 正常系 | RPT-F06, RPT-014 | 55_ui_component/screens/report-detail.md §OwnerActions | `test_OwnerActions_submit_disabled_no_items` | status = "draft"、itemCount = 0 | 提出ボタンが disabled + ツールチップが表示される |
+| RPT-FE-090 | 単体 | OwnerActions | status: ReportStatus | 正常系 | RPT-F03 | 55_ui_component/screens/report-detail.md §OwnerActions | `test_OwnerActions_rejected_shows_resubmit` | status = "rejected" | 再申請ボタンが表示される。編集・提出・削除ボタンは非表示 |
+| RPT-FE-091 | 単体 | OwnerActions | status: ReportStatus | 正常系 | RPT-F03 | 55_ui_component/screens/report-detail.md §OwnerActions | `test_OwnerActions_submitted_no_buttons` | status = "submitted" | 編集・提出・削除・再申請ボタンが全て非表示 |
+| RPT-FE-092 | 単体 | OwnerActions | onEdit: () => void | 正常系 | RPT-F04 | 55_ui_component/screens/report-detail.md §OwnerActions | `test_OwnerActions_edit_calls_callback` | status = "draft"、編集ボタンをクリック | onEdit コールバックが呼び出される |
+| RPT-FE-093 | 単体 | OwnerActions | onSubmitReport: () => void | 正常系 | RPT-F06 | 55_ui_component/screens/report-detail.md §OwnerActions | `test_OwnerActions_submit_calls_callback` | status = "draft"、itemCount = 1、提出ボタンをクリック | onSubmitReport コールバックが呼び出される |
+| RPT-FE-094 | 単体 | OwnerActions | onDelete: () => void | 正常系 | RPT-F05 | 55_ui_component/screens/report-detail.md §OwnerActions | `test_OwnerActions_delete_calls_callback` | status = "draft"、削除ボタンをクリック | onDelete コールバックが呼び出される |
+| RPT-FE-095 | 単体 | OwnerActions | onResubmit: () => void | 正常系 | RPT-F01, RPT-015 | 55_ui_component/screens/report-detail.md §OwnerActions | `test_OwnerActions_resubmit_calls_callback` | status = "rejected"、再申請ボタンをクリック | onResubmit コールバックが呼び出される |
+| RPT-FE-096 | 単体 | OwnerActions | pendingAction: 'submit' \| 'delete' \| null | 正常系 | RPT-F06 | 55_ui_component/screens/report-detail.md §OwnerActions | `test_OwnerActions_pending_submit_disables` | pendingAction = "submit" | 提出ボタンが disabled + スピナー。編集・削除ボタンも disabled |
+| RPT-FE-097 | 単体 | useSubmitReport | useSubmitReport | 正常系 | RPT-F06 | 55_ui_component/state-management.md §useSubmitReport | `test_useSubmitReport_calls_api` | mutate({ id: "test-id", updated_at: "2026-03-01T00:00:00Z" }) | POST /api/reports/test-id/submit が updated_at 付きで呼び出される |
+| RPT-FE-098 | 単体 | useSubmitReport | useSubmitReport | 正常系 | RPT-F06 | 55_ui_component/state-management.md §useSubmitReport | `test_useSubmitReport_invalidates_cache` | ミューテーション成功後 | レポート詳細・一覧のクエリキャッシュが無効化される |
+| RPT-FE-099 | 単体 | useSubmitReport | useSubmitReport | 異常系 | RPT-F06 | 55_ui_component/state-management.md §useSubmitReport | `test_useSubmitReport_handles_error` | API が 422 EMPTY_REPORT_SUBMISSION を返す | isError = true、error にエラー情報が格納される |
+| RPT-FE-100 | 単体 | useDeleteReport | useDeleteReport | 正常系 | RPT-F05 | 55_ui_component/state-management.md §useDeleteReport | `test_useDeleteReport_calls_api` | mutate("test-id") | DELETE /api/reports/test-id が呼び出される |
+| RPT-FE-101 | 単体 | useDeleteReport | useDeleteReport | 正常系 | RPT-F05 | 55_ui_component/state-management.md §useDeleteReport | `test_useDeleteReport_invalidates_cache` | ミューテーション成功後 | レポート一覧のクエリキャッシュが無効化される |
+| RPT-FE-102 | 単体 | useDeleteReport | useDeleteReport | 異常系 | RPT-F05 | 55_ui_component/state-management.md §useDeleteReport | `test_useDeleteReport_handles_error` | API が 422 REPORT_NOT_DELETABLE を返す | isError = true、error にエラー情報が格納される |
+
+---
+
+#### FE テストID一覧（サマリー）
+
+| 範囲 | テストID範囲 | 件数 |
+|------|------------|------|
+| レポート一覧画面 コンポーネント | RPT-FE-001 -- RPT-FE-020 | 20 |
+| レポート一覧画面 Hook（useMyReports） | RPT-FE-021 -- RPT-FE-023 | 3 |
+| レポート作成画面 コンポーネント | RPT-FE-024 -- RPT-FE-045 | 22 |
+| レポート作成画面 Hook（useCreateReport） | RPT-FE-046 -- RPT-FE-049 | 4 |
+| レポート編集画面 コンポーネント | RPT-FE-050 -- RPT-FE-058 | 9 |
+| レポート編集画面 Hook（useReport, useUpdateReport） | RPT-FE-059 -- RPT-FE-063 | 5 |
+| レポート詳細画面 レポート閲覧・操作コンポーネント | RPT-FE-064 -- RPT-FE-096 | 33 |
+| レポート詳細画面 Hook（useSubmitReport, useDeleteReport） | RPT-FE-097 -- RPT-FE-102 | 6 |
+| **FE 合計** | **RPT-FE-001 -- RPT-FE-102** | **102** |
+
+---
+
+#### FE テストファイル構成
+
+```
+expense-saas/frontend/src/
+  pages/reports/
+    __tests__/
+      ReportListPage.test.tsx        # RPT-FE-001〜RPT-FE-007
+      ReportListHeader.test.tsx      # RPT-FE-008〜RPT-FE-009
+      CreateReportButton.test.tsx    # RPT-FE-010
+      ReportListFilter.test.tsx      # RPT-FE-011〜RPT-FE-014
+      ReportListTable.test.tsx       # RPT-FE-015〜RPT-FE-020
+      ReportCreatePage.test.tsx      # RPT-FE-024〜RPT-FE-027
+      ReportEditPage.test.tsx        # RPT-FE-050〜RPT-FE-058
+      ReportDetailPage.test.tsx      # RPT-FE-064〜RPT-FE-069
+      ReportInfoCard.test.tsx        # RPT-FE-070
+      ReportBasicInfo.test.tsx       # RPT-FE-071〜RPT-FE-072
+      ReportWorkflowInfo.test.tsx    # RPT-FE-073〜RPT-FE-078
+      ReportReferenceLink.test.tsx   # RPT-FE-079〜RPT-FE-080
+      ReportActionBar.test.tsx       # RPT-FE-081〜RPT-FE-087
+      OwnerActions.test.tsx          # RPT-FE-088〜RPT-FE-096
+  components/report/
+    __tests__/
+      ReportForm.test.tsx            # RPT-FE-028〜RPT-FE-036, RPT-FE-058
+      ReportPeriodField.test.tsx     # RPT-FE-039〜RPT-FE-042
+      ReportFormActions.test.tsx     # RPT-FE-043〜RPT-FE-045
+  components/ui/
+    __tests__/
+      FormAlert.test.tsx             # RPT-FE-037〜RPT-FE-038
+  hooks/
+    __tests__/
+      useMyReports.test.ts           # RPT-FE-021〜RPT-FE-023
+      useCreateReport.test.ts        # RPT-FE-046〜RPT-FE-049
+      useReport.test.ts              # RPT-FE-059〜RPT-FE-060
+      useUpdateReport.test.ts        # RPT-FE-061〜RPT-FE-063
+      useSubmitReport.test.ts        # RPT-FE-097〜RPT-FE-099
+      useDeleteReport.test.ts        # RPT-FE-100〜RPT-FE-102
+```
+
+#### FE テスト実行コマンド
+
+```bash
+# レポート一覧画面のコンポーネントテスト
+npx vitest run src/pages/reports/__tests__/ReportList*.test.tsx src/pages/reports/__tests__/CreateReportButton.test.tsx
+
+# レポート作成画面のコンポーネントテスト
+npx vitest run src/pages/reports/__tests__/ReportCreatePage.test.tsx src/components/report/__tests__/ReportForm.test.tsx
+
+# レポート編集画面のコンポーネントテスト
+npx vitest run src/pages/reports/__tests__/ReportEditPage.test.tsx
+
+# レポート詳細画面のコンポーネントテスト（レポート閲覧・操作のみ）
+npx vitest run src/pages/reports/__tests__/ReportDetailPage.test.tsx src/pages/reports/__tests__/ReportInfoCard.test.tsx src/pages/reports/__tests__/ReportBasicInfo.test.tsx src/pages/reports/__tests__/ReportWorkflowInfo.test.tsx src/pages/reports/__tests__/ReportReferenceLink.test.tsx src/pages/reports/__tests__/ReportActionBar.test.tsx src/pages/reports/__tests__/OwnerActions.test.tsx
+
+# Hook テスト
+npx vitest run src/hooks/__tests__/useMyReports.test.ts src/hooks/__tests__/useCreateReport.test.ts src/hooks/__tests__/useReport.test.ts src/hooks/__tests__/useUpdateReport.test.ts src/hooks/__tests__/useSubmitReport.test.ts src/hooks/__tests__/useDeleteReport.test.ts
+
+# レポート FE 全テスト一括実行
+npx vitest run --reporter=verbose src/pages/reports/__tests__/ src/components/report/__tests__/ src/components/ui/__tests__/FormAlert.test.tsx src/hooks/__tests__/use*Report*.test.ts
+```
+
+#### FE テスト実装方針
+
+コンポーネントテストは Vitest + React Testing Library で実装する。API 呼び出しは MSW（Mock Service Worker）でモックする。
+
+```typescript
+// 例: ReportListPage のテスト（RPT-FE-001）
+import { render, screen } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
+import { ReportListPage } from '../ReportListPage';
+
+// useMyReports のモック
+vi.mock('@/hooks/useMyReports', () => ({
+  useMyReports: () => ({
+    data: {
+      data: [
+        { id: '1', title: 'レポート1', status: 'draft', totalAmount: 1000, periodStart: '2026-03-01', periodEnd: '2026-03-31', createdAt: '2026-03-01' },
+        { id: '2', title: 'レポート2', status: 'submitted', totalAmount: 2000, periodStart: '2026-03-01', periodEnd: '2026-03-31', createdAt: '2026-03-02' },
+        { id: '3', title: 'レポート3', status: 'approved', totalAmount: 3000, periodStart: '2026-03-01', periodEnd: '2026-03-31', createdAt: '2026-03-03' },
+      ],
+      pagination: { current_page: 1, total_pages: 1, total_count: 3 },
+    },
+    isLoading: false,
+    isError: false,
+  }),
+}));
+
+describe('ReportListPage', () => {
+  it('renders report list with header, filter, table, and pagination', () => {
+    render(<ReportListPage />, { wrapper: TestProviders });
+    expect(screen.getByText('マイレポート')).toBeInTheDocument();
+    expect(screen.getByText('レポート1')).toBeInTheDocument();
+    expect(screen.getByText('レポート2')).toBeInTheDocument();
+    expect(screen.getByText('レポート3')).toBeInTheDocument();
+  });
+});
+```
+
+```typescript
+// 例: useMyReports の Hook テスト（RPT-FE-021）
+import { renderHook, waitFor } from '@testing-library/react';
+import { describe, it, expect } from 'vitest';
+import { useMyReports } from '../useMyReports';
+import { server } from '@/mocks/server';
+import { http, HttpResponse } from 'msw';
+
+describe('useMyReports', () => {
+  it('fetches report list data', async () => {
+    server.use(
+      http.get('/api/reports', () =>
+        HttpResponse.json({
+          data: [{ id: '1', title: 'テスト', status: 'draft' }],
+          pagination: { current_page: 1, total_pages: 1, total_count: 1 },
+        }),
+      ),
+    );
+
+    const { result } = renderHook(
+      () => useMyReports({ page: 1, per_page: 20 }),
+      { wrapper: TestProviders },
+    );
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(result.current.data?.data).toHaveLength(1);
+  });
+});
 ```
