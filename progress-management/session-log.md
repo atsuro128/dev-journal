@@ -1,71 +1,66 @@
 # 引き継ぎメモ
 
-## セッション: 2026-04-06 17:39
+## セッション: 2026-04-06 23:54
 
 ### ゴール
-- codex 指摘 3 件の対応（指摘 2・3 を直接対応、指摘 1 は issue 405 に統合）
-- issue 405 対応（ページネーション方式変更）
-- Step 5.5 続行: 5.5-C-1（認証系）、5.5-C-2（ダッシュボード）
+- progress.md 更新（5.5-A/B/C-1/C-2 の完了反映）
+- issue 405 クローズ処理（設計修正 + Step 8 スケルトンコード修正）
+- Step 5.5-C-3〜5 画面別コンポーネント設計（レポート系・ワークフロー系・管理系）
+- Step 5.5-D 横断レビュー
+- ops-056 FE テストケース補強
 
 ### 作業ログ
-- **codex 指摘 2（認証画面エラー表示例外）** — 完了・コミット済み
-  - common-components.md AppToast に AuthLayout 除外の設計根拠を明文化
-  - state-management.md §6 に 429/500 の AuthLayout 例外注記を追加
-- **codex 指摘 3（トースト表示位置の矛盾解決）** — 完了・コミット済み
-  - ユーザー判断: 「画面上部中央」が自然 → ui-guidelines.md §8 の正本自体を変更
-  - screens.md・個別画面仕様は元々「画面上部」のため変更不要
-- **review-finding 091** — codex が resolved に移動（テンプレート修正確認済み）
-- **issue 405（ページネーション方式変更）** — 設計変更完了・コミット済み
-  - architect が計画策定 → designer が設計文書 8 ファイル修正 → reviewer 内部レビュー PASS → 追加 blocker 5 件修正 → 再レビュー PASS → codex LGTM
-  - カーソルベース + 「さらに読み込む」→ オフセットベース + ページ番号コントロール
-  - screens.md §4.9、個別画面仕様 4 ファイル、openapi.yaml、state-management.md、common-components.md（AppPagination 追加）
-  - deliverables/ 全体の残存（architecture.md, requirements.md, glossary.md, traceability.md, ADR-0003, workflow.md テストケース, project_summary.md）も修正
-- **5.5-C-1（認証系コンポーネント設計）** — 完了・コミット済み
-  - auth-login.md, auth-signup.md, auth-password-reset-request.md, auth-password-reset.md の 4 ファイル作成
-  - ウォークスルー完了（ログイン → サインアップ → リセット要求 → リセット実行）
-- **5.5-C-2（ダッシュボードコンポーネント設計）** — 完了・コミット済み
-  - dashboard.md 作成。ウォークスルーは §2 まで実施（ユーザー判断で中断）
-- **ウォークスルースキル作成** — `/walkthrough` として `.claude/skills/walkthrough/SKILL.md` を作成
-  - IDE が画面共有、テキスト出力が口頭説明という形式
-- **issue 406 起票** — FE エラーメッセージ管理方式が未定義（state-management.md §6 に追加予定）
-- **issue 407 起票** — Step 8 WB に共通 UI コンポーネント実装タスクが欠落（テンプレート修正要）
-- **progress.md 未更新**: 5.5-A, 5.5-B, 5.5-C-1, 5.5-C-2 の状態反映が必要
-- **コミットタイミングの学び**: codex LGTM 前にコミットして取り消す事態が発生。以降は内部+codex 両方 LGTM 後にコミットする方針
+- **progress.md 更新** — 5.5-A/B/C-1/C-2 を完了、Step 5.5 を進行中に更新
+- **issue 405 クローズ処理**
+  - 解決内容・解決日を記入し pending-review に移動
+  - codex 解決レビュー → 差し戻し（Step 8 スケルトンコードが cursor ベースのまま）
+  - ユーザー判断: Step 8 で触れているなら修正が必要
+  - architect が修正計画策定 → backend-developer + frontend-developer が並列で修正
+  - BE: SQL クエリ修正 + sqlc 再生成 + DTO/Repository/Repo 実装修正（6ファイル）
+  - FE: types.ts の Pagination 型修正（1ファイル）
+  - codex 再レビュー → resolved
+- **5.5-C-3 レポート系（4画面）** — designer で作成、内部レビュー PASS
+- **5.5-C-4 ワークフロー系（2画面）** — designer で作成、内部レビュー PASS
+- **5.5-C-5 管理系（2画面）** — designer で作成、内部レビュー PASS
+- **codex レビュー Step 5.5 C-3〜5** → FIX 3件
+  - 092: admin 画面の AppLayout ツリー表記修正 → resolved
+  - 093: report-detail の 404 挙動を詳細設計に統一 → resolved
+  - 094: report-detail のデータフロー補完 + FormAlert 追加 → 2回差し戻し後 resolved（キャッシュ無効化対象の不一致、useDeleteReport の入力型不一致）
+- **コミット** — expense-saas（issue 405 修正）と dev-journal（C-3〜5 + issue 405 クローズ）を別々にコミット
+- **5.5-D 横断レビュー** — reviewer PASS + codex FIX 2件
+  - 095: 共通コンポーネント正本に共有 UI コンポーネント未収録 → common-components.md に9コンポーネント追加 + マトリクス更新 → resolved
+  - 096: 画面別設計書の Props 重複定義 → 参照に切り替え → resolved
+- **Step 5.5 マイルストーン完了** — progress.md 更新、全チケット完了
+- **ops-056 FE テストケース補強**
+  - architect 計画: 項目 1-5 は対応済み確認、項目 6 のみ対応必要
+  - 7つの designer エージェントを並列起動 → 全7ファイルに FE テストケース追加（合計 450 件）
+  - 内部レビュー PASS + codex FIX 5件 → 3件対応（SelfLabel/FilterResetButton/PageTitle 未カバー）、2件押し返し（セクション番号形式、サマリー表 ID 再掲）
+  - codex 再レビュー → FIX 1件（workflow.md サマリー件数未更新）→ 修正 → resolved
+  - ops-056 解決レビュー → 差し戻し（合計件数 448→450 の誤り）→ 修正 → resolved
 
 ### 未完了
-- issue 405: 実装変更（Phase 5 — backend/frontend コード）未着手
-- issue 405: issue ファイルの解決内容・解決日の記入 + pending-review 移動
-- 5.5-C-3〜5: 画面別コンポーネント設計（レポート系・ワークフロー系・管理系）— issue 405 完了後に着手
-- 5.5-C-2 ダッシュボード: ウォークスルー §3 以降未実施（ユーザーが不要と判断、必要なら後で）
-- 5.5-D: 横断レビュー
-- progress.md 更新
-- ops-055, ops-047, ops-050: 運用系 issue（優先度低）
-- ops-056 項目 6: FE テストケース補強（Step 5.5 完了後）
 - issue 406: FE エラーメッセージ管理方式の定義
 - issue 407: Step 8 WB テンプレートに共通 UI コンポーネント実装タスク追加
+- ops-047, ops-050, ops-055: 運用系 issue（優先度低）
 - Step 10 着手前に WB とレビュー観点に MUI 準拠の完了条件を追加
+- traceability.md の FE テスト追跡線追加（ops-056 スコープ外として別途対応）
 
 ### ブロッカー
 なし
 
 ### 次にやること
-1. progress.md 更新（5.5-A, 5.5-B を完了、5.5-C-1, 5.5-C-2 を完了に更新）
-2. issue 405 の issue ファイル更新（解決内容記入 → pending-review → codex 解決レビュー）
-3. issue 405 実装変更（Phase 5）— backend-developer / frontend-developer に委譲
-4. 5.5-C-3〜5 着手（レポート系・ワークフロー系・管理系 — ウォークスルー形式で実施）
-5. 5.5-D 横断レビュー
-6. issue 406, 407 対応
+1. issue 406 対応（FE エラーメッセージ管理方式を state-management.md §6 に定義）
+2. issue 407 対応（Step 8 WB テンプレートに共通 UI コンポーネント実装タスク追加）
+3. traceability.md の FE テスト追跡線追加
+4. Step 9（テストコード実装）着手
 
 ### 学び・気づき
-- **codex LGTM 前にコミットしない**: 内部レビュー PASS → コミット → codex の流れだとユーザーの意図とズレる。今後は内部+codex 両方 LGTM 後にコミットする
-- **git revert より git reset --soft**: revert はコミット履歴にノイズが残る。取り消しは soft reset で行う
-- **セッションログの「次にやること」をそのまま実行するのが最効率**: architect に計画を再策定させるより、前回セッションで合意済みの順序に従う方が速い
-- **ウォークスルーは重め（解説付き）が有効**: ユーザーは設計資料を一人で読むより、セクションごとの解説 + Q&A 形式を求めている。スキル化した
-- **共通コンポーネント実装は Step 8 の責務**: テンプレートの正しいフローでは 5.5 → 8 の順序。Step 8 WB に実装タスクを追加すべき（issue 407）
+- **BE エージェントのワークツリー問題**: BE エージェントが worktree で起動されたが変更がメインツリーに書き込まれていた。ワークツリーの変更確認時は pwd を意識する
+- **codex の合計件数チェック**: codex は合計値の算術チェックも行う。issue の解決内容に件数を書く際は正確に計算する
+- **codex 指摘の押し返し判断**: セクション番号の不一致やサマリー表の ID 再掲など、形式的な指摘は品質ゲート基準で押し返すことが有効。ただし codex が新規 finding を起票した場合は対応が必要
+- **並列実行の効率**: 7つの designer エージェントを並列起動することで FE テストケース 450 件を一度に生成できた
 
 ### 意思決定ログ
-- **トースト表示位置は「画面上部中央」**: ui-guidelines.md §8 の正本を変更。元々 screens.md が「画面上部」と書いていたのが意図的な設計だった
-- **ウォークスルーのスキル化**: 設計説明会を `/walkthrough` としてスキル化。IDE = 画面共有、テキスト = 口頭説明の形式
-- **FE エラーメッセージ管理は state-management.md §6 に追加**: ハードコード vs 定数ファイル vs i18n の方針を設計段階で決めるべき（issue 406）
-- **共通 UI コンポーネント実装は Step 8 の責務**: テンプレートとして Step 5.5 → Step 8 の順序が正しい。Step 8 WB テンプレートを修正する（issue 407）
-
+- **issue 405 のスコープ**: ユーザーは設計修正のみでクローズ可能と認識していたが、Step 8 でスケルトンコードに cursor ベースの実装が含まれていたため、コード修正も必要と判断
+- **codex 指摘の押し返し**: テストケースのセクション番号不一致（指摘 4）と attachments.md のサマリー表 ID 再掲（指摘 5）は形式的と判断し押し返し。codex は受け入れた
+- **traceability.md のスコープ**: architect は ops-056 に含めることを推奨したが、最終的にスコープ外として別途対応とした
