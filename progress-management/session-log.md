@@ -52,7 +52,8 @@
 1. issue 406 対応（FE エラーメッセージ管理方式を state-management.md §6 に定義）
 2. issue 407 対応（Step 8 WB テンプレートに共通 UI コンポーネント実装タスク追加）
 3. traceability.md の FE テスト追跡線追加
-4. Step 9（テストコード実装）着手
+4. agent-worktree-cleanup.sh のデバッグ確認: `/tmp/agent-hook-debug-*.json` で PostToolUse(Agent) の入力構造を確認し、ワークツリーパスの取得方法を確定する。確定後にデバッグ行を削除
+5. Step 9（テストコード実装）着手
 
 ### 学び・気づき
 - **BE エージェントのワークツリー問題**: BE エージェントが worktree で起動されたが変更がメインツリーに書き込まれていた。ワークツリーの変更確認時は pwd を意識する
