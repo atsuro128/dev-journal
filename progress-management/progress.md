@@ -10,7 +10,7 @@
 | 3 | アーキテクチャ設計（技術選定・構成決定） | 完了 | 2026-03-16 | `ai-dev-framework/guide/work-breakdown/step3-architecture.md` |
 | 4 | 基本設計（画面一覧・画面遷移） | 完了 | 2026-03-22 | `ai-dev-framework/guide/work-breakdown/step4-basic-design.md` |
 | 5 | 詳細設計（API・DB・認可・セキュリティ） | 完了 | 2026-03-23 | `ai-dev-framework/guide/work-breakdown/step5-detail-design.md` |
-| 5.5 | UI コンポーネント設計 | 未着手 | - | `ai-dev-framework/guide/work-breakdown/step5.5-ui-component.md` |
+| 5.5 | UI コンポーネント設計 | 進行中 | - | `ai-dev-framework/guide/work-breakdown/step5.5-ui-component.md` |
 | 6 | テスト設計 | 完了 | 2026-03-23 | `ai-dev-framework/guide/work-breakdown/step6-testing.md` |
 | 7 | 運用設計 | 完了 | 2026-03-26 | `ai-dev-framework/guide/work-breakdown/step7-operations.md` |
 | 8 | 基盤構築 | 完了 | 2026-03-31 | `ai-dev-framework/guide/work-breakdown/step8-foundation.md` |
@@ -47,10 +47,10 @@
 
 | ID | タスク | 担当 | 依存 | 状態 | チケット |
 |----|--------|------|------|------|---------|
-| 5.5-A | 共通コンポーネント設計 | designer | なし | 未着手 | `tickets/step5.5/5.5-A-common-components.md` |
-| 5.5-B | 状態管理方針策定 | designer | なし | 未着手 | `tickets/step5.5/5.5-B-state-management.md` |
-| 5.5-C-1 | 画面別コンポーネント設計（認証系） | designer | 5.5-A, 5.5-B | 未着手 | `tickets/step5.5/5.5-C-1-auth-components.md` |
-| 5.5-C-2 | 画面別コンポーネント設計（ダッシュボード） | designer | 5.5-A, 5.5-B | 未着手 | `tickets/step5.5/5.5-C-2-dashboard-components.md` |
+| 5.5-A | 共通コンポーネント設計 | designer | なし | 完了 | `tickets/step5.5/5.5-A-common-components.md` |
+| 5.5-B | 状態管理方針策定 | designer | なし | 完了 | `tickets/step5.5/5.5-B-state-management.md` |
+| 5.5-C-1 | 画面別コンポーネント設計（認証系） | designer | 5.5-A, 5.5-B | 完了 | `tickets/step5.5/5.5-C-1-auth-components.md` |
+| 5.5-C-2 | 画面別コンポーネント設計（ダッシュボード） | designer | 5.5-A, 5.5-B | 完了 | `tickets/step5.5/5.5-C-2-dashboard-components.md` |
 | 5.5-C-3 | 画面別コンポーネント設計（レポート系） | designer | 5.5-A, 5.5-B | 未着手 | `tickets/step5.5/5.5-C-3-report-components.md` |
 | 5.5-C-4 | 画面別コンポーネント設計（ワークフロー系） | designer | 5.5-A, 5.5-B | 未着手 | `tickets/step5.5/5.5-C-4-workflow-components.md` |
 | 5.5-C-5 | 画面別コンポーネント設計（管理系） | designer | 5.5-A, 5.5-B | 未着手 | `tickets/step5.5/5.5-C-5-admin-components.md` |
