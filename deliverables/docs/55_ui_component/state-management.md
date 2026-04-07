@@ -406,6 +406,195 @@ interface SnackbarContextValue {
 }
 ```
 
+### 6.5 エラーメッセージ管理方針
+
+API エラーコードからユーザー向け日本語メッセージへの変換方式を定義する。
+
+> **注記**: 本セクションの TypeScript コードブロックは設計方針の例示であり、実装コードではない。
+
+#### 6.5.1 メッセージ保持場所
+
+| 項目 | 方針 |
+|------|------|
+| 集約先 | `src/lib/errorMessages.ts` に API エラーコード → ユーザー向けメッセージの定数マッピングを定義する |
+| i18n | MVP は日本語固定のため i18n ライブラリを導入しない（スコープ外） |
+| `constants.ts` との分離 | `src/lib/constants.ts` の `ERROR_CODES` はコード識別子（API 通信・条件分岐用）。`errorMessages.ts` の `ERROR_MESSAGES` は画面表示用の日本語文字列。責務が異なるため別ファイルに分離する |
+
+#### 6.5.2 API エラーコード → 表示メッセージ変換マッピング
+
+```typescript
+/**
+ * API エラーコードに対応するユーザー向け日本語メッセージ。
+ * security.md §8.4 の全エラーコードをカバーする。
+ */
+export const ERROR_MESSAGES: Record<string, string> = {
+  // 400 不正リクエスト
+  BAD_REQUEST:
+    'リクエストの形式が正しくありません。',
+  VALIDATION_ERROR:
+    '入力内容に誤りがあります。各項目を確認してください。',
+
+  // 401 認証エラー
+  UNAUTHORIZED:
+    '認証が必要です。再度ログインしてください。',
+  INVALID_CREDENTIALS:
+    'メールアドレスまたはパスワードが正しくありません',
+  INVALID_TOKEN:
+    '認証情報が無効です。再度ログインしてください。',
+  TOKEN_EXPIRED:
+    '認証の有効期限が切れました。再度ログインしてください。',
+
+  // 403 権限エラー
+  FORBIDDEN:
+    'この操作を行う権限がありません。',
+  SELF_APPROVAL_NOT_ALLOWED:
+    '自分のレポートは承認できません',
+  SELF_PAYMENT_NOT_ALLOWED:
+    '自分が作成したレポートの支払完了は記録できません',
+
+  // 404 リソース未検出
+  RESOURCE_NOT_FOUND:
+    '指定されたデータが見つかりません。',
+
+  // 409 競合
+  CONFLICT:
+    '他のユーザーがこのレポートを更新しました。ページを再読み込みしてください。',
+
+  // 413 ファイルサイズ超過
+  FILE_TOO_LARGE:
+    'ファイルサイズは5MB以下にしてください',
+
+  // 422 業務ルール違反
+  INVALID_STATE_TRANSITION:
+    'この状態遷移は許可されていません。',
+  REPORT_NOT_EDITABLE:
+    '提出済みのレポートは編集できません',
+  REPORT_NOT_DELETABLE:
+    '提出済みのレポートは削除できません',
+  EMPTY_REPORT_SUBMISSION:
+    '明細を1件以上追加してから提出してください',
+  NO_APPROVER_IN_TENANT:
+    '承認者が登録されていないため提出できません',
+  INVALID_PERIOD:
+    '開始日は終了日以前を指定してください',
+  INVALID_AMOUNT:
+    '金額は正の整数で入力してください',
+  INVALID_FILE_TYPE:
+    'JPEG, PNG, PDF のみアップロード可能です',
+  MISSING_REJECTION_REASON:
+    '却下理由を入力してください',
+
+  // 429 レート制限超過
+  RATE_LIMIT_EXCEEDED:
+    'しばらく待ってから再試行してください',
+
+  // 500 サーバー内部エラー
+  INTERNAL_ERROR:
+    'サーバーとの通信に失敗しました。しばらくしてから再度お試しください。',
+} as const;
+
+/**
+ * ERROR_MESSAGES に該当するコードがない場合に使用するフォールバックメッセージ。
+ */
+export const DEFAULT_ERROR_MESSAGE =
+  '予期しないエラーが発生しました。しばらくしてから再度お試しください。';
+```
+
+**メッセージ出典一覧**:
+
+| エラーコード | メッセージ | 出典 |
+|------------|-----------|------|
+| INVALID_CREDENTIALS | メールアドレスまたはパスワードが正しくありません | auth-login.md §5 S1 |
+| RATE_LIMIT_EXCEEDED | しばらく待ってから再試行してください | 汎用メッセージ（画面固有の上書きは §6.5.6 参照） |
+| INTERNAL_ERROR | サーバーとの通信に失敗しました。しばらくしてから再度お試しください。 | auth-login.md §5 S3、auth-password-reset-request.md §5 S1、report-detail.md §11、workflow-pending.md §11、workflow-payable.md §11 |
+| FORBIDDEN | この操作を行う権限がありません。 | report-detail.md §11（403） |
+| SELF_APPROVAL_NOT_ALLOWED | 自分のレポートは承認できません | report-detail.md §11 |
+| SELF_PAYMENT_NOT_ALLOWED | 自分が作成したレポートの支払完了は記録できません | report-detail.md §11 |
+| RESOURCE_NOT_FOUND | 指定されたデータが見つかりません。 | report-detail.md §11（404）、report-edit.md §6 |
+| CONFLICT | 他のユーザーがこのレポートを更新しました。ページを再読み込みしてください。 | report-detail.md §11（409）、report-edit.md §7 |
+| FILE_TOO_LARGE | ファイルサイズは5MB以下にしてください | report-detail.md §11 |
+| INVALID_FILE_TYPE | JPEG, PNG, PDF のみアップロード可能です | report-detail.md §11 |
+| EMPTY_REPORT_SUBMISSION | 明細を1件以上追加してから提出してください | report-detail.md §11 |
+| NO_APPROVER_IN_TENANT | 承認者が登録されていないため提出できません | report-detail.md §11 |
+| MISSING_REJECTION_REASON | 却下理由を入力してください | report-detail.md §11 |
+| REPORT_NOT_EDITABLE | 提出済みのレポートは編集できません | report-edit.md §6 |
+| REPORT_NOT_DELETABLE | 提出済みのレポートは削除できません | security.md §8.4 の使用場面「draft 以外での削除」から一般的な日本語メッセージを作成 |
+| INVALID_STATE_TRANSITION | この状態遷移は許可されていません。 | security.md §8.4 の使用場面から一般的な日本語メッセージを作成（report-detail.md §11 では文脈に応じた個別メッセージを使用） |
+| INVALID_PERIOD | 開始日は終了日以前を指定してください | report-edit.md §4 V5 |
+| INVALID_AMOUNT | 金額は正の整数で入力してください | security.md §8.4 の使用場面から一般的な日本語メッセージを作成 |
+| BAD_REQUEST | リクエストの形式が正しくありません。 | 一般的な日本語メッセージ |
+| VALIDATION_ERROR | 入力内容に誤りがあります。各項目を確認してください。 | 一般的な日本語メッセージ（フォールバック用。フィールド別メッセージは §6.5.3 参照） |
+| UNAUTHORIZED | 認証が必要です。再度ログインしてください。 | 一般的な日本語メッセージ（通常は自動リダイレクトのため表示されない） |
+| INVALID_TOKEN | 認証情報が無効です。再度ログインしてください。 | 一般的な日本語メッセージ（通常は自動リダイレクトのため表示されない） |
+| TOKEN_EXPIRED | 認証の有効期限が切れました。再度ログインしてください。 | 一般的な日本語メッセージ（通常は自動リダイレクトのため表示されない） |
+
+#### 6.5.3 変換ユーティリティ関数
+
+```typescript
+import { ERROR_MESSAGES, DEFAULT_ERROR_MESSAGE } from '@/lib/errorMessages';
+
+/**
+ * 任意のエラーオブジェクトからユーザー向けメッセージを取得する。
+ *
+ * - ApiClientError の場合: error.code で ERROR_MESSAGES を引く
+ * - VALIDATION_ERROR の場合: フィールド別メッセージは各フォームの
+ *   onError で処理するため、ここではフォールバックメッセージを返す
+ * - 該当コードがない場合: DEFAULT_ERROR_MESSAGE を返す
+ */
+export function getErrorMessage(error: unknown): string {
+  if (error instanceof ApiClientError) {
+    return ERROR_MESSAGES[error.code] ?? DEFAULT_ERROR_MESSAGE;
+  }
+  return DEFAULT_ERROR_MESSAGE;
+}
+```
+
+**VALIDATION_ERROR の扱い**: `VALIDATION_ERROR` は `details` 配列にフィールド単位のエラー情報を持つ（security.md §8.2）。各フォームの `onError` ハンドラ内で `details` をフォームフィールドにマッピングして表示するため、`getErrorMessage` はフォールバックメッセージ（「入力内容に誤りがあります。各項目を確認してください。」）を返す。
+
+#### 6.5.4 SEC-011 セキュリティメッセージ上書きルール
+
+SEC-011（ユーザー存在の秘匿）に関連して、以下のルールを適用する。
+
+| ルール | 内容 | 根拠 |
+|--------|------|------|
+| INVALID_CREDENTIALS の統一メッセージ | メール未登録・パスワード不一致・TenantMembership 不在を区別せず、「メールアドレスまたはパスワードが正しくありません」を表示する | auth-login.md §5 S1、security.md §8.4 |
+| パスワードリセット要求のエラー分岐不要 | `POST /api/auth/password-reset` は未登録メールでも常に成功レスポンスを返す。FE 側でエラー分岐は不要（常に送信完了状態に遷移する） | auth-password-reset-request.md §5、SEC-011 |
+| API の英語メッセージを表示しない | API レスポンスの `message` フィールド（英語）をそのままユーザーに表示してはならない。必ず `ERROR_MESSAGES` の日本語メッセージに変換する | SEC-011、UX 方針 |
+
+#### 6.5.5 画面固有エラーメッセージの扱い
+
+以下のメッセージは `ERROR_MESSAGES` マッピングに含めず、各画面コンポーネント内で定数オブジェクトとして管理する（文字列リテラル直書きを回避する）。
+
+| 種類 | 例 | 管理場所 |
+|------|-----|---------|
+| 空状態メッセージ | 「レポートはまだありません」「承認待ちのレポートはありません」 | 各画面コンポーネント内の定数オブジェクト |
+| 確認ダイアログ文言 | 「このレポートを提出しますか?」「このレポートを削除しますか?」 | 各画面コンポーネント内の定数オブジェクト |
+| 成功メッセージ | 「レポートを作成しました」「承認しました」 | 各 Hook の `onSuccess` 内の定数オブジェクト |
+| クライアントサイドバリデーションメッセージ | 「タイトルを入力してください」等 | Zod スキーマ定義（`src/lib/validations/*.ts`） |
+
+#### 6.5.6 認証画面固有の上書きルール
+
+`ERROR_MESSAGES` の汎用メッセージと異なるメッセージが必要な画面では、各 Hook の `onError` で個別に上書きする。
+
+| 画面 | エラーコード | 汎用メッセージ | 画面固有メッセージ | 上書き方法 |
+|------|------------|--------------|------------------|-----------|
+| SCR-AUTH-002 ログイン | RATE_LIMIT_EXCEEDED | 「しばらく待ってから再試行してください」 | 「ログイン試行回数の上限に達しました。しばらくしてからお試しください。」 | `useLogin` Hook の `onError` で `error.code === 'RATE_LIMIT_EXCEEDED'` を判定し、画面固有メッセージを設定する |
+
+```typescript
+// useLogin Hook の onError での画面固有メッセージ上書き例
+const LOGIN_ERROR_OVERRIDES: Record<string, string> = {
+  RATE_LIMIT_EXCEEDED:
+    'ログイン試行回数の上限に達しました。しばらくしてからお試しください。',
+};
+
+// onError ハンドラ内
+const message =
+  (error instanceof ApiClientError && LOGIN_ERROR_OVERRIDES[error.code])
+    || getErrorMessage(error);
+```
+
+この方式により、汎用メッセージをデフォルトとしつつ、画面固有の要件がある場合のみ局所的に上書きできる。
+
 ---
 
 ## 7. 既存スケルトンとの整合
@@ -441,6 +630,7 @@ interface SnackbarContextValue {
 | `src/lib/validations/*.ts` | Zod バリデーションスキーマ |
 | `src/lib/queryKeys.ts` | クエリキー定数の一元管理 |
 | `src/contexts/SnackbarContext.tsx` | Snackbar 状態管理 Context |
+| `src/lib/errorMessages.ts` | API エラーコード → ユーザー向けメッセージ変換マッピング + ヘルパー関数 |
 
 ---
 
