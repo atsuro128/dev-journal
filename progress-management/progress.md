@@ -38,7 +38,7 @@
 | 8-4 | 共通ミドルウェア + ヘルスチェック | backend-developer | 8-2 | 完了 | `tickets/step8/8-4-middleware.md` |
 | 8-5 | FE-BE 連携 | frontend-developer | 8-3, 8-4 | 完了 | `tickets/step8/8-5-fe-be-integration.md` |
 | 8-6 | コード生成・スケルトン | backend-developer | 8-4 | 完了 | `tickets/step8/8-6-skeleton.md` |
-| 8-7 | 共通 UI コンポーネント実装 | frontend-developer | 8-3, 8-5 | 未着手 | `tickets/step8/8-7-common-ui-components.md` |
+| 8-7 | 共通 UI コンポーネント実装 | frontend-developer | 8-3, 8-5 | 完了 | `tickets/step8/8-7-common-ui-components.md` |
 | 8-8 | テスト基盤 | backend-developer | 8-6 | 完了 | `tickets/step8/8-8-test-infra.md` |
 | 8-9 | CI/CD パイプライン | platform-builder | 8-2, 8-3 | 完了 | `tickets/step8/8-9-cicd.md` |
 | 8-10 | 開発者ツール | platform-builder | 8-2, 8-3 | 完了 | `tickets/step8/8-10-dev-tools.md` |
@@ -61,7 +61,7 @@
 
 | ID | タスク | 担当 | 依存 | 状態 | チケット |
 |----|--------|------|------|------|---------|
-| 9-A | 認証テスト（共通フィクスチャ含む） | test-implementer | Step 8 完了 | 作業中 | `tickets/step9/9-A-auth-test.md` |
+| 9-A | 認証テスト（共通フィクスチャ含む） | test-implementer | Step 8 完了 | 完了 | `tickets/step9/9-A-auth-test.md` |
 | 9-B | レポートテスト | test-implementer | 9-A | 未着手 | `tickets/step9/9-B-report-test.md` |
 | 9-C | ダッシュボードテスト | test-implementer | 9-A | 未着手 | `tickets/step9/9-C-dashboard-test.md` |
 | 9-D | テナント管理テスト | test-implementer | 9-A | 未着手 | `tickets/step9/9-D-tenant-test.md` |

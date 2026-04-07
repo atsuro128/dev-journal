@@ -6,7 +6,7 @@ AI駆動開発フレームワーク。ガイド・テンプレート・運用設
 ai-dev-framework/
 ├── agents/                      # Codex エージェント手順書
 │   ├── issue-review-procedure.md
-│   ├── re-review-procedure.md
+│   ├── pr-review-procedure.md
 │   └── review-procedure.md
 ├── guide/                       # プロジェクト進行ガイド
 │   ├── workflow.md              # ワークフロー手順（指揮役専用）
