@@ -14,7 +14,7 @@
 | 6 | テスト設計 | 完了 | 2026-03-23 | `ai-dev-framework/guide/work-breakdown/step6-testing.md` |
 | 7 | 運用設計 | 完了 | 2026-03-26 | `ai-dev-framework/guide/work-breakdown/step7-operations.md` |
 | 8 | 基盤構築 | 完了 | 2026-03-31 | `ai-dev-framework/guide/work-breakdown/step8-foundation.md` |
-| 9 | テストコード実装 | 未着手 | - | `ai-dev-framework/guide/work-breakdown/step9-test-implementation.md` |
+| 9 | テストコード実装 | 進行中 | - | `ai-dev-framework/guide/work-breakdown/step9-test-implementation.md` |
 | 10 | 機能実装 | 未着手 | - | `ai-dev-framework/guide/work-breakdown/step10-feature-implementation.md` |
 | 11 | システムテスト・UAT | 未着手 | - | `ai-dev-framework/guide/work-breakdown/step11-system-test.md` |
 
@@ -55,6 +55,18 @@
 | 5.5-C-4 | 画面別コンポーネント設計（ワークフロー系） | designer | 5.5-A, 5.5-B | 完了 | `tickets/step5.5/5.5-C-4-workflow-components.md` |
 | 5.5-C-5 | 画面別コンポーネント設計（管理系） | designer | 5.5-A, 5.5-B | 完了 | `tickets/step5.5/5.5-C-5-admin-components.md` |
 | 5.5-D | 横断レビュー | reviewer | 5.5-C-1〜5 | 完了 | `tickets/step5.5/5.5-D-cross-review.md` |
+
+## Step 9: テストコード実装 — チケット一覧
+
+| ID | タスク | 担当 | 依存 | 状態 | チケット |
+|----|--------|------|------|------|---------|
+| 9-A | 認証テスト（共通フィクスチャ含む） | test-implementer | Step 8 完了 | 作業中 | `tickets/step9/9-A-auth-test.md` |
+| 9-B | レポートテスト | test-implementer | 9-A | 未着手 | `tickets/step9/9-B-report-test.md` |
+| 9-C | ダッシュボードテスト | test-implementer | 9-A | 未着手 | `tickets/step9/9-C-dashboard-test.md` |
+| 9-D | テナント管理テスト | test-implementer | 9-A | 未着手 | `tickets/step9/9-D-tenant-test.md` |
+| 9-E | 明細テスト | test-implementer | 9-B | 未着手 | `tickets/step9/9-E-items-test.md` |
+| 9-F | ワークフローテスト | test-implementer | 9-B | 未着手 | `tickets/step9/9-F-workflow-test.md` |
+| 9-G | 添付ファイルテスト | test-implementer | 9-E | 未着手 | `tickets/step9/9-G-attachments-test.md` |
 
 ## 課題・ブロッカー
 `issues/open/` を参照。
