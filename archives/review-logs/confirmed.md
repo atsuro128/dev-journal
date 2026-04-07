@@ -17,3 +17,9 @@
 - [2026-04-02] `cmd/server/main.go` ステップ 5: JWT Verifier 初期化（RS256、非 fatal → issue 052 で必須化予定）
 - [2026-04-02] `cmd/server/main.go` ステップ 6: バックグラウンド Context（レートリミッター掃除用、トークンバケット方式）
 - [2026-04-02] `cmd/server/main.go` ステップ 7: DI（Repository → Authorizer → Service → Handler）— 途中
+- [2026-04-07] `cmd/server/main.go` ステップ 7: DI — 完了（Service 8個の確認）
+- [2026-04-07] `cmd/server/main.go` ステップ 8: ルーター生成＋共通ミドルウェアチェーン 5層
+- [2026-04-07] `cmd/server/main.go` ステップ 9: 認証不要ルート（auth 系 7 エンドポイント）
+- [2026-04-07] `cmd/server/main.go` ステップ 10: 認証必須グループ（3層ミドルウェア＋ロール別 4 サブグループ RBAC）
+- [2026-04-07] `cmd/server/main.go` ステップ 11: HTTP サーバ起動（0.0.0.0、http.Server 変数化）
+- [2026-04-07] `cmd/server/main.go` ステップ 12: グレースフルシャットダウン（シグナル待ち、10秒タイムアウト）

@@ -1,6 +1,40 @@
 # レビューログ
 
-## レビュー: 2026-04-02 15:18
+## レビュー: 2026-04-07 21:01
+
+### 対象
+- `expense-saas/cmd/server/main.go`（Step 8 成果物）— 前回の続き
+
+### 確認済み
+- ステップ 7: DI — Service 数の修正（7個→8個）、全体の確認完了
+- ステップ 8: ルーター生成＋共通ミドルウェアチェーン（CORS → SecurityHeaders → RequestID → Logger → RateLimit(IP)）、順序の設計意図
+- ステップ 9: 認証不要ルート（auth 系 7 エンドポイント）、logout/refresh が認証不要側にある理由
+- ステップ 10: 認証必須グループ（Auth → TenantContext → RateLimitByUser 3層）、ロール別 4 サブグループの RBAC 設計
+- ステップ 11: HTTP サーバ起動（0.0.0.0 バインド、http.Server を変数に持つ理由）
+- ステップ 12: グレースフルシャットダウン（SIGINT/SIGTERM 待ち、bgCancel、srv.Shutdown 10秒タイムアウト）
+
+### 未確認
+- `internal/` の個別ファイル（handler, service, domain, repository, middleware, config, pkg）
+- `frontend/`
+- `Makefile`
+- `db/`
+
+### 発見した issue
+- なし
+
+### 疑問・メモ
+- API パスのハードコーディングについて質問あり → 現状は main.go のみで使用するため問題なし。肥大化時は routes_*.go へのファイル分割で対応する方針
+- ReadTimeout / WriteTimeout 未設定 — MVP では ALB 側タイムアウトに委ねる設計
+
+### 学んだこと
+- **ポートと 0.0.0.0**: ポートはサービスの窓口番号、0.0.0.0 は全インターフェース待ち受け。Fargate（awsvpc モード）では ENI 経由の通信を受けるため 0.0.0.0 が実質必須
+- **chi の Group と With**: Group はミドルウェアスコープを作る（URL プレフィックスは付かない）、With はサブグループに追加ミドルウェアを適用
+- **グレースフルシャットダウン**: <-quit でシグナル待ち → bgCancel で BG 処理停止 → srv.Shutdown で処理中リクエスト完了を待って終了。ECS の SIGTERM 猶予 30 秒に対し 10 秒タイムアウト
+- **Go のチャネル**: `<-quit` はチャネルからデータが届くまでブロックする構文。シグナル受信まで main() はここで待機し続ける
+
+---
+
+## レビュー: 2026-04-02 15:18（前回）
 
 ### 対象
 - `expense-saas/cmd/server/main.go`（Step 8 成果物）
