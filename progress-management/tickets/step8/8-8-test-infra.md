@@ -2,7 +2,7 @@
 
 - 担当: backend-developer
 - 依存: 8-6
-- ブランチ: step8/8-7-test-infra
+- ブランチ: step8/8-8-test-infra
 - 出力先: expense-saas/internal/testutil/
 - テンプレート: なし
 

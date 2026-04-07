@@ -1,13 +1,13 @@
 # 088: API_PORT が環境変数テンプレートから欠落している
 
 ## 指摘概要
-`step8/8-10-cleanup` で `.env.example` から `API_PORT` が削除されましたが、`docker-compose.yml` の `api` サービスは引き続き `${API_PORT:-8080}` を公開ポートとして使用しています。  
-Step 8-10 の完了条件には「環境変数テンプレートファイルに必要な変数が列挙されているか」が含まれており、この変更によりローカル起動時に必要な可変設定がテンプレートから漏れています。特に Step 8-1 の判断ポイントで要求されている複数インスタンス時のポート競合回避手段が、後続担当から見えなくなります。
+`step8/8-11-cleanup` で `.env.example` から `API_PORT` が削除されましたが、`docker-compose.yml` の `api` サービスは引き続き `${API_PORT:-8080}` を公開ポートとして使用しています。  
+Step 8-11 の完了条件には「環境変数テンプレートファイルに必要な変数が列挙されているか」が含まれており、この変更によりローカル起動時に必要な可変設定がテンプレートから漏れています。特に Step 8-1 の判断ポイントで要求されている複数インスタンス時のポート競合回避手段が、後続担当から見えなくなります。
 
 ## 根拠
 - [expense-saas/.env.example](/root-project/expense-saas/.env.example#L15): Server セクションに `PORT`, `CORS_ALLOWED_ORIGINS`, `LOG_LEVEL` はあるが、`API_PORT` が存在しない
 - [expense-saas/docker-compose.yml](/root-project/expense-saas/docker-compose.yml#L37): `api` サービスの公開ポートに `${API_PORT:-8080}:8080` を使用している
-- [ai-dev-framework/guide/work-breakdown/step8-foundation.md](/root-project/ai-dev-framework/guide/work-breakdown/step8-foundation.md#L195): 8-10 のレビュー観点として「環境変数テンプレートファイルに必要な変数が列挙されているか」を要求
+- [ai-dev-framework/guide/work-breakdown/step8-foundation.md](/root-project/ai-dev-framework/guide/work-breakdown/step8-foundation.md#L195): 8-11 のレビュー観点として「環境変数テンプレートファイルに必要な変数が列挙されているか」を要求
 - [ai-dev-framework/guide/work-breakdown/step8-foundation.md](/root-project/ai-dev-framework/guide/work-breakdown/step8-foundation.md#L267): 8-1 の判断ポイントとして複数インスタンス時のポート競合回避方式を固定する必要がある
 
 ## 判定

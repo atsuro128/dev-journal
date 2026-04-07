@@ -1,11 +1,11 @@
 # 087: （タイトル：開発者ツール実装が ops-037 の責務分担と矛盾し有効化経路もない）
 
 ## 指摘概要
-8-9 の成果物は `ops-037` の判断を反映する必要があるが、現状は Claude Code hook に format / lint を実装しており、上流で確定した「format は git pre-commit、lint は CI、Claude hooks は AI 固有安全策のみ」という責務分担に反している。加えて、リポジトリ内には hook スクリプトしかなく、プロジェクト設定としてこのスクリプトを登録するファイルも存在しないため、完了条件の「コード変更時に自動 format と軽量 lint が実行される」を検証可能な状態になっていない。
+8-10 の成果物は `ops-037` の判断を反映する必要があるが、現状は Claude Code hook に format / lint を実装しており、上流で確定した「format は git pre-commit、lint は CI、Claude hooks は AI 固有安全策のみ」という責務分担に反している。加えて、リポジトリ内には hook スクリプトしかなく、プロジェクト設定としてこのスクリプトを登録するファイルも存在しないため、完了条件の「コード変更時に自動 format と軽量 lint が実行される」を検証可能な状態になっていない。
 
 ## 根拠
-- `dev-journal/progress-management/tickets/step8/8-9-dev-tools.md:15-19`
-  - 8-9 は ops-037 の判断を反映することを要求している。
+- `dev-journal/progress-management/tickets/step8/8-10-dev-tools.md:15-19`
+  - 8-10 は ops-037 の判断を反映することを要求している。
 - `dev-journal/issues/resolved/ops-037-claude-code-hooks-operation-design.md:39-45`
   - フォーマットは `git pre-commit hook`、lint は `CI`、Claude Code hooks は AI 固有安全策に限定すると解決済み。
 - `expense-saas/.claude/hooks/post-edit-format-lint.sh:1-64`
@@ -23,7 +23,7 @@
 - ops-037 に準拠し、format を git pre-commit hook（`.githooks/pre-commit`）に移行
 - Claude Code hook の format/lint 実装を削除、settings.json の PostToolUse を除去
 - Makefile に `setup` ターゲット追加（`git config core.hooksPath .githooks`）
-- 8-9 チケット記述を ops-037 準拠に更新
+- 8-10 チケット記述を ops-037 準拠に更新
 
 ## 解決日
 2026-03-31

@@ -1,7 +1,7 @@
 # 084: （タイトル：フロントエンド CI テストジョブがテスト不在で必ず失敗する）
 
 ## 指摘概要
-`expense-saas/frontend` に Vitest のテストファイルが存在しない一方で、CI は `npx vitest run` を必須ジョブとして実行している。現状のままでは PR 時の `lint → test → build` パイプラインが常に `test-frontend` で失敗し、Step 8-8 の完了条件を満たせない。
+`expense-saas/frontend` に Vitest のテストファイルが存在しない一方で、CI は `npx vitest run` を必須ジョブとして実行している。現状のままでは PR 時の `lint → test → build` パイプラインが常に `test-frontend` で失敗し、Step 8-9 の完了条件を満たせない。
 
 ## 根拠
 - `dev-journal/deliverables/docs/30_arch/architecture.md:481-484`

@@ -2,7 +2,7 @@
 
 - 担当: platform-builder
 - 依存: なし（いつでも可、ただし 8-2, 8-3 と並列推奨）
-- ブランチ: step8/8-10-cleanup
+- ブランチ: step8/8-11-cleanup
 - 出力先: expense-saas/ (.gitignore, .env.example)
 - テンプレート: なし
 

@@ -38,10 +38,11 @@
 | 8-4 | 共通ミドルウェア + ヘルスチェック | backend-developer | 8-2 | 完了 | `tickets/step8/8-4-middleware.md` |
 | 8-5 | FE-BE 連携 | frontend-developer | 8-3, 8-4 | 完了 | `tickets/step8/8-5-fe-be-integration.md` |
 | 8-6 | コード生成・スケルトン | backend-developer | 8-4 | 完了 | `tickets/step8/8-6-skeleton.md` |
-| 8-7 | テスト基盤 | backend-developer | 8-6 | 完了 | `tickets/step8/8-7-test-infra.md` |
-| 8-8 | CI/CD パイプライン | platform-builder | 8-2, 8-3 | 完了 | `tickets/step8/8-8-cicd.md` |
-| 8-9 | 開発者ツール | platform-builder | 8-2, 8-3 | 完了 | `tickets/step8/8-9-dev-tools.md` |
-| 8-10 | 整理 | platform-builder | なし | 完了 | `tickets/step8/8-10-cleanup.md` |
+| 8-7 | 共通 UI コンポーネント実装 | frontend-developer | 8-3, 8-5 | 未着手 | `tickets/step8/8-7-common-ui-components.md` |
+| 8-8 | テスト基盤 | backend-developer | 8-6 | 完了 | `tickets/step8/8-8-test-infra.md` |
+| 8-9 | CI/CD パイプライン | platform-builder | 8-2, 8-3 | 完了 | `tickets/step8/8-9-cicd.md` |
+| 8-10 | 開発者ツール | platform-builder | 8-2, 8-3 | 完了 | `tickets/step8/8-10-dev-tools.md` |
+| 8-11 | 整理 | platform-builder | なし | 完了 | `tickets/step8/8-11-cleanup.md` |
 
 ## Step 5.5: UI コンポーネント設計 — チケット一覧
 

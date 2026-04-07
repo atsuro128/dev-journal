@@ -29,7 +29,7 @@
   - 内容: メッセージ保持場所（errorMessages.ts）、23エラーコードの日本語マッピング、getErrorMessage ヘルパー、SEC-011 準拠ルール、画面固有メッセージの扱い、認証画面固有の上書きルール
   - 内部レビュー PASS → codex PASS
 - **issue 056 対応**
-  - architect 計画 → designer が step8-foundation.md に 8-11（共通 UI コンポーネント実装）タスクを追加
+  - architect 計画 → designer が step8-foundation.md に 8-7（共通 UI コンポーネント実装）タスクを追加
   - 8箇所更新: 上流成果物・成果物・タスクカテゴリ・タスク一覧・依存グラフ・タスク詳細・完了条件・レビュー観点
   - codex PASS with NOTE（成果物テーブル列数不整合）→ 修正 → 再レビュー LGTM
 - **issue 055/056 クローズ** — resolved/ に移動
@@ -54,5 +54,5 @@
 
 ### 意思決定ログ
 - **traceability 列分割方式の採用**: 「テスト反映先」列を BE/FE に分割する方式を採用。新セクション追加方式より一元性が高い
-- **issue 056 の progress.md 不更新**: Step 8 は完了済みのため、progress.md に 8-11 を追加すると完了状態と矛盾する。テンプレート修正のみとし、実装は Step 10 前の別チケットで対応
+- **issue 056 の progress.md 不更新**: Step 8 は完了済みのため、progress.md に 8-7 を追加すると完了状態と矛盾する。テンプレート修正のみとし、実装は Step 10 前の別チケットで対応
 - **codex 指摘の受け入れ判断**: traceability FE マッピングの FIX は実際にマッピング不正確のため受け入れ。step8 成果物テーブルの NOTE も列数不整合のため修正

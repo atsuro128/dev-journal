@@ -35,7 +35,7 @@ Step 10（機能実装）開始時に共通 UI コンポーネントが未実装
 ---
 
 ## 解決内容
-<!-- pending-review へ移動する前に記入 -->
+チケット `tickets/step8/8-11-common-ui-components.md` を起票し、progress.md の Step 8 セクションに 8-11 を追加した。
 
 ## 解決日
-<!-- YYYY-MM-DD -->
+2026-04-07
