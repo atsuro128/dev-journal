@@ -1,67 +1,58 @@
 # 引き継ぎメモ
 
-## セッション: 2026-04-06 23:54
+## セッション: 2026-04-07 09:37
 
 ### ゴール
-- progress.md 更新（5.5-A/B/C-1/C-2 の完了反映）
-- issue 054 クローズ処理（設計修正 + Step 8 スケルトンコード修正）
-- Step 5.5-C-3〜5 画面別コンポーネント設計（レポート系・ワークフロー系・管理系）
-- Step 5.5-D 横断レビュー
-- ops-056 FE テストケース補強
+- issue 採番修正（405→054, 406→055, 407→056）
+- worktree クリーンアップフックのデバッグ確認・修正
+- traceability.md の FE テスト追跡列追加
+- issue 055（FE エラーメッセージ管理方式）対応
+- issue 056（Step 8 WB 共通 UI コンポーネントタスク追加）対応
 
 ### 作業ログ
-- **progress.md 更新** — 5.5-A/B/C-1/C-2 を完了、Step 5.5 を進行中に更新
-- **issue 054 クローズ処理**
-  - 解決内容・解決日を記入し pending-review に移動
-  - codex 解決レビュー → 差し戻し（Step 8 スケルトンコードが cursor ベースのまま）
-  - ユーザー判断: Step 8 で触れているなら修正が必要
-  - architect が修正計画策定 → backend-developer + frontend-developer が並列で修正
-  - BE: SQL クエリ修正 + sqlc 再生成 + DTO/Repository/Repo 実装修正（6ファイル）
-  - FE: types.ts の Pagination 型修正（1ファイル）
-  - codex 再レビュー → resolved
-- **5.5-C-3 レポート系（4画面）** — designer で作成、内部レビュー PASS
-- **5.5-C-4 ワークフロー系（2画面）** — designer で作成、内部レビュー PASS
-- **5.5-C-5 管理系（2画面）** — designer で作成、内部レビュー PASS
-- **codex レビュー Step 5.5 C-3〜5** → FIX 3件
-  - 092: admin 画面の AppLayout ツリー表記修正 → resolved
-  - 093: report-detail の 404 挙動を詳細設計に統一 → resolved
-  - 094: report-detail のデータフロー補完 + FormAlert 追加 → 2回差し戻し後 resolved（キャッシュ無効化対象の不一致、useDeleteReport の入力型不一致）
-- **コミット** — expense-saas（issue 054 修正）と dev-journal（C-3〜5 + issue 054 クローズ）を別々にコミット
-- **5.5-D 横断レビュー** — reviewer PASS + codex FIX 2件
-  - 095: 共通コンポーネント正本に共有 UI コンポーネント未収録 → common-components.md に9コンポーネント追加 + マトリクス更新 → resolved
-  - 096: 画面別設計書の Props 重複定義 → 参照に切り替え → resolved
-- **Step 5.5 マイルストーン完了** — progress.md 更新、全チケット完了
-- **ops-056 FE テストケース補強**
-  - architect 計画: 項目 1-5 は対応済み確認、項目 6 のみ対応必要
-  - 7つの designer エージェントを並列起動 → 全7ファイルに FE テストケース追加（合計 450 件）
-  - 内部レビュー PASS + codex FIX 5件 → 3件対応（SelfLabel/FilterResetButton/PageTitle 未カバー）、2件押し返し（セクション番号形式、サマリー表 ID 再掲）
-  - codex 再レビュー → FIX 1件（workflow.md サマリー件数未更新）→ 修正 → resolved
-  - ops-056 解決レビュー → 差し戻し（合計件数 448→450 の誤り）→ 修正 → resolved
+- **issue 採番修正** — 405→054, 406→055, 407→056 にリネーム。session-log・アーカイブ内の全参照を更新。アーカイブ内 `issue 055, 407` の残存も発見・修正
+- **worktree フックデバッグ**
+  - `/tmp/agent-hook-debug-*.json` が2件存在（今セッションの Explore エージェントで生成）
+  - 入力構造確定: `tool_response.worktreePath`（`tool_result.worktree.worktreePath` は誤り）
+  - worktree 付きテストエージェントで実際の構造を検証
+  - フック修正: jq パスを `.tool_response.worktreePath` に変更、デバッグ行削除、ハードコードパスを汎用 git コマンドに置換
+  - デバッグ用一時ファイル3件をクリーンアップ
+- **traceability.md FE 追跡列追加**
+  - architect が方式検討 → 列分割方式（BE テスト反映先 / FE テスト反映先の2列化）を採用
+  - designer が全4セクション・23テーブルに列追加 + FE テストケース ID 記入
+  - 内部レビュー FIX（8件の ID 欠落）→ 修正
+  - codex レビュー FIX（26行のマッピング不一致 — 推測マッピングが対応要件 ID と不一致）
+  - designer が38行を厳密修正（対応要件 ID 列を逆引きで再マッピング）
+  - codex 再レビュー LGTM（498件突合、不一致0）
+- **issue 055 対応**
+  - architect 計画 → designer が state-management.md §6.5 にエラーメッセージ管理方針を追加
+  - 内容: メッセージ保持場所（errorMessages.ts）、23エラーコードの日本語マッピング、getErrorMessage ヘルパー、SEC-011 準拠ルール、画面固有メッセージの扱い、認証画面固有の上書きルール
+  - 内部レビュー PASS → codex PASS
+- **issue 056 対応**
+  - architect 計画 → designer が step8-foundation.md に 8-11（共通 UI コンポーネント実装）タスクを追加
+  - 8箇所更新: 上流成果物・成果物・タスクカテゴリ・タスク一覧・依存グラフ・タスク詳細・完了条件・レビュー観点
+  - codex PASS with NOTE（成果物テーブル列数不整合）→ 修正 → 再レビュー LGTM
+- **issue 055/056 クローズ** — resolved/ に移動
 
 ### 未完了
-- issue 055: FE エラーメッセージ管理方式の定義
-- issue 056: Step 8 WB テンプレートに共通 UI コンポーネント実装タスク追加
 - ops-047, ops-050, ops-055: 運用系 issue（優先度低）
 - Step 10 着手前に WB とレビュー観点に MUI 準拠の完了条件を追加
-- traceability.md の FE テスト追跡線追加（ops-056 スコープ外として別途対応）
+- 共通 UI コンポーネント実装チケット起票（issue 056 の後続。Step 10 前に実施）
 
 ### ブロッカー
 なし
 
 ### 次にやること
-1. issue 055 対応（FE エラーメッセージ管理方式を state-management.md §6 に定義）
-2. issue 056 対応（Step 8 WB テンプレートに共通 UI コンポーネント実装タスク追加）
-3. traceability.md の FE テスト追跡線追加
-4. agent-worktree-cleanup.sh のデバッグ確認: `/tmp/agent-hook-debug-*.json` で PostToolUse(Agent) の入力構造を確認し、ワークツリーパスの取得方法を確定する。確定後にデバッグ行を削除
-5. Step 9（テストコード実装）着手
+1. Step 9（テストコード実装）チケット起票 + 9-A（認証テスト）着手
+2. 共通 UI コンポーネント実装チケット起票（Step 10 前、Step 9 と並列可）
+3. ops-047/050/055 対応（余力があれば）
 
 ### 学び・気づき
-- **BE エージェントのワークツリー問題**: BE エージェントが worktree で起動されたが変更がメインツリーに書き込まれていた。ワークツリーの変更確認時は pwd を意識する
-- **codex の合計件数チェック**: codex は合計値の算術チェックも行う。issue の解決内容に件数を書く際は正確に計算する
-- **codex 指摘の押し返し判断**: セクション番号の不一致やサマリー表の ID 再掲など、形式的な指摘は品質ゲート基準で押し返すことが有効。ただし codex が新規 finding を起票した場合は対応が必要
-- **並列実行の効率**: 7つの designer エージェントを並列起動することで FE テストケース 450 件を一度に生成できた
+- **worktree フックの入力構造**: PostToolUse(Agent) の入力は `tool_result` ではなく `tool_response`。worktree パスは `.tool_response.worktreePath` で取得。非 worktree エージェントにはこのフィールドがない
+- **traceability の FE マッピングは厳密逆引き必須**: FE テストケースの「対応要件ID」列に明記されている ID のみを traceability に記載すること。機能的な関連性での推測マッピングは codex に指摘される
+- **replace_all の限界**: `issue 407` → `issue 056` の一括置換で、`issue 055, 407` のような「issue」が先行しないパターンは置換されない。置換後に残存チェックが必要
 
 ### 意思決定ログ
-- **issue 054 のスコープ**: ユーザーは設計修正のみでクローズ可能と認識していたが、Step 8 でスケルトンコードに cursor ベースの実装が含まれていたため、コード修正も必要と判断
-- **codex 指摘の押し返し**: テストケースのセクション番号不一致（指摘 4）と attachments.md のサマリー表 ID 再掲（指摘 5）は形式的と判断し押し返し。codex は受け入れた
-- **traceability.md のスコープ**: architect は ops-056 に含めることを推奨したが、最終的にスコープ外として別途対応とした
+- **traceability 列分割方式の採用**: 「テスト反映先」列を BE/FE に分割する方式を採用。新セクション追加方式より一元性が高い
+- **issue 056 の progress.md 不更新**: Step 8 は完了済みのため、progress.md に 8-11 を追加すると完了状態と矛盾する。テンプレート修正のみとし、実装は Step 10 前の別チケットで対応
+- **codex 指摘の受け入れ判断**: traceability FE マッピングの FIX は実際にマッピング不正確のため受け入れ。step8 成果物テーブルの NOTE も列数不整合のため修正
