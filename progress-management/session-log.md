@@ -1,71 +1,71 @@
 # 引き継ぎメモ
 
-## セッション: 2026-04-07 09:37〜15:27（並列セッション統合）
+## セッション: 2026-04-07 15:30〜19:30
 
 ### ゴール
-- Step 9 チケット起票（9-A〜9-G）+ 9-A 認証テスト実装・マージ
-- ops-057 対応（共通UIコンポーネント実装チケット起票）+ 8-7 実装・マージ
+- Step 9 テストコード実装: 9-B/C/D の 3 並列実装・マージ
+- worktree 汚染防止の対策
 
 ### 作業ログ
 
-#### セッション前半（9-A + 運用改善）
-- **Step 9 チケット起票** — 7 チケット（9-A〜9-G）作成、progress.md に Step 9 セクション追加
-- **ops-057 起票** — 共通 UI コンポーネント実装チケット未起票の issue
-- **9-A 認証テスト実装** — test-implementer エージェントで実装、PR #5 作成・マージ
-  - BE: AUTH-001〜080 / FE: AUTH-FE-001〜076 / 共通テストヘルパー
-  - CI 修正 3 回、codex レビュー → 修正 → 再々レビュー
-- **worktree 分離ルール整備** — implementation-workflow.md にルール追加
-- **devcontainer.json 修正** — gh CLI 認証の永続化
+#### 9-B/C/D 並列実装
+- **3 エージェント並列起動** — test-implementer で 9-B（レポート）/9-C（ダッシュボード）/9-D（テナント管理）を同時実装
+- **PR 作成** — 9-D: PR #9、9-C: PR #10、9-B: PR #11
+- **CI 修正** — 9-D/9-C/9-B 全て FE Lint 失敗（TypeScript 型エラー: optional chaining 不足等）→ 修正・再 push
+- **内部レビュー** — 3 PR とも PASS
 
-#### セッション後半（8-7 共通UIコンポーネント）
-- **ops-057 対応** — 8-7 チケット起票 + progress.md 更新 + ops-057 クローズ
-- **Step 8 タスク ID 振り直し** — 8-11（共通UI）を依存順に合わせて 8-7 に挿入
-  - 旧 8-7〜8-10 → 新 8-8〜8-11 にずらし
-  - 23 ファイル（WB・progress・チケット・アーカイブ・review-findings）の全参照を更新
-  - reviewer 検証で残存 5 件（チケット内ブランチ名・相互参照）を追加修正
-- **8-7 実装** — PR #6 作成・マージ
-  - 全 24 コンポーネント実装（レイアウト 4 + UI 共通 16 + レポート 3 + 認証 1）
-  - 内部レビュー FIX → PASS（AppSidebar ナビ項目を screens.md §4.3 に準拠）
-  - staticcheck U1000 修正（actorFromRequest に lint:ignore 追加）
-  - codex レビュー 5 回:
-    - 全レポートパス /admin/reports → /reports/all
-    - JWT decode から name 取得削除 → auth store 経由に切り替え
-    - RHF rules → Zod スキーマ（reportFormSchema）に移行
-    - ロゴに RouterLink 追加、バリデーション文言・発火タイミングを仕様準拠
-    - /dashboard Route 追加 + / からのリダイレクト
-  - コンフリクト解消（master merge）→ squash merge 完了
-- **レビュー手順書の整理**
-  - review-procedure.md: 初回レビュー → 設計レビューに改名、re-review-procedure.md を統合・削除
-  - pr-review-procedure.md: 再レビュー手順を追加（PR コメント回答確認を含む）
-  - AGENTS.md: テーブルを 3 行に整理
-  - workflow.md: codex 指摘対応時の PR コメント投稿ルールを追加
-- **edit-scope-check フック削除** — 古い PreToolUse フックを除去（settings.json・.py・ログ）
-- **session-log.md 文字化け修正** — 「ブロッカー」の Unicode 置換文字を修正
+#### codex レビュー対応（多数周回）
+- **9-C（PR #10）codex 7 回**:
+  - ワークフロー遷移先 URL 修正（/approvals, /payments）
+  - TenantStatusCards URL 修正（/reports/all）
+  - DSH-018 期待値修正（my_draft_count 2→1）
+  - URL テスト assertion 強化（各ステータス個別検証）
+  - useCurrentUser query key 修正（['auth', 'me']）
+  - DSH-FE-038 リダイレクト検証追加
+  - アクセントカラーテスト: data-accent-color → borderColor 直接検証 → Emotion CSS クラス検証（JSDOM 制約で PASS 出ず）
+- **9-D（PR #9）codex 6 回**:
+  - SnackbarProvider 依存除去 → AppToast 直接使用
+  - PageTitle + AppPagination 追加
+  - AppLayout ラップ対応
+  - AllReportsFilterBar/Table を AppSelect/AppDataGrid 等の共通コンポーネントに変更
+  - API 型 snake_case 化（OpenAPI 準拠）
+  - MUI X モック追加（ESM import 解決問題回避）
+  - モックとテスト本体の不整合（最新指摘、未修正）
+- **9-B（PR #11）codex 2 回**:
+  - handler テスト 501→仕様どおりの HTTP ステータスに変更
+  - domain/report.go スタブ化（機能実装混入の除去）
+  - FE ページテスト書き直し（reports.md テストケース定義に正確対応）
+  - ESLint no-unused-vars 修正
+  - CI 結果待ち → codex 再々レビュー未実施
+
+#### worktree 汚染防止
+- **原因分析** — 9-C エージェントが本体パスで Read → Edit を85件実行し master を汚染。cwd は worktree 内だったが絶対パスで本体にアクセス
+- **master 復元** — `git checkout -- .` + `git clean -fd` で 34 ファイルの汚染を除去
+- **対策コミット** — implementation-workflow.md に NG/OK パターン例示追加、implement SKILL.md に汚染防止ブロック必須化
 
 ### 未完了
-- ops-047, ops-050, ops-055: 運用系 issue（優先度低）
-- ops-058: Step 10 完了後に continue-on-error 削除
-- Step 10 着手前に WB とレビュー観点に MUI 準拠の完了条件を追加
-- implement スキルに worktree 手動作成手順を反映（Agent tool の isolation: worktree は expense-saas サブリポジトリに効かない）
-- codex 指摘押し返しワークフローの issue 起票（workflow.md 未文書化部分）
+- **9-B（PR #11）**: CI 結果待ち → codex 再々レビュー → LGTM まで
+- **9-C（PR #10）**: codex 指摘残 1 件（アクセントカラー Emotion CSS クラス検証 — JSDOM 制約）
+- **9-D（PR #9）**: codex 指摘残 1 件（MUI X モックとテスト本体の不整合 — 9 件のモック由来失敗）
+- progress.md の 9-B/C/D ステータス更新（完了への変更はマージ後）
 
 ### ブロッカー
 なし
 
 ### 次にやること
-1. 9-B/C/D 並列着手（9-A 完了済みなので依存解消）
-2. implement スキルの worktree 手順修正
-3. ops-047/050/055 対応（余力があれば）
+1. **9-D モック不整合修正** — AllReportsFilterBar/Table テストをモックの振る舞いに合わせて更新 → push → CI → codex 再レビュー
+2. **9-C アクセントカラー** — codex の指摘に対して、Emotion CSS クラスの差分検証で押し返す or 別の検証手法を試す
+3. **9-B codex 再々レビュー** — CI 通過後に codex 再レビュー → 指摘対応
+4. 全 PR が LGTM になったらマージ前の最新化 + スカッシュマージ（依存順: 9-B → 9-C/9-D）
+5. progress.md 更新（9-B/C/D を完了に）
 
 ### 学び・気づき
-- **worktree と サブリポジトリ**: Agent tool の `isolation: "worktree"` は root-project レベルで worktree を作るため、サブリポジトリ expense-saas には正しく効かない。手動で expense-saas の worktree を作成してからエージェントを起動する必要がある
-- **codex の再レビューで同じ指摘を繰り返す問題**: 原因は (1) 設計レビュー用の re-review-procedure.md を読んでいた (2) PR コメントでの回答を確認していなかった。pr-review-procedure.md に再レビュー手順を追加し、PR コメント確認を明示することで解消
-- **codex への指摘対応は PR コメントで明記必須**: 修正で対応した指摘も、対応不要と判断した指摘も、PR コメントで状況を明記しないと codex が未対応と誤判断する
-- **循環 ID リネームは影響範囲が大きい**: 8-7〜8-11 の振り直しで 23 ファイルに影響。アーカイブの歴史改変を避けたかったが、ユーザー判断で issue 以外は全て更新。reviewer 検証で残存 5 件を発見し対応
-- **codex の指摘が正当な場合もある**: user.name 空文字の指摘を当初押し返したが、auth.ts に既に /api/auth/me 取得経路と AuthUser 型が存在しており、接続するだけで解消できた。既存インフラの確認不足
+- **codex レビューの周回数**: 9-C で 7 回、9-D で 6 回回した。指摘の粒度がどんどん細かくなり、JSDOM の技術的制約に起因する問題で堂々巡りになる。品質ゲート基準で指揮役判断での PASS を早めに検討すべきだった
+- **worktree 汚染の根本原因**: エージェント（Sonnet）が既存コード参照時に本体の絶対パスを使い、Read → Edit のパス引き継ぎで汚染が拡大。9-C は 85 件書き込み。ルールだけでは防げないため、プロンプトに具体的な汚染防止ブロックを必須化した
+- **MUI sx prop と JSDOM の相性**: MUI の sx prop は Emotion の class ベース CSS-in-JS で適用されるため、JSDOM の `element.style` や `getComputedStyle` では色値を取得できない。単体テストでの視覚スタイル検証は E2E（Step 11）に委譲すべき
+- **Step 9 の「全テスト失敗」条件の解釈**: codex は「501 を期待してテスト PASS」を問題視した。Step 9 の完了条件は「テストが赤い状態」なので、501 期待ではなく仕様の HTTP ステータスを期待して失敗させるのが正しい
 
 ### 意思決定ログ
-- **タスク ID の並び順**: 依存関係の流れに合わせて 8-11（共通UI）を 8-7 に挿入。ID は識別子だが依存順で並ぶ方が可読性が高い
-- **レビュー手順書の統合方針**: 設計レビュー（初回+再レビュー）を 1 ファイルに統合、PR レビュー（初回+再レビュー）も 1 ファイルに統合。AGENTS.md の行を減らし codex の手順ファイル選択ミスを防ぐ
-- **edit-scope-check フックの廃止**: worktree パスを正しく認識できず誤警告が出る。実害（ブロック）は発生していなかったが、今後も worktree 運用が増えるため削除
-- **session-log の並列セッション統合**: 別セッションで 9-A と 8-7 を並行作業したため、アーカイブせず同一セッションとしてマージ
+- **codex 押し返し方針**: アクセントカラーの視覚検証は JSDOM 制約で不可能。Emotion CSS クラスの差分検証（default vs 非 default の className 不一致 + 非 default 間の一意性）で対応したが codex は納得せず。次セッションで最終判断
+- **domain/report.go のスタブ化**: codex 指摘で Step 9 に機能実装が混入していることが判明。Submit/Approve/Reject 等を `errors.New("not implemented")` に置き換え。Step 10 で本実装する
+- **worktree 汚染対策のコミット**: implement スキルと implementation-workflow.md の両方を修正し、0d8196f でコミット済み
