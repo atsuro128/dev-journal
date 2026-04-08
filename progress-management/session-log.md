@@ -56,6 +56,23 @@
   - Step 5 は既に 5-9 として定義済みだった
   - Step 8: 8-X、Step 9: 9-X、Step 10: 10-X を追加
 
+#### ops-050: 受け渡し契約セクション廃止
+- 全 work-breakdown（14 step + テンプレート）から「次 Step への受け渡し契約」セクションを削除
+- 依存関係の正本を各 Step の「上流入力」に一元化
+- step11 のリリース判断権限は完了条件に統合（削除で欠落する唯一の情報だった）
+
+#### ops-047: work-breakdown ディレクトリ分割
+- 全14 step ファイル + テンプレートを2ファイル構成ディレクトリに分割
+  - `review.md`: 上流成果物（入力）、完了条件、品質ゲート、レビュー観点
+  - `main.md`: それ以外（上流成果物セクションは review.md への参照）
+- 見出し名「上流入力」→「上流成果物（入力）」に統一
+- 参照元13ファイルのパスを新構造に更新
+- codex レビューで workflow.md の旧パス残存とディレクトリ構成図の用語不一致を指摘され修正
+
+#### DevContainer 更新
+- CLI バージョン固定（claude-code, codex）を廃止し `latest` + `postCreateCommand` で最新化
+- シェルエイリアス設定を `setup-shell-aliases.sh` に分離（`ccr` エイリアス追加）
+
 ### 未完了
 - 9-X 横断レビュー指摘 3 件の対応（次セッションで実施）
 
@@ -75,6 +92,7 @@
 - **横断レビュータスクのテンプレート化**: 並列実装がある Step（5, 8, 9, 10）には横断レビューを work-breakdown のタスクとして定義しておくべき。個別レビューでは見えない整合性の問題を拾える
 - **codex レビューの指摘傾向（9-G）**: 上流設計との契約整合性（queryKey、レスポンス型、Hook の種類）を厳密にチェックする。前回セッション同様、Hook のスタブは上流の state-management.md に合わせる必要がある
 - **9-X チケットは汎用的に**: 特定の指摘に依存する内容はチケットに書かず、session-log で引き継ぐ。テンプレートとして再利用可能な形にする
+- **work-breakdown 分割の設計判断**: upstream を review.md に入れつつ main.md にセクション見出し + 参照を残すことで、作業者が上流入力の確認タイミングを見落とさない構造にした。冒頭の参照行（blockquote）は二重記載になるため廃止
 
 ### 意思決定ログ
 - **useAttachmentDownload の Hook 種類**: 上流 state-management.md に従い `useQuery` + `staleTime: 0` を採用（codex の指摘どおり）。当初実装は `useMutation` だったが、署名付き URL の取得は GET クエリであり `useQuery` が正しい
