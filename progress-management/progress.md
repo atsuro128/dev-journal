@@ -65,8 +65,8 @@
 | 9-B | レポートテスト | test-implementer | 9-A | 完了 | `tickets/step9/9-B-report-test.md` |
 | 9-C | ダッシュボードテスト | test-implementer | 9-A | 完了 | `tickets/step9/9-C-dashboard-test.md` |
 | 9-D | テナント管理テスト | test-implementer | 9-A | 完了 | `tickets/step9/9-D-tenant-test.md` |
-| 9-E | 明細テスト | test-implementer | 9-B | 未着手 | `tickets/step9/9-E-items-test.md` |
-| 9-F | ワークフローテスト | test-implementer | 9-B | 未着手 | `tickets/step9/9-F-workflow-test.md` |
+| 9-E | 明細テスト | test-implementer | 9-B | 完了 | `tickets/step9/9-E-items-test.md` |
+| 9-F | ワークフローテスト | test-implementer | 9-B | 完了 | `tickets/step9/9-F-workflow-test.md` |
 | 9-G | 添付ファイルテスト | test-implementer | 9-E | 未着手 | `tickets/step9/9-G-attachments-test.md` |
 
 ## 課題・ブロッカー
