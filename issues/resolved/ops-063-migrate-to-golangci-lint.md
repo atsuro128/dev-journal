@@ -38,7 +38,7 @@ refs: actions/setup-go#506, actions/setup-go#403, actions/setup-go#722
 ---
 
 ## 解決内容
-<!-- pending-review へ移動する前に記入 -->
+PR #20 で `golangci/golangci-lint-action@v9` に移行。`.golangci.yml`（version: 2）で govet + staticcheck を有効化。CI 全ジョブ PASS 確認済み。
 
 ## 解決日
-<!-- YYYY-MM-DD -->
+2026-04-08
