@@ -10,20 +10,25 @@ ai-dev-framework/
 │   └── review-procedure.md
 ├── guide/                       # プロジェクト進行ガイド
 │   ├── workflow.md              # ワークフロー手順（指揮役専用）
-│   └── work-breakdown/          # Step 別作業分解
-│       ├── pre-step-discovery.md
-│       ├── step0-preparation.md
-│       ├── step1-requirements.md
-│       ├── step2-domain.md
-│       ├── step3-architecture.md
-│       ├── step4-basic-design.md
-│       ├── step5-detail-design.md
-│       ├── step6-testing.md
-│       ├── step7-operations.md
-│       ├── step8-foundation.md
-│       ├── step9-test-implementation.md
-│       ├── step10-feature-implementation.md
-│       └── step11-system-test.md
+│   └── work-breakdown/          # Step 別作業分解（各 Step = ディレクトリ）
+│       ├── pre-step-discovery/
+│       │   ├── main.md          # タスク・依存関係・プロセス
+│       │   └── review.md        # 上流成果物（入力）・完了条件・品質ゲート・レビュー観点
+│       ├── step0-preparation/
+│       │   ├── main.md
+│       │   └── review.md
+│       ├── step1-requirements/   ... (同構造)
+│       ├── step2-domain/
+│       ├── step3-architecture/
+│       ├── step4-basic-design/
+│       ├── step5-detail-design/
+│       ├── step5.5-ui-component/
+│       ├── step6-testing/
+│       ├── step7-operations/
+│       ├── step8-foundation/
+│       ├── step9-test-implementation/
+│       ├── step10-feature-implementation/
+│       └── step11-system-test/
 ├── operations/                  # AI運用設計（人間向け参照資料）
 │   ├── overview.md              # AI運用方針
 │   ├── branch-strategy.md       # ブランチ戦略

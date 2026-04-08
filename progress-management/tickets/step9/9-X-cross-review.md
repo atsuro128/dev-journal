@@ -8,7 +8,7 @@
 
 | 資料 | パス | 参照箇所 |
 |------|------|----------|
-| Step 9 品質ゲート | ai-dev-framework/guide/work-breakdown/step9-test-implementation.md | 品質ゲート・レビュー観点 |
+| Step 9 品質ゲート | ai-dev-framework/guide/work-breakdown/step9-test-implementation/review.md | 品質ゲート・レビュー観点 |
 | テストケース定義 | deliverables/docs/60_test/test_cases/*.md | 全テストケース |
 | テストコード（BE） | expense-saas/internal/ 配下の *_test.go | 実装済みテストコード |
 | テストコード（FE） | expense-saas/frontend/src/ 配下の *.test.ts(x) | 実装済みテストコード |

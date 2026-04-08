@@ -4,7 +4,7 @@
 Step 9 の品質ゲートは「失敗しているテストが未実装による期待どおりの失敗であり、環境不備・初期化漏れ・テスト破損による失敗ではないこと」を要求している。しかし現行の主要 FE ページは単なる `<div>` スタブのままで、対応するページ仕様テストが UI 契約を一切観測できずに壊れている。これは仕様を表現する失敗ではなく、テスト対象コンポーネント自体が置き換わっていないことによる破損であり、品質ゲートを満たさない。
 
 ## 根拠
-- 品質ゲートは `ai-dev-framework/guide/work-breakdown/step9-test-implementation.md` で「失敗しているテストが『未実装による期待どおりの失敗』であり、環境不備・初期化漏れ・テスト破損による失敗ではないこと」を PASS 条件としている。
+- 品質ゲートは `ai-dev-framework/guide/work-breakdown/step9-test-implementation/review.md` で「失敗しているテストが『未実装による期待どおりの失敗』であり、環境不備・初期化漏れ・テスト破損による失敗ではないこと」を PASS 条件としている。
 - 現行のページ実装は以下の通り、いずれも仕様コンポーネントを組み立てておらず単純文字列を返すだけである。
   - `expense-saas/frontend/src/pages/ReportListPage.tsx:1`
   - `expense-saas/frontend/src/pages/ReportCreatePage.tsx:1`

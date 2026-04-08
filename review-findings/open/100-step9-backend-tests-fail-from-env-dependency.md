@@ -4,7 +4,7 @@
 Step 9 の品質ゲートでは、失敗するテストは「未実装による期待どおりの失敗」である必要があるが、サービス層統合テストは未実装判定へ到達する前にテスト DB 接続失敗で停止する。これではテストが仕様を示す赤テストとして機能せず、環境差分次第で失敗理由が変わるため、品質ゲートの「環境不備ではない失敗」を満たしていない。
 
 ## 根拠
-- 品質ゲートは `ai-dev-framework/guide/work-breakdown/step9-test-implementation.md` で、失敗理由が環境不備・初期化漏れでないことを要求している。
+- 品質ゲートは `ai-dev-framework/guide/work-breakdown/step9-test-implementation/review.md` で、失敗理由が環境不備・初期化漏れでないことを要求している。
 - `expense-saas/internal/service/auth_service_test.go:17` 以降の `TestAuthService_*_NotImplemented` は全ケースで最初に `testutil.SetupTestDB(t)` を呼び出し、未実装エラー確認より前に DB 接続へ依存している。
 - `expense-saas/internal/testutil/db.go:11` では `TEST_DATABASE_URL` 未設定時の既定値が `postgresql://testuser:testpass@localhost:5433/expense_test` に固定されている。
 - 実際に `go test ./internal/domain ./internal/service` を実行すると、`expense-saas/internal/service/auth_service_test.go` の全ケースが `localhost:5433` への `connect: connection refused` で失敗し、`ErrNotImplemented` の確認まで進まないことを確認した。

@@ -4,7 +4,7 @@
 Step 9 の品質ゲートは `test_cases/*.md` の全テストケースを実際のテストコードへ変換することを要求しているが、現行実装では 9-E（明細）と 9-G（添付）のテストケース ID が実装側から検出できず、9-F（ワークフロー）も `WFL-001` `WFL-002` `WFL-012` `WFL-014` の 4 件しか確認できない。結果として、Step 10 担当が明細・添付・ワークフロー仕様をテストから追跡できず、横断レビューの PASS 条件を満たしていない。
 
 ## 根拠
-- 品質ゲートは `ai-dev-framework/guide/work-breakdown/step9-test-implementation.md` で「`test_cases/*.md` の全テストケースに対応するテストコードが存在すること」「テストケース ID とテストコードの対応が追跡可能であること」を PASS 条件としている。
+- 品質ゲートは `ai-dev-framework/guide/work-breakdown/step9-test-implementation/review.md` で「`test_cases/*.md` の全テストケースに対応するテストコードが存在すること」「テストケース ID とテストコードの対応が追跡可能であること」を PASS 条件としている。
 - `dev-journal/deliverables/docs/60_test/test_cases/items.md:69` 以降には `ITM-001` からの BE ケースが定義され、`dev-journal/deliverables/docs/60_test/test_cases/items.md:387` と `dev-journal/deliverables/docs/60_test/test_cases/items.md:490` には `ITM-FE-001`〜`ITM-FE-059` が定義されている。
 - `dev-journal/deliverables/docs/60_test/test_cases/attachments.md:81` 以降には `ATT-001` からの BE ケースが定義され、`dev-journal/deliverables/docs/60_test/test_cases/attachments.md:414` と `dev-journal/deliverables/docs/60_test/test_cases/attachments.md:498` には `ATT-FE-001`〜`ATT-FE-050` が定義されている。
 - `dev-journal/deliverables/docs/60_test/test_cases/workflow.md:60` 以降には `WFL-001`〜`WFL-062`、`dev-journal/deliverables/docs/60_test/test_cases/workflow.md:334` と `dev-journal/deliverables/docs/60_test/test_cases/workflow.md:518` には `WFL-FE-001`〜`WFL-FE-078` が定義されている。
