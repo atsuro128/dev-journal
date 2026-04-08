@@ -15,7 +15,7 @@
 | 7 | 運用設計 | 完了 | 2026-03-26 | `ai-dev-framework/guide/work-breakdown/step7-operations/` |
 | 8 | 基盤構築 | 完了 | 2026-03-31 | `ai-dev-framework/guide/work-breakdown/step8-foundation/` |
 | 9 | テストコード実装 | 完了 | 2026-04-08 | `ai-dev-framework/guide/work-breakdown/step9-test-implementation/` |
-| 10 | 機能実装 | 未着手 | - | `ai-dev-framework/guide/work-breakdown/step10-feature-implementation/` |
+| 10 | 機能実装 | 進行中 | - | `ai-dev-framework/guide/work-breakdown/step10-feature-implementation/` |
 | 11 | システムテスト・UAT | 未着手 | - | `ai-dev-framework/guide/work-breakdown/step11-system-test/` |
 
 ## タスク状態定義
@@ -69,6 +69,19 @@
 | 9-F | ワークフローテスト | test-implementer | 9-B | 完了 | `tickets/step9/9-F-workflow-test.md` |
 | 9-G | 添付ファイルテスト | test-implementer | 9-E | 完了 | `tickets/step9/9-G-attachments-test.md` |
 | 9-X | 横断レビュー | reviewer (codex) | 9-A〜9-G | 完了 | `tickets/step9/9-X-cross-review.md` |
+
+## Step 10: 機能実装 — チケット一覧
+
+| ID | タスク | 担当 | 依存 | 状態 | チケット |
+|----|--------|------|------|------|---------|
+| 10-A | 認証 | backend-developer, frontend-developer | Step 9 完了 | 未着手 | `tickets/step10/10-A-auth.md` |
+| 10-B | レポート | backend-developer, frontend-developer | 10-A | 未着手 | `tickets/step10/10-B-report.md` |
+| 10-C | ダッシュボード | backend-developer, frontend-developer | 10-A | 未着手 | `tickets/step10/10-C-dashboard.md` |
+| 10-D | テナント管理 | backend-developer, frontend-developer | 10-A | 未着手 | `tickets/step10/10-D-tenant.md` |
+| 10-E | 明細 | backend-developer, frontend-developer | 10-B | 未着手 | `tickets/step10/10-E-items.md` |
+| 10-F | ワークフロー | backend-developer, frontend-developer | 10-B | 未着手 | `tickets/step10/10-F-workflow.md` |
+| 10-G | 添付ファイル | backend-developer, frontend-developer | 10-E | 未着手 | `tickets/step10/10-G-attachments.md` |
+| 10-X | 横断レビュー | reviewer (codex) | 10-A〜10-G | 未着手 | `tickets/step10/10-X-cross-review.md` |
 
 ## 課題・ブロッカー
 `issues/open/` を参照。
