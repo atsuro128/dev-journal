@@ -357,7 +357,7 @@ const (
 
 **テストIDプレフィックス**: `ITM-FE-`（001 から連番）
 
-**対象テストファイル**: `src/__tests__/pages/reports/Item*.test.tsx`, `src/__tests__/hooks/useItems.test.tsx`, `src/__tests__/hooks/useCategories.test.tsx`
+**対象テストファイル**: `src/pages/reports/__tests__/Item*.test.tsx`, `src/hooks/__tests__/useItems.test.tsx`, `src/hooks/__tests__/useCategories.test.tsx`
 
 **責務境界**:
 - 添付ファイル関連コンポーネント（AttachmentArea, AttachmentList, AttachmentUploader）は `attachments.md` に記載する。本ファイルには書かない。
@@ -517,15 +517,16 @@ const (
 expense-saas/
   frontend/
     src/
-      __tests__/
-        pages/
-          reports/
+      pages/
+        reports/
+          __tests__/
             ItemListSection.test.tsx   -- ITM-FE-001 ~ 004
             ItemListHeader.test.tsx    -- ITM-FE-005 ~ 009
             ItemTable.test.tsx         -- ITM-FE-010 ~ 017
             ItemSlidePanel.test.tsx    -- ITM-FE-018 ~ 025
             ItemForm.test.tsx          -- ITM-FE-026 ~ 047
-        hooks/
+      hooks/
+        __tests__/
           useItems.test.tsx            -- ITM-FE-048 ~ 056
           useCategories.test.tsx       -- ITM-FE-057 ~ 059
 ```
@@ -534,13 +535,13 @@ expense-saas/
 
 ```bash
 # 明細コンポーネントテスト
-npx vitest run src/__tests__/pages/reports/Item*.test.tsx
+npx vitest run src/pages/reports/__tests__/Item*.test.tsx
 
 # 明細 Hook テスト
-npx vitest run src/__tests__/hooks/useItems.test.tsx src/__tests__/hooks/useCategories.test.tsx
+npx vitest run src/hooks/__tests__/useItems.test.tsx src/hooks/__tests__/useCategories.test.tsx
 
 # 全 FE 明細テスト
-npx vitest run --reporter=verbose src/__tests__/pages/reports/Item* src/__tests__/hooks/useItems* src/__tests__/hooks/useCategories*
+npx vitest run --reporter=verbose src/pages/reports/__tests__/Item* src/hooks/__tests__/useItems* src/hooks/__tests__/useCategories*
 ```
 
 ### 12.3 テスト記述ガイド

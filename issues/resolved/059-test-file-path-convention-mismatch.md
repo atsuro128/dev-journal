@@ -53,7 +53,14 @@ items.md 以外のテストケース設計書（auth.md, reports.md, dashboard.m
 ---
 
 ## 解決内容
-<!-- pending-review へ移動する前に記入 -->
+設計書を実装慣習（コロケーション方式）に合わせる方針を採用。調査の結果、修正対象は `items.md` のみ（他6ファイルは全てコロケーション方式で記載済み）。
+
+items.md の4箇所を修正:
+- セクション10: 対象テストファイルパス
+- セクション12.1: テストファイル配置ツリー
+- セクション12.2: テスト実行コマンド（3箇所）
+
+変換ルール: `src/__tests__/pages/reports/` → `src/pages/reports/__tests__/`、`src/__tests__/hooks/` → `src/hooks/__tests__/`
 
 ## 解決日
-<!-- YYYY-MM-DD -->
+2026-04-08
