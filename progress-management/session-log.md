@@ -1,45 +1,41 @@
 # 引き継ぎメモ
 
-## セッション: 2026-04-09 17:00〜19:40
+## セッション: 2026-04-09 20:00〜22:00
 
 ### ゴール
-- PR #24 (10-C BE) と PR #27 (10-B FE) の codex 指摘対応 → 再レビュー → マージ完了
-- progress.md の 10-B / 10-C を完了に更新
+- 10-E（明細）/ 10-F（ワークフロー）の並列実装 → レビュー → マージ完了
 
 ### 作業ログ
 
-#### PR #24 (10-C BE) 修正・マージ
-1. `MonthlySummaryAll` / `MonthlySummaryByUser` の SQL を `status = 'paid'` のみに修正 → codex 再レビュー
-2. codex 指摘: `monthly_summary` の回帰テスト不足 → テスト追加（`approved` と `paid` 混在フィクスチャで金額検証）
-3. codex 指摘: 集計軸が `submitted_at` だが設計仕様は `period_start` → SQL を `period_start` ベースに修正
-4. codex 指摘: テストの `period_start` を当月にしたが `period_end` がデフォルト `2026-03-31` で CHECK 制約違反 → `WithReportPeriodEnd` 追加
-5. codex APPROVE → スカッシュマージ完了
+#### architect 統合計画
+1. 10-E / 10-F の architect を並列起動
+2. 10-F は極小規模と判明: BE handler の 2メソッド（ListPendingReports / ListPayableReports）のみスタブ、FE 変更なし
+3. 10-E は中規模: BE handler/service の 3メソッド（CreateItem / UpdateItem / DeleteItem）、FE は軽微修正のみ
 
-#### PR #27 (10-B FE) 修正・マージ
-1. ReportDetailPage へのコンポーネント統合（ReportBasicInfo / WorkflowActions / ItemListSection / ItemSlidePanel）
-2. AttachmentArea → AttachmentUploader の `onUploadError` 接続
-3. codex 指摘: ワークフロー操作に確認ダイアログなし → ConfirmDialog の `inputField` を活用して承認（コメント任意）・却下（理由必須）・支払完了の各ダイアログ追加
-4. codex 指摘: 自己承認・自己支払禁止の UI 制御 → WorkflowActions に `isOwner` prop 追加
-5. codex 指摘: 明細削除に確認ダイアログなし → ConfirmDialog 追加
-6. codex 指摘: エラーハンドリング分岐（404/500/403/409/422）→ `handleActionError` ヘルパー追加
-7. codex 指摘: 提出ボタンが明細 0 件でも有効 → `disabled={!hasItems}` + ガイド文言追加
-8. codex 指摘: 409 の再読み込み CTA → `conflictDetected` バナー + 再読み込みボタン追加
-9. codex 指摘: 削除成功トースト → navigation state で一覧画面に伝搬
-10. codex 指摘: 金額 ¥ プレフィックス・日付フォーマット → ReportBasicInfo / ItemTable 修正
-11. codex 指摘: ReportInfoCard / ReportActionBar を使っていない → ReportDetailPage を合成コンポーネント構造に統合
-12. codex 指摘: 明細操作の成功トースト + フォームリセット → setToast 追加 + formKey 再マウント
-13. codex APPROVE → スカッシュマージ完了
+#### 実装 + PR 作成
+4. 3エージェント並列起動（10-E BE, 10-E FE, 10-F BE）— 全て worktree 隔離
+5. PR #28 (10-E BE): handler/service 本実装 + helpers ErrInvalidAmount マッピング + main.go DI修正
+6. PR #29 (10-E FE): テスト修正（ItemForm: フォーム入力追加、ItemSlidePanel: QueryClientProvider追加）
+7. PR #30 (10-F BE): workflow.go ListPendingReports / ListPayableReports + parseWorkflowListParams
 
-#### PR レビュー手順改善
-- `ai-dev-framework/agents/pr-review-procedure.md` を改善
-  - Step 1.2: 「上流資料の確認」→「チケットの確認」に変更（チケットの入力資料のみ読む）
-  - ステップ別観点: `review.md` の具体パスを明記
-  - 再レビューのスコープ制限を追加（前回指摘の解消確認 + 修正差分起因の回帰のみ blocker）
-- 改善後の再レビューで ApprovalListPage/PaymentListPage のスコープ外指摘が消え、1発で APPROVE 取得
+#### CI + 内部レビュー
+8. 3 PR とも CI PASS
+9. 3 PR とも reviewer APPROVE（blocker 0件）
 
-#### progress.md 更新
-- 10-B: 修正中 → 完了
-- 10-C: 修正中 → 完了
+#### codex レビュー
+10. PR #30: codex 初回 APPROVE
+11. PR #29: codex 初回 APPROVE
+12. PR #28: codex が 2件 blocker
+    - `expense_date` が RFC3339 で返る（openapi.yaml は format: date = YYYY-MM-DD）
+    - `attachments` フィールドが openapi.yaml の ExpenseItem スキーマに未定義
+13. 1回目の押し返し: expense_date は共有 DTO の既存設計、FE で .slice(0,10) で対処。attachments は forward-compatible → codex 再 REQUEST CHANGES
+14. 2回目の押し返し: expense_date の FE 修正を PR #29 にコミット（9476640）、attachments は対応不要を維持 → codex 再 REQUEST CHANGES
+15. 方針変更: handler 層に `itemResponse` 構造体を追加し、expense_date を YYYY-MM-DD に変換 + attachments を除外（1eccd5c）→ codex APPROVE
+
+#### マージ
+16. マージ順: PR #30 → PR #28 → PR #29（BE → FE）
+17. PR #29 は master 取り込み後にマージ
+18. progress.md を更新（10-E / 10-F → 完了）
 
 ### 未完了
 なし
@@ -48,19 +44,20 @@
 なし
 
 ### 次にやること
-1. **10-E（明細）/ 10-F（ワークフロー）の並列実装着手**
-   - 10-E は 10-B 完了が前提（依存解消済み）
-   - 10-F も 10-B 完了が前提（依存解消済み）
-   - 並列起動可能
-2. **10-E / 10-F の architect 統合計画 → チケット起票 → 実装**
-3. 余力があれば 10-G（添付ファイル）も着手（10-E 完了が前提）
+1. **10-G（添付ファイル）の実装着手**
+   - 10-E 完了が前提（依存解消済み）
+   - S3 クライアント + 署名付き URL 発行 API + ファイルバリデーション + 添付 UI
+   - 10-E / 10-F より重い（S3 連携あり、BE テスト + FE テスト 8ファイル）
+   - まず architect に規模調査させ、既存スタブの実装状況を把握する
+2. 10-G 完了後、10-X（横断レビュー）で全機能の整合性確認
+3. 10-X の前提作業: CI の `continue-on-error` フラグ除去（ops-058）
 
 ### 学び・気づき
-- **codex レビューのスコープ拡大問題**: codex が毎ラウンド設計書を全読みし直し、新規ギャップを blocker として挙げ続ける問題が発生。根本原因は (1) チケットを読まないため責務スコープを知らない (2) review.md が Step 全体の上流資料を列挙しているため関係ない設計書も読む。チケット参照の必須化と再レビュースコープ制限の追加で解決
-- **再レビュープロンプトにコンテキストを渡す効果**: 前回指摘の対応状況を明示することで、codex がゼロから発見し直す必要がなくなり、トークン消費も削減。改善後は1発で APPROVE 取得
-- **テスト側を変える vs 実装側を合わせる**: ReportInfoCard/ReportActionBar はラッパーに過ぎず、テスト側の testid を変える方がコスパが良かった可能性。次回同様の判断が必要な場合の参考に
+- **codex の API 契約厳密性**: codex は openapi.yaml との厳密な一致を求める。共有 DTO が API 契約と乖離している場合、「既存設計だから」では押し返せない。handler 層でレスポンス変換構造体を用意するのが低コストな解決策
+- **押し返しの判断基準**: 2回押し返して通らなければ修正する方が効率的。3往復のレビューコストが修正コスト（1構造体追加）を上回った
+- **10-F の規模が極小だった**: FE 全実装済み、BE も 2メソッドのスタブのみ。architect 調査で事前に判明したのは良かった
 
 ### 意思決定ログ
-- **PR レビュー手順改善**: codex のスコープ拡大を防ぐため、チケットの「責務」「入力」を正本としてレビュースコープを確定する方式に変更。再レビューでは前回指摘解消 + 修正差分起因の回帰のみ blocker、それ以外は COMMENT
-- **ApprovalListPage/PaymentListPage の書式指摘**: 10-F スコープとして PR コメントで押し返し、codex も受け入れ
-- **ReportInfoCard/ReportActionBar 統合**: テスト側を変える選択肢もあったが、既にエージェント起動済みだったためそのまま実装側を合わせた
+- **expense_date の対処方針**: 共有 DTO（ExpenseItemDTO）の time.Time は変更せず、handler 層で `itemResponse` 構造体に変換して YYYY-MM-DD を返す。GET /reports/{id} の items にも同じ問題があるが、10-X で横断対処する
+- **attachments の対処方針**: handler 層の itemResponse から除外。共有 DTO は変更せず、report detail API では引き続き attachments 付きで返す。openapi.yaml のスキーマ更新は 10-G で対応
+- **PR #29 に expense_date.slice(0,10) も追加**: BE が YYYY-MM-DD を返すようになったが、防御的に FE でも .slice(0,10) を残した

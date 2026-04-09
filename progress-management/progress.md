@@ -78,8 +78,8 @@
 | 10-B | レポート | backend-developer, frontend-developer | 10-A | 完了 | `tickets/step10/10-B-report.md` |
 | 10-C | ダッシュボード | backend-developer, frontend-developer | 10-A | 完了 | `tickets/step10/10-C-dashboard.md` |
 | 10-D | テナント管理 | backend-developer, frontend-developer | 10-A | 完了 | `tickets/step10/10-D-tenant.md` |
-| 10-E | 明細 | backend-developer, frontend-developer | 10-B | 未着手 | `tickets/step10/10-E-items.md` |
-| 10-F | ワークフロー | backend-developer, frontend-developer | 10-B | 未着手 | `tickets/step10/10-F-workflow.md` |
+| 10-E | 明細 | backend-developer, frontend-developer | 10-B | 完了 | `tickets/step10/10-E-items.md` |
+| 10-F | ワークフロー | backend-developer, frontend-developer | 10-B | 完了 | `tickets/step10/10-F-workflow.md` |
 | 10-G | 添付ファイル | backend-developer, frontend-developer | 10-E | 未着手 | `tickets/step10/10-G-attachments.md` |
 | 10-X | 横断レビュー | reviewer (codex) | 10-A〜10-G | 未着手 | `tickets/step10/10-X-cross-review.md` |
 
