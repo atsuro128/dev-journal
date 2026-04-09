@@ -1,73 +1,74 @@
 # 引き継ぎメモ
 
-## セッション: 2026-04-09 06:30〜10:30
+## セッション: 2026-04-09 11:00〜13:30
 
 ### ゴール
-- Step 10 機能実装の 10-A（認証）を完了する
+- Step 10 機能実装の 10-B（レポート）、10-C（ダッシュボード）、10-D（テナント管理）の並列実装着手
 
 ### 作業ログ
 
-#### 前セッションからの継続
-- 前セッションで BE/FE 実装は完了・push 済みだったが、gh CLI 認証エラーで PR 作成が止まっていた
-- ユーザーが `gh auth login` で認証完了
+#### architect 計画策定（3並列）
+- 10-B/10-C/10-D の architect を並列起動し、全入力資料・テストコード・既存実装を分析
+- 主要な発見:
+  - 10-B が最大スコープ。ビジネスロジック実装パターンを初めて確立する（10-A は認証フレームワークのみ）
+  - 10-C FE: DashboardPage.tsx は Step 9 で既に本実装済み（変更不要）
+  - 10-D FE: 全14ファイル実装済み（変更不要）
+  - report_service.go / handler/report.go を 10-B と 10-D が共有（コンフリクト注意）
 
-#### PR 作成・CI 確認
-- BE PR #21、FE PR #22 を作成
-- BE の CI で Lint (Backend) fail — `buildAuthServiceWithoutDB` が5引数で `NewAuthService` を呼ぶが、BE ブランチでは8引数に変更済み
-- 原因: BE ブランチ分岐後に master で `aea156d`（`buildAuthServiceWithoutDB` 追加）がマージされ、GitHub のマージコミットで両方の変更が合成された
-- rebase で解決を試みるも、Git の3-way merge が `buildAuthServiceWithoutDB` を残す問題は変わらず
+#### BE+FE 実装（5並列）
+- 10-B BE、10-B FE、10-C BE、10-C FE、10-D BE の5エージェントを worktree 分離で並列起動
+- 完了順: 10-D BE → 10-C BE → 10-C FE → 10-B BE → 10-B FE
+- PR 作成: #23(10-D BE), #24(10-C BE), #25(10-C FE), #26(10-B BE), #27(10-B FE)
+- 10-B FE は hooks 8本 + コンポーネント12本 + ページ2本と大規模。266ツール呼び出し、約80分
 
-#### 内部レビュー（reviewer エージェント並列実行）
-- **BE blocker 4件**: SEC-011 タイミングサイドチャネル、Signup トランザクション不在、GetMe レスポンス不一致、auth_service_test.go 未更新
-- **FE blocker 0件**: warning 4件（バリデーション文言乖離、maxLength 未実装、500系エラー表示）
+#### CI 確認
+- PR #23, #24, #25, #26 全て CI PASS
+- PR #27 は未確認（セッション終了時点）
 
-#### BE blocker 修正
-- architect に修正計画を策定させ、backend-developer に委譲
-- Signup トランザクション対応: middleware に SetTx/GetTx 追加、db.go の queries() で tx 優先
-- SEC-011: dummyHash でタイミング均一化
-- GetMe: domain.UserProfile を直接返すよう変更
-- auth_service_test.go: 旧 NotImplemented テスト削除
-- スコープ外の domain/report.go 変更を検出・除外（`git checkout origin/master -- internal/domain/report.go`）
+#### 内部レビュー（4並列: #23, #24, #25, #26）
+- **PR #23 (10-D BE)**: PASS
+- **PR #24 (10-C BE)**: FIX → エラーコード `INTERNAL_SERVER_ERROR` → `INTERNAL_ERROR` 修正 → CI PASS
+- **PR #25 (10-C FE)**: クローズ（DashboardPage.tsx は master に既存実装あり。新規ファイルはデッドコード）
+- **PR #26 (10-B BE)**: FIX → data ラッパー欠落7箇所修正 + Approver CanViewReport 認可ロジック修正 → CI PASS
 
-#### codex レビュー（BE/FE 並列実行）
-- **BE blocker 2件**: リフレッシュトークン再利用検知で全セッション無効化が未実装、SetupTestDB の t.Skipf 問題
-- **FE blocker 2件**: バリデーション発火タイミング（onBlur 未設定）、バリデーション文言不一致
-- 指摘対応を BE/FE 並列で実施 → CI PASS
-
-#### codex 横断レビュー
-- **blocker 3件**: TOKEN_EXPIRED vs INVALID_TOKEN 不整合、openapi.yaml に 422 未定義、FE maxLength 未実装
-- BE: TOKEN_EXPIRED → INVALID_TOKEN に統一、openapi.yaml に 422 追加
-- FE: TOKEN_EXPIRED 防御対応、maxLength 制約追加
-- 指摘対応 → CI PASS
-
-#### マージ
-- BE PR #21 → master マージ
-- FE ブランチに master 取り込み → FE PR #22 → master マージ
-
-#### 10-X チケット・work-breakdown 更新
-- 10-X の前提作業に「continue-on-error 除去 → 全テスト PASS 確認」を追加
-- Step 9 (9-A) に「continue-on-error 設定」を前提作業として明記
-- 指示書から issue への紐づけを削除（issue 側から紐づけるのはOK）
+#### codex レビュー（3並列: #23, #24, #26）
+- **PR #23 (10-D BE)**: REQUEST CHANGES 2件
+  1. ListAllReports クエリパラメータバリデーション不足 → 対応済（422返却追加）
+  2. ListAllReports ソート順が設計と不一致 → 対応済（submitted_at DESC NULLS LAST に修正）
+- **PR #24 (10-C BE)**: 指摘 2件
+  1. sqlcgen 手書きコード、SQL 定義なし → 対応済（db/queries/ に定義追加）
+  2. omitempty で空配列脱落 → 対応済（*[]T ポインタ型で nil/空配列を区別）
+- **PR #26 (10-B BE)**: blocker 3件
+  1. ワークフロー handler クエリパラメータ未パース → **押し返し**（10-F スコープ、PR コメント投稿済み）
+  2. 却下理由 maxLength(1000) 未実装 → 対応済
+  3. 再申請の参照レポート所有権チェック欠落 → 対応済
+- 3PR とも修正後 CI PASS
 
 ### 未完了
-なし
+1. PR #27 (10-B FE) の CI 確認 → 内部レビュー → codex レビュー
+2. PR #23, #24, #26 の codex 再レビュー
+3. 全 PR のマージ（順序: 10-D → 10-C → 10-B BE → 10-B FE）
+4. progress.md の更新（10-B/10-C/10-D のステータス）
 
 ### ブロッカー
 なし
 
 ### 次にやること
-1. **10-B（レポート）、10-C（ダッシュボード）、10-D（テナント管理）** の並列実装着手
-   - 10-A と同じ BE+FE 並列パターンで進める
-   - 依存グラフ: 10-A 完了 → 10-B/10-C/10-D 並列可
+1. **PR #27 (10-B FE)** の CI 確認
+   - 7件のテスト失敗（ITM-FE-037/040, ATT-FE-006, ATT-FE-046-049）は明細(10-E)/添付(10-G) スコープのテスト仕様バグ。CI の continue-on-error で PASS するはず
+2. **PR #27 の内部レビュー** → codex レビュー
+3. **PR #23, #24, #26 の codex 再レビュー**（指摘対応後の確認）
+4. **マージ** — 順序: 10-D(#23) → 10-C(#24) → 10-B BE(#26) → 10-B FE(#27)
+   - 各マージ後に次の PR で master 取り込み → コンフリクト解消
+5. **progress.md 更新** — 10-B/10-C/10-D のステータスを完了に
 
 ### 学び・気づき
-- **ローカル master のフェッチ漏れ**: worktree 作成前に master が最新化されていなかったため、BE ブランチの分岐点が古く、マージコミットで不整合が発生した。worktree 作成前に `git fetch origin` を確認すること
-- **CI ツールのローカルインストール不要**: CI で失敗したツール（staticcheck）をローカルにインストールして再現する必要はない。CI の出力（アノテーション、ログ）で原因を特定し、コード修正 → push → CI 再実行で対応する
-- **CI には既に DB がある**: test-backend ジョブに PostgreSQL サービスが設定済み。DB 結合テストを別タスクにする必要はなかった
-- **continue-on-error の影響**: CI PASS ≠ テスト全 PASS。continue-on-error が ON の間はテスト失敗が隠れる
+- **Step 9 で FE 本実装が混入**: 10-C FE の DashboardPage.tsx は Step 9(9-C) でテストコードと一緒にコミットされていた。テスト実装フェーズで本実装まで入るケースがある
+- **10-B FE のスコープ膨張**: architect 計画では hooks + ページ微調整の想定だったが、実際にはワークフローページ・明細コンポーネント・添付コンポーネントまで必要だった。テストが期待するコンポーネント構成の事前確認が重要
+- **codex 指摘の押し返し**: ワークフロー handler のクエリパラメータ未パースは 10-F スコープの最小実装。品質ゲート基準で批判的に評価し、形式的な指摘には PR コメントで理由を明記して押し返すパターンが有効
 
 ### 意思決定ログ
-- **E2E フロー確認は Step 11 に委ねる**: Playwright 等の E2E 基盤が未整備のため、10-A のタスクからは削除
-- **master 全テスト PASS 確認は 10-X に移管**: continue-on-error 除去は Step 10 全体の完了条件であり、10-A 単体の条件ではない
-- **指示書から issue への紐づけ禁止**: issue 側から指示書を参照するのはOKだが、指示書に issue 番号を書かない
-- **BE 並列実装ルール**: work-breakdown に「BE+FE 並列実装、API 契約確定済みが前提、マージ順は BE → FE」を明記済み
+- **マージ順序**: 10-D → 10-C → 10-B（スコープ小→大、コンフリクト最小化）
+- **PR #25 クローズ**: 既存 DashboardPage.tsx が設計仕様に準拠して実装済みのため、新規ファイルは不要
+- **codex 押し返し**: 10-B の workflow handler クエリパラメータ未パースは 10-F スコープとして対応不要と判断
+- **Approver CanViewReport 修正**: authz.md SS10.3 に準拠し、submitted + 自分が承認/却下したレポートのみ閲覧可に制限
