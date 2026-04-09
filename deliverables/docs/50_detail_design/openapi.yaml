@@ -391,6 +391,12 @@ paths:
                       message:
                         type: string
                         example: "パスワードリセットメールを送信しました"
+        "422":
+          description: バリデーションエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         "429":
           $ref: "#/components/responses/TooManyRequests"
 
