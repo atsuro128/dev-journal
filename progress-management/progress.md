@@ -74,7 +74,7 @@
 
 | ID | タスク | 担当 | 依存 | 状態 | チケット |
 |----|--------|------|------|------|---------|
-| 10-A | 認証 | backend-developer, frontend-developer | Step 9 完了 | 未着手 | `tickets/step10/10-A-auth.md` |
+| 10-A | 認証 | backend-developer, frontend-developer | Step 9 完了 | 完了 | `tickets/step10/10-A-auth.md` |
 | 10-B | レポート | backend-developer, frontend-developer | 10-A | 未着手 | `tickets/step10/10-B-report.md` |
 | 10-C | ダッシュボード | backend-developer, frontend-developer | 10-A | 未着手 | `tickets/step10/10-C-dashboard.md` |
 | 10-D | テナント管理 | backend-developer, frontend-developer | 10-A | 未着手 | `tickets/step10/10-D-tenant.md` |
