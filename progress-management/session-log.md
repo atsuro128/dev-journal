@@ -48,8 +48,13 @@
 - なし
 
 ### 次にやること
-1. **Step 11: システムテスト・UAT に着手** — work-breakdown を確認し、チケット起票から開始
-2. issue 065〜069 は Step 11 の作業中に必要に応じて対応
+1. **issue 065〜069 の対応** — Step 11 着手前に解消する。優先順:
+   - 065: 認証系 expense_owner DB 接続分離（影響度 中、テナント分離の根幹）
+   - 068: 素 HTML 要素の MUI 統一（影響度 低、機械的置換）
+   - 069: useUploadAttachment invalidation の設計テーブル更新（影響度 低、設計文書のみ）
+   - 066: フィルタ UI の AppSelect 対応（影響度 低、AppSelect API 変更を伴う）
+   - 067: currentUser store の設計乖離（影響度 低、UX 変更を伴う）
+2. **issue 対応完了後、Step 11: システムテスト・UAT に着手**
 
 ### 学び・気づき
 - **codex exec のフラグはバージョンで変わる**: `--approval-mode` → `--full-auto`、`-q` は不可（位置引数で渡す）、sandbox は `--dangerously-bypass-approvals-and-sandbox` が必要。CI ログは `gh api .../logs` で zip ダウンロードが確実
