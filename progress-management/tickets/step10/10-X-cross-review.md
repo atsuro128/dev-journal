@@ -1,7 +1,7 @@
 # Step 10 横断レビュー
 
 - 担当: reviewer（codex 横断レビュー）
-- 依存: 10-A〜10-G 全完了
+- 依存: 10-H 完了
 - 出力先: review-findings/
 
 ## 入力
