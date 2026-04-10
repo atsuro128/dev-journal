@@ -35,7 +35,7 @@ Step 10 の全テストが PASS した時点で `continue-on-error: true` を削
 ---
 
 ## 解決内容
-<!-- pending-review へ移動する前に記入 -->
+10-H（CI 安定化）で `continue-on-error: true` を削除済み。10-X 横断レビューで CI 全 PASS を確認し、master にスカッシュマージ (7373054)。
 
 ## 解決日
-<!-- YYYY-MM-DD -->
+2026-04-11

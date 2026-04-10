@@ -15,7 +15,7 @@
 | 7 | 運用設計 | 完了 | 2026-03-26 | `ai-dev-framework/guide/work-breakdown/step7-operations/` |
 | 8 | 基盤構築 | 完了 | 2026-03-31 | `ai-dev-framework/guide/work-breakdown/step8-foundation/` |
 | 9 | テストコード実装 | 完了 | 2026-04-08 | `ai-dev-framework/guide/work-breakdown/step9-test-implementation/` |
-| 10 | 機能実装 | 進行中 | - | `ai-dev-framework/guide/work-breakdown/step10-feature-implementation/` |
+| 10 | 機能実装 | 完了 | 2026-04-11 | `ai-dev-framework/guide/work-breakdown/step10-feature-implementation/` |
 | 11 | システムテスト・UAT | 未着手 | - | `ai-dev-framework/guide/work-breakdown/step11-system-test/` |
 
 ## タスク状態定義
@@ -82,7 +82,7 @@
 | 10-F | ワークフロー | backend-developer, frontend-developer | 10-B | 完了 | `tickets/step10/10-F-workflow.md` |
 | 10-G | 添付ファイル | backend-developer, frontend-developer | 10-E | 完了 | `tickets/step10/10-G-attachments.md` |
 | 10-H | CI 安定化 + リファクタリング | backend-developer, frontend-developer | 10-A〜10-G | 完了 | `tickets/step10/10-H-ci-stabilization.md` |
-| 10-X | 横断レビュー | reviewer (codex) | 10-H | 作業中 | `tickets/step10/10-X-cross-review.md` |
+| 10-X | 横断レビュー | reviewer (codex) | 10-H | 完了 | `tickets/step10/10-X-cross-review.md` |
 
 ## 課題・ブロッカー
 `issues/open/` を参照。
