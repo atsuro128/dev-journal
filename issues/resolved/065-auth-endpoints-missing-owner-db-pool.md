@@ -52,5 +52,7 @@ db_schema.md §DB ユーザー設計では、認証系エンドポイントは `
 ---
 
 ## 解決内容
+cmd/server/main.go に ownerPool (expense_owner) を追加し、認証系サービス (auth_service.go) に注入。全認証エンドポイントで owner 接続を使用するよう修正。refresh_token_repo.go の RevokeAllByUserID を execer 経由に変更。PR #35 でマージ済み。
 
 ## 解決日
+2026-04-11

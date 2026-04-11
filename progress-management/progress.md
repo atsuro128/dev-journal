@@ -85,4 +85,21 @@
 | 10-X | 横断レビュー | reviewer (codex) | 10-H | 完了 | `tickets/step10/10-X-cross-review.md` |
 
 ## 課題・ブロッカー
-`issues/open/` を参照。
+
+### 解決済み（2026-04-11）
+| ID | タイトル | 解決 PR |
+|----|---------|---------|
+| 065 | 認証系エンドポイントで expense_owner 専用 DB 接続が未使用 | PR #35 |
+| 066 | フィルタ UI で AppSelect が使われていない | PR #37 |
+| 067 | auth store に currentUser を保持しており state-management.md と乖離 | PR #36 |
+| 068 | 一部ページで素の HTML 要素（button / table）が残存 | PR #34 |
+| 069 | 添付ファイルアップロード後の invalidation が設計テーブルと乖離 | — |
+
+### 残存 issue（運用・基盤系）
+| ID | タイトル |
+|----|---------|
+| ops-055 | work-breakdown テンプレート不整合 |
+| 060 | devcontainer egress allowlist の厳格化と根拠の欠如 |
+| 061 | devcontainer マウントとシークレット露出の最小化 |
+| ops-062 | ワークフロースキルの粒度 |
+| 064 | MCP ジョブログが proxy allowlist でブロック |

@@ -37,5 +37,7 @@ ReportListPage のステータスフィルタが MUI `Select` を直接使用し
 ---
 
 ## 解決内容
+AppSelect に fullWidth prop を追加（デフォルト true 維持）、displayEmpty を常時有効化。ReportListPage のフィルタを AppSelect に切替。PR #37 でマージ済み。
 
 ## 解決日
+2026-04-11
