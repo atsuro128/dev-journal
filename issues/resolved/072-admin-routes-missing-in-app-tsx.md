@@ -45,4 +45,7 @@ Step 10（機能実装）/ Step 11（システムテスト・UAT — 11-A ロー
 
 ## 解決内容
 
+PR #43 で AllReportsPage（/reports/all）と TenantPage（/settings/tenant）のルートを App.tsx に追加。master とのコンフリクト解消後にマージ。
+
 ## 解決日
+2026-04-11

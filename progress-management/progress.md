@@ -11,12 +11,12 @@
 | 4 | 基本設計（画面一覧・画面遷移） | 完了 | 2026-03-22 | `ai-dev-framework/guide/work-breakdown/step4-basic-design/` |
 | 5 | 詳細設計（API・DB・認可・セキュリティ） | 完了 | 2026-03-23 | `ai-dev-framework/guide/work-breakdown/step5-detail-design/` |
 | 5.5 | UI コンポーネント設計 | 完了 | 2026-04-06 | `ai-dev-framework/guide/work-breakdown/step5.5-ui-component/` |
-| 6 | テスト設計 | 完了 | 2026-03-23 | `ai-dev-framework/guide/work-breakdown/step6-testing/` |
+| 6 | テスト設計 | 完了 | 2026-04-12 | `ai-dev-framework/guide/work-breakdown/step6-testing/` |
 | 7 | 運用設計 | 完了 | 2026-03-26 | `ai-dev-framework/guide/work-breakdown/step7-operations/` |
 | 8 | 基盤構築 | 完了 | 2026-03-31 | `ai-dev-framework/guide/work-breakdown/step8-foundation/` |
 | 9 | テストコード実装 | 完了 | 2026-04-08 | `ai-dev-framework/guide/work-breakdown/step9-test-implementation/` |
 | 10 | 機能実装 | 完了 | 2026-04-11 | `ai-dev-framework/guide/work-breakdown/step10-feature-implementation/` |
-| 11 | システムテスト・UAT | 未着手 | - | `ai-dev-framework/guide/work-breakdown/step11-system-test/` |
+| 11 | システムテスト・UAT | 進行中 | - | `ai-dev-framework/guide/work-breakdown/step11-system-test/` |
 
 ## タスク状態定義
 
@@ -43,6 +43,12 @@
 | 8-9 | CI/CD パイプライン | platform-builder | 8-2, 8-3 | 完了 | `tickets/step8/8-9-cicd.md` |
 | 8-10 | 開発者ツール | platform-builder | 8-2, 8-3 | 完了 | `tickets/step8/8-10-dev-tools.md` |
 | 8-11 | 整理 | platform-builder | なし | 完了 | `tickets/step8/8-11-cleanup.md` |
+
+## Step 6: テスト設計 — 追加チケット（issue 074 対応）
+
+| ID | タスク | 担当 | 依存 | 状態 | チケット |
+|----|--------|------|------|------|---------|
+| 6-D | 手動チェックリスト定義 | designer | 6-C | 完了 | `tickets/step6/6-D-manual-checklists.md` |
 
 ## Step 5.5: UI コンポーネント設計 — チケット一覧
 
@@ -84,11 +90,26 @@
 | 10-H | CI 安定化 + リファクタリング | backend-developer, frontend-developer | 10-A〜10-G | 完了 | `tickets/step10/10-H-ci-stabilization.md` |
 | 10-X | 横断レビュー | reviewer (codex) | 10-H | 完了 | `tickets/step10/10-X-cross-review.md` |
 
+## Step 11: システムテスト・UAT — チケット一覧
+
+| ID | タスク | 担当 | 依存 | 状態 | チケット |
+|----|--------|------|------|------|---------|
+| 11-A | ローカル動作確認 | ユーザー + 指揮役 | Step 10 全完了 | 作業中 | `tickets/step11/11-A-local-verification.md` |
+| 11-B | 横断テスト（Go） | test-implementer | 11-A | 未着手 | `tickets/step11/11-B-cross-cutting-test.md` |
+| 11-C | E2E テスト（Playwright） | test-implementer | 11-A | 未着手 | `tickets/step11/11-C-e2e-test.md` |
+| 11-D | 横断レビュー | reviewer (codex) | 11-B, 11-C | 未着手 | `tickets/step11/11-D-cross-review.md` |
+| 11-E | デプロイ・スモークテスト | platform-builder | 11-D | 未着手 | `tickets/step11/11-E-deploy.md` |
+| 11-F | UAT | ユーザー | 11-E | 未着手 | `tickets/step11/11-F-uat.md` |
+
 ## 課題・ブロッカー
 
-### 解決済み（2026-04-11）
+### 解決済み（2026-04-12）
 | ID | タイトル | 解決 PR |
 |----|---------|---------|
+| 070 | App.tsx の LoginPage import がスケルトンを参照 | PR #42 |
+| 071 | pages ディレクトリ構成が3パターン混在 | PR #42 |
+| 072 | App.tsx に管理系画面のルートが未登録 | PR #43 |
+| 074 | 11-A ローカル動作確認のチェックリストが存在しない | Step 6-D 追加 |
 | 065 | 認証系エンドポイントで expense_owner 専用 DB 接続が未使用 | PR #35 |
 | 066 | フィルタ UI で AppSelect が使われていない | PR #37 |
 | 067 | auth store に currentUser を保持しており state-management.md と乖離 | PR #36 |
@@ -103,3 +124,4 @@
 | 061 | devcontainer マウントとシークレット露出の最小化 |
 | ops-062 | ワークフロースキルの粒度 |
 | 064 | MCP ジョブログが proxy allowlist でブロック |
+| 073 | work-breakdown の保証種別が test_strategy.md の実態と乖離（別セッションで対応予定） |

@@ -47,4 +47,7 @@ import LoginPage from './pages/login/LoginPage';  // Step 10 で実装済み
 
 ## 解決内容
 
+PR #42（071 のディレクトリ整理）に含めてマージ。App.tsx の import パスを実装済みの `pages/login/LoginPage.tsx` に修正し、スケルトンを削除。Signup, PasswordReset のルートも追加。PR #41 は #42 に包含されたためクローズ。
+
 ## 解決日
+2026-04-11
