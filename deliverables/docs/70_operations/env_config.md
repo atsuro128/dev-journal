@@ -114,7 +114,6 @@
 | `S3_BUCKET` | 領収書格納バケット名 | string | `expense-saas-receipts-dev` | `expense-saas-receipts-stg` | `expense-saas-receipts-prod` |
 | `AWS_REGION` | AWS リージョン（S3 アクセスで使用） | string | `ap-northeast-1` | `ap-northeast-1` | `ap-northeast-1` |
 | `S3_ENDPOINT` | S3 互換エンドポイント（MinIO 用） | string | `http://localhost:9000` | 未設定（AWS デフォルト） | 未設定（AWS デフォルト） |
-| `S3_PRESIGNED_URL_EXPIRY` | 署名付き URL 有効期間 | duration | `15m` | `15m` | `15m` |
 | `AWS_ACCESS_KEY_ID` | AWS アクセスキー（MinIO 用） | string (secret) | MinIO デフォルト | ECS タスクロール | ECS タスクロール |
 | `AWS_SECRET_ACCESS_KEY` | AWS シークレットキー（MinIO 用） | string (secret) | MinIO デフォルト | ECS タスクロール | ECS タスクロール |
 
