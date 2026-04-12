@@ -1,98 +1,162 @@
 # 引き継ぎメモ
 
-## セッション: 2026-04-12 12:00〜14:21
+## セッション: 2026-04-12 15:03〜21:09
 
 ### ゴール
-- ハウスキーピング（issue 070-072 を resolved に移動、Step 11 チケット起票）
-- 11-A ローカル動作確認の続行（docker compose up → smoke check）
-
-実際にはハウスキーピング段階で「テスト観点の妥当性」議論に発展し、Step 6-D（手動チェックリスト定義）の追加というスコープに変わった。11-A 実施には到達していない。
+- 当初: 11-A ローカル動作確認の着手（前セッションからの続き）
+- 実際: 着手前調査で Step 8 の配線漏れが発覚し、スコープを「Step 8-11 ローカル開発環境統合の実装・マージ」に変更
 
 ### 作業ログ
 
-#### Phase 1: ハウスキーピング
-1. session-start で状態確認。Step 10 完了、Step 11 進行中（11-A 作業中）を確認
-2. 070-072 を resolved に移動（解決内容記入）
-3. Step 11 全6チケット（11-A〜11-F）を起票
-4. progress.md を更新（Step 11 「進行中」、11-A 「作業中」）
-5. 6-D 追加前に「チケットは作っていないのか」とユーザー指摘で気づき、Step 11 チケット作成を完遂
+#### Phase 1: 状態確認と 11-A 入力の妥当性検証
+1. session-start で状態確認（Step 11 進行中、11-A 作業中、ブロッカーなし）
+2. ユーザー問いかけ「11-A チケットの入力は適切か」→ 指揮役でチケット入力欄を分析
+3. 以下 5 点の不足を指摘:
+   - test_strategy.md §4 フィクスチャ定義の参照欠落
+   - シードデータ投入手段の調査必要性
+   - MinIO 起動方法の不確実性
+   - JWT 鍵生成手順の欠落
+   - グローバルナビ正本の不明確さ
+4. Explore エージェントで `expense-saas/` を調査 → シード・migration 自動適用・MinIO・README の 4 点配線漏れを確定
 
-#### Phase 2: テスト観点の議論
-6. ユーザーが「テスト設計の保証種別だけで品質担保できているか」「動作確認時の確認項目はあるか」と問題提起
-7. work-breakdown の保証種別5分類は不十分、自動テスト設計のみで手動確認チェックリストが存在しないことを共有
-8. codex に「テスト観点の妥当性」分析を依頼 → 詳細な分析結果を取得
-   - work-breakdown の5分類と test_strategy.md の8分類の乖離
-   - CORS/セキュリティヘッダ・タイムゾーン・二重送信防止等の不足
-   - 11-A の確認観点リストの提案
+#### Phase 2: 問題の説明と方針合意
+5. ユーザー「問題を理解できていない。専門用語が理解できない」→ 専門用語なしで 4 つの配線漏れを説明（テストアカウント・データの入れ物・倉庫・取扱説明書）
+6. MinIO の設計書記載状況を調査 → ADR-0004・env_config.md・files.md・test_strategy.md・diagrams.md の 6 ファイルに明記済みと確認（設計書と実装の乖離パターン）
+7. 対応方針を議論:
+   - 選択肢: (A) Step 11-A に組み込む / (B) Step 8 への遡及追加 / (C) issue として別対応
+   - 採用: (B) 選択肢 Y（新 8-11 を割り込ませ旧 8-11「整理」を 8-12 にリネーム）
+   - シードは自動投入（選択肢 A）を採用、手動登録体験は 11-F UAT 側に委譲
 
-#### Phase 3: issue 起票と方針決定
-9. 議論結果を以下2件の issue に分割起票:
-   - 073: work-breakdown の保証種別が test_strategy.md と乖離
-   - 074: 11-A ローカル動作確認のチェックリストが存在しない
-10. ユーザー指摘で「074 はチケットに直接書くのではなく、Step 6/9/11 のどこかに work-breakdown タスクとして配置すべき」と方針転換
-11. 議論の結果、「Step 6 に 6-D として追加。manual_checklists/ ディレクトリに smoke_check.md / uat_check.md を作成」で合意
+#### Phase 3: issue 076 起票と work-breakdown 修正
+8. issue 076 起票（infrastructure / 高 / proactive）
+9. Step 8 work-breakdown 修正:
+   - main.md L109,110: 並列可列 `8-11` → `8-12`
+   - L118-119: 新 8-11「ローカル開発環境統合」行を追加、旧 8-11「整理」を 8-12 に
+   - L131: 依存グラフ更新（8-8 → 8-11、8-12 は独立）
+   - L138, L293: タスク詳細セクション追加
+   - review.md: 上流成果物 4 行追加、完了条件 3 項目追加、レビュー観点 #1 タイトルとレビュー項目 7 点追加、#5 タイトル更新
+10. 旧チケット `8-11-cleanup.md` を `8-12-cleanup.md` に `git mv`、内部に旧 ID 注記追加
+11. 新チケット `8-11-local-dev-integration.md` 起票（責務・入力・判断ポイント・完了条件）
+12. progress.md を Step 8「修正中」に戻す、8-11/8-12 行、11-A「ブロック中」に更新
+13. ai-dev-framework と dev-journal をコミット（push は後回し）
 
-#### Phase 4: Step 6-D 追加（work-breakdown 修正）
-12. Step 6 main.md に 6-D タスク詳細・責務境界・標準列・traceability.md による重複排除ルールを追加
-13. Step 6 review.md に完了条件・FAIL 条件を追加
-14. Step 11 main.md / review.md の 11-A / 11-F 入力に manual_checklists 参照を追加
-15. codex レビュー → FIX（5件指摘）→ 対応 → 再レビュー → FIX（指摘2「6-C依存の根拠」と Step 11 依存グラフ不整合）→ 対応
-16. Step 11 の依存グラフ修正でユーザーから「過剰」と指摘 → 元のグラフに戻す
-17. 「6-C 依存根拠」の私の修正が traceability.md の実態と整合していなかったことが判明 → 実態（BE/FE 列が `-`、備考の「自動テスト対象外」等）に基づく記述に再修正
+#### Phase 4: 8-11 実装 1 回目（初回実装）
+14. platform-builder を worktree isolation + バックグラウンド起動（ブランチ `step8/8-11-local-dev-integration`）
+15. 完了報告: PR #44 作成、init コンテナ方式 + mc サイドカー採用、seed CLI 新設、`SeedFixtures()` をラッパー化
+16. 起動時に LSP 診断で main.go のコンパイルエラー表示 → 最終 push コードは正常（agent 編集中の中間状態）と確認
+17. CI 監視（run 24300218136）→ 全 6 ジョブ PASS
 
-#### Phase 5: 6-D 実行
-18. 6-D チケット起票、progress.md 更新（Step 6 を「修正中」に）
-19. designer エージェント起動 → smoke_check.md（54項目）、uat_check.md（36項目）作成完了
-20. 11-A / 11-F チケットを成果物参照に更新
+#### Phase 5: reviewer 1 回目 → FIX → 2 回目 PASS
+18. reviewer 起動 → FIX 判定:
+    - blocker 1: `S3_BUCKET_NAME` vs 実装 `S3_BUCKET`（チケット指示の誤り）
+    - blocker 2: `AWS_REGION=us-east-1` vs 設計書 `ap-northeast-1`
+    - warning: S3_PRESIGNED_URL_EXPIRY 欠落、変数名横断問題
+19. ユーザー承認を得て指揮役直接修正（`.env.example`、`docker-compose.yml`、バケット名 `expense-attachments` → `expense-saas-receipts-dev`）
+20. issue 077（S3_PRESIGNED_URL_EXPIRY 実装未参照）、issue 078（S3_REGION vs AWS_REGION）を別途起票
+21. commit `6be7f97` push → CI 再実行 PASS
+22. reviewer 2 回目 → PASS
 
-#### Phase 6: 6-D 成果物 codex レビュー
-21. codex レビュー → FIX（3件）:
-    - UAT-040〜046 に対応UC欠落
-    - 用語集違反（`申請中`→`提出済み`）
-    - UAT-032 の 4 ロール網羅性不足
-22. designer に差し戻し → 修正完了
-23. 再レビュー → PASS 取得
+#### Phase 6: codex 1 回目 → FIX
+23. codex 1 回目 → blocker 2 件:
+    - blocker 1: `.env.example` の `S3_ENDPOINT=http://localhost:9000` が `.env` 経由で api コンテナに注入され Compose 内通信を壊す
+    - blocker 2: seed に添付ファイルフィクスチャが無い（SMK-037/038 の前提未達）
+24. 批判的評価: blocker 1 は即修正必須、blocker 2 は選択肢 A（seed 拡張）推奨
+25. ユーザー承認 → blocker 1 は指揮役直接修正（commit `3805738`）、blocker 2 は platform-builder 再起動
 
-#### Phase 7: クローズ・コミット
-24. issue 074 に解決内容記入 → resolved に移動
-25. progress.md を Step 6 「完了」、6-D 「完了」に更新
-26. ai-dev-framework と dev-journal をコミット・push
-27. ユーザーから「3ファイルが文字化け」と指摘
-28. 073, 074 issue ファイル + attachment_handler_test.go の文字化けを修正
-29. dev-journal と expense-saas をコミット・push
-30. LSP diagnostic で `attachment_handler_test.go:217` の unused parameter 警告を発見
-31. issue 075 として起票・コミット・push
+#### Phase 7: 8-11 実装 2 回目（添付シード追加）
+26. platform-builder 再起動 → commit `4ba771c` push:
+    - `internal/seed/testdata/receipt_sample.jpg` 1024 バイト埋め込み
+    - `seed.Run` シグネチャに `*s3.Client` 追加
+    - `reportSubmitted` に添付レコード + MinIO Upload
+27. CI 失敗（ECONNRESET 一時障害）→ `gh run rerun --failed` でリラン → PASS
+28. reviewer 3 回目 → PASS（追加指摘なし）
+
+#### Phase 8: codex 2 回目 → FIX
+29. codex 2 回目 → blocker 1 件:
+    - `reportDraft` に添付フィクスチャが無く SMK-038 を seed 直後に単独実施不可
+30. **指揮役の判断ミスをユーザー指摘** — 初回 platform-builder 指示で「SMK-038 は SMK-030 実施後の状態で検証可能」と順序依存を勝手に想定したことがミスの原因。smoke_check.md は各項目独立実施前提
+31. ユーザー承認 → platform-builder 再起動（選択肢 A）
+
+#### Phase 9: 8-11 実装 3 回目（reportDraft 添付追加）
+32. platform-builder → commit `084bd5e` push:
+    - `AttachmentDraftID` 定数追加
+    - `reportDraft` / `ItemDraftID` に添付レコード + MinIO Upload
+    - `testutil/fixture.go` で再エクスポート
+33. CI PASS、reviewer 4 回目 PASS
+
+#### Phase 10: codex 3 回目 → FIX
+34. codex 3 回目 → blocker 2 件:
+    - blocker 1: seed の実行経路が Compose に統合されていない（`make seed` が `go run` でホスト Go 前提）
+    - blocker 2: `api.depends_on` が `minio-init` 完了を待たず NoSuchBucket race
+35. **ユーザー指摘**: 「対応方針を即座に考えたものか。ちゃんと計画した方がよい。architect に依頼してみては」
+36. architect 起動 → 詳細な実装計画返却:
+    - CI は compose 非使用（profile 追加影響ゼロ）を実測発見
+    - Blocker 1 案 1: seed サービス新設 + profile + Dockerfile 拡張
+    - Blocker 2 案 1: depends_on に minio-init 追加
+    - 判断ポイント 9 項目を確定（Dockerfile ビルド、profile 名 `seed`、2 ステップ運用、既存 migrate パターン踏襲、minio healthy 削除、environment ハードコード、--profile 明示、entrypoint 使用）
+    - 案 3（README 手順書依存）は指揮役の過去ミスと同型として明示的に却下
+
+#### Phase 11: 8-11 実装 4 回目（seed サービス + minio-init 待機）
+37. platform-builder → commit `d865ff0` push（architect 計画通り）:
+    - Dockerfile にマルチステージで seed バイナリビルド追加
+    - docker-compose.yml に `seed` サービス（profile）追加、`api.depends_on` から `minio: service_healthy` 削除して `minio-init: service_completed_successfully` に置換
+    - Makefile の `seed` を `docker compose --profile seed run --rm seed` に変更
+    - README から Go 1.24 前提削除、サービス表・トラブルシュート更新
+38. CI PASS、reviewer 5 回目 PASS
+
+#### Phase 12: codex 4 回目 → PASS → マージ
+39. codex 4 回目 → **全 blocker 解消、新規指摘なし**
+40. マージ準備確認（CLEAN / MERGEABLE）
+41. ユーザー承認 → `gh pr merge --squash --delete-branch` 実行 → merge commit `82497f1`
+
+#### Phase 13: progress.md 更新・issue クローズ・コミット・push
+42. progress.md 更新: Step 8「完了」、8-11「完了」、11-A「未着手」、issue 076 を解決済みテーブルへ、075/077/078 を残存テーブルへ
+43. issue 076 に解決内容記入 → resolved 移動
+44. dev-journal 一括コミット（commit `b91fa10`）
+45. dev-journal と ai-dev-framework を push
 
 ### 未完了
-- **11-A ローカル動作確認の実施**: smoke_check.md の 54 項目を docker compose up 後にブラウザで実施
-- **issue 073**: Step 6 保証種別と test_strategy.md の乖離整理（test_strategy.md・cross-cutting.md・traceability.md の更新を伴う）
-- **issue 075**: attachment_handler_test.go の unused parameter（addAuthHeader の srv 引数削除）
+- **11-A ローカル動作確認の実施**: smoke_check.md の 54 項目を `docker compose up -d` → `make seed` の後にブラウザで実施（Step 11-A ブロッカー解消済み）
+- **issue 073**: test_strategy.md 保証種別乖離（別セッション対応予定、前セッションから持ち越し）
+- **issue 075**: attachment_handler_test.go unused parameter（実害なし、優先度低）
+- **issue 077**: S3_PRESIGNED_URL_EXPIRY 実装未参照（本 PR レビューで顕在化）
+- **issue 078**: S3_REGION vs AWS_REGION 変数名乖離（本 PR レビューで顕在化）
 
 ### ブロッカー
 - なし
 
 ### 次にやること
-1. **docker compose up の成功確認** — 前回セッションで worktree 残骸削除済み。ホスト側で再試行
-2. **smoke_check.md（54項目）の実施** — ブラウザで全項目をチェックし結果記録
-3. 発見した問題を issue 化（ブロッカー / 非ブロッカー分類）
-4. 11-A 完了後、11-B / 11-C を並列起動（test-implementer に委譲）
-5. 余裕があれば issue 073 の対応（test_strategy.md の整理 + cross-cutting.md にテストケース追加）
-6. 余裕があれば issue 075（unused parameter 削除）
+
+ユーザー指示: 次回は他の issue 対応をするかも
+
+候補（優先度順）:
+
+1. **issue 077/078 対応** — 本セッションで顕在化した派生 issue。設計書 or 実装の片側修正で決着可能。実装量は中程度
+2. **issue 073 対応** — 保証種別と test_strategy.md の乖離整理。test_strategy.md / cross-cutting.md / traceability.md の更新を伴う中規模作業
+3. **Step 11-A 着手** — 8-11 完了でブロッカー解消済み。`docker compose up -d` → `make seed` 後に smoke_check.md 54 項目を手動実施
+4. **Step 11-B / 11-C 並列起動** — 11-A 完了後、test-implementer に委譲（Go 横断テスト + Playwright E2E）
+5. **issue 075 対応** — 小規模、いつでも対応可能
+
+セッション開始時はユーザーの意向を `/session-start` で確認すること。
 
 ### 学び・気づき
 
-- **チケット起票は「成果物作成のフロー上段に必須」** — 6-D 追加時、最初は work-breakdown だけ更新して手動チェックリストを作ろうとしたが、ユーザー指摘で「チケットを起票するワークフローでは？」と気づいた。設計成果物フローの「0. チケット起票」を飛ばしていた
-- **codex レビュー指摘への修正で別のでっち上げを混入した** — 「6-C依存の根拠」修正で、traceability.md の「カバー済み列」（実在しない）を別の存在しない記法（「未カバー」「UI/UX」）に置き換えただけだった。実態を確認せずに修正案を出すと、指摘を根本解決していないどころか別の問題を生む
-- **work-breakdown 改修時、過剰に追記しがち** — Step 11 の依存グラフに 6-D を入力として書き込み、「[smoke_check.md を入力]」のような注記まで足した。ユーザー指摘で「依存列は Step 内タスク間依存のみ。Step 6 は Step 10 より上流なので明示不要」と気付いた。タスク一覧の「依存」列と「入力」列の責務分離を意識すべき
-- **codex の指摘も鵜呑みにせず実態確認すべき** — codex の指摘は妥当だったが、私の修正が間違っていた。指摘の妥当性検証と修正の妥当性検証は別物
-- **issue 起票時の文字化け** — Write ツール出力で日本語の特定箇所が `�` になる現象が発生。原因不明だが、起票後に grep で検査する習慣を持つべき。`grep -l 'U+FFFD' issues/open/` 等で確認
+- **手動チェックリストの独立性前提を見落とした（重大な判断ミス）** — codex 2 回目 blocker 対応で「SMK-038 は SMK-030 実施後の状態で検証可能」と勝手に順序依存を前提化した結果、reportDraft 添付シードを抜かす指示を platform-builder に出した。codex 3 回目で指摘される。smoke_check.md は各項目が独立実施可能である前提で作られており、手順依存を前提にした簡素化は不可。チケット完了条件の文言（「SMK-030〜038 が実施可能」）を恣意的に狭めない
+- **チケット指示の誤記が実装に伝播する** — 指揮役が 8-11 チケットで `S3_BUCKET_NAME=expense-attachments` と誤記したため、platform-builder はチケット通りに実装し、コード側の `S3_BUCKET` と不整合を起こした。チケット起票時は**設計書との照合**を必須化すべき
+- **architect への早期委譲が質を上げる** — codex 3 回目指摘対応の計画を指揮役が即興で作ろうとしたが、ユーザー指摘で architect に委譲。結果、CI への影響（compose 非使用発見）、既存 `migrate` パターンの活用、手順書依存の拒否理由が明示された計画が返り、2 次手戻りを防げた。複雑な設計判断は architect 委譲を早めに検討する
+- **reviewer と codex で検出精度の得意分野が異なる** — reviewer は実装の後方互換性・SQL スキーマ整合・具体コードレベルを確実に拾う。codex は設計書整合性・起動シーケンス・責務欄との照合を拾う。両方を走らせる意義あり
+- **CI の一時的ネットワーク障害（ECONNRESET）は rerun で復旧** — `gh run rerun --failed` で失敗ジョブのみ再実行できる。コード起因と切り分けるため失敗ログを必ず確認
+- **LSP 診断は agent 編集中の中間状態を拾うことがある** — LSP から届く compile error が push 済みコードの実態と一致しないケースあり。`go build` で実測確認してから判断する
+- **設計書と実装の乖離は PR レビュー中に顕在化する** — 本 PR で S3_BUCKET / S3_REGION / S3_PRESIGNED_URL_EXPIRY の 3 つの乖離が浮上。うち本 PR スコープで対応したのは S3_BUCKET のみ、他は別 issue に切り出した（スコープ管理）
 
 ### 意思決定ログ
 
-- **6-D を Step 6 に追加（既完了 Step への遡及）**: 概念的に手動チェックリストはテスト設計の成果物。Step 11 で実行直前に作るのは「設計時レビューを通らない」ため不適。既完了 Step への追加は前例になるが、代替案より正当性が勝った
-- **smoke_check.md と uat_check.md を分割**: 開発者視点（動作・崩れ）とユーザー視点（業務要件・UX）で観点が異なるため。1ファイルだと焦点がぼやける
-- **smoke_check.md は業務フロー成立性を扱わない**: E2E 自動テスト（cross-cutting.md §3）と責務境界が曖昧になるため、業務成立性検証は E2E に委譲すると明文化
-- **Step 11 main.md の依存グラフから「Step 6-D 完了」を削除**: 通常フローでは Step 6 は Step 10 より先に完了しているため、依存グラフに明示する必要はない（タスク一覧の「入力」列で参照すれば十分）
-- **issue 073 を別セッション対応に**: test_strategy.md / cross-cutting.md / traceability.md の更新を伴う中規模作業のため、本セッションのスコープから除外
-- **expense-saas の文字化け修正は master 直接コミット**: コメント1文字の修正で実害なし、PR フローのオーバーヘッドが過剰。GitHub Free のため branch protection が無効で技術的にも可能だった
-- **issue 075（unused parameter）を起票のみ**: 既存コードのコード品質問題で実害なし。Step 9/10 の実装時から存在していた
+- **Step 8 への遡及追加（選択肢 B）を採用**: issue 076 の対応として Step 8 を「完了」→「修正中」に戻し、新 8-11 を割り込ませた。issue で別途対応（選択肢 C）は「機能追加に issue は責務違反」のため却下。Step 11-A に組み込む（選択肢 A）は Step 8 の品質ゲート漏れを覆い隠すため却下
+- **ID 振り替えは選択肢 Y（割り込み + rename）を採用**: 旧 8-11「整理」を 8-12 にリネーム。歴史ファイル（`archives/`, `issues/resolved/`, `review-findings/resolved/`）内の旧 ID 参照は保持。歴史を書き換えない原則を守りつつ、依存順は論理的に維持
+- **シードは自動投入、手動体験は 11-F UAT へ**: smoke_check.md の前提フィクスチャが固定 UUID なので自動投入が必須。テナント登録 → ユーザー招待の業務フロー体験は uat_check.md 側で別途担保
+- **blocker 1-2（S3_BUCKET_NAME 等）は指揮役直接修正**: 2〜3 ファイル・各 5 行以下の機械的修正のため workflow.md の「小規模 → 指揮役が直接修正」に該当。platform-builder 再起動のオーバーヘッドを避けた
+- **blocker 2（添付シード追加）は platform-builder 再起動**: 実装 ~100 行 + testdata 追加で機械的修正の範疇を超えるため
+- **codex 3 回目指摘対応は architect 計画を経由**: ユーザー指摘で「即興でなくちゃんと計画」を実施。architect の実測調査（CI 非 compose 使用の発見）と選択肢分析が計画質を上げた
+- **seed サービスの profile 名は `seed`**: 汎用化（`tools`）する理由がなく、チケット責務文言と一致させることで認知負荷最小化
+- **`api.depends_on` の `minio: service_healthy` は削除**: `minio-init: service_completed_successfully` に含意されるため冗長を排除
+- **本セッションは 8-11 完了で区切り、11-A は次セッションへ**: セッションが既に 6 時間超、集中力と品質確保のため区切る判断。ユーザーも次回は別 issue 対応の可能性を示唆
