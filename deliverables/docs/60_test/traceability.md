@@ -221,8 +221,8 @@
 | NFR-SEC-003 | テナント分離（アプリ層 + RLS 二重保証） | `db_schema.md#RLS設定`, `authz.md#9` | `test_cases/cross-cutting.md#CRS-001〜020` | - | ルールID: TNT-001〜005 |
 | NFR-SEC-004 | RBAC 全APIでミドルウェア検証 | `authz.md#3`, `architecture.md#3.2` | `test_cases/cross-cutting.md#CRS-021〜075` | - | ルールID: RBC-001 |
 | NFR-SEC-005 | レート制限（認証済み: 100 req/min/user、未認証: 20 req/min/IP） | `security.md#4.1`, `openapi.yaml#x-ratelimit` | `test_cases/cross-cutting.md#CRS-076〜088` | - | ルールID: SEC-012 |
-| NFR-SEC-006 | CORS（許可オリジンを明示指定） | `security.md#4.2` | `test_cases/cross-cutting.md#CRS-076〜088` | - | ルールID: SEC-013 |
-| NFR-SEC-007 | セキュリティヘッダー（HSTS, X-Content-Type-Options, X-Frame-Options） | `security.md#4.3` | `test_cases/cross-cutting.md#CRS-076〜088` | - | ルールID: SEC-014 |
+| NFR-SEC-006 | CORS（許可オリジンを明示指定） | `security.md#4.2` | - | - | ルールID: SEC-013。MVP スコープ外。`issue 081 §1` で追跡、管理方式は `ops-080` で検討中 |
+| NFR-SEC-007 | セキュリティヘッダー（HSTS, X-Content-Type-Options, X-Frame-Options） | `security.md#4.3` | - | - | ルールID: SEC-014。MVP スコープ外。`issue 081 §1` で追跡、管理方式は `ops-080` で検討中 |
 | NFR-SEC-008 | ファイルアップロード MIMEタイプ検証、5MB制限 | `files.md#3`, `openapi.yaml#uploadAttachment` | `test_cases/attachments.md#ATT-004, ATT-006〜010` | - | ルールID: ATT-013, ATT-003 |
 
 ### 3.3 可用性（NFR-AVAIL-*）
@@ -230,7 +230,7 @@
 | 要件ID | 要件概要 | 設計反映先 | BE テスト反映先 | FE テスト反映先 | 備考 |
 |--------|---------|-----------|---------------|---------------|------|
 | NFR-AVAIL-001 | 稼働率 99.5% | `architecture.md#8.3`, ADR-0004 | - | - | 運用監視で確認。自動テスト対象外（インフラ SLA の計測は本番環境でのみ可能） |
-| NFR-AVAIL-002 | ヘルスチェックエンドポイント `/health` | `openapi.yaml#getHealth`, `architecture.md#8.3`, ADR-0005 | - | - | Step 9 以降で実装時にヘルスチェックテストを追加 |
+| NFR-AVAIL-002 | ヘルスチェックエンドポイント `/health` | `openapi.yaml#getHealth`, `architecture.md#8.3`, ADR-0005 | - | - | MVP スコープ外。`issue 081 §3` で追跡、管理方式は `ops-080` で検討中 |
 | NFR-AVAIL-003 | DB バックアップ RDS 自動バックアップ 7日間保持 | `architecture.md#8.3`, ADR-0004 | - | - | 運用確認項目 |
 
 ### 3.4 データ（NFR-DATA-*）
@@ -243,7 +243,7 @@
 | NFR-DATA-004 | MVP監査証跡（改ざんしにくいデータ構造） | `db_schema.md#expense_reports` | `test_cases/reports.md#RPT-053, RPT-065` | - | submitted_at/approved_at/rejected_at/paid_at の記録を検証 |
 | NFR-DATA-005 | 日本円（JPY）のみ、整数値 | `db_schema.md#expense_items.amount` | `test_cases/items.md#ITM-006, ITM-011〜014` | - | ルールID: ITM-002 |
 | NFR-DATA-006 | 文字コード UTF-8 | `db_schema.md#CREATE DATABASE` | - | - | 自動テスト対象外（DB 設定で保証。マイグレーション時に確認） |
-| NFR-DATA-007 | タイムゾーン UTC保存、表示時JST変換 | `architecture.md#4.2` | - | - | 自動テスト対象外（アプリケーション実装規約で保証。Step 9 以降でタイムスタンプ形式の検証を含める） |
+| NFR-DATA-007 | タイムゾーン UTC保存、表示時JST変換 | `architecture.md#4.2` | - | - | MVP スコープ外（手動補強: `smoke_check.md SMK-070/071`）。`issue 081 §2` で追跡、管理方式は `ops-080` で検討中 |
 
 ### 3.5 ユーザビリティ（NFR-UX-*）
 
