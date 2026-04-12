@@ -13,7 +13,7 @@
 | 5.5 | UI コンポーネント設計 | 完了 | 2026-04-06 | `ai-dev-framework/guide/work-breakdown/step5.5-ui-component/` |
 | 6 | テスト設計 | 完了 | 2026-04-12 | `ai-dev-framework/guide/work-breakdown/step6-testing/` |
 | 7 | 運用設計 | 完了 | 2026-03-26 | `ai-dev-framework/guide/work-breakdown/step7-operations/` |
-| 8 | 基盤構築 | 完了 | 2026-03-31 | `ai-dev-framework/guide/work-breakdown/step8-foundation/` |
+| 8 | 基盤構築 | 修正中 | 2026-03-31（初回完了）/ 再オープン 2026-04-12（8-11 追加） | `ai-dev-framework/guide/work-breakdown/step8-foundation/` |
 | 9 | テストコード実装 | 完了 | 2026-04-08 | `ai-dev-framework/guide/work-breakdown/step9-test-implementation/` |
 | 10 | 機能実装 | 完了 | 2026-04-11 | `ai-dev-framework/guide/work-breakdown/step10-feature-implementation/` |
 | 11 | システムテスト・UAT | 進行中 | - | `ai-dev-framework/guide/work-breakdown/step11-system-test/` |
@@ -42,7 +42,8 @@
 | 8-8 | テスト基盤 | backend-developer | 8-6 | 完了 | `tickets/step8/8-8-test-infra.md` |
 | 8-9 | CI/CD パイプライン | platform-builder | 8-2, 8-3 | 完了 | `tickets/step8/8-9-cicd.md` |
 | 8-10 | 開発者ツール | platform-builder | 8-2, 8-3 | 完了 | `tickets/step8/8-10-dev-tools.md` |
-| 8-11 | 整理 | platform-builder | なし | 完了 | `tickets/step8/8-11-cleanup.md` |
+| 8-11 | ローカル開発環境統合 | platform-builder | 8-1, 8-2, 8-3, 8-8 | 未着手 | `tickets/step8/8-11-local-dev-integration.md` |
+| 8-12 | 整理 | platform-builder | なし | 完了（旧 8-11） | `tickets/step8/8-12-cleanup.md` |
 
 ## Step 6: テスト設計 — 追加チケット（issue 074 対応）
 
@@ -94,7 +95,7 @@
 
 | ID | タスク | 担当 | 依存 | 状態 | チケット |
 |----|--------|------|------|------|---------|
-| 11-A | ローカル動作確認 | ユーザー + 指揮役 | Step 10 全完了 | 作業中 | `tickets/step11/11-A-local-verification.md` |
+| 11-A | ローカル動作確認 | ユーザー + 指揮役 | Step 10 全完了、Step 8-11 完了 | ブロック中（8-11 待ち） | `tickets/step11/11-A-local-verification.md` |
 | 11-B | 横断テスト（Go） | test-implementer | 11-A | 未着手 | `tickets/step11/11-B-cross-cutting-test.md` |
 | 11-C | E2E テスト（Playwright） | test-implementer | 11-A | 未着手 | `tickets/step11/11-C-e2e-test.md` |
 | 11-D | 横断レビュー | reviewer (codex) | 11-B, 11-C | 未着手 | `tickets/step11/11-D-cross-review.md` |
@@ -125,3 +126,4 @@
 | ops-062 | ワークフロースキルの粒度 |
 | 064 | MCP ジョブログが proxy allowlist でブロック |
 | 073 | work-breakdown の保証種別が test_strategy.md の実態と乖離（別セッションで対応予定） |
+| 076 | Step 8 ローカル開発環境統合の漏れ（本セッションで 8-11 として対応中） |
