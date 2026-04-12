@@ -71,3 +71,28 @@ AWS SDK v2 の標準挙動と合致するため、方針 B を推奨する。た
 
 - PR #44（Step 8-11 ローカル開発環境統合）: 本 issue が顕在化したきっかけ。PR #44 では `AWS_REGION=ap-northeast-1` を設定しており、動作上は問題なし
 - 本 issue と並行して起票: issue 077（`S3_PRESIGNED_URL_EXPIRY` が実装で環境変数参照されていない）
+
+---
+
+## 解決内容
+
+**採用方針**: 方針 B（設計書を実装に寄せる = `S3_REGION` → `AWS_REGION`）
+
+### 修正内容
+`dev-journal/deliverables/docs/70_operations/env_config.md` の 3 箇所を修正（commit `1c0ed5d`）:
+
+- **§4.4 L115**: 環境変数テーブル行を `S3_REGION / S3 リージョン` → `AWS_REGION / AWS リージョン（S3 アクセスで使用）` に更新
+- **§5.3 L217**: ECS タスク定義 JSON サンプル内の `"name": "S3_REGION"` → `"name": "AWS_REGION"` に更新
+- **L342**: dev 用 `.env` サンプル内の `S3_REGION=ap-northeast-1` → `AWS_REGION=ap-northeast-1` に更新
+
+### 理由
+- AWS SDK v2 は `AWS_REGION` を標準的に参照するため、実装側 (`internal/pkg/s3/client.go:33`) の現行挙動と設計書を揃えることで二重管理のリスクを排除
+- `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` と同じ `AWS_` プレフィックスに揃い、命名統一性も向上
+- 実装側 (`expense-saas/` 配下) の修正は不要（既に `AWS_REGION` を参照済み）
+
+### レビュー結果
+- **codex レビュー**: `PASS with NOTE`（blocker なし）
+  - NOTE: 完了済みチケット `tickets/step8/8-11-local-dev-integration.md` に古い `S3_BUCKET_NAME` 記述が残存するが、これは履歴ファイル書き換え禁止原則により本 issue スコープ外として対応不要と判断
+
+## 解決日
+2026-04-12
