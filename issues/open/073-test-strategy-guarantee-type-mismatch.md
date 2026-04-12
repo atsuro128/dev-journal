@@ -1,4 +1,4 @@
-# work-breakdown の保証���別が test_strategy.md の実態と乖離している
+# work-breakdown の保証種別が test_strategy.md の実態と乖離している
 
 ## 発見日
 2026-04-12
@@ -25,15 +25,15 @@ Step 6 の work-breakdown（`ai-dev-framework/guide/work-breakdown/step6-testing
 さらに、テストケースの実態ではこれ以外にも以下の観点が暗黙的にカバーされている:
 - 排他制御（楽観的ロック 409）
 - ページネーション
-- UI 状態（ローデ���ング、エラー表示）
+- UI 状態（ローディング、エラー表示）
 - キャッシュ整合性
 
 一方、以下の観点は traceability.md でカバー扱いだが実ケースが不足している:
 - CORS / セキュリティヘッダ（HSTS, X-Content-Type-Options, X-Frame-Options）
-- 真の競合シ��リオ（同時承認・同時支払のレー���再現）
+- 真の競合シナリオ（同時承認・同時支払のレース再現）
 - 組み合わせテスト（ロール × 所有者 × 状態 × テナント境界）
 - タイムゾーン（UTC保存/JST表示）
-- 二��送信防止
+- 二重送信防止
 - `/health` エンドポイント
 
 ## 影響
