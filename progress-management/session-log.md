@@ -1,68 +1,78 @@
 # 引き継ぎメモ
 
-## セッション: 2026-04-11 06:00〜11:00
+## セッション: 2026-04-11 17:00〜2026-04-12 12:00
 
 ### ゴール
-- Step 11 着手前のプロダクト issue 5件（065〜069）を全て解消する
+- Step 11 着手: work-breakdown の見直し + 11-A ローカル動作確認の開始
 
 ### 作業ログ
 
-#### Phase 1: 並列起動（069, 068, 065）
-1. 069（設計テーブル更新）: designer が state-management.md の invalidation テーブルを更新
-2. reviewer が useDeleteAttachment の非対称を指摘 → 実装のコメントに意図的な非対称が明記されていたため、設計テーブルを実装に合わせる形で修正 → reviewer 再レビュー PASS
-3. codex が「対称化のため実装も変更すべき」と差し戻し → スコープ拡大として却下、issue を resolved に移動
-4. 068（素HTML→MUI）: frontend-developer が PR #34 作成 → CI PASS → reviewer PASS
-5. 065（ownerPool）: architect が調査完了 → テスト環境の testuser がテーブルオーナーのため RLS バイパスされている事実を発見
-6. ユーザーに 065 の RLS / テーブルオーナー / リスクを詳細に説明
+#### Phase 1: Step 11 work-breakdown の見直し
+1. session-start で状態確認。Step 10 完了、Step 11 未着手を確認
+2. ユーザーと Step 11 の work-breakdown について議論:
+   - ローカル動作確認工程が抜けている
+   - E2E テスト（Playwright）が独立タスクになっていない
+   - 入力に test_strategy.md がない
+   - デプロイ環境構築が先頭にあるが最後でいい
+3. 方針合意: ローカル確認 → テスト → レビュー → デプロイ → スモークテスト
+4. architect に work-breakdown 再設計を依頼 → 完了
+5. 新タスク構成（6タスク）: 11-A ローカル確認 → 11-B Go横断テスト ‖ 11-C E2E → 11-D レビュー → 11-E デプロイ・スモーク → 11-F UAT
+6. work-breakdown 修正をコミット（ai-dev-framework: 3f64b01）
 
-#### Phase 2: 065 実装 + 068 codex 対応
-7. 065: backend-developer が PR #35 作成 → CI PASS → reviewer PASS
-8. codex が 065 に2件指摘: (a) ExecutePasswordReset の GetByTokenHash が owner 接続前 → FIX（妥当）、(b) ownerPool Ping 追加 → FIX（妥当）。直接修正してプッシュ
-9. codex 再レビューで (a) Signup/Login の GetByEmail が owner 前 → 却下（users テーブルは RLS 非適用）、(b) テスト不足 → 却下（UAT で検証の方針でユーザー合意済み）
-10. 068 codex: AppDataGrid + AppPagination を使うべきと指摘 → 妥当と判断、architect に計画依頼
+#### Phase 2: ローカル動作確認（11-A）の環境調査
+7. devcontainer 内でアプリを動かす方法を議論
+   - DB サーバーも Docker もない → docker compose 実行不可
+   - 案A（Go/Node 直接実行）、案B（docker-compose 統合）、案C（ホスト側で docker compose）を検討
+   - 案C（ホスト側で docker compose）を採用
+8. ユーザーがホスト側で docker compose up を実行
 
-#### Phase 3: 067, 066 並列起動 + 068 AppDataGrid 移行
-11. 067: architect 計画で api/auth.ts の login() が未使用と判明（currentUser は常に null の可能性）
-12. 067, 066, 068 AppDataGrid の実装を並列起動
-13. 067 CI 失敗: fetchQuery がテストでエラー → prefetchQuery に変更で解決
-14. 068 AppDataGrid: frontend-developer が3ファイル移行 + テスト修正 → CI PASS → reviewer warning 2件（headerName '金額'→'合計金額'、ReportListTable ¥プレフィックス）→ 直接修正
+#### Phase 3: issue 発見と対応
+9. **issue 070**: ユーザーがログイン画面で「LoginPage」テキストのみ表示を報告
+   - 原因: App.tsx が Step 8 のスケルトン `pages/LoginPage.tsx` を import していた
+   - 実装済みの `pages/login/LoginPage.tsx` が未接続
+   - signup, password-reset のルートも App.tsx に未登録
+   - PR #41 作成 → CI PASS
 
-#### Phase 4: codex 再レビュー + マージ
-15. 065 PR #35 マージ
-16. 067 codex: (a) ログアウト時 auth/me キャッシュ残留 → FIX（queryClient.removeQueries 追加）、(b) サーバー側ログアウト未実装 → FIX（useLogout Hook 新設）
-17. 066 codex: displayEmpty 空欄回帰 → FIX（displayEmpty 常時有効化）
-18. 066 PR #37 マージ、067 PR #36 マージ
-19. 068 codex: (a) 遷移アイコン列欠落 → FIX（別 PR で対応）、(b) totalPages <= 1 ページネーション → FIX
-20. 068 PR #34 マージ
+10. **issue 071**: ユーザーが pages ディレクトリ構成の不統一を指摘
+    - 3パターン混在（サブディレクトリ全部入り / Page直置き+子だけサブ / Page直置き+テストだけサブ）
+    - issue 059（解決済み）でコロケーション方式に統一する方針は確定済み
+    - サブディレクトリ方式（パターンA）に統一することで合意
+    - PR #42 作成 → CI 失敗（vi.mock パス未更新）→ 指揮役が直接修正 → CI PASS
+    - reviewer レビュー PASS → PR #42 マージ（PR #41 の変更含む）、PR #41 クローズ
 
-#### Phase 5: 遷移アイコン列追加
-21. PR #38 作成 → AppDataGrid 移行前のコードベースで作成されてしまいコンフリクト → クローズ
-22. PR #39 作成 → 古い 068 ブランチをマージしたため重複差分 → クローズ
-23. master から直接ブランチ作成し PR #40 → CI PASS → reviewer PASS
-24. codex: テストで5カラム検証がない → FIX（data-column-count 属性追加）
-25. PR #40 マージ
+11. **issue 072**: reviewer が管理系画面のルート未登録を指摘
+    - AllReportsPage（/reports/all）、TenantPage（/settings/tenant）が App.tsx に未登録
+    - PR #43 作成 → CI 起動せず → master とのコンフリクト解消後 CI PASS → マージ
 
-#### クリーンアップ
-26. ops-writer が issue 065-068 を resolved に移動、progress.md を更新
+#### Phase 4: クリーンアップ
+12. worktree 3つを削除（agent-a7c9beb0, agent-a45624e6, agent-a4e1037f）
+13. ユーザーがホスト側で docker compose up を再試行
+    - worktree 残骸の node_modules が Docker ビルドコンテキストに混入して失敗
+    - worktree 削除後に再試行を依頼した状態でセッション終了
 
 ### 未完了
-- なし
+- 11-A ローカル動作確認: ユーザーがホスト側で docker compose up → ブラウザ確認がまだ
+- architecture.md のディレクトリツリー更新（071 の付随作業）
+- issue 070-072 のファイルを resolved に移動（マージ済みだが移動していない）
+- progress.md の Step 11 チケット一覧追加
 
 ### ブロッカー
 - なし
 
 ### 次にやること
-1. **Step 11: システムテスト・UAT に着手**
-   - 11-A: デプロイ環境構築（AWS リソース、deploy.yml 有効化）
-   - 残存 issue（ops-055, 060, 061, ops-062, 064）は運用・基盤系のため Step 11 と並行で対応可能
+1. **docker compose up の成功確認** — ユーザーに再試行してもらう（worktree 削除済みなので通るはず）
+2. **ブラウザでの動作確認続行** — ログイン画面・各画面の表示・主要フローの手動確認
+3. **issue 070-072 を resolved に移動** + progress.md 更新
+4. **architecture.md のディレクトリツリー更新**（サブディレクトリ方式を反映）
+5. 動作確認で問題なければ 11-B / 11-C に進む
 
 ### 学び・気づき
-- **worktree の作成タイミングに注意**: PR マージ直後に worktree を作ると、fetch のタイミングによっては古い master から分岐する。直接 `git checkout -b ... origin/master` で作るのが確実
-- **codex の指摘は品質ゲート基準で判定する習慣が定着**: 今回は 069 の対称化、065 の GetByEmail、068 の遷移アイコンなど、スコープ拡大を適切に却下できた一方、067 の useLogout や 068 の AppPagination ガードなど妥当な指摘は受け入れた
-- **prefetchQuery vs fetchQuery**: テスト環境でモックがない API を呼ぶ場合、fetchQuery はエラーを投げるが prefetchQuery は飲み込む。onSuccess 内の fire-and-forget には prefetchQuery が安全
-- **ユーザーへの技術説明は段階的に**: RLS → テーブルオーナー → テスト環境の差異 と段階を踏んで説明し、ユーザーの理解度に合わせて深掘りした
+- **worktree の残骸が Docker ビルドを壊す**: .claude/worktrees/ 内の node_modules シンボリックリンクが Docker ビルドコンテキストに含まれてエラーになる。PR マージ後は速やかに worktree を削除すべき。.dockerignore に `.claude/` を追加する対策も検討
+- **vi.mock パスはファイル移動時に更新が漏れやすい**: import パスは更新されても vi.mock() の文字列パスは静的解析で検出されない。ファイル移動 PR では vi.mock のパスも確認すべき
+- **スカッシュマージ後の後続 PR はコンフリクトに注意**: PR #42 マージ後、PR #43 のブランチが古い master から分岐していたためコンフリクト発生。CI も起動しなかった
 
 ### 意思決定ログ
-- **065 テスト方針**: CI でのロール分離テストは見送り、Step 11 UAT での間接検証に委ねる。RLS の問題は「動くか動かないかの二択」のため、本番デプロイ時に即座にわかる
-- **codex 却下基準の明確化**: (1) RLS 非適用テーブルへのアクセスは owner 接続不要、(2) 既存バグは当該 issue のスコープ外、(3) 設計書のスコープ拡大解釈は issue 化して分離
-- **api/auth.ts 削除の判断**: architect が全関数未使用と確認 → 削除。ただし logout() 削除により POST /api/auth/logout の経路が消える問題を codex が指摘 → useLogout Hook で復元
+- **Step 11 タスク順序の変更**: ローカル確認 → テスト → デプロイの順に変更。デプロイ後は網羅テストではなくスモークテスト（主要フロー1本の疎通）で十分とした（ポートフォリオプロジェクトのため）
+- **ローカル実行方式**: devcontainer 内での実行（案A/B）ではなくホスト側 docker compose（案C）を採用。devcontainer に DB サーバーも Docker もないため。devcontainer 改善は別途検討
+- **pages ディレクトリ構成**: サブディレクトリ方式（パターンA）に統一。architecture.md のフラット配置設計から変更。テスト配置はコロケーション方式（issue 059 で確定済み）を維持
+- **PR #42 に PR #41 を含めてマージ**: ディレクトリ整理（071）が認証ルーティング修正（070）の変更を包含していたため、PR #42 のみマージし PR #41 はクローズ
