@@ -98,3 +98,40 @@ Step 8 に新規タスク **8-11「ローカル開発環境統合」** を割り
 
 - **要更新**: `progress.md` L45, `tickets/step8/8-11-cleanup.md`（→ `8-12-cleanup.md` にリネーム）, `ai-dev-framework/guide/work-breakdown/step8-foundation/main.md` L109,110,118,119,131,138,293, `step8-foundation/review.md` L43,82
 - **更新しない（歴史保持）**: `dev-journal/archives/**`, `dev-journal/issues/resolved/**`, `dev-journal/review-findings/resolved/**` — 旧 8-11「整理」の記録はそのまま保持
+
+---
+
+## 解決内容
+
+PR #44（Step 8-11「ローカル開発環境統合」）として対応完了。2026-04-12 に master へスカッシュマージ（merge commit `82497f1`）。
+
+### 実装した配線
+
+1. **シード投入 CLI**: `cmd/seed/main.go` + `internal/seed/seed.go` を新設。`testutil/fixture.go` の `SeedFixtures()` を `seed.Run()` のラッパーに縮退させ、本番用 DB と test 用 DB の両方から同一ロジックを呼ぶ構造に統一
+2. **マイグレーション自動適用**: `docker-compose.yml` に `migrate` init コンテナ（`migrate/migrate:v4.17.0`）を追加し、`depends_on.service_completed_successfully` で api/seed の起動順序を制御
+3. **MinIO 統合**: `minio` サービス + `minio-init` mc サイドカー（`expense-saas-receipts-dev` バケット作成）を追加。`.env.example` と docker-compose.yml に S3 関連環境変数を注入
+4. **README 起動手順**: 正規シーケンス（`generate-keys.sh` → `docker compose up -d` → `make seed`）、サービス表、停止/リセット、トラブルシュートを記載
+5. **seed サービスの Compose 統合**（codex 3 回目レビュー指摘対応）: `seed` サービスを `profiles: [seed]` で新設し、Dockerfile のマルチステージに seed バイナリビルドを追加。`make seed` を `docker compose --profile seed run --rm seed` に変更してホスト Go 非依存化
+6. **添付ファイルフィクスチャ**: `reportSubmitted` と `reportDraft` の両方に添付レコードと MinIO オブジェクトを seed 投入し、smoke_check.md の SMK-030〜038（特に SMK-037/038）を seed 直後に独立実施可能に
+
+### work-breakdown 更新
+
+- Step 8 main.md / review.md を更新
+- 新タスク 8-11「ローカル開発環境統合」を割り込ませ、旧 8-11「整理」を 8-12 にリネーム
+- 歴史ファイル（`dev-journal/archives/**`, `issues/resolved/**`, `review-findings/resolved/**`）の旧 8-11 参照は保持
+
+### レビュー履歴
+
+- reviewer: 5 回（1 回目 FIX → 2〜5 回目 PASS）
+- codex: 4 回（1〜3 回目 FIX → 4 回目 PASS）
+- CI: 全 PASS（ECONNRESET 一時障害でリラン 1 回）
+
+### 派生 issue
+
+本 PR のレビューで顕在化した設計書・実装乖離を別 issue として分離:
+
+- **issue 077**: `S3_PRESIGNED_URL_EXPIRY` が設計書定義されているが実装コードで環境変数参照されていない
+- **issue 078**: `S3_REGION`（設計書）vs `AWS_REGION`（実装）の変数名乖離
+
+## 解決日
+2026-04-12
