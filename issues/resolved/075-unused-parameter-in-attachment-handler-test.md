@@ -51,4 +51,23 @@ func addAuthHeader(t *testing.T, srv *testutil.TestServer, req *http.Request, us
 
 ## 解決内容
 
+### 実施内容
+- `internal/handler/attachment_handler_test.go:217` の関数定義から `srv *testutil.TestServer` 引数を削除
+- 同ファイル内の 18 箇所の呼び出しから `srv` 引数を削除（機械的置換）
+- 関数コメントを実態に合わせて更新（TestServer への言及を削除）
+
+### 提案 #3 の調査結果
+他のテストファイルで `*testutil.TestServer` を引数に取るヘルパーは `internal/handler/auth_test.go:76` の `loginAndGetTokens` のみだったが、こちらは関数内の 89 行目で `srv.Execute(req)` を実際に使用しているため**未使用ではなく、追加対応不要**。
+
+### 提案 #4 の扱い
+CI での静的解析（unusedparams）を失敗扱いにする検討は本 PR のスコープ外として保留。別途検討が必要なら issue として起票する。
+
+### PR & レビュー結果
+- **PR**: https://github.com/atsuro128/expense-saas/pull/46（commit `73956ff`）
+- **CI**: 全 6 ジョブ PASS（Lint / Test / Build × BE / FE）
+- **内部 reviewer**: PASS（blocker 0、warning 0、指摘ゼロ）
+- **codex レビュー**: PASS（指摘なし、スコープ管理・コメント整合性・呼び出し箇所の更新漏れ全てクリア）
+- **マージ**: `gh pr merge 46 --squash --delete-branch` で master にマージ済み（master 最新コミット `8e86f4f`）
+
 ## 解決日
+2026-04-13
