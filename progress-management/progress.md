@@ -130,3 +130,4 @@
 | 075 | attachment_handler_test.go の unused parameter |
 | 077 | S3_PRESIGNED_URL_EXPIRY 実装未参照（PR #44 レビューで顕在化） |
 | 078 | S3 関連変数名の設計書・実装乖離（S3_REGION vs AWS_REGION、PR #44 レビューで顕在化） |
+| 079 | env_config.md §4.x 全変数の棚卸し |
