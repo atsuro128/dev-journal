@@ -109,11 +109,11 @@ Logger ミドルウェアが自動的に付与する。
 // cmd/server/main.go での初期化イメージ
 var level slog.Level
 switch os.Getenv("LOG_LEVEL") {
-case "DEBUG":
+case "debug":
     level = slog.LevelDebug
-case "WARN":
+case "warn":
     level = slog.LevelWarn
-case "ERROR":
+case "error":
     level = slog.LevelError
 default:
     level = slog.LevelInfo

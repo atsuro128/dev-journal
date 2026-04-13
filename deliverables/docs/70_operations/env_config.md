@@ -93,7 +93,7 @@
 | `DATABASE_URL` | オーナーロール接続 URL | string (secret) | `postgres://expense_owner:localpass@localhost:5432/expense_saas?sslmode=disable` | Secrets Manager | Secrets Manager |
 | `APP_DATABASE_URL` | アプリロール接続 URL | string (secret) | `postgres://expense_app:localpass@localhost:5432/expense_saas?sslmode=disable` | Secrets Manager | Secrets Manager |
 
-コネクションプール設定（最大接続数・アイドル数・接続生存時間）は実装内で pgxpool のデフォルト値を使用しており、環境変数として外部化していない。
+コネクションプール設定（最大接続数・アイドル数・接続生存時間）は環境変数として外部化していない。アプリプールは pgxpool のデフォルト値、オーナープールは `MaxConns = 5` をハードコードで使用。
 
 ### 4.3 JWT 認証
 
@@ -141,7 +141,7 @@ Argon2id パラメータは SEC-002（OWASP 推奨値）に基づき実装内で
 | 分類 | 管理方式 | 対象 |
 |------|---------|------|
 | DB 接続情報 | AWS Secrets Manager（stg/prod）、環境変数（dev） | `DATABASE_URL`, `APP_DATABASE_URL` |
-| JWT 鍵ペア | AWS Secrets Manager（stg/prod）、ローカルファイル（dev） | `JWT_PRIVATE_KEY_PATH`, `JWT_PUBLIC_KEY_PATH` |
+| JWT 鍵ペア | AWS Secrets Manager（stg/prod）、ローカルファイル（dev） | RS256 秘密鍵・公開鍵（PEM）。アプリは `JWT_PRIVATE_KEY_PATH` / `JWT_PUBLIC_KEY_PATH` でファイルパスを参照 |
 | AWS 認証情報 | ECS タスクロール（stg/prod）、環境変数（dev、MinIO 用） | S3 アクセス |
 
 ### 5.2 AWS Secrets Manager の構成
