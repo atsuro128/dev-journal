@@ -96,8 +96,8 @@
 |------|------|
 | 署名アルゴリズム | RS256（RSA + SHA-256）（SEC-004） |
 | 鍵長 | RSA 2048bit 以上 |
-| 秘密鍵の保管 | 環境変数（`JWT_PRIVATE_KEY`）または AWS Secrets Manager |
-| 公開鍵の保管 | 環境変数（`JWT_PUBLIC_KEY`）。検証のみに使用 |
+| 秘密鍵の保管 | ファイルパスを環境変数（`JWT_PRIVATE_KEY_PATH`）で指定。stg/prod では Secrets Manager から取得した PEM を一時ファイルに配置（env_config.md §5.3 参照） |
+| 公開鍵の保管 | ファイルパスを環境変数（`JWT_PUBLIC_KEY_PATH`）で指定。検証のみに使用 |
 | 鍵フォーマット | PEM エンコード |
 | 鍵ペア生成 | `openssl genrsa -out private.pem 2048` / `openssl rsa -in private.pem -pubout -out public.pem` |
 
