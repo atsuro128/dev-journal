@@ -53,10 +53,10 @@
 
 | 項目 | dev | stg | prod |
 |------|-----|-----|------|
-| ログレベル | DEBUG | INFO | INFO |
+| ログレベル | `debug` | `info` | `info` |
 | CORS 許可オリジン | `http://localhost:5173` | `https://staging.expense-saas.example.com` | `https://expense-saas.example.com` |
-| レート制限（認証済み） | 無制限（開発効率優先） | 100 req/min/user | 100 req/min/user |
-| レート制限（未認証） | 無制限 | 20 req/min/IP | 20 req/min/IP |
+| レート制限（認証済み） | 100 req/min/user | 100 req/min/user | 100 req/min/user |
+| レート制限（未認証） | 20 req/min/IP | 20 req/min/IP | 20 req/min/IP |
 | DB 自動バックアップ | 無効 | 有効（7 日間） | 有効（7 日間） |
 | Container Insights | 無効 | 有効 | 有効 |
 | CloudWatch Alarms | なし | 設定あり | 設定あり |
