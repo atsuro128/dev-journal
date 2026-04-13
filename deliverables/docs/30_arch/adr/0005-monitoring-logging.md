@@ -57,7 +57,7 @@
 | 出力形式 | JSON（構造化ログ） |
 | 出力先 | stdout → CloudWatch Logs（ECS が自動転送） |
 | ログレベル | DEBUG / INFO / WARN / ERROR |
-| ログレベル設定 | 環境変数 `LOG_LEVEL` で制御（本番: INFO、開発: DEBUG） |
+| ログレベル設定 | 環境変数 `LOG_LEVEL` で制御（本番: `info`、開発: `debug`） |
 
 ### ログに含める標準フィールド
 
