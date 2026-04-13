@@ -35,16 +35,15 @@
 ### AuthStore
 
 - 責務: JWT トークンペア（アクセストークン・リフレッシュトークン）の保持と操作
-- 永続化: 不要（メモリのみ。ページリロードでログアウト。architecture.md SS4.2 準拠）
+- 永続化: sessionStorage（タブを閉じると破棄）。アクセストークン・リフレッシュトークンを sessionStorage に保存し、F5 リロード後もログイン状態を維持する。XSS リスクは React の自動エスケープと将来の CSP 設定で軽減し、本番運用では httpOnly Cookie への移行を検討する（issue 084）
+- sessionStorage キー名: `auth.access_token`, `auth.refresh_token`
 
 ```typescript
-// stores/auth.ts（既存スケルトン維持）
-// モジュール変数方式: Zustand を導入せず、export 関数で操作する
-
-interface AuthStoreState {
-  accessToken: string | null;
-  refreshToken: string | null;
-}
+// stores/auth.ts
+// モジュール変数方式: Zustand を導入せず、export 関数で操作する。
+// アクセストークン・リフレッシュトークンを sessionStorage に永続化し、
+// F5 リロード後もログイン状態を維持する。
+// プライベートモード等で sessionStorage が利用不可の場合はメモリ専用にフォールバックする。
 
 interface AuthStoreActions {
   getAccessToken(): string | null;
