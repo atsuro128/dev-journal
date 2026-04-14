@@ -313,6 +313,8 @@ JWT_PUBLIC_KEY_PATH=/app/keys/public.pem
 S3_BUCKET=expense-saas-receipts-dev
 AWS_REGION=ap-northeast-1
 S3_ENDPOINT=http://localhost:9000
+# 署名付きダウンロード URL 生成用エンドポイント。未設定時は S3_ENDPOINT にフォールバック
+S3_PUBLIC_ENDPOINT=http://localhost:9000
 AWS_ACCESS_KEY_ID=minioadmin
 AWS_SECRET_ACCESS_KEY=minioadmin
 
