@@ -112,7 +112,8 @@
 |--------|------|-----|-----|-----|------|
 | `S3_BUCKET` | 領収書格納バケット名 | string | `expense-saas-receipts-dev` | `expense-saas-receipts-stg` | `expense-saas-receipts-prod` |
 | `AWS_REGION` | AWS リージョン（S3 アクセスで使用） | string | `ap-northeast-1` | `ap-northeast-1` | `ap-northeast-1` |
-| `S3_ENDPOINT` | S3 互換エンドポイント（MinIO 用） | string | `http://localhost:9000` | 未設定（AWS デフォルト） | 未設定（AWS デフォルト） |
+| `S3_ENDPOINT` | S3 互換エンドポイント（MinIO 用）。内部通信・アップロード用 | string | `http://minio:9000` | 未設定（AWS デフォルト） | 未設定（AWS デフォルト） |
+| `S3_PUBLIC_ENDPOINT` | 署名付きダウンロード URL 生成に使うエンドポイント。未設定時は `S3_ENDPOINT` にフォールバック。ローカル開発ではホストブラウザから到達可能な URL を設定する | string | `http://localhost:9000` | 未設定（AWS デフォルト） | 未設定（AWS デフォルト） |
 | `AWS_ACCESS_KEY_ID` | AWS アクセスキー（MinIO 用） | string (secret) | MinIO デフォルト | ECS タスクロール | ECS タスクロール |
 | `AWS_SECRET_ACCESS_KEY` | AWS シークレットキー（MinIO 用） | string (secret) | MinIO デフォルト | ECS タスクロール | ECS タスクロール |
 
