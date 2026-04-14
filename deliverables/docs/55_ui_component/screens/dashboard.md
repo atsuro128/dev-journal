@@ -111,7 +111,7 @@ interface CountCardProps {
 | `count` | `number` | Yes | 表示する件数 | `useDashboard` レスポンスの各カウントフィールド |
 | `href` | `string` | No | クリック時の遷移先パス | 固定パス + クエリパラメータ |
 | `accentColor` | `'default' \| 'info' \| 'success' \| 'error' \| 'secondary'` | No | アクセントカラー | 固定値（ステータス色マッピング） |
-| `showBadge` | `boolean` | No | 要対応バッジ表示 | `count >= 1` の判定結果を親が算出 |
+| `showBadge` | `boolean` | No | 要対応バッジ表示。`count >= 1` のとき右上に赤点（dot）バッジを表示する。表示の意図は要対応件数の可視化であり、`anchorOrigin={{ vertical: 'top', horizontal: 'right' }}` + `aria-label="要対応あり"` で実装する | `count >= 1` の判定結果を親が算出 |
 | `unit` | `string` | No | 件数の単位（デフォルト:「件」） | 固定文字列 |
 
 ---
