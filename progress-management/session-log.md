@@ -1,157 +1,150 @@
 # 引き継ぎメモ
 
-## セッション: 2026-04-13 14:00頃〜20:50
+## セッション: 2026-04-14 朝〜14:21
 
 ### ゴール
-- Step 11-A ローカル動作確認の着手 — smoke_check.md 全 54 項目を手動実施し、発見した問題を issue 起票して解消
+- Step 11-A Phase 2 Member 連続実施の続行（SMK-012 開始点）
+- 実施中に発見した不具合の即時 issue 起票
+- 全 issue の対応計画を Plan モードで策定し承認を得る
 
 ### 作業ログ
 
-#### Phase 1: session-start と着手判断
-1. `/session-start` 実行、progress.md / session-log.md / 7 open issue（ops-055, 060, 061, ops-062, 064, ops-080, 081）を確認、未解決レビュー指摘なしを確認
-2. ユーザー意向「11-A 着手」で合意
-3. 11-A チケット `11-A-local-verification.md` と smoke_check.md 全 54 項目を読み込み
-4. 作業計画策定（環境起動準備 → ブラウザ疎通 → 全 54 項目手動実施 → 結果記録 → issue 起票 → 完了処理）
+#### Phase 1: session-start と環境リセット
+1. `/session-start` 実行 — 進行 Step 11、open issue 8 件、未解決指摘なしを確認
+2. ユーザー判断「11-A 続行」で合意、SMK-012 から再開方針を固める
+3. 前セッションの reportDraft 提出済み問題に対し、ユーザーがホスト側で `docker compose down -v && up -d --build && --profile seed run --rm seed` を実行して環境完全リセット
+4. リセット直後に「サーバーとの通信に失敗」エラー発生 → 仮説立てて DevTools / API ログ確認指示。実際は古い JWT/refresh token が sessionStorage に残ったまま DB ボリューム削除されたためで、ユーザーが該当現象に納得 → 自然解決
 
-#### Phase 2: プラン確定と結果ファイル初期化
-5. ユーザーから「1件ずつ具体的手順で順次提示してほしい」と指示
-6. Plan mode で進行プラン作成（`cuddly-knitting-gosling.md`）、ExitPlanMode で承認
-7. `dev-journal/progress-management/11-A-smoke-results.md` を新規作成（SMK-001〜094 の結果テーブル + 進捗管理 + FAIL ログ + UI 観察メモ）
+#### Phase 2: SMK-012 着手と実装バグ連鎖発見
+5. SMK-012 手順提示時に「ファイル添付ボタンが見つからない」とユーザー報告
+6. 実装調査で `ItemSlidePanel.tsx` / `AttachmentArea.tsx` を読み、添付 UI が「明細スライドパネル内」にあると確認、手順を再提示
+7. ユーザー追加報告 3 件:
+   - **カテゴリ欄でラベルと placeholder が重複表示**
+   - **明細行クリックで閲覧モードなのに添付操作が可能**
+   - **明細詳細/編集モード時にフォーム既存値がプリフィルされない**
+8. コード読解で根本原因特定:
+   - 089: AppSelect の label + placeholder 二重指定
+   - 091: 設計書 §5/§6 で draft 所有者の行クリック挙動が未定義、実装は「常に view モードで開くが canModify=true で添付 UI 出現」
+   - 090: ItemSlidePanel が `display: block/none` 切替のみで再マウントされず useForm の defaultValues が初回マウント時のみ評価される
+9. ユーザー追加報告: **「スライドパネルが実際にはスライドしない」** → 092 として、`display: block/none` のみで Drawer 未使用と確認
+10. ユーザー指摘で 11-A-smoke-results.md L175「発見-001」が PR #47 で既に解決済みであることを確認、「解決済み」マーク追加
+11. ユーザー判断: **「バッファに溜めるより issue に即時起票する運用に変える」**
 
-#### Phase 3: SMK-001 → 認証バグ発見（issue 082）
-8. SMK-001 提示（Member `test-member@example.com` / `TestPass1!`）
-9. FAIL: ログイン時に一瞬エラー → ログイン画面に戻る（シード未投入が root cause → `make seed` で復旧後は SMK-001 PASS）
-10. 復旧過程で **2 つの実装バグを発見**:
-    - **§1 AppLayout 未適用**: `App.tsx` のルートがほとんど `AppLayout` でラップされていない（ヘッダー・サイドバー・PrivateRoute 全欠落）→ SMK-002 以降ブロック
-    - **§2 ログイン 401 リダイレクト誤動作**: `api/client.ts` L77-101 が `/api/auth/login` の 401 にも refresh フローを走らせ、`window.location.href='/login'` で強制リロード → エラーメッセージが一瞬で消える
-11. Issue **082**（§1 + §2）起票、frontend-developer エージェントに修正委譲（ブランチ `fix/082-auth-flow-ux-bugs`、worktree 隔離、background）
+#### Phase 3: 即時起票運用への切り替えと issue 085〜094 起票
+12. 既存バッファ 4 件（UI 観察 3 + SMK-007 FAIL）+ 今回発見 3 件（089/090/091）+ Drawer 1 件（092）を一括起票
+13. SMK-030 観察基準確認時に「サムネ/アイコン要件が smoke_check.md にだけ存在」を発見 → 093 起票
+14. ファイルサイズ表示が生バイト数（`1024`, `2860118` 等）と発覚 → 094 起票
+15. ファイル名クリック時に MinIO の Docker 内部ホスト名 `minio:9000` で署名付き URL 生成され `ERR_NAME_NOT_RESOLVED` 発生 → 095 起票（SMK-037 ブロッカー、PresignClient の BaseEndpoint 共通使用が根本原因）
+16. issue 085〜095 計 11 件を `dev-journal/issues/open/` に作成、`11-A-smoke-results.md` の発行 issue テーブルと `11-A-local-verification.md` 運用ルール（不具合発見時は即時起票）を更新
 
-#### Phase 4: PR #47 レビュー・マージ
-12. frontend-developer 完了 → `PR #47` 作成（`PrivateRoute.tsx` / `AppLayoutOutlet.tsx` 新規、App.tsx ネストルート化、client.ts 401 バイパス）
-13. CI 全 6 ジョブ SUCCESS
-14. 内部レビュー（reviewer エージェント） → **FIX**: blocker 1（PrivateRoute/client.ts テストゼロ） + warning 2（死にモック、useAuth 未使用）
-15. 指摘評価: blocker は正当（認証クリティカルパス）、warning も正当 → 修正委譲
-16. 追加コミット `8dc4f8f`（PRT-001〜003、CLT-401-001〜004 追加、useAuth 置換、死にモック削除）
-17. 再レビュー → **PASS**
-18. codex レビュー → **APPROVE 相当・指摘なし**
-19. `gh pr merge 47 --squash` → マージコミット `e05ddf9`、worktree クリーンアップ
-20. Issue 082 を `resolved/` に移動、progress.md 更新
+#### Phase 4: Plan モード - 全 issue 統合対応計画策定
+17. ユーザー指示「各 issue の対応方針を先に計画しておかないと出戻りリスク」→ Plan モード突入
+18. Explore エージェント 3 並列起動して frontend / backend / seed の実装状態を網羅的に調査
+19. 調査結果を統合し、Group A〜F のグルーピングと並列戦略を設計、ファイル衝突マトリクスを作成
+20. 設計判断事項を AskUserQuestion で確定:
+    - **091**: 案 B（閲覧モード時は添付操作も禁止）
+    - **093**: 案 B（smoke_check.md からサムネ/アイコン記述削除）
+    - **087**: 切り分け結果は seed データ 3 重欠陥（候補 A 確定、psql で SQL 集計検証済み）
+    - **088 実装方針**: 各ページ個別でトースト発火（最小変更）
+    - **088 文言**: 案 A「この画面にアクセスする権限がありません。」（既存 smoke_check.md SMK-025 と一致）
+    - **094 配置**: lib/format.ts に追加（既存空ファイル活用）
+    - **並列戦略**: Stage 1 blocker 3 並列 → Stage 2 残り 2 並列
+    - **ルーティング基本方針**: URL ベース維持（業務 SaaS 要件: レポート URL 共有・ブックマーク・E2E テスト・既存実装）
+21. ユーザーから根本疑問「SPA で URL ベース必要？」と「404 偽装案 C で完全 404 と同一挙動か？」を投げかけられ、catch-all ルート未実装を発見
+22. catch-all 不在による真っ白画面問題は別 issue 096 として後追い、088 は案 A で確定
+23. プランファイル `/home/node/.claude/plans/curious-gathering-koala.md` 作成 → ExitPlanMode で承認
 
-#### Phase 5: SMK-001 / 002 / 003 / 004 / 005 実施
-21. ホスト側で `git pull && docker compose down/up -d --build` 完了
-22. SMK-001 PASS（Member 入口、下書き/提出中/却下カード確認）
-23. SMK-002 PASS（Approver 入口、承認待ちカード追加確認）
-24. SMK-003 PASS（Accounting 入口、支払待ちカード追加確認）
-25. SMK-004 PASS（Admin 入口、テナント全体集計確認）— 観察: 月別合計が 2026-03 のみ 0 円表示（seed データの分布起因の可能性）
-26. SMK-005 PASS（Member ナビ、ダッシュボード/マイレポート/レポート作成のみ表示）
-27. UI 観察バッファ 2 件追記: 却下カード右下の赤点 Badge、承認待ち/支払待ちカードのスタイル不統一
-
-#### Phase 6: F5 リロード問題発見（issue 083 + 084）
-28. ユーザー報告「ログイン状態で F5 を押すとログイン画面に戻る」
-29. 調査: `stores/auth.ts` がモジュール変数のみ（永続化なし）。F5 でトークン消失
-30. **設計矛盾発見**:
-    - `state-management.md L38`: 「永続化: 不要（メモリのみ。ページリロードでログアウト）」
-    - `smoke_check.md SMK-094`: 「F5 で再読込 → ログイン画面に戻らない」
-    - → 直接矛盾
-31. さらに引用先 `architecture.md SS4.2` は存在しない dangling reference
-32. ユーザー判断: **方針 B（smoke_check.md を正とし実装と state-management.md を修正）**。sessionStorage 採用
-33. ユーザー追加指示: XSS リスク説明を求める → 将来の httpOnly Cookie 移行を別 issue として起票
-34. **Issue 083** 起票（§1 設計矛盾解消 + §2 実装 sessionStorage 化）
-35. **Issue 084** 起票（post-MVP の httpOnly Cookie 移行、ops-080 紐付け、081 と同様）
-
-#### Phase 7: PR #48 レビュー・マージ
-36. frontend-developer に 083 を委譲、`fix/083-auth-token-persistence` ブランチ・worktree 隔離・background 起動
-37. 並行して SMK-002 PASS 記録（このタイミングで Phase 5 の続きを進めた）
-38. frontend-developer 完了 → `PR #48` 作成（`stores/auth.ts` sessionStorage 化、7 ケーステスト新規、state-management.md 修正）
-39. CI 全 6 ジョブ SUCCESS
-40. 内部レビュー → **PASS**（blocker 0 / warning 0 / info 2 のみ）
-41. codex レビュー → **APPROVE 相当・指摘なし**
-42. ユーザー承認 → `gh pr merge 48 --squash` → マージコミット `f1ca9cf`
-43. Issue 083 を `resolved/` に移動、progress.md 更新
-
-#### Phase 8: 実施順序の最適化（Member 先行へ）
-44. ホスト側で `git pull && docker compose up -d --build` → F5 リロード維持を確認
-45. SMK-003 PASS、SMK-004 PASS、SMK-005 PASS を連続実施
-46. ユーザーから「1件ずつアカウント変えるのは非効率」指摘
-47. ロール別グルーピングでロール切替 4 回に圧縮する計画を提案
-48. さらにユーザーから「セッションまたぎの持続性」指摘 → `smoke_check.md`（設計成果物）ではなく `11-A-local-verification.md`（チケット）に実施順序を追記する方針で合意
-49. ユーザーから「Member 先行が直感的」追加指摘 → データ依存（Approver/Accounting がフィクスチャを書き換える）も考慮して Member → Approver → Accounting → 未ログインの順に再設計
-50. `11-A-local-verification.md` に「実施順序」セクション追加（Phase 1〜5 + 設計原則）
-51. `11-A-smoke-results.md` の「現在地」欄を強化（現在 Phase / 次 SMK / Phase 別進捗テーブル）
-
-#### Phase 9: SMK-007 / 009 / 010 実施
-52. SMK-007 **FAIL**: 認可エラーリダイレクトは動作するが、仕様要求の「403 画面 or トースト」が表示されない（`TenantPage.tsx` L30-34 が黙って navigate しているだけ）。非ブロッカーだが UX 問題として FAIL 記録
-53. SMK-008 は Phase 5（未ログイン）に送る
-54. SMK-009 PASS（ログアウト後の戻るボタンでログイン画面維持、401 は未検証）
-55. SMK-010 PASS（reportDraft 提出時のボタン disabled + スピナー + 成功トースト + 提出済みステータス遷移）
-56. ユーザー判断「一旦セッション終了」
+#### Phase 5: 後片付け
+24. issue 096 起票（catch-all route 未実装）
+25. 11-A-smoke-results.md の発行 issue テーブルに 096 追加
+26. dev-journal の 14 ファイル（issue 12 件 + smoke-results + 11-A-local-verification）を 1 コミットでステージ・コミット（`bf08f2c`）
+27. `/session-log` で本セッションログを作成
 
 ### 未完了
-- **Step 11-A 残り 46 項目**: Phase 2 途中。次は **SMK-012**（添付アップロード中のローディング）
-- **UI 観察バッファ 3 件**: 全 SMK 完了後に issue 化（却下カード赤点、承認/支払カードのスタイル不統一、月別合計 0 円表示）
-- **SMK-007 FAIL の issue 化**: 認可エラー時のフィードバック欠落。非ブロッカーだが要対応
-- **ops-080 対応**: post-MVP スコープ管理方式の決定（前セッションから継続持ち越し）
-- **issue 081 / 084 対応**: ops-080 決定後に移動/分割
-- **運用系 open issue**: ops-055, 060, 061, ops-062, 064 は長期保留中
+- **Stage 1 並列起動**: Group A (089+090+091+092 frontend) / Group D (095 backend) / Group E (087 seed) を 3 並列で起動する作業が次セッションの最初のアクション
+- **Stage 2 並列起動**: Group B (085+086+094) / Group C (088) を Stage 1 完了後に順次（DashboardPage 衝突回避）
+- **Group F**: 091 設計書修正は Group A PR にバンドル指示、093 smoke_check.md 修正は Group B PR にバンドル指示
+- **Phase 3 SMK 再開**: 全 PR マージ後に環境リセット → SMK-012 / 030〜032 / 037 / 038 / 007 / 004 を再観察 → 残り Phase 2 Member SMK 続行
+- **issue 096**: Step 11-A 完了後の後追い対応
 
 ### ブロッカー
-- なし（issue 082 と 083 で解消済み）
+- なし（issue 090 と 095 は Stage 1 で解消予定）
 
 ### 次にやること
 
-`/session-start` で状態確認。以下の順で進める:
+`/session-start` で状態確認後、以下の順で進める:
 
-1. **Step 11-A 続行（Phase 2 Member 連続実施）** — 最優先
-   - 開始点: **SMK-012**（添付アップロード中のローディング）
-   - 前提データ注意: 本セッションで `reportDraft`（ccc...001）を提出済みにしたため、現在は「提出済み」状態。SMK-012 は reportDraft が必要なので `make seed` で再投入するか、reportDraftEmpty（明細なし）を使える項目から再開するか判断
-   - 推奨: `make seed` は冪等（ON CONFLICT DO NOTHING）なので安易に叩いても `reportDraft` が draft に戻らない点に注意。必要なら手動でステータス戻し or DB リセット
-2. **UI 観察 3 件 + SMK-007 FAIL の issue 化** — SMK 全項目完了後にまとめて実施
-3. **Step 11-B / 11-C 並列起動** — 11-A 完了後、test-implementer に委譲
-4. **ops-080 対応** — post-MVP の管理方式決定
+1. **プランファイル参照** — `/home/node/.claude/plans/curious-gathering-koala.md` を Read
+2. **Stage 1 並列起動** — 計画通り Group A / D / E を background + worktree で起動
+   - 起動前: `git -C expense-saas fetch origin`
+   - Group A: frontend-developer, ブランチ `fix/step11/item-form-and-slide-panel`、091 設計書修正同梱
+   - Group D: backend-developer, ブランチ `fix/step11/s3-presigned-public-endpoint`
+   - Group E: backend-developer, ブランチ `fix/step11/seed-data-expansion`
+3. **CI 監視 → レビュー → マージ** — workflow.md PR フローに従う
+4. **Stage 2 起動** — Stage 1 全マージ後、Group B → Group C の順次（DashboardPage.tsx 衝突回避）
+5. **Phase 3 SMK 再開** — 環境リセット + 修正検証 SMK + Phase 2 Member 残り続行
 
 ### 学び・気づき
 
-- **シード未投入の盲点** — SMK-001 の初回 FAIL は `make seed` 未実行が root cause。ユーザーは「docker compose up -d 済み」と伝えたがシード投入は別ステップ。**環境起動時には compose ps だけでなく seed 完了確認も必要**。次回の 11-A 再開時にも要確認
-- **実装バグの連鎖発見** — F5 問題（083）は 082 修正後に初めて気づけた。082 の `AppLayout` / `PrivateRoute` 適用で認証ガードが有効になったため、メモリ専用トークンの弱点が顕在化した。**1 つのバグを潰すと隣接バグが見える** — 環境整備 → 1 機能スモーク → 次のバグ発見、のサイクルは効率的
-- **設計矛盾の検出** — `state-management.md` と `smoke_check.md` の矛盾はスモーク実施時にしか発見できない類のバグ。Step 5.5 設計レビューでは検出できなかった。**複数文書の組合わせで矛盾する設計エラー** は、実装後のスモークが唯一の検出機会となる場合がある
-- **ロール切替の最適化を最初に設計すべきだった** — 初回 SMK 提示時、smoke_check.md の ID 順で機械的に進めてしまい、切替コストの問題をユーザー指摘まで気づけなかった。**初回着手時に「実施順序の最適化」を考える** べきだった。SMK 数 × ロール数のマトリクス分析は事前にできた
-- **持続可能性の観点** — セッション間の引き継ぎを減らすには「次セッションで同じ文脈を再構築できる成果物」を書き残す必要がある。チケット側に手順を書く判断は、単発セッションでの進め方ではなく、プロジェクトのライフサイクル全体を意識した判断
-- **Member 先行の理由は「心理」ではなく「データ依存」** — ユーザーは「Member 先行の方が心理的に楽」と指摘したが、実際にはフィクスチャ状態変更の依存関係（Approver が reportSubmitted を承認する、Accounting が reportApproved を支払処理する）でも Member 先行が必須。直感が技術的正解と一致するケース
-- **issue 084 を ops-080 紐付けで起票する判断** — sessionStorage 採用は妥当な MVP 判断だが、本番移行時には httpOnly Cookie が正解。この「将来の正解」を忘却しない仕組みとして ops-080 管理が有効。issue 081 と同じパターンで MVP スコープ外事項を明示的に記録
-- **codex レビューが両 PR で指摘ゼロ** — 本セッションの 2 PR（#47, #48）は codex が両方とも APPROVE 相当で通った。前セッションの issue 079 で codex が 4 ラウンド指摘を出したのとは対照的。**差分のサイズ・複雑度・文書横断範囲が小さい PR は codex も 1 回で通る**
+- **バッファ運用は機能しない** — 「軽微な発見はバッファに溜めて後でまとめて issue 化」という前回までの方針はユーザー指摘で破綻。実際にバッファが溜まると優先度判断が遅れ、関連バグの連鎖発見も阻害される。**発見即起票がオペレーション上正解**
+- **連鎖発見の継続** — 1 つのバグを潰すと隣接バグが顕在化するパターンが今セッションも継続。SMK-012 着手だけで 4 件の実装バグ + 1 件の設計乖離 + 1 件のインフラバグを発見した
+- **Plan モードでの Explore 並列調査の効率** — 3 つの Explore エージェントを並列起動して frontend / backend / seed を網羅的に調査することで、計画策定時の盲点を最小化できた。単独で読み進めるより数倍速い
+- **設計判断を後送りにすると出戻る** — ユーザーの指摘「対応方針を先に計画しておかないと出戻りリスク」は的確で、案 A/B/C/D の議論を前倒しで決着させたことで、エージェント委譲後の差し戻しが防げる
+- **404 偽装案の完全成立は別問題を呼ぶ** — 案 C を真剣に検討した結果、catch-all ルート未実装という別問題が浮上。小さな「セキュリティ強化」が「アーキテクチャ拡張」につながる典型例
+- **psql 切り分けの威力** — issue 087 の「集計クエリバグ or seed 不足」を 3 つの SQL クエリで 5 分以内に確定できた。「ユーザーがホスト側で psql を実行 → 結果を貼る」運用は効率的
+- **`cat -A` の出力が API フィルタを誤検知** — UTF-8 エスケープシーケンスが大量に並ぶと Claude Code 側のポリシー検知に引っかかった。バイナリ確認は `wc -c` や `xxd` の方が安全
 
 ### 意思決定ログ
 
-- **issue 082 の 2 不具合を 1 PR で修正**: §1 AppLayout 未適用 と §2 ログイン 401 リダイレクトは別々の原因だが、どちらも認証フロー UX に属する。1 PR で修正する方がレビュー・マージコストが安い
-- **PrivateRoute の採用と useAuth 経由**: reviewer 指摘で `getAccessToken` 直接呼び出しから `useAuth()` フック経由に変更。認証状態取得経路を一本化し、将来 httpOnly Cookie 移行時の変更点も最小化
-- **issue 083 は方針 B（実装修正）を採用**: 方針 A（smoke_check.md 側を修正）は UX が破綻するため不採用。ポートフォリオ MVP として F5 ログアウトは致命的欠陥。sessionStorage を localStorage より優先（タブ閉じで消える、他タブ共有なし）
-- **XSS リスクの受容判断**: sessionStorage は XSS があれば読み取り可能だが、React 自動エスケープ + dangerouslySetInnerHTML 不使用 + 将来 CSP 追加で多層防御可能。本番運用時には httpOnly Cookie に移行（issue 084）
-- **実施順序はチケット側に追記**: smoke_check.md（テスト設計書）は「何を検証するか」の正本として安定性が必要。「どの順序で実施するか」は作業計画の領域なのでチケット側（11-A-local-verification.md）に追記
-- **Member 先行の順序**: データ依存を考慮。Approver SMK-011 が reportSubmitted を承認して状態を変更するため、Member 系で reportSubmitted を参照する項目（SMK-037, 070 等）は Phase 2（Member）で完了させてから Phase 3（Approver）に進む
-- **SMK-007 を FAIL と判定**: `feedback_accountability.md` の「安易に PASS しない、仕様との乖離は黙って見逃さない」に従い、リダイレクトは動作するが仕様要求のフィードバック（403 画面 or トースト）が欠落しているため FAIL とした。非ブロッカーだが UX 問題として記録
-- **UI 観察は issue 化せずバッファに溜める**: SMK 全項目完了後に分類してまとめて issue 化。粒度が細かすぎる issue は避ける
-- **session-log archive 命名**: 前回セッション（11:00〜13:24）は終了日で 2026-04-13.md に追記。本セッション（14:00〜20:50）は次セッション開始時に同 2026-04-13.md へ追記される想定
+- **不具合発見時の運用変更**: バッファ → 即時起票へ転換。理由: 軽微な観察も独立 issue として記録すれば修正可否の判断履歴がトレース可能、優先度判断は issue メタデータで行う
+- **Plan モードで全 11 issue を統合計画**: 個別対応すると worktree 錯綜・修正重複・出戻りリスクが高いため、設計判断・文言・グルーピング・並列戦略をすべて前倒しで決着
+- **URL ベースルーティング維持**: hidden routing への移行は業務 SaaS 要件（レポート URL 共有・ブックマーク・E2E テスト）に反するうえ、既存 react-router 全面実装の撤去コストが過大
+- **088 案 A 採用**: 案 C（404 偽装）は catch-all ルートと BE 偽装まで必要でスコープ過大、案 B/D は smoke_check.md 文言修正が必要だが UX 改善効果が小さい。元々の案 A（既存 SMK-025 と完全一致）が最小変更
+- **Stage 1 = blocker 3 並列**: 090（フォームプリフィル）・095（ダウンロード URL）の 2 ブロッカーと、独立性の高い 087（seed 拡充）を並列起動。ファイル衝突なしを事前確認済み
+- **Stage 2 順次実施**: B（DashboardPage カードレイアウト変更）と C（DashboardPage に location state 受信処理追加）が DashboardPage.tsx で衝突するため B → C の順次
+- **issue 087 切り分けに psql 直接実行を採用**: 集計クエリ確認 + seed 検証 + paid_at 確認の 3 クエリで「seed 3 重欠陥」を確定、5 分で切り分け完了
+- **issue 096 を別起票**: 088 の対応スコープに含めず後追いとした。理由: catch-all ルート追加 + 404 ページ新設 + ルート構造整理は実装範囲が大きく、Step 11-A の必須対応外
 
 ### 環境再開時の注意
 
-- **docker compose の状態**: ホスト側で `up -d --build` 済み、`make seed` 実行済み
+- **docker compose の状態**: ホスト側で `up -d --build` 済み、`seed` 実行済み（本セッションでユーザー実施）
 - **フィクスチャ状態**:
-  - `reportDraft`（cccccccc-0001-0001-0001-000000000001）: 本セッションの SMK-010 で **提出済み** に変更した
-  - その他フィクスチャは seed 初期状態のはず
-- **再開時の推奨**:
-  - `reportDraft` が提出済みのままだと SMK-012（draft への添付アップロード）以降で使えない
-  - 対応: DB リセット（`docker compose down -v && up -d && make seed`）または Accounting で `reportPaid` を使った SMK 項目から再開
-  - 判断は次セッション冒頭で
+  - `reportDraft` は完全リセット後 draft 状態に戻っている
+  - SMK-012 試行で添付ファイルを 1 件追加した可能性あり（次セッションでも残存）
+- **次セッション再開時**:
+  - **環境リセットは不要**（現状で OK）
+  - Stage 1 のエージェント起動から開始
+  - エージェント完了後の Phase 3 で再度リセットが必要
 
-### PR/マージ済み（本セッション）
+### Plan ファイル
 
-| PR | タイトル | マージコミット | Issue |
-|----|---------|--------------|-------|
-| #47 | fix/082: 認証フロー UX バグ修正（AppLayout/PrivateRoute + login 401 リフレッシュ除外） | `e05ddf9` | 082 |
-| #48 | fix/083: 認証トークンを sessionStorage 永続化（F5 リロード後もログイン維持） | `f1ca9cf` | 083 |
+- パス: `/home/node/.claude/plans/curious-gathering-koala.md`
+- 内容: 全 11 issue の修正方針、ファイル衝突マトリクス、グルーピング、Stage 1/2 並列戦略、検証手順
+- 次セッションで Stage 1 起動前に必ず参照すること
+
+### 起票・コミット済み
+
+| コミット | 内容 |
+|---------|------|
+| `bf08f2c` | issue 085〜096 起票（12 件）+ 11-A-smoke-results.md / 11-A-local-verification.md 更新 |
 
 ### Open issue（本セッション追加分）
 
 | ID | タイトル | ステータス |
 |----|---------|-----------|
-| 084 | 認証トークン保管方式を sessionStorage → httpOnly Cookie へ移行（post-MVP） | 起票のみ、ops-080 紐付け |
+| 085 | ダッシュボード「却下」カード Badge dot 意図不明 | 起票のみ |
+| 086 | 承認待ち/支払待ちカードのスタイル不統一 | 起票のみ |
+| 087 | Admin ダッシュボード月別合計 0 円（seed 3 重欠陥） | 起票のみ |
+| 088 | 403 認可エラー時のフィードバック欠落 | 起票のみ |
+| 089 | カテゴリラベル重複 | 起票のみ |
+| 090 | 明細フォームプリフィル未実装 | **起票のみ（blocker）** |
+| 091 | 明細行クリック時挙動未定義 | 起票のみ（案 B 確定） |
+| 092 | スライドパネルが Drawer 未使用 | 起票のみ |
+| 093 | サムネ/アイコン要件不整合 | 起票のみ（案 B 確定） |
+| 094 | ファイルサイズ生バイト数表示 | 起票のみ |
+| 095 | S3 presigned URL minio ホスト名問題 | **起票のみ（blocker）** |
+| 096 | catch-all ルート未実装 | 起票のみ（後追い） |
+
+## 前回セッション
+
+前回セッション（2026-04-13 14:00頃〜20:50）の詳細は `dev-journal/archives/session-logs/2026-04-13.md` を参照。
