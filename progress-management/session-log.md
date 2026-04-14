@@ -1,150 +1,191 @@
 # 引き継ぎメモ
 
-## セッション: 2026-04-14 朝〜14:21
+## セッション: 2026-04-14 14:30〜23:23
 
 ### ゴール
-- Step 11-A Phase 2 Member 連続実施の続行（SMK-012 開始点）
-- 実施中に発見した不具合の即時 issue 起票
-- 全 issue の対応計画を Plan モードで策定し承認を得る
+- Step 11-A issue 085〜095 の統合対応計画（curious-gathering-koala.md）を実行
+- Stage 1（3 並列: Group A / D / E）+ Stage 2（Group B → C 順次）の全 5 PR をマージまで完走
+- Phase 3 SMK 再検証の準備まで整える
 
 ### 作業ログ
 
-#### Phase 1: session-start と環境リセット
-1. `/session-start` 実行 — 進行 Step 11、open issue 8 件、未解決指摘なしを確認
-2. ユーザー判断「11-A 続行」で合意、SMK-012 から再開方針を固める
-3. 前セッションの reportDraft 提出済み問題に対し、ユーザーがホスト側で `docker compose down -v && up -d --build && --profile seed run --rm seed` を実行して環境完全リセット
-4. リセット直後に「サーバーとの通信に失敗」エラー発生 → 仮説立てて DevTools / API ログ確認指示。実際は古い JWT/refresh token が sessionStorage に残ったまま DB ボリューム削除されたためで、ユーザーが該当現象に納得 → 自然解決
+#### Phase 1: セッション開始と Stage 1 起動
+1. `/session-start` 実行 — 前回セッションログ参照、Stage 1 並列起動が次アクションと確認
+2. プランファイル `/home/node/.claude/plans/curious-gathering-koala.md` を再読
+3. Stage 1 の 3 エージェントを worktree + background で並列起動:
+   - Group A（frontend）: `fix/step11/item-form-and-slide-panel` (089/090/091/092 + 091設計書)
+   - Group D（backend）: `fix/step11/s3-presigned-public-endpoint` (095)
+   - Group E（backend）: `fix/step11/seed-data-expansion` (087)
 
-#### Phase 2: SMK-012 着手と実装バグ連鎖発見
-5. SMK-012 手順提示時に「ファイル添付ボタンが見つからない」とユーザー報告
-6. 実装調査で `ItemSlidePanel.tsx` / `AttachmentArea.tsx` を読み、添付 UI が「明細スライドパネル内」にあると確認、手順を再提示
-7. ユーザー追加報告 3 件:
-   - **カテゴリ欄でラベルと placeholder が重複表示**
-   - **明細行クリックで閲覧モードなのに添付操作が可能**
-   - **明細詳細/編集モード時にフォーム既存値がプリフィルされない**
-8. コード読解で根本原因特定:
-   - 089: AppSelect の label + placeholder 二重指定
-   - 091: 設計書 §5/§6 で draft 所有者の行クリック挙動が未定義、実装は「常に view モードで開くが canModify=true で添付 UI 出現」
-   - 090: ItemSlidePanel が `display: block/none` 切替のみで再マウントされず useForm の defaultValues が初回マウント時のみ評価される
-9. ユーザー追加報告: **「スライドパネルが実際にはスライドしない」** → 092 として、`display: block/none` のみで Drawer 未使用と確認
-10. ユーザー指摘で 11-A-smoke-results.md L175「発見-001」が PR #47 で既に解決済みであることを確認、「解決済み」マーク追加
-11. ユーザー判断: **「バッファに溜めるより issue に即時起票する運用に変える」**
+#### Phase 2: GitHub Actions 課金停止と運用変更
+4. Group D 完了 → PR #49 作成直後、CI ジョブが「spending limit 超過」で起動失敗を検出
+5. ユーザー判断: 課金しない → **ローカル CI 運用に切り替え**
+6. 制約整理:
+   - devcontainer は bridge network で test-db (port 5433) に到達不可 → BE Test はホスト側で実施するか、マージ後に後追い検証
+   - vitest 並列クラッシュ前例あり → 3 worktree 間で順次実行
+   - Backend Lint は v1.64.8 → v2.1.6 へ upgrade（`.golangci.yml` が v2 形式のため）
+7. ユーザー指示: **BE Test はすべての対応が終わってマージ後にホスト側で確認**
+8. 指揮役（私）が devcontainer で lint/build/tsc/vitest をすべて実行:
+   - PR #49: BE Lint ✅ / BE Build ✅
+   - PR #50: BE Lint ✅ / BE Build ✅
+   - PR #51: FE Lint ✅ / tsc ✅ / vitest 465/465 ✅ / FE Build ✅
 
-#### Phase 3: 即時起票運用への切り替えと issue 085〜094 起票
-12. 既存バッファ 4 件（UI 観察 3 + SMK-007 FAIL）+ 今回発見 3 件（089/090/091）+ Drawer 1 件（092）を一括起票
-13. SMK-030 観察基準確認時に「サムネ/アイコン要件が smoke_check.md にだけ存在」を発見 → 093 起票
-14. ファイルサイズ表示が生バイト数（`1024`, `2860118` 等）と発覚 → 094 起票
-15. ファイル名クリック時に MinIO の Docker 内部ホスト名 `minio:9000` で署名付き URL 生成され `ERR_NAME_NOT_RESOLVED` 発生 → 095 起票（SMK-037 ブロッカー、PresignClient の BaseEndpoint 共通使用が根本原因）
-16. issue 085〜095 計 11 件を `dev-journal/issues/open/` に作成、`11-A-smoke-results.md` の発行 issue テーブルと `11-A-local-verification.md` 運用ルール（不具合発見時は即時起票）を更新
+#### Phase 3: Stage 1 内部レビュー & codex レビュー
+9. 3 PR の reviewer エージェントを並列起動
+10. **PR #49 reviewer**: PASS（info 3 件、`.env.example` 未追記など軽微）
+11. **PR #50 reviewer**: **FIX** — DSH-019 (`TestGetDashboard_MonthlySummary_OnlyPaidIncluded`) が時間依存で壊れる。seed 拡張で当月 paid が重複するため固定期待値 5000 が失敗
+12. **PR #51 reviewer**: PASS（info 1 件、MUI Backdrop テストの条件分岐のみ）
+13. 指揮役が DSH-019 を delta ベース（seed baseline + 5000）に直接修正・commit・push
+14. reviewer 再レビュー（PR #50）→ PASS
+15. ユーザー指示で **.env.example の S3_PUBLIC_ENDPOINT 追記** を議論 → 軽微だが指揮役判断で対応（設計書追記は不要と判断）
+16. codex review を 3 PR 並列実行:
+    - **PR #49**: PASS（blocker なし）
+    - **PR #50**: **REQUEST CHANGES** — 2 件（時間固定フィクスチャ、README.md / test_strategy.md 乖離）
+    - **PR #51**: **REQUEST CHANGES** — 2 件（089 placeholder 削除議論、090 テストがプリフィル値を検証していない）
+17. 089 placeholder 議論でユーザーと詳細検討:
+    - 選択肢: A 現状維持 / B shrink + notched で placeholder 維持 / C placeholder のみ / 4 label 削除
+    - ユーザー提案「placeholder そもそも不要」に合致する **現 PR の修正方針（MUI 標準パターン）が正** と結論
+    - codex 指摘 1 に対して反論コメント投稿（MUI 標準 + プロジェクト規約 + §6 は ASCII モック近似）
+18. PR #50 と PR #51 を並列で修正エージェント差し戻し:
+    - PR #50: seed を `time.Now().UTC()` 動的 rolling 3 months 化 + README.md / test_strategy.md 更新
+    - PR #51: RPT-FE-090-A/B にプリフィル値検証追加 + RPT-FE-090-C（編集ボタン経路）新規追加
 
-#### Phase 4: Plan モード - 全 issue 統合対応計画策定
-17. ユーザー指示「各 issue の対応方針を先に計画しておかないと出戻りリスク」→ Plan モード突入
-18. Explore エージェント 3 並列起動して frontend / backend / seed の実装状態を網羅的に調査
-19. 調査結果を統合し、Group A〜F のグルーピングと並列戦略を設計、ファイル衝突マトリクスを作成
-20. 設計判断事項を AskUserQuestion で確定:
-    - **091**: 案 B（閲覧モード時は添付操作も禁止）
-    - **093**: 案 B（smoke_check.md からサムネ/アイコン記述削除）
-    - **087**: 切り分け結果は seed データ 3 重欠陥（候補 A 確定、psql で SQL 集計検証済み）
-    - **088 実装方針**: 各ページ個別でトースト発火（最小変更）
-    - **088 文言**: 案 A「この画面にアクセスする権限がありません。」（既存 smoke_check.md SMK-025 と一致）
-    - **094 配置**: lib/format.ts に追加（既存空ファイル活用）
-    - **並列戦略**: Stage 1 blocker 3 並列 → Stage 2 残り 2 並列
-    - **ルーティング基本方針**: URL ベース維持（業務 SaaS 要件: レポート URL 共有・ブックマーク・E2E テスト・既存実装）
-21. ユーザーから根本疑問「SPA で URL ベース必要？」と「404 偽装案 C で完全 404 と同一挙動か？」を投げかけられ、catch-all ルート未実装を発見
-22. catch-all 不在による真っ白画面問題は別 issue 096 として後追い、088 は案 A で確定
-23. プランファイル `/home/node/.claude/plans/curious-gathering-koala.md` 作成 → ExitPlanMode で承認
+#### Phase 4: codex 再レビューのループ
+19. 再レビュー実行:
+    - **PR #50 再 1**: REQUEST CHANGES（README.md の内訳に approved × 1 抜け、draft_empty 記述不整合）
+    - **PR #51 再**: APPROVE 相当
+20. 指揮役が README.md を直接修正・push
+21. **PR #50 再 2**: REQUEST CHANGES（`TestSeed_PaidReportPeriodDistribution` が `len(months) >= 2` のみで 3 ヶ月分散を保証していない）
+22. 指揮役が seed_test.go を当月/前月/前々月の明示検証に強化
+23. **PR #50 再 3**: APPROVE 相当
 
-#### Phase 5: 後片付け
-24. issue 096 起票（catch-all route 未実装）
-25. 11-A-smoke-results.md の発行 issue テーブルに 096 追加
-26. dev-journal の 14 ファイル（issue 12 件 + smoke-results + 11-A-local-verification）を 1 コミットでステージ・コミット（`bf08f2c`）
-27. `/session-log` で本セッションログを作成
+#### Phase 5: Stage 1 マージと後処理
+24. ユーザー承認 → Stage 1 全 3 PR を `gh pr merge --squash --delete-branch --admin` で順次マージ（#49 #50 #51）
+25. 不要 worktree（agent-a0ca29b5 / a20fe306 / a8e87c18 / ad457247 / ad7b179f）を削除
+26. dev-journal で後処理コミット: issue 087/089/090/091/092/095 を resolved へ移動 + progress.md の「解決済み（2026-04-14）」セクション追加 + env_config.md §7.1 サンプル追記
+
+#### Phase 6: Stage 2 Group B（ユーザー外出中）
+27. ユーザーが外出前に Q1〜Q4 を確認:
+    - Q1 Group C タイミング: **A. Group B マージ待ち**（戻ってから）
+    - Q2 レビュー範囲: **B. 内部 reviewer + codex 両方**
+    - Q3 progress.md 更新: A（セッション内で実施）
+    - Q4 issue resolved 移動: A（セッション内で実施）
+28. Group B エージェント起動（`fix/step11/dashboard-and-attachment-display`、085 + 086 + 094 + 093 smoke_check.md 同梱）
+29. Group B 完了 → PR #52 作成
+30. ローカル CI: eslint ✅ / tsc ✅ / vitest 479/479 ✅ / build ✅
+31. 内部 reviewer: PASS（指摘なし、CountCard Badge・Grid 統一・formatFileSize すべて整合）
+32. codex review: 指摘なし（APPROVE 相当）
+
+#### Phase 7: ユーザー復帰後 — Stage 2 Group B マージと Group C
+33. ユーザー帰宅 → PR #52 マージ承認
+34. PR #52 squash merge → 後処理（issue 085/086/093/094 を resolved 移動、progress.md 更新）
+35. Group C エージェント起動（`fix/step11/auth-error-feedback`、088 対応）
+36. Group C 完了 → PR #53 作成
+37. ローカル CI: eslint ✅ / tsc ✅ / vitest 484/484 ✅
+
+#### Phase 8: PR #53 の再レビュー往復
+38. 内部 reviewer（PR #53）: **FIX** — blocker 1 件 + warning 2 件
+    - **Blocker #1**: `navigate('/', ...)` が App.tsx の `<Navigate to="/dashboard" replace />` 経由で state を失う（react-router 実装まで読んで根拠提示）
+    - **Warning #2**: テストが `path="/"` に直接 DashboardPage を載せており、実アプリの 2 段遷移を再現していない。blocker を検出できない
+    - **Warning #3**: SMK-025 の再現シナリオは `/workflow/pending` なので ApprovalListPage / PaymentListPage も対象。plan Group C がスコープ取りこぼしていた
+39. ユーザーと Warning #3 の意味を詳細議論:
+    - `/workflow/pending` が何か（Approver 専用の承認待ち画面）を説明
+    - issue 088 の再現手順（TenantPage）と smoke_check.md SMK-025（ApprovalListPage）の乖離が判明
+    - ユーザー承認: **本 PR に ApprovalListPage/PaymentListPage を含める**
+40. frontend-developer に差し戻し（既存 worktree、ブランチ同じ）:
+    - 4 ページ navigate 先修正（`/` → `/dashboard`）
+    - 4 テストファイルを 2 段ルーティング構成に変更
+    - Workflow 2 ページの 403 useEffect に toast state 追加
+    - 新規テスト APR-FE-001 / PAY-FE-001 追加
+41. 修正完了: 3 コミット（7e494ab / a9bf323 / f045a99）、vitest 486/486
+42. 内部 reviewer 再レビュー: PASS
+43. codex review: 指摘なし（APPROVE 相当）
+
+#### Phase 9: Stage 2 Group C マージと最終後処理
+44. ユーザー承認 → PR #53 squash merge
+45. 不要 worktree（agent-a9abe0fa / add833c1）削除
+46. dev-journal で後処理: issue 088 を resolved 移動、progress.md 更新、push
+47. セッションクローズへ → `/session-log` 実行
 
 ### 未完了
-- **Stage 1 並列起動**: Group A (089+090+091+092 frontend) / Group D (095 backend) / Group E (087 seed) を 3 並列で起動する作業が次セッションの最初のアクション
-- **Stage 2 並列起動**: Group B (085+086+094) / Group C (088) を Stage 1 完了後に順次（DashboardPage 衝突回避）
-- **Group F**: 091 設計書修正は Group A PR にバンドル指示、093 smoke_check.md 修正は Group B PR にバンドル指示
-- **Phase 3 SMK 再開**: 全 PR マージ後に環境リセット → SMK-012 / 030〜032 / 037 / 038 / 007 / 004 を再観察 → 残り Phase 2 Member SMK 続行
-- **issue 096**: Step 11-A 完了後の後追い対応
+- **Phase 3 SMK 再開**: 次セッションで実施予定
+  - ホスト側で `docker compose down -v && docker compose up -d --build && docker compose --profile seed run --rm seed` を実行
+  - ブラウザ sessionStorage クリア
+  - SMK-012 / 030〜032 / 037 / 038 / 007 / 004 を再観察（Stage 1/2 修正を検証）
+  - Phase 2 Member の残り SMK を順次実施
+- **issue 096**: catch-all ルート未実装（Step 11-A 完了後の後追い）
 
 ### ブロッカー
-- なし（issue 090 と 095 は Stage 1 で解消予定）
+- なし
 
 ### 次にやること
 
-`/session-start` で状態確認後、以下の順で進める:
-
-1. **プランファイル参照** — `/home/node/.claude/plans/curious-gathering-koala.md` を Read
-2. **Stage 1 並列起動** — 計画通り Group A / D / E を background + worktree で起動
-   - 起動前: `git -C expense-saas fetch origin`
-   - Group A: frontend-developer, ブランチ `fix/step11/item-form-and-slide-panel`、091 設計書修正同梱
-   - Group D: backend-developer, ブランチ `fix/step11/s3-presigned-public-endpoint`
-   - Group E: backend-developer, ブランチ `fix/step11/seed-data-expansion`
-3. **CI 監視 → レビュー → マージ** — workflow.md PR フローに従う
-4. **Stage 2 起動** — Stage 1 全マージ後、Group B → Group C の順次（DashboardPage.tsx 衝突回避）
-5. **Phase 3 SMK 再開** — 環境リセット + 修正検証 SMK + Phase 2 Member 残り続行
+1. `/session-start` で状態確認
+2. **Phase 3 SMK 再開準備**:
+   - ユーザーに環境リセット手順を案内
+   - ホスト側で `docker compose down -v && up -d --build && seed run` を実施してもらう
+   - ブラウザ sessionStorage クリア依頼
+3. **修正検証 SMK**:
+   - SMK-012（明細詳細パネル、Drawer 化 + プリフィル確認）
+   - SMK-030〜032（添付アップロード、ファイルサイズ X.X MB 形式）
+   - SMK-037（ダウンロード URL、localhost:9000 解決）
+   - SMK-038（添付削除）
+   - SMK-007（403 トースト、TenantPage/AllReports 直接アクセス）
+   - SMK-025（403 トースト、`/workflow/pending` 直接アクセス）
+   - SMK-004（Admin 月別合計、直近 3 ヶ月の paid 分散表示）
+4. **Phase 2 Member 残り SMK**: 発見-001 以降の残項目を続行
+5. 発見バグあれば即時起票（バッファ禁止、前セッションの教訓）
 
 ### 学び・気づき
 
-- **バッファ運用は機能しない** — 「軽微な発見はバッファに溜めて後でまとめて issue 化」という前回までの方針はユーザー指摘で破綻。実際にバッファが溜まると優先度判断が遅れ、関連バグの連鎖発見も阻害される。**発見即起票がオペレーション上正解**
-- **連鎖発見の継続** — 1 つのバグを潰すと隣接バグが顕在化するパターンが今セッションも継続。SMK-012 着手だけで 4 件の実装バグ + 1 件の設計乖離 + 1 件のインフラバグを発見した
-- **Plan モードでの Explore 並列調査の効率** — 3 つの Explore エージェントを並列起動して frontend / backend / seed を網羅的に調査することで、計画策定時の盲点を最小化できた。単独で読み進めるより数倍速い
-- **設計判断を後送りにすると出戻る** — ユーザーの指摘「対応方針を先に計画しておかないと出戻りリスク」は的確で、案 A/B/C/D の議論を前倒しで決着させたことで、エージェント委譲後の差し戻しが防げる
-- **404 偽装案の完全成立は別問題を呼ぶ** — 案 C を真剣に検討した結果、catch-all ルート未実装という別問題が浮上。小さな「セキュリティ強化」が「アーキテクチャ拡張」につながる典型例
-- **psql 切り分けの威力** — issue 087 の「集計クエリバグ or seed 不足」を 3 つの SQL クエリで 5 分以内に確定できた。「ユーザーがホスト側で psql を実行 → 結果を貼る」運用は効率的
-- **`cat -A` の出力が API フィルタを誤検知** — UTF-8 エスケープシーケンスが大量に並ぶと Claude Code 側のポリシー検知に引っかかった。バイナリ確認は `wc -c` や `xxd` の方が安全
+- **GitHub Actions 課金停止は想定外のブロッカー** — 月次 spending limit $0 設定のため超過時にジョブが即拒否される。ローカル CI 運用に切り替えるためには golangci-lint のバージョン整合（v1→v2）、vitest の並列問題、BE Test の DB 依存など複数の制約を解決する必要がある
+- **レビュー指摘の往復が多発** — PR #50 は codex review を 4 回実行（1 + 3 再レビュー）、PR #53 は 2 回実行。指摘の質は高かったが、初回実装で網羅しきれなかった分の再作業コストが大きい。次回は実装プロンプトに「時間固定 / 静的文書 / テストルーティング整合」を予防的に含める
+- **reviewer の根拠深度が高品質** — PR #53 の blocker #1 は reviewer が react-router のチャンクファイル実装まで読んで「Navigate prop の state は呼び出し元 state を引き継がない」と証明した。単なる警告ではなく実装根拠付きの指摘で、押し返し不可の説得力があった
+- **plan のスコープ漏れを発見** — plan Group C は TenantPage / AllReportsPage / DashboardPage 3 画面しか対象にしていなかったが、SMK-025 正本を読むと `/workflow/pending`（ApprovalListPage）が対象。plan 策定時に正本との照合が甘く、reviewer が検知して救済された
+- **軽微修正は「起票しない・対応しない」のラインを引く** — .env.example 追記の議論で、ユーザーに「軽微なら対応不要」と押し返された。info レベルは PR レビュー履歴で十分トレース可能、フォローアップ起票は運用負荷を生むため基本スキップする
+- **issue 088 と設計書の微妙な乖離** — issue ファイルの再現手順（TenantPage）と正本 smoke_check.md の再現手順（ApprovalListPage）が乖離していた。issue を起票した時点で正本との整合を確認していなかった。**次回 issue 起票時は smoke_check.md / test_strategy.md を先に確認する**
 
 ### 意思決定ログ
 
-- **不具合発見時の運用変更**: バッファ → 即時起票へ転換。理由: 軽微な観察も独立 issue として記録すれば修正可否の判断履歴がトレース可能、優先度判断は issue メタデータで行う
-- **Plan モードで全 11 issue を統合計画**: 個別対応すると worktree 錯綜・修正重複・出戻りリスクが高いため、設計判断・文言・グルーピング・並列戦略をすべて前倒しで決着
-- **URL ベースルーティング維持**: hidden routing への移行は業務 SaaS 要件（レポート URL 共有・ブックマーク・E2E テスト）に反するうえ、既存 react-router 全面実装の撤去コストが過大
-- **088 案 A 採用**: 案 C（404 偽装）は catch-all ルートと BE 偽装まで必要でスコープ過大、案 B/D は smoke_check.md 文言修正が必要だが UX 改善効果が小さい。元々の案 A（既存 SMK-025 と完全一致）が最小変更
-- **Stage 1 = blocker 3 並列**: 090（フォームプリフィル）・095（ダウンロード URL）の 2 ブロッカーと、独立性の高い 087（seed 拡充）を並列起動。ファイル衝突なしを事前確認済み
-- **Stage 2 順次実施**: B（DashboardPage カードレイアウト変更）と C（DashboardPage に location state 受信処理追加）が DashboardPage.tsx で衝突するため B → C の順次
-- **issue 087 切り分けに psql 直接実行を採用**: 集計クエリ確認 + seed 検証 + paid_at 確認の 3 クエリで「seed 3 重欠陥」を確定、5 分で切り分け完了
-- **issue 096 を別起票**: 088 の対応スコープに含めず後追いとした。理由: catch-all ルート追加 + 404 ページ新設 + ルート構造整理は実装範囲が大きく、Step 11-A の必須対応外
-
-### 環境再開時の注意
-
-- **docker compose の状態**: ホスト側で `up -d --build` 済み、`seed` 実行済み（本セッションでユーザー実施）
-- **フィクスチャ状態**:
-  - `reportDraft` は完全リセット後 draft 状態に戻っている
-  - SMK-012 試行で添付ファイルを 1 件追加した可能性あり（次セッションでも残存）
-- **次セッション再開時**:
-  - **環境リセットは不要**（現状で OK）
-  - Stage 1 のエージェント起動から開始
-  - エージェント完了後の Phase 3 で再度リセットが必要
+- **GitHub Actions 課金しない** → ローカル CI 運用切り替え。BE Test はマージ後にホスト側で検証する運用（ユーザー指示）
+- **DSH-019 を delta ベースに書き換え**（指揮役直接修正） → エージェント差し戻しより早い小規模修正は指揮役が直接行う判断
+- **089 placeholder 削除は MUI 標準として維持** → codex 指摘 1 に反論コメント投稿。プロジェクト全体の AppSelect 利用箇所と規約整合
+- **S3_PUBLIC_ENDPOINT は設計書本体に書かない** → ローカル開発の docker network 都合の実装詳細で、設計書の抽象度を下げる。env_config.md §4.4 と client.go コメントで十分
+- **ApprovalListPage / PaymentListPage を PR #53 に含める** → SMK-025 再現シナリオ対象、別 issue 後追いより 1 PR 完結が効率的
+- **Stage 2 の `/workflow/pending` テストを 2 段ルーティング構成で verify** → 実アプリ構造を再現することで将来の `navigate('/dashboard')` 経由 state バグを予防
+- **PR マージは `--admin` フラグで branch protection 迂回** → CI 課金停止中は required status checks が永遠に pass しないため、管理者権限で強行マージ。リスクはローカル CI 実施で緩和
 
 ### Plan ファイル
 
 - パス: `/home/node/.claude/plans/curious-gathering-koala.md`
-- 内容: 全 11 issue の修正方針、ファイル衝突マトリクス、グルーピング、Stage 1/2 並列戦略、検証手順
-- 次セッションで Stage 1 起動前に必ず参照すること
+- ステータス: **Stage 1 / Stage 2 全実行完了**（issue 085-095 すべて resolved）
+- 未実行: Phase 3 SMK 再開（次セッション）
 
-### 起票・コミット済み
+### マージ済み PR
 
-| コミット | 内容 |
-|---------|------|
-| `bf08f2c` | issue 085〜096 起票（12 件）+ 11-A-smoke-results.md / 11-A-local-verification.md 更新 |
+| PR | スコープ | 解消 issue | コミット SHA（master） |
+|---|---|---|---|
+| #49 | S3 PresignClient 分離 + .env.example | 095 | 164f172 |
+| #50 | seed 動的 rolling 3 months + 上流資料 | 087 | e78362b |
+| #51 | ItemForm/SlidePanel 修正 + 090 テスト強化 | 089 / 090 / 091 / 092 | 2b60743 |
+| #52 | Dashboard Badge + Grid 統一 + formatFileSize | 085 / 086 / 093 / 094 | 17e9db0 |
+| #53 | 403 認可エラー UX（6 ページ + 2 段ルータテスト） | 088 | 9618dc3 |
 
-### Open issue（本セッション追加分）
+### Open issue（残り）
 
-| ID | タイトル | ステータス |
-|----|---------|-----------|
-| 085 | ダッシュボード「却下」カード Badge dot 意図不明 | 起票のみ |
-| 086 | 承認待ち/支払待ちカードのスタイル不統一 | 起票のみ |
-| 087 | Admin ダッシュボード月別合計 0 円（seed 3 重欠陥） | 起票のみ |
-| 088 | 403 認可エラー時のフィードバック欠落 | 起票のみ |
-| 089 | カテゴリラベル重複 | 起票のみ |
-| 090 | 明細フォームプリフィル未実装 | **起票のみ（blocker）** |
-| 091 | 明細行クリック時挙動未定義 | 起票のみ（案 B 確定） |
-| 092 | スライドパネルが Drawer 未使用 | 起票のみ |
-| 093 | サムネ/アイコン要件不整合 | 起票のみ（案 B 確定） |
-| 094 | ファイルサイズ生バイト数表示 | 起票のみ |
-| 095 | S3 presigned URL minio ホスト名問題 | **起票のみ（blocker）** |
-| 096 | catch-all ルート未実装 | 起票のみ（後追い） |
+| ID | タイトル | 対応予定 |
+|---|---|---|
+| 096 | catch-all ルート未実装 | Step 11-A 完了後の後追い |
+| ops-055, 060, 061, ops-062, 064, ops-080, 073, 075, 077, 078, 079, 081, 084 | 運用系 / post-MVP | スコープ外 |
+
+### 環境再開時の注意
+
+- **docker compose の状態**: 前セッション終了時点の状態のまま（未リセット）
+- **次セッション再開時**:
+  - **環境リセット必須**: Stage 1/2 の修正を検証するため `docker compose down -v && up -d --build && seed run` を実行
+  - **ブラウザ sessionStorage クリア必須**: 古い JWT/refresh token の混入を防ぐ
+  - SMK-012 から Phase 3 SMK を開始
 
 ## 前回セッション
 
-前回セッション（2026-04-13 14:00頃〜20:50）の詳細は `dev-journal/archives/session-logs/2026-04-13.md` を参照。
+前回セッション（2026-04-14 朝〜14:21）の詳細は `dev-journal/archives/session-logs/2026-04-14.md` を参照。
