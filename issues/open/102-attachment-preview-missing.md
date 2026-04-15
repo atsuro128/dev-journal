@@ -39,9 +39,55 @@ Step 5（詳細設計）/ Step 10-G（添付ファイル機能実装）/ Step 11
   - 署名付き URL 発行時に `ResponseContentDisposition=attachment; filename="..."`
 - `GET /api/reports/:id/items/:itemId/attachments/:attId/preview`（新設）
   - 署名付き URL 発行時に `ResponseContentDisposition=inline; filename="..."`
-- 両方とも同じ認可ロジックを呼ぶ（service 層に共通関数）
-- レスポンス型は同じ `{ url, expires_at }`
+- 両方とも同じ認可ロジックを呼ぶ（service 層に共通関数 `GeneratePresignedURL(disposition string)`）
+
+#### レスポンススキーマ: 共通 `AttachmentAccess` へ統合
+
+既存 `AttachmentDownload` スキーマ（`download_url`, `file_name`, `mime_type`, `file_size`, `expires_at` の 5 フィールド）を **`AttachmentAccess` にリネーム**し、`download_url` → `url` にリネーム。`/download` と `/preview` の両方が同じスキーマを返す。
+
+```yaml
+AttachmentAccess:
+  type: object
+  required: [url, file_name, mime_type, file_size, expires_at]
+  properties:
+    url:        { type: string, format: uri, description: "署名付き URL。Content-Disposition は発行エンドポイントで決まる" }
+    file_name:  { type: string }
+    mime_type:  { type: string }
+    file_size:  { type: integer }
+    expires_at: { type: string, format: date-time }
+```
+
+影響範囲: `openapi.yaml`, `files.md`, `types.ts`, `dto.go`, `test_cases/attachments.md`, `traceability.md`, `55_ui_component/screens/report-detail.md` 等、既存 5 フィールド前提の全箇所を更新する（詳細は決定 6 参照）。
+
+#### フロント呼び出しパターン: クリック同期で空タブ open → URL 差し替え（ポップアップブロック回避）
+
+非同期 fetch 後に `window.open(url)` を呼ぶと、クリックイベントと切り離されてブラウザのポップアップブロックに引っかかる。これを回避するため、**クリック同期で空タブを先に開き、URL 取得後に location を差し替える**パターンを採用する。
+
+```ts
+// AttachmentArea.tsx (orchestration 担当)
+const handlePreview = (attId: string) => {
+  // クリック同期で空タブを先に開く（ポップアップブロック回避）
+  const newWindow = window.open('about:blank', '_blank');
+  if (!newWindow) {
+    showErrorToast('ポップアップがブロックされました。ブラウザ設定を確認してください');
+    return;
+  }
+  // URL を非同期で取得
+  fetchPreviewUrl(reportId, itemId, attId)
+    .then(data => { newWindow.location.href = data.url; })
+    .catch(() => {
+      newWindow.close();
+      showErrorToast('プレビューの取得に失敗しました');
+    });
+};
+```
+
+設計書（`report-detail.md` §7 / `files.md`）にもこの実装制約を明記する。
+
+- 実際の API 呼び出しと `window.open` 呼び出しは `AttachmentArea.tsx`（orchestration 担当）に配置
+- `AttachmentList.tsx`（presentational）は `onPreview` / `onDownload` コールバックを props で受け取るだけ
 - フロント hook も 2 つに分割: `useAttachmentDownloadUrl` / `useAttachmentPreviewUrl`
+  - いずれも `enabled: false` + 明示的 `refetch()` 方式（初期ロード不要）
 
 ### 決定 4: 認可・セキュリティ → **案 A（既存 15 分・調整なし）**
 - 認可ルール: 既存 attachment 取得 API と同じ（同一テナント + 閲覧権限）
@@ -55,62 +101,120 @@ Step 5（詳細設計）/ Step 10-G（添付ファイル機能実装）/ Step 11
 - smoke_check.md SMK-060〜063 のレスポンシブカバレッジ不足は **issue 104 に統合**（ロール別表示制御 + レスポンシブを 1 つの監査マトリクスで扱う）
 - モバイル対応そのものは NFR-UX-001（正式要件）として維持
 
-### 決定 6: 設計書修正範囲 → **叩き台を提示、codex レビューで監査**
+### 決定 6: 設計書修正範囲 → **codex 監査指摘を反映（2026-04-15）**
 
-以下は指揮役が整理した叩き台。抜け漏れ・不要項目を codex に監査してもらう。
+初版の叩き台は `dev-journal/review-findings/open/101-issue102-attachment-preview-audit.md` の指摘 3〜6 を受けて全面改訂。横断参照、テスト責務、実装ファイルパス、API 契約互換性の問題を全て反映した。
 
 #### 設計書（修正対象）
 
 | # | ファイル | 修正内容 |
 |---|---|---|
-| D1 | `deliverables/docs/50_detail_design/openapi.yaml` | 既存 `GET /api/.../attachments/:attId` を `/download` にリネーム。新規 `/preview` エンドポイント追加。両方ともレスポンススキーマ `{ url, expires_at }` を定義、認可ルールを既存同等と明記 |
-| D2 | `deliverables/docs/50_detail_design/files.md` §3〜§4 | `Content-Disposition` の扱いを「ダウンロード時は `attachment`、プレビュー時は `inline`」に変更。`ResponseContentDisposition` パラメータを用途別に記述。既存の `attachment` 固定記述を修正 |
-| D3 | `deliverables/docs/50_detail_design/screens/report-detail.md` §7 | 操作方法を「ファイル名クリック = プレビュー、↓ アイコン = ダウンロード」に変更。UI モック（L266 付近）に ↓ アイコン追加。挙動記述を「新しいタブでファイルを表示（画像・PDF）またはダウンロード」に明確化 |
-| D4 | `deliverables/docs/60_test/manual_checklists/smoke_check.md` SMK-037 | プレビュー動作の期待結果を追加。「1. ファイル名テキストを押下 → 新しいタブで表示。2. ↓ アイコン押下 → ダウンロード開始」 |
-| D5 | `deliverables/docs/60_test/test_cases/attachments.md`（存在確認要）| プレビュー関連のテストケース追加（認可 4 ロール × 2 操作）|
+| D1 | `deliverables/docs/50_detail_design/openapi.yaml` | 既存 `getAttachmentDownload` オペレーション（L1265 付近）を `/download` パスにリネーム。新規 `getAttachmentPreview` オペレーション追加。`AttachmentDownload` スキーマ（L2187 付近）を `AttachmentAccess` にリネームし `download_url` → `url` に変更。両オペレーションのレスポンスは `AttachmentAccess` を参照 |
+| D2 | `deliverables/docs/50_detail_design/files.md` §3〜§4 | `Content-Disposition` の扱いを「ダウンロード時は `attachment`、プレビュー時は `inline`」に変更。L305 以降のレスポンス例と L328 以降の署名付き URL 設計を `url` / `AttachmentAccess` 前提で書き換え。L333 の `ResponseContentDisposition` 記述を用途別に分割。新タブ方式での「クリック同期で空タブ open → location 差し替え」パターンを実装制約として明記 |
+| D3 | `deliverables/docs/50_detail_design/screens/report-detail.md` §7 | 操作方法を「ファイル名クリック = プレビュー、↓ アイコン = ダウンロード」に変更。UI モック（L266 付近）に ↓ アイコン追加。L360 の「署名付き URL を取得し、新しいタブでファイルを表示/ダウンロード」を「クリック同期で空タブを開き、非同期取得した署名付き URL で location を差し替える」と明確化 |
+| D4 | `deliverables/docs/50_detail_design/authz.md` | L195 のルート定義断片を `/download` と `/preview` の 2 エンドポイントに分割。L325 の添付 API マトリクスに `/preview` を追加（4 ロール × 2 操作）。認可ルールは既存 download と同じ（同一テナント + 閲覧権限）と明記 |
+| D5 | `deliverables/docs/50_detail_design/security.md` | L425-426 の CSP `img-src` と S3 アクセス方針を、preview 導入後の表現に整理。新タブ `window.open` は CSP 対象外である旨を明記 |
+| D6 | `deliverables/docs/55_ui_component/state-management.md` | L127 の `useAttachmentDownload` 前提を `useAttachmentDownloadUrl` / `useAttachmentPreviewUrl` の 2 hook 分割前提に更新 |
+| D7 | `deliverables/docs/55_ui_component/screens/report-detail.md` | L512 付近の添付ダウンロード前提 UI 定義を、プレビュー + ダウンロード併存前提に更新 |
+| D8 | `deliverables/docs/60_test/manual_checklists/smoke_check.md` SMK-037 | プレビュー動作の期待結果を追加。「1. ファイル名テキストを押下 → クリック同期で新しいタブが開き、取得完了後に画像/PDF が表示される。2. ↓ アイコン押下 → ダウンロード開始」 |
+| D9 | `deliverables/docs/60_test/test_cases/attachments.md` | L160 付近の `data.download_url` 前提を `data.url` + `AttachmentAccess` 前提に書き換え。プレビュー関連のテストケース追加（認可 4 ロール × 2 エンドポイント） |
+| D10 | `deliverables/docs/60_test/test_cases/cross-cutting.md` | L147 付近の `CRS-010` `GetAttachmentDownload` 前提に、`GetAttachmentPreview` の越境ケースを追加 |
+| D11 | `deliverables/docs/60_test/traceability.md` | L79 付近の `ATT-F03` 正本参照を `getAttachmentDownload` / `getAttachmentPreview` の 2 参照に更新 |
+
+**codex レビューで `architecture.md` は現行ツリーに存在しないため修正対象から除外**。
 
 #### テスト（新規 / 更新）
 
-| # | 種別 | ファイル（想定）| 内容 |
+| # | 種別 | ファイル | 内容 |
 |---|---|---|---|
-| T1 | BE handler test | `internal/handler/attachment_handler_test.go` | `TestGetPreviewURL` 追加、4 ロール × 2 エンドポイントの認可テスト |
-| T2 | BE service test | `internal/service/attachment_service_test.go` | `GeneratePreviewURL` / `GenerateDownloadURL` の分岐テスト |
-| T3 | FE hook test | `frontend/src/hooks/__tests__/useAttachmentDownloadUrl.test.tsx`（リネーム）+ 新規 `useAttachmentPreviewUrl.test.tsx` | エンドポイント変更を反映、両 hook の API 呼び出し検証 |
-| T4 | FE component test | `frontend/src/pages/reports/__tests__/AttachmentList.test.tsx` | ファイル名クリックで `window.open(preview_url)`、↓ アイコンで `window.open(download_url)` を検証 |
-| T5 | Cross-cutting test | `internal/handler/cross_cutting_test.go`（Step 11-B で実装予定）| RBAC マトリクスに `/preview` エンドポイント追加 |
+| T1 | BE handler test | `expense-saas/internal/handler/attachment_handler_test.go`（既存、`ATT-030`〜`ATT-041` に追加）| `/download` はリネーム対応、`/preview` 系ケースを mirror で追加（4 ロール × 認可テスト、テナント越境テスト）|
+| T2 | BE service test | `expense-saas/internal/service/attachment_service_test.go`（新規）| `GeneratePresignedURL(disposition string)` の分岐テスト。既存 service には unit test がないため新設 |
+| T3 | FE hook test | `expense-saas/frontend/src/hooks/__tests__/useAttachmentDownloadUrl.test.tsx`（既存をリネーム）+ 新規 `useAttachmentPreviewUrl.test.tsx` | エンドポイント変更を反映、両 hook の API 呼び出しと返却型（`AttachmentAccess`）検証 |
+| T4 | FE presentational test | `expense-saas/frontend/src/pages/reports/__tests__/AttachmentList.test.tsx`（既存） | ファイル名クリックで `onPreview(attId)` コールバック発火、↓ アイコンで `onDownload(attId)` コールバック発火を検証。**`window.open` 呼び出しは検証しない**（presentational の責務外）|
+| T5 | FE integration test | `expense-saas/frontend/src/pages/reports/__tests__/AttachmentArea.integration.test.tsx`（既存、ATT-FE-047/048 周辺に追加）| 実際の API 呼び出しと `window.open('about:blank')` → `location.href` 差し替えパターンを検証（preview / download 両方）|
+| T6 | cross-cutting BE test | Step 11-B で `cross_cutting_test.go` が新設される予定だが、**現時点では存在しないため、`attachment_handler_test.go` に越境ケースを追加**。Step 11-B 着手時に cross_cutting_test.go へ移行する |
 
 #### 実装（新規 / 更新）
 
-| # | 種別 | ファイル（想定）| 内容 |
+| # | 種別 | ファイル | 内容 |
 |---|---|---|---|
-| I1 | BE handler | `internal/handler/attachment_handler.go` | `GetPreviewURL` メソッド追加、`GetDownloadURL` にリネーム（既存ロジック流用）|
-| I2 | BE service | `internal/service/attachment_service.go` | `GeneratePresignedURL(disposition string)` 共通関数 + 公開関数 2 つ |
-| I3 | BE ルーティング | `internal/router/router.go`（想定）| 新エンドポイント 2 つを登録（既存 1 つはリネーム）|
-| I4 | FE hook | `frontend/src/hooks/useAttachmentDownloadUrl.ts` + 新規 `useAttachmentPreviewUrl.ts` | 既存 `useAttachmentDownload.ts` を分割 |
-| I5 | FE component | `frontend/src/pages/reports/AttachmentList.tsx` | ファイル名 onClick、↓ IconButton 追加、window.open 呼び出し |
-| I6 | FE 型定義 | `frontend/src/api/types.ts`（想定）| `AttachmentDownload` 型を用途別に分割 or リネーム |
+| I1 | BE handler | `expense-saas/internal/handler/attachment.go`（既存、`attachment_handler.go` ではない）| `GetAttachmentDownload` を `/download` パスにリネーム対応、新規 `GetAttachmentPreview` メソッド追加 |
+| I2 | BE service | `expense-saas/internal/service/attachment_service.go`（既存想定、要確認）| `GeneratePresignedURL(disposition string)` 共通関数追加、`GenerateDownloadURL` / `GeneratePreviewURL` の公開関数 2 つ |
+| I3 | BE ルーティング | `expense-saas/cmd/server/main.go`（既存、L188 付近）| 既存 `/attachments/:attId` ルートを `/attachments/:attId/download` にリネーム、`/attachments/:attId/preview` を新設 |
+| I4 | BE test 用ルーティング | `expense-saas/internal/testutil/http.go`（既存、L102 付近）| 本番ルーティングと同じ変更を適用 |
+| I5 | BE DTO | `expense-saas/internal/domain/dto.go`（既存、L68 付近）| `AttachmentDownload` DTO を `AttachmentAccess` にリネーム、`DownloadURL` フィールドを `URL` にリネーム |
+| I6 | BE service interface | `expense-saas/internal/service/interfaces.go`（既存、L75 付近）| service の interface を preview/download 対応に更新 |
+| I7 | FE hook | `expense-saas/frontend/src/hooks/useAttachmentDownloadUrl.ts`（既存 `useAttachmentDownload.ts` をリネーム）+ 新規 `useAttachmentPreviewUrl.ts` | `enabled: false` + 明示的 `refetch()` 方式に変更 |
+| I8 | FE orchestration | `expense-saas/frontend/src/pages/reports/AttachmentArea.tsx`（既存、L58 付近）| `handlePreview` と `handleDownload` を追加。クリック同期で `window.open('about:blank')` → fetch → `location.href` 差し替えパターンを実装 |
+| I9 | FE presentational | `expense-saas/frontend/src/pages/reports/AttachmentList.tsx`（既存、L28 付近、L44 付近のクリックハンドラ）| `onPreview` / `onDownload` コールバック props を追加。ファイル名 onClick と ↓ IconButton を配置 |
+| I10 | FE 型定義 | `expense-saas/frontend/src/api/types.ts`（既存、L96〜L104 付近）| `AttachmentDownload` 型を `AttachmentAccess` にリネーム、`download_url` → `url` に変更 |
 
-### 実装の PR 分割案
+### 実装の PR 分割案 → **統合ブランチパターン（stacked PR）**
 
-設計成果物 / BE / FE の順で 3 段階に分割:
+master を中間破壊から守るため、**統合ブランチに sub PR を積む方式**を採用:
 
-1. **PR-1: 設計書修正**（設計成果物フロー）
-   - D1〜D5 を 1 コミット
-   - reviewer → codex レビュー → 合意
-2. **PR-2: BE 実装 + テスト**（PR フロー）
-   - I1〜I3 + T1〜T2, T5
-   - ローカル CI (go test / golangci-lint) 通過で merge
-3. **PR-3: FE 実装 + テスト**（PR フロー）
-   - I4〜I6 + T3〜T4
-   - PR-2 マージ後。ローカル CI (vitest / tsc / eslint / build) 通過で merge
+```
+master
+  └─ integration/102-attachment-preview       （master から分岐、他の master 更新を追従）
+       ├─ PR #X: 設計書修正                    → integration ブランチへ merge
+       ├─ PR #Y: BE 実装 + テスト              → integration ブランチへ merge
+       └─ PR #Z: FE 実装 + テスト              → integration ブランチへ merge（BE マージ後）
+  
+  最後に integration/102-attachment-preview → master を単一 PR で squash merge
+```
 
-### 影響範囲の最終まとめ
+#### PR の流れ
 
-- **BE 変更**: handler 1, service 1, router 1、新エンドポイント 1、既存エンドポイント 1 リネーム
-- **FE 変更**: hook 1 → 2 に分割、AttachmentList UI 修正、test 2 ファイル追加
-- **設計書変更**: 4〜5 ファイル
+1. **Setup**: `git checkout master && git pull && git checkout -b integration/102-attachment-preview && git push -u origin integration/102-attachment-preview`
+
+2. **PR #X: 設計書修正**
+   - ベース: `integration/102-attachment-preview`
+   - ブランチ: `step11/102-design-docs`
+   - 内容: D1〜D11 を 1〜2 コミットに分割
+   - フロー: 設計成果物フロー（reviewer → codex → 合意）
+   - ローカル CI 不要（ドキュメントのみ）
+
+3. **PR #Y: BE 実装 + テスト**
+   - ベース: `integration/102-attachment-preview`
+   - ブランチ: `step11/102-be-preview`
+   - 内容: I1〜I6 + T1〜T2, T6
+   - フロー: PR フロー（reviewer → codex）
+   - ローカル CI: `go test ./...`, `golangci-lint run ./...`
+   - BE 単体で動作確認（curl で新エンドポイントを叩く）
+
+4. **PR #Z: FE 実装 + テスト**
+   - ベース: `integration/102-attachment-preview`（PR #Y マージ後）
+   - ブランチ: `step11/102-fe-preview`
+   - 内容: I7〜I10 + T3〜T5
+   - フロー: PR フロー（reviewer → codex）
+   - ローカル CI: `npm run lint`, `npx tsc --noEmit`, `npm test`, `npm run build`
+
+5. **結合動作確認**（integration ブランチ上）
+   - BE + FE が結合した状態で `docker compose up`
+   - SMK-037（プレビュー / ダウンロード両方）を実行
+   - 4 ロール × 2 操作の認可確認
+
+6. **最終 PR: integration → master**
+   - 結合動作確認 PASS 後に作成
+   - squash merge でコミット履歴をきれいに統合
+   - master が初めて preview 機能を受け入れる
+
+#### 統合ブランチの運用注意
+
+- integration ブランチは master の更新を定期的に merge する（他の PR がマージされた際）
+- sub PR 作成時は必ず integration ブランチを最新化してから分岐
+- sub PR のレビューは独立して実施できるが、マージ順序は 設計書 → BE → FE を守る
+
+### 影響範囲の最終まとめ（改訂版）
+
+- **設計書**: 11 ファイル（50_detail_design 5 / 55_ui_component 2 / 60_test 4）
+- **BE 実装**: handler 1, service 1, router 2（main.go + testutil/http.go）, DTO 1, interfaces 1 = 6 ファイル
+- **BE test**: 2 ファイル（attachment_handler_test.go 更新 + attachment_service_test.go 新設）
+- **FE 実装**: hook 2（1 リネーム + 1 新設）, AttachmentArea.tsx 更新, AttachmentList.tsx 更新, types.ts 更新 = 5 ファイル
+- **FE test**: 3 ファイル（hook test 2 + AttachmentList.test.tsx 更新 + AttachmentArea.integration.test.tsx 更新）
 - **既存の認可ロジック / S3 設定 / env 変数 / DB schema は変更なし**
 - **マイグレーション不要**
+- **DTO スキーマ変更（AttachmentDownload → AttachmentAccess, download_url → url）は breaking change だが、integration ブランチで BE+FE を結合するため master は常に整合**
 
 ---
 
