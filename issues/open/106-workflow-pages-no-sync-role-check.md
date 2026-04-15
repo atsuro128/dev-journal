@@ -115,8 +115,10 @@ useEffect(() => {
 ```
 
 **注意点**:
-- ApprovalListPage は Approver / Admin のみ可（design 確認）
-- PaymentListPage は Accounting / Admin のみ可（design 確認）
+# 2026-04-15 訂正: 当初「Admin 含む」と記載していたが、authz.md / screens 正本では Admin 非許可。
+# PR #54 のレビュー（reviewer）で指摘され、同 PR で修正。
+- ApprovalListPage は **Approver のみアクセス可能**（`authz.md` L334-337、`screens/workflow-pending.md` L23）
+- PaymentListPage は **Accounting のみアクセス可能**（`authz.md` L376-379、`screens/workflow-payable.md` L23）
 - ロール定数は `screens/*.md` および `authz.md` を正本にして拾うこと
 - 既存の API 403 エラー useEffect はフェイルセーフとして残す（同期チェックを抜けても弾けるように）
 
