@@ -300,7 +300,7 @@ interface PayableReportListParams {
 | `useUpdateItem` | `['reports', 'detail', reportId]` |
 | `useDeleteItem` | `['reports', 'detail', reportId]` |
 | `useUploadAttachment` | `['reports', 'detail', reportId]`, `['reports', reportId, 'items', itemId, 'attachments']` |
-| `useDeleteAttachment` | `['reports', 'detail', reportId]` |
+| `useDeleteAttachment` | `['reports', 'detail', reportId]`, `['reports', reportId, 'items', itemId, 'attachments']` |
 | `useApproveReport` | `['reports', 'detail', id]`, `['workflow', 'pending']`, `['workflow', 'payable']`, `['dashboard']` |
 | `useRejectReport` | `['reports', 'detail', id]`, `['workflow', 'pending']`, `['dashboard']` |
 | `useMarkAsPaid` | `['reports', 'detail', id]`, `['workflow', 'payable']`, `['dashboard']`, `['reports', 'all']` |
