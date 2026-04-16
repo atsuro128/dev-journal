@@ -137,25 +137,32 @@ codex + architect による分析の結果、以下の理由で不採用。
 - **DinD**: `--privileged` が必要で `no-new-privileges`・seccomp・apparmor を全て無効化する。firewall の FORWARD DROP とも競合。セキュリティ方針を根本的に破壊する
 - **DooD**: docker.sock マウントはホスト Docker への root 相当アクセス。issue 061（mount 最小化）と矛盾し、Squid proxy/allowlist もバイパスされる
 
-### 採用した方式: ホスト Docker 併用 + host gateway outbound
+### 採用した方式（初回・2026-04-16）: host gateway outbound → 廃止
+
+初回は「devcontainer から host gateway 経由で db-test に接続する」方式を採用したが、以下の問題で廃止。
+
+1. `docker-compose.yml` の全 ports を `127.0.0.1` バインドに変更したため、host gateway IP 経由で到達不可
+2. Docker Desktop on WSL2 では host gateway IP（172.17.0.1）に published port の応答主体がなく、`host.docker.internal`（192.168.65.254）を使う必要がある
+3. 上記を修正しても、ホスト側で `docker compose up db-test -d` を手動実行する運用が残る
+
+初回実装（c00652f, 4e612df）は全てリバート済み。
+
+### 採用した方式（最終・2026-04-17）: ホスト側 docker compose run + VS Code タスク
 
 - **Frontend CI**: devcontainer 内で完結（`npm run lint` / `tsc` / `vitest` / `vite build`）
-- **Backend CI**: ホスト側で `docker compose up db-test` → devcontainer から host gateway 経由で接続 → `go test -tags integration`
+- **Backend CI**: ホスト側で VS Code タスク → `docker compose --profile test run --rm test-be` で lint / unit / integration テストを実行
 - **E2E**: ホスト側で `docker compose up` + ブラウザ確認
 - **フルスタック起動**: ホスト側で `docker compose up` → ホストブラウザで `localhost:5173` にアクセス
 
+テスト結果は `tee` で `dev-journal/logs/test-results/` に出力し、devcontainer 側から読み取り可能。
+
 ### 実装した変更
 
-1. `init-firewall.sh`: `HOST_GATEWAY_OUTBOUND_TCP_PORTS` 環境変数による OUTPUT ルール追加（コンテナ → ホスト方向の指定ポートを許可）
-2. `devcontainer.json`: `HOST_GATEWAY_OUTBOUND_TCP_PORTS=5433` を設定（テスト DB 接続用）
-3. `docker-compose.yml`: 全 ports を `127.0.0.1` バインドに変更（ローカルネットワークへの意図しない公開を防止）
-4. `SECURITY.md`: DinD/DooD 非採用理由と outbound 設計を追記
-5. `devcontainer-design.md`: host gateway 設計にセクション 8.2（outbound）を追加
-
-### 残作業
-
-- `/test` スキル化は別タスクとして実施
-- PR body の Local CI テンプレートは `/test` スキル整備時に合わせて策定
+1. `docker-compose.yml`: `test-be` サービスを追加（`golangci-lint:v2.11.4` イメージ、`profiles: [test]`）
+2. `.vscode/tasks.json`: BE lint / unit test / integration test / full test の 4 タスクを追加
+3. `.vscode/launch.json`: 上記タスクをワンクリック実行可能に
+4. `devcontainer-design.md`: セクション 8.2 を outbound から BE テスト実行方式に書き換え
+5. 初回実装のリバート: init-firewall.sh の outbound ルール削除、docker-compose.yml の 127.0.0.1 バインド解除
 
 ## 解決日
-2026-04-16
+2026-04-17

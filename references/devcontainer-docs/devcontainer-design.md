@@ -278,24 +278,14 @@ host gateway からの inbound は `HOST_GATEWAY_TCP_PORTS` で制御する。
 - ローカルアプリ接続
 - 開発用 API / UI 公開
 
-### 8.2 outbound（コンテナ → ホスト）
+### 8.2 運用方針
 
-コンテナから host gateway への outbound は `HOST_GATEWAY_OUTBOUND_TCP_PORTS` で制御する。
-
-既定値: なし（空）
-
-想定用途:
-
-- ホスト側で起動した Docker サービス（PostgreSQL, MinIO 等）への接続
-- Backend integration テストの DB 接続
-
-DB 接続ポートは既定では開けず、必要時のみ設定する。現在の設定値は `5433`（テスト用 PostgreSQL）。
-
-### 8.3 運用方針
-
-- inbound / outbound ともに必要最小限のポートだけを開ける
+- inbound は必要最小限のポートだけを開ける
 - 使わないポートは外す
-- DB や管理系ポートは既定で開けず、必要時のみ追加する
+
+### 8.3 BE テスト実行
+
+devcontainer 内から Docker を操作する方式（DinD / DooD）は不採用とした（SECURITY.md 参照）。BE integration テストはホスト側で `docker compose --profile test run --rm test-be` により実行し、結果を共有ディレクトリ（`dev-journal/logs/test-results/`）に出力する。VS Code タスクでワンクリック実行可能。
 
 ## 9. allowlist 設計
 
