@@ -274,15 +274,15 @@ T2（approve）・T3（reject）・T4（pay）の統合テストは `workflow.md
 | レポート編集画面 Hook（useReport, useUpdateReport） | RPT-FE-059〜RPT-FE-063 | 5 |
 | レポート詳細画面 レポート閲覧・操作コンポーネント | RPT-FE-064〜RPT-FE-096 | 33 |
 | レポート詳細画面 Hook（useSubmitReport, useDeleteReport） | RPT-FE-097〜RPT-FE-102 | 6 |
-| **FE 合計** | **RPT-FE-001〜RPT-FE-102** | **102** |
+| **FE 合計** | **RPT-FE-001〜RPT-FE-102, RPT-FE-090-A** | **103** |
 
 ### 全体合計
 
 | 区分 | 件数 |
 |------|------|
 | BE テストケース | 90 |
-| FE テストケース | 102 |
-| **総合計** | **192** |
+| FE テストケース | 103 |
+| **総合計** | **193** |
 
 ---
 
@@ -499,6 +499,8 @@ FE テストケースは `55_ui_component/screens/*.md` のコンポーネント
 | RPT-FE-088 | 単体 | OwnerActions | status: ReportStatus | 正常系 | RPT-F03 | 55_ui_component/screens/report-detail.md §OwnerActions | `test_OwnerActions_draft_shows_edit_submit_delete` | status = "draft"、itemCount = 1 | 編集・提出・削除ボタンが表示される |
 | RPT-FE-089 | 単体 | OwnerActions | status: ReportStatus, itemCount: number | 正常系 | RPT-F06, RPT-014 | 55_ui_component/screens/report-detail.md §OwnerActions | `test_OwnerActions_submit_disabled_no_items` | status = "draft"、itemCount = 0 | 提出ボタンが disabled + ツールチップが表示される |
 | RPT-FE-090 | 単体 | OwnerActions | status: ReportStatus | 正常系 | RPT-F03 | 55_ui_component/screens/report-detail.md §OwnerActions | `test_OwnerActions_rejected_shows_resubmit` | status = "rejected" | 再申請ボタンが表示される。編集・提出・削除ボタンは非表示 |
+
+**備考**: ReportDetailPage 側の明細行クリックプリフィルテスト（issue-103 対応）は、OwnerActions 側の RPT-FE-090 と ID が重複するため RPT-FE-090-A に振り直した。OwnerActions 側の RPT-FE-090（本行）はそのまま維持する。
 | RPT-FE-091 | 単体 | OwnerActions | status: ReportStatus | 正常系 | RPT-F03 | 55_ui_component/screens/report-detail.md §OwnerActions | `test_OwnerActions_submitted_no_buttons` | status = "submitted" | 編集・提出・削除・再申請ボタンが全て非表示 |
 | RPT-FE-092 | 単体 | OwnerActions | onEdit: () => void | 正常系 | RPT-F04 | 55_ui_component/screens/report-detail.md §OwnerActions | `test_OwnerActions_edit_calls_callback` | status = "draft"、編集ボタンをクリック | onEdit コールバックが呼び出される |
 | RPT-FE-093 | 単体 | OwnerActions | onSubmitReport: () => void | 正常系 | RPT-F06 | 55_ui_component/screens/report-detail.md §OwnerActions | `test_OwnerActions_submit_calls_callback` | status = "draft"、itemCount = 1、提出ボタンをクリック | onSubmitReport コールバックが呼び出される |
@@ -514,6 +516,18 @@ FE テストケースは `55_ui_component/screens/*.md` のコンポーネント
 
 ---
 
+#### FE-5. 追記テスト（明細行クリックプリフィル）
+
+以下のテスト ID は旧 RPT-FE-090（ReportDetailPage 側）の重複解消のために追記する。
+
+| テストID | テストレベル | 対象コンポーネント | 対象 Props / Hook | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---|---|---|---|---|---|---|---|---|---|
+| RPT-FE-090-A | 単体 | ReportDetailPage | useReport | 正常系 | RPT-F03 | 55_ui_component/screens/report-detail.md §ReportDetailPage | `test_ReportDetailPage_item_row_click_prefills_panel` | useReport が draft 状態のレポート（明細2件）を返す。明細行をクリック | ItemSlidePanel が開き、対象明細の値（金額・摘要等）がフォームにプリフィルされる（handleItemClick が formKey をインクリメントして ItemSlidePanel を再マウントし、既存値をプリフィルする） |
+
+**備考**: RPT-FE-090-A は旧 RPT-FE-090（ReportDetailPage 側の明細行クリックプリフィル）を振り直した ID。OwnerActions 側の RPT-FE-090（test_OwnerActions_rejected_shows_resubmit）はそのまま維持する。
+
+---
+
 #### FE テストID一覧（サマリー）
 
 | 範囲 | テストID範囲 | 件数 |
@@ -526,7 +540,8 @@ FE テストケースは `55_ui_component/screens/*.md` のコンポーネント
 | レポート編集画面 Hook（useReport, useUpdateReport） | RPT-FE-059 -- RPT-FE-063 | 5 |
 | レポート詳細画面 レポート閲覧・操作コンポーネント | RPT-FE-064 -- RPT-FE-096 | 33 |
 | レポート詳細画面 Hook（useSubmitReport, useDeleteReport） | RPT-FE-097 -- RPT-FE-102 | 6 |
-| **FE 合計** | **RPT-FE-001 -- RPT-FE-102** | **102** |
+| 追記テスト（明細行クリックプリフィル） | RPT-FE-090-A | 1 |
+| **FE 合計** | **RPT-FE-001 -- RPT-FE-102, RPT-FE-090-A** | **103** |
 
 ---
 

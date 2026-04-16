@@ -544,7 +544,37 @@ npx vitest run src/hooks/__tests__/useItems.test.tsx src/hooks/__tests__/useCate
 npx vitest run --reporter=verbose src/pages/reports/__tests__/Item* src/hooks/__tests__/useItems* src/hooks/__tests__/useCategories*
 ```
 
-### 12.3 テスト記述ガイド
+### 12.3 追記テスト（UX 修正・view/edit モード）
+
+以下のテスト ID は実装済みテストコードとの整合のために追記する。
+
+#### ItemSlidePanel -- view/edit モード追加テスト
+
+| テストID | テストレベル | 対象コンポーネント | 対象 Props / Hook | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---|---|---|---|---|---|---|---|---|---|
+| ITM-FE-091-A | 単体 | ItemSlidePanel | mode: PanelMode | 認可 | ITM-F01 | 55_ui_component/screens/report-detail.md §ItemSlidePanel | `view_mode_hides_attachment_uploader` | open=true, mode='view', isOwner=true, reportStatus='draft', item=mockItem | mode=view のとき AttachmentUploader が表示されない（canModify=false） |
+| ITM-FE-091-B | 単体 | ItemSlidePanel | mode: PanelMode | 正常系 | ITM-F02 | 55_ui_component/screens/report-detail.md §ItemSlidePanel | `edit_mode_shows_attachment_area` | open=true, mode='edit', isOwner=true, reportStatus='draft', item=mockItem | mode=edit のとき canModify=true で AttachmentArea が描画される（対照ケース） |
+| ITM-FE-092-A | 単体 | ItemSlidePanel | onClose: () => void | 正常系 | ITM-F01 | 55_ui_component/screens/report-detail.md §ItemSlidePanel | `esc_key_calls_onClose` | open=true, onClose=jest.fn() | ESC キー押下で onClose が呼ばれる（MUI Drawer の標準挙動） |
+| ITM-FE-092-B | 単体 | ItemSlidePanel | onClose: () => void | 正常系 | ITM-F01 | 55_ui_component/screens/report-detail.md §ItemSlidePanel | `backdrop_click_calls_onClose` | open=true, onClose=jest.fn() | Backdrop クリックで onClose が呼ばれる（MUI Drawer の標準挙動） |
+
+#### ItemSlidePanel / ItemForm / ReportDetailPage -- UX 修正テスト
+
+| テストID | テストレベル | 対象コンポーネント | 対象 Props / Hook | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---|---|---|---|---|---|---|---|---|---|
+| ITM-FE-098-1 | 単体 | ItemSlidePanel | open: boolean | 正常系 | ITM-F01 | 55_ui_component/screens/report-detail.md §ItemSlidePanel | `drawer_width_responsive` | open=true | Drawer Paper に width スタイル sx が設定されている（xs: '100%', sm: 480px） |
+| ITM-FE-098-1b | 単体 | ItemSlidePanel | open: boolean | 正常系 | ITM-F01 | 55_ui_component/screens/report-detail.md §ItemSlidePanel | `drawer_paper_props_sm_width` | open=true | ItemSlidePanel が Drawer に渡す PaperProps.sx の sm 幅が 480 である |
+| ITM-FE-098-2 | 単体 | ItemSlidePanel | open: boolean | 正常系 | ITM-F01 | 55_ui_component/screens/report-detail.md §ItemSlidePanel | `close_button_in_header` | open=true, onClose=jest.fn() | ヘッダー右上に aria-label="閉じる" の IconButton が存在し、クリックで onClose が呼ばれる |
+| ITM-FE-098-3 | 単体 | ItemSlidePanel | open: boolean | 正常系 | ITM-F01 | 55_ui_component/screens/report-detail.md §ItemSlidePanel | `open_false_to_true_shows_drawer` | open=false から open=true に変更 | Drawer が表示される |
+| ITM-FE-098-3b | 単体 | ReportDetailPage | useReport | 正常系 | ITM-F01 | 55_ui_component/screens/report-detail.md §ReportDetailPage | `item_click_flushSync_panel_reopen` | 明細行をクリック後、編集中に別の明細行をクリック | flushSync pattern でパネルが一度 'closed' を経由してから再度開く |
+| ITM-FE-098-4 | 単体 | ItemSlidePanel | mode: PanelMode | 正常系 | ITM-F01 | 55_ui_component/screens/report-detail.md §ItemSlidePanel | `view_mode_readonly_fields` | mode='view', item=mockItem | ItemForm 内の全フィールドが readOnly 状態になる（disabled ではない） |
+| ITM-FE-098-5 | 単体 | ReportDetailPage | useReport | 正常系 | ITM-F01 | 55_ui_component/screens/report-detail.md §ReportDetailPage | `row_click_then_add_maintains_add_mode` | 行クリック直後に明細追加ボタンを押す | 追加モードが維持される（flushSync 置換により setTimeout の race が解消） |
+| ITM-FE-098-6 | 単体 | ReportDetailPage | useReport | 正常系 | ITM-F01 | 55_ui_component/screens/report-detail.md §ReportDetailPage | `edit_click_then_row_click_shows_view` | 編集クリック直後に別の行をクリック | 最新の行の閲覧モードが維持される（flushSync 置換により setTimeout の race が解消） |
+| ITM-FE-098-7 | 単体 | ItemForm | mode: PanelMode | 正常系 | ITM-005 | 55_ui_component/screens/report-detail.md §ItemForm | `view_mode_category_select_not_openable` | mode='view', categories=mockCategories, defaultValues=mockItem | mode=view のときカテゴリ Select をクリックしても listbox が開かない（MUI Select readOnly 制御の回帰テスト） |
+| ITM-FE-098-8 | 単体 | ItemForm | mode: PanelMode | 正常系 | ITM-005 | 55_ui_component/screens/report-detail.md §ItemForm | `add_mode_category_select_openable` | mode='add', categories=mockCategories | mode=add のときカテゴリ Select をクリックすると listbox が開く（対照ケース） |
+
+---
+
+### 12.4 テスト記述ガイド（旧 12.3）
 
 **コンポーネントテスト**:
 - `@testing-library/react` の `render` / `screen` / `userEvent` を使用する

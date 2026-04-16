@@ -85,6 +85,8 @@
 |---------|------------|---------|---------|-----------|-----------|---------------|-------------------|---------|
 | WFL-013 | 統合 | handler | 状態遷移 | WFL-002 | openapi.yaml#approveReport, state_machine.md#T2 | `TestApproveReport_AlreadyApproved` | Approver で認証。対象: `report_approved`（approved 状態）（state_machine.md §T2 事前条件 No.1: status == submitted の違反）。リクエストボディ: `{"updated_at": "<updated_at>"}` | 422 INVALID_STATE_TRANSITION |
 | WFL-014 | 統合 | handler | 状態遷移 | WFL-002 | openapi.yaml#approveReport | `TestApproveReport_DraftState` | Approver で認証。対象: draft 状態のレポート | 422 INVALID_STATE_TRANSITION |
+
+**備考**: report_handler_test.go の RPT-057（TestSubmitReport_NoApprover）は対応要件 ID として WFL-014 を参照しているが、テスト ID としては RPT-057 のまま維持する。テスト ID の重複は発生しない。本行の WFL-014（TestApproveReport_DraftState）もそのまま維持する。
 | WFL-015 | 統合 | handler | 状態遷移 | WFL-004 | openapi.yaml#approveReport, state_machine.md#X9 | `TestApproveReport_RejectedState` | Approver で認証。対象: rejected 状態のレポート（X9: rejected→approved は禁止） | 422 INVALID_STATE_TRANSITION |
 | WFL-016 | 統合 | handler | 状態遷移 | WFL-004 | openapi.yaml#approveReport, state_machine.md#X10 | `TestApproveReport_PaidState` | Approver で認証。対象: paid 状態のレポート（X10: paid→approved は禁止） | 422 INVALID_STATE_TRANSITION |
 
@@ -243,7 +245,7 @@
 | markReportAsPaid（自己支払処理禁止） | WFL-056 | 1 件 |
 | markReportAsPaid（RBAC） | WFL-057〜WFL-060 | 4 件 |
 | markReportAsPaid（異常系） | WFL-061〜WFL-063 | 3 件 |
-| **合計** | WFL-001〜WFL-062 | **62 件** |
+| **合計** | WFL-001〜WFL-063（WFL-017 欠番） | **62 件** |
 
 ---
 
@@ -351,16 +353,16 @@ FE テストケースは `55_ui_component/screens/*.md` のコンポーネント
 
 | テストID | テストレベル | 対象コンポーネント | 対象 Props / Hook | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
 |---|---|---|---|---|---|---|---|---|---|
-| WFL-FE-011 | 単体 | PendingFilterBar | filters: PendingReportListParams | 正常系 | WFL-F04 | `55_ui_component/screens/workflow-pending.md §PendingFilterBar` | `debounces_applicant_name_input` | 申請者名入力フィールドに「テスト」と入力 | 300ms 経過後に onFilterChange が `{ applicant_name: "テスト" }` で呼び出される。300ms 以内には呼び出されない |
-| WFL-FE-012 | 単体 | PendingFilterBar | onFilterChange: function | 正常系 | WFL-F04 | `55_ui_component/screens/workflow-pending.md §PendingFilterBar` | `resets_filter_on_button_click` | フィルタ適用中（`filters: { applicant_name: "田中" }`）にリセットボタンをクリック | onFilterChange が `{ applicant_name: undefined }` で呼び出される。入力フィールドがクリアされる |
+| WFL-FE-011 | 単体 | PendingFilterBar | filters: PendingReportListParams | 正常系 | WFL-F04 | `55_ui_component/screens/workflow-pending.md §PendingFilterBar` | `debounces_applicant_name_input` | 申請者名入力フィールドに「テスト」と入力 | 300ms 経過後に onFilterChange が `{ applicant_name: "テスト" }` で呼び出される。300ms 以内には呼び出されない。※ ページ統合テスト WFL-FE-002 に包含して実装 |
+| WFL-FE-012 | 単体 | PendingFilterBar | onFilterChange: function | 正常系 | WFL-F04 | `55_ui_component/screens/workflow-pending.md §PendingFilterBar` | `resets_filter_on_button_click` | フィルタ適用中（`filters: { applicant_name: "田中" }`）にリセットボタンをクリック | onFilterChange が `{ applicant_name: undefined }` で呼び出される。入力フィールドがクリアされる。※ ページ統合テスト WFL-FE-002/004 に包含して実装 |
 
 #### PendingReportCount
 
 | テストID | テストレベル | 対象コンポーネント | 対象 Props / Hook | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
 |---|---|---|---|---|---|---|---|---|---|
 | WFL-FE-013 | 単体 | PendingReportCount | totalCount: number | 正常系 | WFL-F04 | `55_ui_component/screens/workflow-pending.md §PendingReportCount` | `displays_report_count` | `totalCount: 5`, `isFiltered: false` | 「5 件の承認待ちレポート」が表示される |
-| WFL-FE-014 | 単体 | PendingReportCount | totalCount: number, isFiltered: boolean | 正常系 | WFL-F04 | `55_ui_component/screens/workflow-pending.md §PendingReportCount` | `hidden_when_zero_no_filter` | `totalCount: 0`, `isFiltered: false` | 件数コンポーネントが非表示になる |
-| WFL-FE-015 | 単体 | PendingReportCount | totalCount: number, isFiltered: boolean | 正常系 | WFL-F04 | `55_ui_component/screens/workflow-pending.md §PendingReportCount` | `shows_no_match_message_when_filtered` | `totalCount: 0`, `isFiltered: true` | 「条件に一致するレポートはありません。」が表示される |
+| WFL-FE-014 | 単体 | PendingReportCount | totalCount: number, isFiltered: boolean | 正常系 | WFL-F04 | `55_ui_component/screens/workflow-pending.md §PendingReportCount` | `hidden_when_zero_no_filter` | `totalCount: 0`, `isFiltered: false` | 件数コンポーネントが非表示になる。※ ページ統合テスト WFL-FE-007 に包含して実装 |
+| WFL-FE-015 | 単体 | PendingReportCount | totalCount: number, isFiltered: boolean | 正常系 | WFL-F04 | `55_ui_component/screens/workflow-pending.md §PendingReportCount` | `shows_no_match_message_when_filtered` | `totalCount: 0`, `isFiltered: true` | 「条件に一致するレポートはありません。」が表示される。※ ページ統合テスト WFL-FE-008 に包含して実装 |
 
 #### PendingReportTable
 
@@ -370,8 +372,8 @@ FE テストケースは `55_ui_component/screens/*.md` のコンポーネント
 | WFL-FE-017 | 単体 | PendingReportTable | reports: PendingReport[] | 正常系 | WFL-F04 | `55_ui_component/screens/workflow-pending.md §PendingReportTable` | `shows_self_label_for_own_report` | `reports` に `is_own_report: true` のレポート | 申請者名の横に「自分」ラベル（SelfLabel）が表示される |
 | WFL-FE-018 | 単体 | PendingReportTable | reports: PendingReport[] | 正常系 | WFL-F04 | `55_ui_component/screens/workflow-pending.md §PendingReportTable` | `hides_self_label_for_other_report` | `reports` に `is_own_report: false` のレポート | 「自分」ラベルが表示されない |
 | WFL-FE-019 | 単体 | PendingReportTable | onRowClick: function | 正常系 | WFL-F04 | `55_ui_component/screens/workflow-pending.md §PendingReportTable` | `navigates_to_detail_on_row_click` | レポート行をクリック（reportId: "test-report-id"） | onRowClick が "test-report-id" で呼び出される（SCR-RPT-004 への遷移） |
-| WFL-FE-020 | 単体 | PendingReportTable | isLoading: boolean | 正常系 | WFL-F04 | `55_ui_component/screens/workflow-pending.md §PendingReportTable` | `shows_skeleton_when_loading` | `isLoading: true` | PageSkeleton（variant: "table"）が表示される |
-| WFL-FE-021 | 単体 | PendingReportTable | reports: PendingReport[] | 正常系 | WFL-F04 | `55_ui_component/screens/workflow-pending.md §PendingReportTable` | `shows_empty_state_when_no_reports` | `reports: []`, `isLoading: false`, `emptyMessage: "承認待ちのレポートはありません。"` | EmptyState にメッセージが表示される |
+| WFL-FE-020 | 単体 | PendingReportTable | isLoading: boolean | 正常系 | WFL-F04 | `55_ui_component/screens/workflow-pending.md §PendingReportTable` | `shows_skeleton_when_loading` | `isLoading: true` | PageSkeleton（variant: "table"）が表示される。※ ページ統合テスト WFL-FE-006 に包含して実装 |
+| WFL-FE-021 | 単体 | PendingReportTable | reports: PendingReport[] | 正常系 | WFL-F04 | `55_ui_component/screens/workflow-pending.md §PendingReportTable` | `shows_empty_state_when_no_reports` | `reports: []`, `isLoading: false`, `emptyMessage: "承認待ちのレポートはありません。"` | EmptyState にメッセージが表示される。※ ページ統合テスト WFL-FE-007 に包含して実装 |
 
 #### SelfLabel（SCR-WFL-001 コンテキスト）
 
@@ -424,16 +426,16 @@ FE テストケースは `55_ui_component/screens/*.md` のコンポーネント
 
 | テストID | テストレベル | 対象コンポーネント | 対象 Props / Hook | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
 |---|---|---|---|---|---|---|---|---|---|
-| WFL-FE-040 | 単体 | PayableFilterBar | filters: PayableReportListParams | 正常系 | WFL-F05 | `55_ui_component/screens/workflow-payable.md §PayableFilterBar` | `debounces_applicant_name_input` | 申請者名入力フィールドに「テスト」と入力 | 300ms 経過後に onFilterChange が `{ applicant_name: "テスト" }` で呼び出される。300ms 以内には呼び出されない |
-| WFL-FE-041 | 単体 | PayableFilterBar | onFilterChange: function | 正常系 | WFL-F05 | `55_ui_component/screens/workflow-payable.md §PayableFilterBar` | `resets_filter_on_button_click` | フィルタ適用中（`filters: { applicant_name: "田中" }`）にリセットボタンをクリック | onFilterChange が `{ applicant_name: undefined }` で呼び出される。入力フィールドがクリアされる |
+| WFL-FE-040 | 単体 | PayableFilterBar | filters: PayableReportListParams | 正常系 | WFL-F05 | `55_ui_component/screens/workflow-payable.md §PayableFilterBar` | `debounces_applicant_name_input` | 申請者名入力フィールドに「テスト」と入力 | 300ms 経過後に onFilterChange が `{ applicant_name: "テスト" }` で呼び出される。300ms 以内には呼び出されない。※ ページ統合テスト WFL-FE-031 に包含して実装 |
+| WFL-FE-041 | 単体 | PayableFilterBar | onFilterChange: function | 正常系 | WFL-F05 | `55_ui_component/screens/workflow-payable.md §PayableFilterBar` | `resets_filter_on_button_click` | フィルタ適用中（`filters: { applicant_name: "田中" }`）にリセットボタンをクリック | onFilterChange が `{ applicant_name: undefined }` で呼び出される。入力フィールドがクリアされる。※ ページ統合テスト WFL-FE-031/033 に包含して実装 |
 
 #### PayableReportCount
 
 | テストID | テストレベル | 対象コンポーネント | 対象 Props / Hook | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
 |---|---|---|---|---|---|---|---|---|---|
 | WFL-FE-042 | 単体 | PayableReportCount | totalCount: number | 正常系 | WFL-F05 | `55_ui_component/screens/workflow-payable.md §PayableReportCount` | `displays_report_count` | `totalCount: 5`, `isFiltered: false` | 「5 件の支払待ちレポート」が表示される |
-| WFL-FE-043 | 単体 | PayableReportCount | totalCount: number, isFiltered: boolean | 正常系 | WFL-F05 | `55_ui_component/screens/workflow-payable.md §PayableReportCount` | `hidden_when_zero_no_filter` | `totalCount: 0`, `isFiltered: false` | 件数コンポーネントが非表示になる |
-| WFL-FE-044 | 単体 | PayableReportCount | totalCount: number, isFiltered: boolean | 正常系 | WFL-F05 | `55_ui_component/screens/workflow-payable.md §PayableReportCount` | `shows_no_match_message_when_filtered` | `totalCount: 0`, `isFiltered: true` | 「条件に一致するレポートはありません。」が表示される |
+| WFL-FE-043 | 単体 | PayableReportCount | totalCount: number, isFiltered: boolean | 正常系 | WFL-F05 | `55_ui_component/screens/workflow-payable.md §PayableReportCount` | `hidden_when_zero_no_filter` | `totalCount: 0`, `isFiltered: false` | 件数コンポーネントが非表示になる。※ ページ統合テスト WFL-FE-036 に包含して実装 |
+| WFL-FE-044 | 単体 | PayableReportCount | totalCount: number, isFiltered: boolean | 正常系 | WFL-F05 | `55_ui_component/screens/workflow-payable.md §PayableReportCount` | `shows_no_match_message_when_filtered` | `totalCount: 0`, `isFiltered: true` | 「条件に一致するレポートはありません。」が表示される。※ ページ統合テスト WFL-FE-037 に包含して実装 |
 
 #### PayableReportTable
 
@@ -443,8 +445,8 @@ FE テストケースは `55_ui_component/screens/*.md` のコンポーネント
 | WFL-FE-046 | 単体 | PayableReportTable | reports: PayableReport[] | 正常系 | WFL-F05 | `55_ui_component/screens/workflow-payable.md §PayableReportTable` | `shows_self_label_for_own_report` | `reports` に `is_own_report: true` のレポート | 申請者名の横に「自分」ラベル（SelfLabel）が表示される |
 | WFL-FE-047 | 単体 | PayableReportTable | reports: PayableReport[] | 正常系 | WFL-F05 | `55_ui_component/screens/workflow-payable.md §PayableReportTable` | `hides_self_label_for_other_report` | `reports` に `is_own_report: false` のレポート | 「自分」ラベルが表示されない |
 | WFL-FE-048 | 単体 | PayableReportTable | onRowClick: function | 正常系 | WFL-F05 | `55_ui_component/screens/workflow-payable.md §PayableReportTable` | `navigates_to_detail_on_row_click` | レポート行をクリック（reportId: "test-report-id"） | onRowClick が "test-report-id" で呼び出される（SCR-RPT-004 への遷移） |
-| WFL-FE-049 | 単体 | PayableReportTable | isLoading: boolean | 正常系 | WFL-F05 | `55_ui_component/screens/workflow-payable.md §PayableReportTable` | `shows_skeleton_when_loading` | `isLoading: true` | PageSkeleton（variant: "table"）が表示される |
-| WFL-FE-050 | 単体 | PayableReportTable | reports: PayableReport[] | 正常系 | WFL-F05 | `55_ui_component/screens/workflow-payable.md §PayableReportTable` | `shows_empty_state_when_no_reports` | `reports: []`, `isLoading: false`, `emptyMessage: "支払待ちのレポートはありません。"` | EmptyState にメッセージが表示される |
+| WFL-FE-049 | 単体 | PayableReportTable | isLoading: boolean | 正常系 | WFL-F05 | `55_ui_component/screens/workflow-payable.md §PayableReportTable` | `shows_skeleton_when_loading` | `isLoading: true` | PageSkeleton（variant: "table"）が表示される。※ ページ統合テスト WFL-FE-035 に包含して実装 |
+| WFL-FE-050 | 単体 | PayableReportTable | reports: PayableReport[] | 正常系 | WFL-F05 | `55_ui_component/screens/workflow-payable.md §PayableReportTable` | `shows_empty_state_when_no_reports` | `reports: []`, `isLoading: false`, `emptyMessage: "支払待ちのレポートはありません。"` | EmptyState にメッセージが表示される。※ ページ統合テスト WFL-FE-036 に包含して実装 |
 | WFL-FE-051 | 単体 | PayableReportTable | reports: PayableReport[] | 正常系 | WFL-F05 | `55_ui_component/screens/workflow-payable.md §PayableReportTable` | `renders_approved_date_column` | `reports` に承認日データを含むレポート | 日付カラムが「承認日」であること（SCR-WFL-001 の「提出日」との差異） |
 
 #### usePayableReports
@@ -544,6 +546,36 @@ FE テストケースは `55_ui_component/screens/*.md` のコンポーネント
 | useRejectReport | WFL-FE-073〜WFL-FE-075 | 3 件 |
 | useMarkAsPaid | WFL-FE-076〜WFL-FE-078 | 3 件 |
 | **FE 合計** | WFL-FE-001〜WFL-FE-082 | **82 件** |
+| **APR-FE 合計** | APR-FE-001〜APR-FE-004 | **4 件** |
+| **PAY-FE 合計** | PAY-FE-001〜PAY-FE-005 | **5 件** |
+| **FE 全体合計** | | **91 件** |
+
+---
+
+### 追記テスト（issue-106 同期ロールチェック + 403 トースト）
+
+#### ApprovalListPage -- 同期ロールチェック + 403 トースト
+
+テスト ID プレフィックス: `APR-FE-`（ApprovalListPage 専用。承認待ち一覧が PendingApprovalsPage からリネームされた画面に対応）
+
+| テストID | テストレベル | 対象コンポーネント | 対象 Props / Hook | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---|---|---|---|---|---|---|---|---|---|
+| APR-FE-001 | 単体 | ApprovalListPage | usePendingReports | 認可 | RBAC-F01, RBC-001 | `55_ui_component/screens/workflow-pending.md §PendingApprovalsPage` | `redirects_on_403_with_toast` | usePendingReports が 403 エラーを返す | ダッシュボード（`/dashboard`）にリダイレクトされ、navigate の state.toast にトーストメッセージ「この画面にアクセスする権限がありません。」が含まれる（issue-088 対応） |
+| APR-FE-002 | 単体 | ApprovalListPage | useCurrentUser | 認可 | RBAC-F01, RBC-001 | `55_ui_component/screens/workflow-pending.md §PendingApprovalsPage` | `sync_role_check_member_redirects` | useCurrentUser が Member ロールを返す | 同期ロールチェックにより即座にダッシュボード（`/dashboard`）にリダイレクトされる（issue-106 対応） |
+| APR-FE-003 | 単体 | ApprovalListPage | useCurrentUser | 認可 | RBAC-F01, RBC-001 | `55_ui_component/screens/workflow-pending.md §PendingApprovalsPage` | `sync_role_check_approver_renders` | useCurrentUser が Approver ロールを返す | 同期ロールチェックを通過し、通常レンダリングされる（issue-106 対応） |
+| APR-FE-004 | 単体 | ApprovalListPage | useCurrentUser | 認可 | RBAC-F01, RBC-001 | `55_ui_component/screens/workflow-pending.md §PendingApprovalsPage` | `sync_role_check_admin_redirects` | useCurrentUser が Admin ロールを返す | 同期ロールチェックにより即座にダッシュボード（`/dashboard`）にリダイレクトされる（authz.md 正本: Approver のみ許可。issue-106 対応） |
+
+#### PaymentListPage -- 同期ロールチェック + 403 トースト
+
+テスト ID プレフィックス: `PAY-FE-`（PaymentListPage 専用。支払待ち一覧が PayableReportsPage からリネームされた画面に対応）
+
+| テストID | テストレベル | 対象コンポーネント | 対象 Props / Hook | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---|---|---|---|---|---|---|---|---|---|
+| PAY-FE-001 | 単体 | PaymentListPage | usePayableReports | 認可 | RBAC-F01, RBC-001 | `55_ui_component/screens/workflow-payable.md §PayableReportsPage` | `redirects_on_403_with_toast` | usePayableReports が 403 エラーを返す | ダッシュボード（`/dashboard`）にリダイレクトされ、navigate の state.toast にトーストメッセージ「この画面にアクセスする権限がありません。」が含まれる（issue-088 対応） |
+| PAY-FE-002 | 単体 | PaymentListPage | useCurrentUser | 認可 | RBAC-F01, RBC-001 | `55_ui_component/screens/workflow-payable.md §PayableReportsPage` | `sync_role_check_member_redirects` | useCurrentUser が Member ロールを返す | 同期ロールチェックにより即座にダッシュボード（`/dashboard`）にリダイレクトされる（issue-106 対応） |
+| PAY-FE-003 | 単体 | PaymentListPage | useCurrentUser | 認可 | RBAC-F01, RBC-001 | `55_ui_component/screens/workflow-payable.md §PayableReportsPage` | `sync_role_check_accounting_renders` | useCurrentUser が Accounting ロールを返す | 同期ロールチェックを通過し、通常レンダリングされる（issue-106 対応） |
+| PAY-FE-004 | 単体 | PaymentListPage | useCurrentUser | 認可 | RBAC-F01, RBC-001 | `55_ui_component/screens/workflow-payable.md §PayableReportsPage` | `sync_role_check_admin_redirects` | useCurrentUser が Admin ロールを返す | 同期ロールチェックにより即座にダッシュボード（`/dashboard`）にリダイレクトされる（authz.md 正本: Accounting のみ許可。issue-106 対応） |
+| PAY-FE-005 | 単体 | PaymentListPage | useCurrentUser | 認可 | RBAC-F01, RBC-001 | `55_ui_component/screens/workflow-payable.md §PayableReportsPage` | `sync_role_check_approver_redirects` | useCurrentUser が Approver ロールを返す | 同期ロールチェックにより即座にダッシュボード（`/dashboard`）にリダイレクトされる（issue-106 対応） |
 
 ---
 

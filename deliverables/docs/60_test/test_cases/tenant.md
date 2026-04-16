@@ -216,7 +216,11 @@ RBAC ミドルウェアが返す 403 は以下の形式であること（`authz.
 | テストID | テストレベル | 対象コンポーネント | 対象 Props / Hook | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
 |---------|-----------|------------------|------------------|---------|-----------|-----------|---------------|-----------------|---------|
 | TNT-FE-008 | 単体 | TenantInfoCard | tenant: TenantInfo, loading: boolean, error: ApiClientError \| null | 正常系 | ADM-F01 | 55_ui_component/screens/admin-tenant.md §TenantInfoCard | `test_TenantInfoCard_renders_company_name` | `tenant = { id: "...", name: "Test Company A", created_at: "..." }`, `loading = false`, `error = null` | TenantInfoField がラベル「会社名」、値「Test Company A」で描画されること |
+
+**備考**: TenantPage 側のロール不一致リダイレクトトーストテスト（issue-088 対応）は、TenantInfoCard 側の TNT-FE-008 と ID が重複するため TNT-FE-044 に振り直した。TenantInfoCard 側の TNT-FE-008（本行）はそのまま維持する。
 | TNT-FE-009 | 単体 | TenantInfoCard | loading: boolean | 正常系 | ADM-F01 | 55_ui_component/screens/admin-tenant.md §TenantInfoCard | `test_TenantInfoCard_shows_skeleton_when_loading` | `tenant = undefined`, `loading = true`, `error = null` | PageSkeleton（variant="card"）が描画されること。TenantInfoField が描画されないこと |
+
+**備考**: TenantPage 側の 403 リダイレクトトーストテスト（issue-088 対応）は、TenantInfoCard 側の TNT-FE-009 と ID が重複するため TNT-FE-045 に振り直した。TenantInfoCard 側の TNT-FE-009（本行）はそのまま維持する。
 | TNT-FE-010 | 単体 | TenantInfoCard | error: ApiClientError \| null | 異常系 | ADM-F01 | 55_ui_component/screens/admin-tenant.md §TenantInfoCard | `test_TenantInfoCard_shows_error_message_on_404` | `tenant = undefined`, `loading = false`, `error = { status: 404, ... }` | 「テナント情報が見つかりません。」というエラーメッセージが表示されること |
 
 #### TenantInfoField
@@ -267,7 +271,11 @@ RBAC ミドルウェアが返す 403 は以下の形式であること（`authz.
 | テストID | テストレベル | 対象コンポーネント | 対象 Props / Hook | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
 |---------|-----------|------------------|------------------|---------|-----------|-----------|---------------|-----------------|---------|
 | TNT-FE-024 | 単体 | AllReportsFilterBar | filters: AllReportsFilterValues, onFilterChange, members: UserSummary[], membersLoading: boolean | 正常系 | ADM-F01 | 55_ui_component/screens/admin-all-reports.md §AllReportsFilterBar | `test_AllReportsFilterBar_renders_all_filters` | `filters = { status: "", from: null, to: null, submitterId: "" }`, `members = [{ id: "u1", name: "User1" }]`, `membersLoading = false` | ステータスセレクト、期間（開始日・終了日）の DatePicker、申請者セレクトの 4 つのフィルタ入力が描画されること |
+
+**備考**: AllReportsPage 側のロール不一致リダイレクトトーストテスト（issue-088 対応）は、AllReportsFilterBar 側の TNT-FE-024 と ID が重複するため TNT-FE-046 に振り直した。AllReportsFilterBar 側の TNT-FE-024（本行）はそのまま維持する。
 | TNT-FE-025 | 単体 | AllReportsFilterBar | onFilterChange | 正常系 | ADM-F01 | 55_ui_component/screens/admin-all-reports.md §AllReportsFilterBar | `test_AllReportsFilterBar_calls_onFilterChange_on_status_change` | ステータスセレクトで「提出済み」を選択する | `onFilterChange` が `{ status: "submitted", from: null, to: null, submitterId: "" }` で呼び出されること |
+
+**備考**: AllReportsPage 側の 403 リダイレクトトーストテスト（issue-088 対応）は、AllReportsFilterBar 側の TNT-FE-025 と ID が重複するため TNT-FE-047 に振り直した。AllReportsFilterBar 側の TNT-FE-025（本行）はそのまま維持する。
 | TNT-FE-026 | 単体 | AllReportsFilterBar | onFilterChange | 正常系 | ADM-F01 | 55_ui_component/screens/admin-all-reports.md §AllReportsFilterBar | `test_AllReportsFilterBar_calls_onFilterChange_on_submitter_change` | 申請者セレクトでメンバーを選択する | `onFilterChange` が `submitterId` に選択したメンバーの ID が設定された値で呼び出されること |
 | TNT-FE-027 | 単体 | AllReportsFilterBar | onFilterChange | 正常系 | ADM-F01 | 55_ui_component/screens/admin-all-reports.md §AllReportsFilterBar | `test_AllReportsFilterBar_calls_onFilterChange_on_date_change` | 開始日 DatePicker で「2025-01-01」を入力する | `onFilterChange` が `from: "2025-01-01"` を含む値で呼び出されること |
 | TNT-FE-028 | 単体 | AllReportsFilterBar | filters: AllReportsFilterValues | 異常系 | ADM-F01 | 55_ui_component/screens/admin-all-reports.md §AllReportsFilterBar | `test_AllReportsFilterBar_shows_date_validation_error` | `filters = { status: "", from: "2025-12-31", to: "2025-01-01", submitterId: "" }` | 終了日の DatePicker にバリデーションエラー（開始日が終了日より後）が表示されること |
@@ -305,6 +313,30 @@ RBAC ミドルウェアが返す 403 は以下の形式であること（`authz.
 | テストID | テストレベル | 対象コンポーネント | 対象 Props / Hook | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
 |---------|-----------|------------------|------------------|---------|-----------|-----------|---------------|-----------------|---------|
 | TNT-FE-043 | 単体 | PageTitle | title: string | 正常系 | ADM-F01 | 55_ui_component/screens/admin-all-reports.md §PageTitle | `test_PageTitle_renders_all_reports_title` | `title = "全レポート一覧"` | 「全レポート一覧」がページタイトルとして描画されること |
+
+---
+
+### 追記テスト（issue-088 リダイレクトトースト）
+
+以下のテスト ID は重複解消（issue-088）のために追記する。
+
+#### TenantPage -- リダイレクトトースト（旧 TNT-FE-008/009 → 振り直し）
+
+| テストID | テストレベル | 対象コンポーネント | 対象 Props / Hook | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---------|-----------|------------------|------------------|---------|-----------|-----------|---------------|-----------------|---------|
+| TNT-FE-044 | 単体 | TenantPage | useCurrentUser | 認可 | ADM-F01, RBC-001 | 55_ui_component/screens/admin-tenant.md §TenantPage | `test_TenantPage_redirects_non_admin_shows_toast` | useCurrentUser が Member ロールを返すようモック | ダッシュボード（`/`）にリダイレクトされ、navigate の state.toast にトーストメッセージ「この画面にアクセスする権限がありません。」が含まれること（issue-088 対応） |
+| TNT-FE-045 | 単体 | TenantPage | useTenant | 認可 | ADM-F01 | 55_ui_component/screens/admin-tenant.md §TenantPage | `test_TenantPage_redirects_on_403_shows_toast` | useTenant が 403 エラーを返すようモック。useCurrentUser が Admin ロールを返すようモック | ダッシュボード（`/`）にリダイレクトされ、navigate の state.toast にトーストメッセージが含まれること（issue-088 対応） |
+
+**備考**: TNT-FE-044/045 は旧 TNT-FE-008/009（TenantPage 側の重複 ID）を振り直したもの。TenantInfoCard 側の TNT-FE-008/009 はそのまま維持する。
+
+#### AllReportsPage -- リダイレクトトースト（旧 TNT-FE-024/025 → 振り直し）
+
+| テストID | テストレベル | 対象コンポーネント | 対象 Props / Hook | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---------|-----------|------------------|------------------|---------|-----------|-----------|---------------|-----------------|---------|
+| TNT-FE-046 | 単体 | AllReportsPage | useCurrentUser | 認可 | ADM-F01, RBC-001 | 55_ui_component/screens/admin-all-reports.md §AllReportsPage | `test_AllReportsPage_redirects_non_admin_shows_toast` | useCurrentUser が Member ロールを返すようモック | ダッシュボード（`/`）にリダイレクトされ、navigate の state.toast にトーストメッセージ「この画面にアクセスする権限がありません。」が含まれること（issue-088 対応） |
+| TNT-FE-047 | 単体 | AllReportsPage | useAllReports | 認可 | ADM-F01 | 55_ui_component/screens/admin-all-reports.md §AllReportsPage | `test_AllReportsPage_redirects_on_403_shows_toast` | useAllReports が 403 エラーを返すようモック。useCurrentUser が Admin ロールを返すようモック | ダッシュボード（`/`）にリダイレクトされ、navigate の state.toast にトーストメッセージが含まれること（issue-088 対応） |
+
+**備考**: TNT-FE-046/047 は旧 TNT-FE-024/025（AllReportsPage 側の重複 ID）を振り直したもの。AllReportsFilterBar 側の TNT-FE-024/025 はそのまま維持する。
 
 ---
 
