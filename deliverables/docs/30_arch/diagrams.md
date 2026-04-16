@@ -193,19 +193,25 @@ graph TD
 ## 6. デプロイパイプライン（計画）
 
 > 対応: [architecture.md](architecture.md) 4.0 SPA 配信方式（ビルド・配信の概要）
+>
 
 ```mermaid
 graph LR
-    subgraph CI["GitHub Actions"]
-        A["Push / PR"] --> B["Lint<br/>golangci-lint<br/>ESLint"]
+    subgraph LocalCI["ローカルテスト（devcontainer + ホスト側 Docker）"]
+        A["PR 作成"] --> B["Lint<br/>golangci-lint<br/>ESLint"]
         B --> C["Test<br/>Go test<br/>Vitest"]
         C --> D["Build<br/>Vite build → dist/<br/>Go build (embed dist/)"]
-        D --> E["Docker Build<br/>& Push to ECR"]
     end
 
-    subgraph CD["デプロイ"]
-        E --> F["ECS<br/>ローリングアップデート"]
-        F --> G["ヘルスチェック<br/>確認"]
+    subgraph Merge["PR マージ"]
+        D --> E["PR body に<br/>テスト結果記載"]
+        E --> F["手動確認 →<br/>マージ"]
+    end
+
+    subgraph Deploy["手動デプロイ"]
+        F --> G["Docker Build<br/>& Push to ECR"]
+        G --> H["ECS<br/>ローリングアップデート"]
+        H --> I["ヘルスチェック<br/>確認"]
     end
 ```
 

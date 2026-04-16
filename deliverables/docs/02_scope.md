@@ -63,12 +63,12 @@
 - テナント分離テスト
 - RBAC テスト
 - 状態遷移テスト
-- CI での自動テスト実行
+- ローカルテスト実行（ci.yml は参考用デモとしてリポジトリに残す）
 
 ### インフラ
 - Docker Compose（ローカル開発）
 - AWS デプロイ（ECS Fargate / RDS / S3）
-- CI/CD（GitHub Actions: lint / test / build）
+- ローカルテスト（lint / test / build）+ 手動デプロイ（GHA の ci.yml / deploy.yml は参考用デモとして残す）
 - ヘルスチェックエンドポイント（`/health`）
 
 ---
