@@ -1,235 +1,197 @@
 # 引き継ぎメモ
 
-## セッション: 2026-04-15 11:00〜15:40
+## セッション: 2026-04-16 朝〜09:42
 
 ### ゴール
-- Step 11-A で前セッション起票の issue 097〜106（10 件）を一括対応
-- バグ修正系を並列実装、合意確認必要系はユーザー議論で方針決定
-- GHA 使用上限中のため、ローカル CI で検証する運用を確立
-- 結果の引き継ぎとして session-log 作成
+- 前セッションで作成した PR #54〜#57 をレビュー → マージまで完走する
+- 体力に余裕があれば Group F-100 実装まで進む（結果的に未着手）
 
 ### 作業ログ
 
-#### Phase 1: 計画策定（Plan Mode）
-1. `/session-start` で状態確認 → Step 11-A 進行中、open issues 19 件（Step 11-A 関連 10 件）を把握
-2. Plan mode で 097〜106 を対応するための計画を立案:
-   - Explore agent 3 並列で各 issue の調査（バグ系 / UX 系 / 軽微系）
-   - Plan agent でグルーピングとサブエージェント分配設計
-   - ユーザー合意: フル並列起動、議論先行、098 は 4 論点 1 PR + コミット 4 分割
-3. 計画ファイル `~/.claude/plans/spicy-frolicking-grove.md` を作成、ExitPlanMode
+#### Phase 1: 内部レビュー（reviewer 4 並列）
+1. `/session-start` で状態確認 → Step 11-A 進行中、open issues 22 件、PR #54〜#57 がレビュー待ち
+2. `git -C expense-saas fetch origin` 実行後、reviewer エージェント 4 並列起動（PR #54〜#57）
+3. 結果:
+   - **PR #55** (097 AppSelect): PASS（warning 2 / suggestion 3）
+   - **PR #56** (098 ItemSlidePanel): PASS 条件付き（warning 3、W3 が設計書 readonly vs 実装 disabled の乖離）
+   - **PR #54** (106 Workflow): **FIX**（blocker 1：Admin が許可リストに入り、Admin 直打ちで元バグ再発）
+   - **PR #57** (099+103 添付削除): **FIX**（blocker 1：state-management.md L303 未更新で issue 069 再発）
 
-#### Phase 2: GHA 使用上限対応
-4. ユーザー指摘「GHA 使用上限に達している」を受けて調査:
-   - `gh run list` で直近 PR CI が 4〜6 秒で即 failure（使用上限確定）
-   - expense-saas は private repo + GH Pro なし → branch protection 設定不可、required checks 強制なし
-   - devcontainer に docker CLI / socket なし → docker compose 不可
-   - frontend-only の Group A〜E は devcontainer 内で完結可能
-5. **ops-107** 起票: GHA 使用上限時のローカル CI 運用戦略（指揮役がローカル CI 実行、復旧後の戻し方針、docker 戦略の論点整理）
-6. 計画ファイル更新: 指揮役が各 worktree で `npm ci / lint / tsc / test / build` を順次実行する運用に変更
+#### Phase 2: PR #56 W3 議論
+4. ユーザーから「Plan ファイル `~/.claude/plans/spicy-frolicking-grove.md` L109 では『AppSelect を他フィールドと揃える』= 案 A 方向だったはず」と指摘
+5. 確認結果、PR は Plan から逸脱して案 B（disabled 統一）を採用していた → **コミット 4 を差し戻し、案 A ① で再実装** に方針変更
+6. 案 A ① の実装手段は frontend-developer に委ねる方針（最小実装優先）
+7. ユーザー指示「ドロップダウン矢印を消す必要はない、Select が開けなければ十分」「他のフィールドも枠の色変化でフォーカスは表現されるから OK」
 
-#### Phase 3: 並列実装（サブエージェント 5 起動）
-7. `git -C expense-saas fetch origin` 実行後、5 エージェント並列起動（全て `run_in_background: true`）:
-   - **Group A (frontend-developer, worktree)**: issues 099+103 — 添付削除 invalidation + ConfirmDialog
-   - **Group B (frontend-developer, worktree)**: issue 106 — Workflow 2 ページの同期ロールチェック
-   - **Group C (frontend-developer, worktree)**: issue 097 — AppSelect displayEmpty/shrink 条件化
-   - **Group D (frontend-developer, worktree)**: issue 098 — ItemSlidePanel UX 4 件（4 コミット分割）
-   - **Group E (designer)**: issues 101+105 — smoke_check.md 修正（worktree 不要）
-8. 5 エージェント全完了:
-   - PR #54 (Group B/106), #55 (Group C/097), #56 (Group D/098), #57 (Group A/099+103)
-   - Group E は直接 dev-journal 編集、コミット未実施
+#### Phase 3: 並列修正（agent A/B + 指揮役）
+8. 3 並列で起動:
+   - **Agent A** (frontend-developer, worktree): PR #56 コミット 4 差し戻し + 案 A ① 再実装 + W1/W2 テスト強化
+   - **Agent B** (frontend-developer, worktree): PR #54 Admin 除外 + テスト反転 + issue 106 本文訂正
+   - **指揮役直接**: PR #57 dev-journal 側の state-management.md L303 更新 + issue 069 追記
+9. 結果:
+   - PR #54: `c0347de` push、Admin 除外完了、APR-FE-004/PAY-FE-004 仕様反転
+   - PR #57 dev-journal: `9fd4628` コミット（state-management 対称化）、`06b0843` コミット（issue 106 本文訂正）
+   - PR #56: `04c32c9` push、AppSelect に readOnly prop 追加 + 案 A ① 実装 + ItemSlidePanel/ItemForm/ReportDetailPage テスト 50/50 PASS
 
-#### Phase 4: issue 104 議論フェーズ
-9. 4 軸の論点:
-   - 監査範囲 → **全画面 × 全ロール × 全 viewport** 採用
-   - 検証手段 → **重要度で振り分け**（副作用あり = 自動 + smoke、情報表示 = smoke のみ、その他 = 自動のみ）
-   - フェーズ分け → **リサーチと実装を 2 sub-issue に分割**
-10. 議論途中で「副作用とは？」の質問 → サーバー状態を変える操作（CREATE/UPDATE/DELETE）と定義して再回答
+#### Phase 4: codex 初回レビュー（4 並列、個別起動）
+10. `/codex-review` をまず PR #55 で起動、ユーザー確認後に PR #54 / #57 も追加起動 → 並列 3 本実行
+11. PR #56 は Agent A 完了待ちのため codex 初回未起動
+12. 結果:
+   - **PR #55**: **FIX**。codex が `displayEmpty={!!placeholder}` で `{ value: '' }` を持つ既存フィルタ（AllReportsFilterBar / ReportListPage）の初期表示が壊れる回帰を発見。reviewer は shrink の話だけ確認し displayEmpty を見落としていた
+   - **PR #54**: **FIX**。codex が `APR-FE-004` の test id 不一致を発見（テスト側 `approval-list-page` / 実装側 `pending-approvals-page`）。常に true になる false positive
+   - **PR #57**: **FIX**。codex がダイアログ message に追加文言「削除した添付ファイルは元に戻せません。」が入っており、screens.md L231 の「完全一致」要件違反を指摘
 
-#### Phase 5: issue 100 議論フェーズ
-11. 4 論点全て決着:
-    - ボタン見た目 → **案 A: outlined + AddIcon**（気に入らなければ最小修正に戻す可能性あり）
-    - ローディング → **案 A: CircularProgress**（startIcon 差し替え）
-    - DnD エリア → **案 B: 視覚化**（点線枠 + ヒント、理由: ユーザー本人すら把握していなかった）
-    - 文言 → **案 A: 設計書準拠**（「ファイルを追加」）
-12. 議論中に派生した懸念:
-    - ユーザー指摘「アップロード中に保存ボタンを押した場合の整合性は？」
-    - 調査: `AttachmentUploader` の isPending は内部閉じ、`ItemForm` の isPending とは別系統、保存ボタン disable されない
-    - **issue 108** 起票: 添付アップロード中の並行操作整合性（4 つの対応案提示、別セッションで議論）
+#### Phase 5: 追加修正（Agent C/D/E 3 並列）
+13. 3 並列で起動:
+   - **Agent C** (PR #55): displayEmpty を「options に空文字 value がある」条件に拡張、回帰テスト追加
+   - **Agent D** (PR #54): test id を実装と合わせ、`PAGE_TEST_ID` 定数 export 化、false positive 防止検証
+   - **Agent E** (PR #57): ConfirmDialog の `message` を「この添付ファイルを削除しますか?」のみに修正
+14. 結果:
+   - PR #55: `0183e98` push、案 X 採用（`hasEmptyValueOption` フラグ）、499 tests 全 PASS
+   - PR #54: `56373a6` push、両ページに `PAGE_TEST_ID` export、false positive 検証で実装一時無効化 → 該当テスト FAIL を確認
+   - PR #57: `03b5d25` push、方針 2 採用（title="添付ファイルの削除" / message="この添付ファイルを削除しますか?"）。Agent E は npm test がフルスイートでタイムアウトしたため指揮役が AttachmentArea/useDeleteAttachment/ReportDetailPage の対象テストのみ実行 → 19/19 PASS 確認
 
-#### Phase 6: issue 102 議論フェーズ（最重量、6 論点）
-13. 論点 1 (対象形式) → 案 A（JPEG/PNG/PDF 全形式対応）
-14. 論点 2 (UI 併存) → 案 A/C（ファイル名=プレビュー、↓ アイコン=ダウンロード）。将来の案 D（モーダル）への移行コストは小と確認
-15. 論点 3 (API 設計): 議論で紆余曲折あり
-    - 最初に案 B（統合レスポンス）推奨 → ユーザー指摘「`staleTime=0` なら統合のメリット薄い」で再評価
-    - 案 C（クエリ切り替え）推奨に変更 → さらにユーザー指摘「API が分かれている方が明快」
-    - 最終的に **案 A（別エンドポイント `/download` / `/preview`）** に決着
-16. 論点 4 (認可・セキュリティ) → 案 A（既存 15 分期限のまま、CSP/CORS 調整不要、認可ルール流用）
-17. 論点 5 (モバイル対応) → 案 A（PC 優先、モバイル best-effort）
-    - 派生議論: 「SMK-060〜063 のレスポンシブ項目が少なすぎるのでは？」
-    - 事実確認: NFR-UX-001 / 02_scope.md / ui-guidelines.md でレスポンシブは正式要件、SMK 4 項目では確実に不足
-    - → **issue 104 に統合**（RBAC + レスポンシブを 1 つの監査マトリクスで扱う、sub-issue でリサーチ/実装を分割）
-18. 論点 6 (設計書修正範囲) → ユーザー指示「codex に聞いてほしい」で叩き台作成 → commit → codex レビュー
+#### Phase 6: codex 再レビュー（4 並列）
+15. 4 本並列起動（#54/#55/#56 初回/#57）
+16. 結果:
+   - **PR #54**: APPROVE 相当（Admin 除外 + test id 修正の両方解消確認）
+   - **PR #55**: APPROVE 相当（空文字 option 回帰の修正確認、26 tests PASS）
+   - **PR #57**: APPROVE 相当（文言修正と state-management.md 整合確認、20 tests PASS）
+   - **PR #56**: **FIX**（新規 blocker）— `setTimeout(0)` のキャンセル漏れによる race condition を codex が repro テストで検証
 
-#### Phase 7: codex レビューと指摘対応
-19. issue 102 決定事項（論点 1〜5）+ 論点 6 叩き台をコミット
-20. `codex-review` 実行（バックグラウンド） → `review-findings/open/101-issue102-attachment-preview-audit.md` に 6 件の指摘
-21. 指摘内容:
-    - **warning 1**: PR 分割で BE 先行マージすると master の FE が壊れる
-    - **warning 2**: `window.open(url)` は非同期 fetch 後だとポップアップブロックされる
-    - **suggestion 3**: 設計書修正対象が D1〜D5 では閉じない（authz.md, security.md, 55_ui_component, traceability.md 追加必須）
-    - **suggestion 4**: テスト構成誤り（cross_cutting_test.go 不存在、AttachmentList.test.tsx で window.open 検証するのは責務違反）
-    - **suggestion 5**: 実装ファイルパス誤り（attachment_handler.go ではなく attachment.go、internal/router/router.go 不存在、AttachmentArea で API 呼ぶ）
-    - **suggestion 6**: API 契約互換性（既存 AttachmentDownload は 5 フィールド必須）
-22. 指揮役で批判的評価 → 全て実害のある非形式的指摘、押し返し余地なし、全て受け入れ
-23. 対応方針をユーザーと議論:
-    - **指摘 1**: ユーザー提案の**統合ブランチパターン**（stacked PR）採用。`integration/102-attachment-preview` に sub PR を積み、結合動作確認後に master へ squash merge
-    - **指摘 2**: 案 α（クリック同期で空タブ open → location 差し替え）採用
-    - API スキーマ: 案 A（共通 `AttachmentAccess` スキーマへリネーム、`download_url` → `url`）採用
-24. issue 102 の決定 3・決定 6 を全面改訂:
-    - 設計書修正対象 D1〜D11（5 → 11 ファイル）
-    - 実装 I1〜I10（事実に合わせて修正）
-    - テスト T1〜T6（責務分離を正確化）
-    - PR 分割を stacked PR パターンに変更
-25. review-findings/open/101 を resolved/ に移動
-26. コミット f3a3b2c: issue 102 改訂 + findings resolved
+#### Phase 7: PR #56 race 議論 → flushSync 採用
+17. ユーザー指摘「0ms 後 setTimeout 設定後に物理的にクリックを差し込めない」→ 指揮役が再評価
+18. 結論: codex の repro は `vi.useFakeTimers()` で時計凍結した人工シナリオ。実機ではマクロタスクが次のユーザー入力イベント前に必ず発火するため race は起きない
+19. ただし `setTimeout(0)` 自体が hack なので、defensive code（useRef + clearTimeout）を足すより **`flushSync` で構造的に置換** するほうが筋が良いとユーザーと合意
+20. ユーザー質問「Vue の nextTick みたいなもの？」→ 「方向は逆だが目的は同じ」と回答
+21. **Agent (PR #56 flushSync 置換)** 起動:
+    - `setTimeout(0)` を `flushSync(() => setPanelState('closed'))` → `setPanelState('view'|'edit')` に置換
+    - 既存 W1 テスト（fake timers 方式）を userEvent + waitFor 方式に書き換え
+    - 新規 ITM-FE-098-5/6 追加（連続クリックで最終状態が期待通りに収束することを検証）
+    - `68b9f44` push、52 tests 全 PASS
 
-#### Phase 8: Local CI 実行（指揮役がシリアル実行）
-27. **Group A Local CI**: lint/tsc/test (490件)/build 全 PASS ✅
-28. **Group B Local CI**: 全 PASS ✅
-29. **Group C Local CI**: 全 PASS ✅
-30. **Group D Local CI**: 全 PASS ✅
-31. 各 CI は `/tmp/ci-group-{a,b,c,d}.log` に記録
+#### Phase 8: PR #56 codex 再レビュー → AppSelect readOnly 指摘
+22. PR #56 codex 再レビュー → race 解消は確認、しかし新たに `AppSelect.tsx:95` の **readOnly 実装誤り** 指摘
+23. codex 主張: `inputProps={{ readOnly: true }}` のみだと SelectInput の開閉制御に効かない（MUI ソース trace で根拠提示）
+24. ユーザーから「false positive と言うのは PR #54 の test id ケースとは違うのでは？」と質問
+25. 整理: **PR #54** は「テストが嘘をつく型」（id 誤りで常に true）、**PR #56** は「テストが沈黙する型」（カテゴリの readOnly テスト自体が存在しない）。両者は別物だが、結果的にどちらも「テスト PASS なのに実害バグが残る」点で似ている
 
-### 今セッションで起票した issue / 新規 PR / コミット一覧
+#### Phase 9: PR #56 readOnly 修正 + codex の前提誤り発見
+26. **Agent (PR #56 readOnly トップレベル化)** 起動
+27. 結果: `1b66e70` push、AppSelect.tsx に `readOnly={readOnly}` トップレベル prop 追加、AppSelect 単体テスト 3 件 + ItemForm 統合テスト ITM-FE-098-7/8 追加、計 57 tests PASS
+28. **重要な発見**: Agent が false positive 防止検証中に「修正前後どちらも PASS」を確認。MUI の `node_modules` を trace すると、`InputBase.js` L493-500 の spread 順序により `inputProps.readOnly=true` も SelectInput の top-level readOnly destructure に届いていた。**つまり codex の技術的説明は誤りで、元実装も実際には動いていた**
+29. ただし修正は依然として価値あり（公式 API、内部 spread 順序への依存排除、テストカバレッジ穴埋め）
+30. ユーザー判断「PR コメントで codex の誤りを明示してから再レビュー」を採用 → PR #56 にコメント投稿（`#issuecomment-4251622340`）
+31. PR #56 codex 再レビュー → **APPROVE 相当**（race 解消 + readOnly 改善確認、未解消指摘なし、57 tests PASS）
 
-#### 起票した issue
-| ID | タイトル | 状態 |
-|---|---|---|
-| ops-107 | GHA 使用上限時のローカル CI 運用戦略 | open（別セッションで正式決着） |
-| 108 | 添付アップロード中の並行操作整合性 | open（別セッションで議論） |
+#### Phase 10: マージ（4 PR スカッシュマージ）
+32. 4 PR 全て MERGEABLE 確認（mergeStateStatus UNSTABLE は GHA 使用上限で CI 未実行のため想定通り）
+33. PR #55 → #57 → #54 → #56 の順でスカッシュマージ:
+    - **PR #55**: `69ff524` (issue 097)
+    - **PR #57**: `e55b66c` (issues 099+103)
+    - **PR #54**: `ac7e3d6` (issue 106)
+    - **PR #56**: AppSelect.test.tsx で add/add コンフリクト発生
+34. PR #56 のコンフリクト解消:
+    - 両ブランチの AppSelect.test.tsx 内容（PR #55 の issue-097-1〜9 + R1/R2 + PR #56 の readOnly 3 件）を 1 ファイルに統合
+    - 統合後テスト 14 件 PASS 確認
+    - merge commit `310616c` push
+    - スカッシュマージ `e4d7598` (issue 098)
 
-#### 更新した issue
-| ID | 更新内容 |
-|---|---|
-| 102 | 論点 1〜5 決定 + 論点 6 全面改訂（codex 指摘反映、D1〜D11 / I1〜I10 / T1〜T6 / stacked PR）|
-| 104 | レスポンシブ軸を統合、タイトル拡張、決定 1〜3 追記、sub-issue 2 分割方針 |
+#### Phase 11: クリーンアップ + 引き継ぎ
+35. worktree クリーンアップ: 14 個の worktree（agents + /tmp 系 codex worktree）を全削除、`git worktree prune` で残骸除去
+36. ローカル + リモートのマージ済みブランチ削除（step11/097/098/106/fix-attachment-delete-flow）
+37. issue 097/098/099/103/106 を `dev-journal/issues/resolved/` に移動 + 各ファイルに「## 解決」セクションを追記
+38. progress.md 更新:
+    - 「解決済み（2026-04-15）」セクション追加（5 件）
+    - 残存 issue を「Step 11-A 実装待ち」と「運用・基盤系」に再分類
+39. dev-journal コミット `3042223` push
 
-#### 解決した review-findings
-- `101-issue102-attachment-preview-audit.md` → resolved/
+### 今セッションで作成したコミット / マージ一覧
 
-#### 新規 PR（GitHub）
-| PR | 内容 | ローカル CI |
-|---|---|---|
-| #54 | issue 106 — Workflow 同期ロールチェック | PASS |
-| #55 | issue 097 — AppSelect 切り欠き条件化 | PASS |
-| #56 | issue 098 — ItemSlidePanel UX 4 件（4 コミット分割）| PASS |
-| #57 | issues 099+103 — 添付削除 invalidation + ConfirmDialog | PASS |
+#### マージ済み PR
+| PR | マージコミット | issue | 内容 |
+|---|---|---|---|
+| #55 | `69ff524` | 097 | AppSelect outlined 切り欠きを placeholder/空文字 option で条件化 |
+| #57 | `e55b66c` | 099, 103 | 添付削除後 invalidation 追加 + ConfirmDialog |
+| #54 | `ac7e3d6` | 106 | Workflow 2 ページに同期ロールチェック追加 |
+| #56 | `e4d7598` | 098 | ItemSlidePanel UX 不整合 4 件 |
 
 #### dev-journal コミット
-- `8ec0e36` fix(101,105): smoke_check の URL パス/文言を実装仕様に合わせる
-- `fa635dd` docs(issues): Step 11-A 議論で派生した issue の起票・更新
-- `f3a3b2c` docs(102): codex 指摘を反映して論点 6 を全面改訂 (resolves finding 101)
+- `9fd4628` state-management.md の useDeleteAttachment invalidation 対称化
+- `06b0843` issue 106 本文の Admin 許可誤記訂正
+- `3042223` issue 097/098/099/103/106 を resolved に移動 + progress 更新
 
 ### 未完了
-- **PR #54〜#57 の内部レビュー（reviewer エージェント）未実施**: 次セッションで起動
-- **PR #54〜#57 の codex レビュー未実施**: 内部レビュー PASS 後
-- **PR #54〜#57 のマージ未実施**: レビュー全完了後
-- **Group F-100（issue 100 実装）未着手**: 論点決着済み、Group A マージ後に実装。`step11/100-uploader-ui` ブランチ
-- **Group F-102（issue 102 実装）未着手**: 論点決着済み、codex レビューで詳細化完了。統合ブランチパターンで 3 sub PR 実装
-- **Group F-104（リサーチ sub-issue 起票）未実施**: issue 104 を親 issue として残し、リサーチ sub-issue を新規起票する必要あり
-- **Phase 3 SMK 残項目**: Approver / Accounting / Admin 系 SMK。PR マージ後に再開
+- **Group F-100 (issue 100) 実装**: AttachmentUploader UI 改修。前セッションで方針合意済み、未着手
+- **issue 104 sub-issue 起票（104-A リサーチ / 104-B 実装）**: 起票してから 104-A 着手
+- **ops-107 方針正式決定**: 暫定運用で回せているが正式決着が必要
+- **issue 102 実装**: 統合ブランチパターン、ops-107 決着後
+- **Phase 3 SMK 残項目**: Approver / Accounting / Admin 系
 
 ### ブロッカー
-- **GHA 使用上限**（月末まで継続見込み）: ops-107 で運用決定が必要だが、暫定運用（指揮役ローカル CI + master 直接マージ可）で今月は回せる
-- **BE テストの実行手段未決定**: issue 102 実装（Go コード変更あり）で問題化する。ops-107 内で解決する必要あり（案 1: ホスト postgres + TCP 接続 / 案 2: docker.sock マウント / 案 3: dind）
+- **GHA 使用上限**: 月末まで継続見込み。暫定運用（指揮役ローカル CI + master 直接マージ可）で回せている
+- **BE テスト実行手段未決定**: issue 102 実装で問題化。ops-107 で解決必要
 
 ### 次にやること
 
-#### 優先度 1: PR レビュー → マージ
-1. `/session-start` で状態確認
-2. `reviewer` エージェントで PR #54〜#57 の内部レビュー（並列起動可）
-3. reviewer 指摘対応（あれば）→ PASS
-4. `/codex-review` で PR #54〜#57 の codex レビュー（並列起動可）
-5. codex 指摘対応 → PASS
-6. PR マージ順（rebase 負荷軽減のため推奨）:
-   - PR #55 (C/AppSelect, 共通コンポ、最優先)
-   - PR #57 (A/添付削除フロー)
-   - PR #54 (B/Workflow ロールチェック)
-   - PR #56 (D/ItemSlidePanel UX)
+#### 優先度 1: Group F-100 実装（issue 100）
+1. `step11/100-uploader-ui` ブランチで frontend-developer 起動
+2. AttachmentUploader.tsx 修正（visually-hidden input + outlined Button + AddIcon + CircularProgress、DnD 視覚化、設計書文言「ファイルを追加」）
+3. 既存パターン: MUI VisuallyHiddenInput 公式ドキュメント参照
+4. テスト: 既存 AttachmentUploader.test.tsx を更新
 
-#### 優先度 2: Group F-100 実装（issue 100）
-7. PR #57（Group A）マージ後に `step11/100-uploader-ui` で実装
-8. 担当: frontend-developer、worktree
-9. 内容: AttachmentUploader.tsx 修正（案 A 実装、visually-hidden input + outlined Button + AddIcon + CircularProgress、DnD 視覚化）
-10. 既存パターン: MUI VisuallyHiddenInput（公式ドキュメント参照）
-11. テスト: vitest で既存 AttachmentUploader.test.tsx を更新
+#### 優先度 2: issue 104 sub-issue 起票
+5. `/issue 起票` で 2 件起票:
+   - **104-A**: リサーチフェーズ（screens/*.md × ロール × viewport マトリクス抽出、既存テストカバー確認、ギャップ分析）
+   - **104-B**: 実装フェーズ（マトリクスに基づくテスト追加、smoke_check.md 拡充、個別バグ修正）
+6. 104-A 着手は Group F-100 完了後
 
-#### 優先度 3: issue 104 sub-issue 起票
-12. `/issue 起票` で 2 件起票:
-    - **104-A**: リサーチフェーズ（screens/*.md × ロール × viewport マトリクス抽出、既存テストカバー確認、ギャップ分析）
-    - **104-B**: 実装フェーズ（マトリクスに基づくテスト追加、smoke_check.md 拡充、個別バグ修正）
-13. 104-A 着手は Group F-100 完了後（工数的に）
+#### 優先度 3: ops-107 方針決定
+7. ローカル CI 運用戦略を正式決定（案 A〜γ、BE 戦略、PR マージ条件、復旧後戻し）
+8. issue 102 実装（BE 変更あり）に着手する前に必須
 
-#### 優先度 4: ops-107 方針決定
-14. ローカル CI 運用戦略を正式決定（案 A〜γ、BE 戦略、PR マージ条件、復旧後戻し）
-15. issue 102 実装（BE 変更あり）に着手する前に必須
-16. docker 戦略の決定: ホスト postgres TCP / docker.sock マウント / dind
+#### 優先度 4: issue 102 実装（最重量、stacked PR）
+9. ops-107 決着後に着手
+10. 統合ブランチ `integration/102-attachment-preview` 作成 → 設計書 PR / BE PR / FE PR の 3 sub PR 構成
 
-#### 優先度 5: issue 102 実装（最重量）
-17. ops-107 決着後に着手
-18. 統合ブランチ `integration/102-attachment-preview` を作成
-19. 3 段階の sub PR:
-    - 設計書 PR: D1〜D11 の修正（designer + reviewer）
-    - BE PR: I1〜I6 + T1〜T2, T6（backend-developer、ローカル Go テスト環境の整備後）
-    - FE PR: I7〜I10 + T3〜T5（frontend-developer、worktree）
-20. 結合動作確認 → 最終 PR を master へマージ
-
-#### 優先度 6: Phase 3 SMK 残項目
-21. Member / Approver / Accounting / Admin の未実施 SMK を順次消化
+#### 優先度 5: Phase 3 SMK 残項目
+11. Member / Approver / Accounting / Admin の未実施 SMK を順次消化
 
 ### 学び・気づき
-- **Plan mode の活用が機能した** — 10 件の issue を 3 Explore agent で並列調査 → Plan agent でグルーピング → ユーザー AskUserQuestion で 3 軸合意 → ExitPlanMode の流れが非常にスムーズ。今後も issue 多数対応時の雛型として有効
-- **サブエージェント 5 並列起動が実用的** — `run_in_background: true` で全部バックグラウンド化、完了通知で拾う方式が安定。主な注意点: 同一ファイル重複を避けるグルーピング + worktree 分離 + 事前の origin fetch
-- **議論フェーズで「前提説明が不足」とユーザーに指摘された** — AskUserQuestion を使う前に必ず (1) 対象画面・コンポーネント、(2) 現状の実装・UI、(3) 修正後のイメージ、(4) 選択肢の視覚比較、を明示するべき。論点 1（ボタン見た目）で最初ショートカットしてユーザーに押し返された。以降の論点では毎回この構造で説明するよう改善
-- **codex の指摘は全て受け入れた（押し返しなし）** — 形式的な指摘ではなく、実ファイル構成・責務分離・契約互換性という本質的な指摘のみ。feedback_critical_review_of_codex のルールに従って批判的評価を行ったが、押し返し対象なしと判断
-- **統合ブランチパターン（stacked PR）はユーザー発案** — codex が指摘した「PR 分割で master が壊れる」問題に対し、指揮役は互換 alias を残すか同一 PR にまとめる案を提示したが、ユーザーが「統合ブランチに sub PR を積む」案を提示。`integration/102-attachment-preview` で整理。これは複雑な機能追加の PR 管理パターンとして今後も使える
-- **issue 起票は「対応前の合意確認」付きで** — 100, 102, 104 の議論で合意確認セクションが機能的に使えた（論点を事前に整理できるので議論が機械的に進む）。UX 系 issue では今後も必須パターンとして採用
-- **Docker compose profile 除外サービスの再ビルド問題** — 前セッション記録済みだが今セッションでも参照価値あり。`seed` サービスなどが `profiles: [seed]` の場合、`docker compose up --build` では再ビルドされないため `compose run --build` 必須
+
+- **codex の指摘は全てが正しいわけではない（PR #56 readOnly のケース）** — codex が「inputProps.readOnly では Select の開閉制御に効かない」と主張したが、MUI ソース trace で実際は両経路とも動いていることが判明。`feedback_critical_review_of_codex` の精神で疑う姿勢は重要だが、push back の判断は「形式的か実害か」だけでなく「事実関係の正確性」も評価軸に加えるべき
+- **修正の価値は「バグ修正」以外にもある** — 上記 readOnly 修正は技術的にはバグ修正ではなかったが、公式 API への統一 + 内部実装への依存排除 + テストカバレッジ穴埋めという複数の価値があった。「正しいかどうか」だけでなく「将来の保守性」も判断軸
+- **race condition 議論で「実機の事象」と「テストの人工シナリオ」を区別する重要性** — codex は `vi.useFakeTimers()` で時計凍結して race を再現したが、実機イベントループでは setTimeout(0) のマクロタスクが必ずユーザー入力前に発火する。テストの再現性 = 実機の脆弱性ではない。ただし hack を残すよりは設計改善（flushSync）で解消する判断はベター
+- **Plan からの逸脱を「実装の好み」で済まさず検出する重要性** — Agent A の最初の修正は Plan の「他フィールドと揃える」(= 案 A)指示を案 B 方向に解釈していた。ユーザーが Plan を覚えていて指摘してくれたから気付けた。今後はサブエージェント起動プロンプトに「Plan の意図を引用」する形で誤解を減らすべき
+- **テスト品質の「false positive」と「カバレッジ不足」は別問題** — PR #54 はテスト ID 誤りで常に true（false positive）、PR #56 はカテゴリのテスト自体が存在しない（テスト不足）。両者は性質が違うが、結果的にどちらも「PASS なのに実害バグが残る」になる。レビュー時はアサーションの正確性とカバレッジ網羅性の両方を見る必要がある
+- **Local CI 実行はサブエージェントに任せず指揮役で（フルスイートタイムアウト対策）** — Agent E が `npm test` フルスイート実行で 2 分超のタイムアウト。対象ファイルのみの部分実行ならエージェントでも問題ないが、フルスイートは指揮役が拾うのが安定。サブエージェントへの指示テンプレに「対象ファイルのみテストする」を明記すべき
+- **AppSelect.test.tsx の add/add コンフリクトはマージ順序によらず発生し得る** — PR #55 と PR #56 で別々にこのファイルを「新規追加」していた。本来は片方が先にマージされた時点で fetch + merge をして相手の追加分を取り込むべきだった。次回は並列 PR 起動時にファイル衝突を grep で検出してから着手するルールを徹底
 
 ### 意思決定ログ
 
-#### GHA 使用上限への対応
-- **暫定運用**: 指揮役がローカル CI 実行、frontend-only の Group A〜E は devcontainer 内で完結
-- **PR マージ条件**: Local CI PASS ログを PR body に明記、required checks 強制なし（private repo + GH Pro なし）、reviewer + codex レビュー PASS で master 直接マージ可
-- **正式決定**: ops-107 で別セッション対応（案 A〜γ、BE 戦略、復旧後戻しを含む）
+#### PR #56 W3 → 案 A ① 採用
+- **Plan の意図を尊重**（「他フィールドと揃える」= 案 A 方向）
+- **A11y 観点**で disabled は値コピー不可 / フォーカス外れ / 読み上げ順ずれの問題があり、設計書 report-detail.md L243 の「readonly」が正しい
+- **AppSelect 実装手段**: ① Select に readOnly prop 渡し（ドロップダウン矢印は残す）。ユーザー明示指示「無理に消す必要はない」
 
-#### issue 100 決定（AttachmentUploader）
-- **案 A: outlined Button + AddIcon**（気に入らなければ最小修正に戻す可能性あり）
-- **案 A: CircularProgress**（startIcon 差し替え）
-- **案 B: DnD 視覚化**（ユーザー本人すら把握していなかったため、可視化価値大）
-- **案 A: 設計書準拠「ファイルを追加」**
-- **並行操作問題は issue 108 で別枠対応**（100 のスコープ外）
+#### PR #56 race → flushSync 採用
+- **case A (push back)** ではなく **case B (設計改善)** を採用
+- 理由: setTimeout(0) は元々 hack で flushSync に置き換える方が意図が明確、defensive code で race を守るより構造的に解消するほうが筋が良い、codex の懸念に対しても説得力がある
+- Vue の nextTick との対比: nextTick はキューに積む方式（待つ）、flushSync は強制フラッシュ方式（先回し）
 
-#### issue 102 決定（添付プレビュー）
-- **案 A: 全形式対応**（JPEG/PNG/PDF）
-- **案 A/C: ファイル名 = プレビュー、↓ = ダウンロード**（案 D モーダルへの将来移行コスト小）
-- **案 A: 別エンドポイント** `/download` と `/preview`、共通 `AttachmentAccess` スキーマ
-- **案 α: クリック同期で空タブ open → location 差し替え**（ポップアップブロック回避）
-- **案 A: 認可・期限は既存流用**
-- **案 A: PC 優先、モバイル best-effort**
-- **統合ブランチパターン: `integration/102-attachment-preview` に stacked PR**
+#### PR #56 codex の readOnly 指摘 → 採用するが押し返しコメントも投稿
+- **修正は採用**（公式 API、内部依存排除、テストカバレッジ）
+- **PR コメントで codex の前提誤りを明示**（MUI source trace の結果を記載）
+- 理由: 将来同じ議論を回避するため、技術的根拠を残す
 
-#### issue 104 決定（UI カバレッジ監査）
-- **全画面 × 全ロール × 全 viewport**（レスポンシブ軸統合）
-- **重要度で振り分け**（副作用あり = 自動 + smoke / 情報表示 = smoke のみ / その他 = 自動のみ）
-- **リサーチと実装を 2 sub-issue に分割**
+#### マージ順序とコンフリクト解消方針
+- 順序: #55 (共通コンポ最優先) → #57 → #54 → #56 (最後に rebase 負荷を吸収)
+- PR #56 add/add コンフリクト: 両セットのテスト（issue-097-1〜9 + R1/R2 + readOnly 3 件）を統合、merge commit 経由で解消（force push 不要）
 
-#### PR マージ順序（優先）
-1. PR #55（共通コンポ AppSelect、最優先で rebase 負荷軽減）
-2. PR #57（添付削除フロー）
-3. PR #54（Workflow ロールチェック）
-4. PR #56（ItemSlidePanel UX）
+#### dev-journal / expense-saas のリポジトリ別運用
+- expense-saas: PR ベース、master 直接 push 禁止
+- dev-journal: 直接 master push 可（progress 更新等）
 
 ## 前回セッション
 
-前回セッション（2026-04-15 朝〜10:54）の詳細は `dev-journal/archives/session-logs/2026-04-15.md` を参照。
+前回セッション（2026-04-15 11:00〜15:40）の詳細は `dev-journal/archives/session-logs/2026-04-15.md` を参照。
