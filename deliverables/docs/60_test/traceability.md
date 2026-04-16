@@ -76,7 +76,7 @@
 |--------|---------|-----------|---------------|---------------|------|
 | ATT-F01 | ファイルアップロード（S3 + DB メタデータ） | `openapi.yaml#uploadAttachment`, `files.md`, `db_schema.md#attachments` | `test_cases/attachments.md#ATT-001〜019` | `test_cases/attachments.md#ATT-FE-016〜020, ATT-FE-025, ATT-FE-027〜028, ATT-FE-036〜037, ATT-FE-045` | |
 | ATT-F02 | ファイル一覧取得 | `openapi.yaml#listAttachments` | `test_cases/attachments.md#ATT-020〜029` | `test_cases/attachments.md#ATT-FE-001〜002, ATT-FE-005, ATT-FE-007〜009, ATT-FE-029〜032` | |
-| ATT-F03 | ファイルダウンロード（署名付き URL 発行） | `openapi.yaml#getAttachmentDownload`, `files.md#署名付きURL` | `test_cases/attachments.md#ATT-030〜041` | `test_cases/attachments.md#ATT-FE-010, ATT-FE-033, ATT-FE-035, ATT-FE-049` | |
+| ATT-F03 | ファイルダウンロード/プレビュー（署名付き URL 発行） | `openapi.yaml#getAttachmentDownload`, `openapi.yaml#getAttachmentPreview`, `files.md#署名付きURL` | `test_cases/attachments.md#ATT-030〜041, ATT-055〜060` | `test_cases/attachments.md#ATT-FE-010, ATT-FE-010b, ATT-FE-033, ATT-FE-035, ATT-FE-049` | |
 | ATT-F04 | ファイル削除（論理削除） | `openapi.yaml#deleteAttachment` | `test_cases/attachments.md#ATT-042〜054` | `test_cases/attachments.md#ATT-FE-006, ATT-FE-013〜015, ATT-FE-041〜043, ATT-FE-047〜048` | |
 
 ### 1.8 ダッシュボード（DASH-F*）
@@ -156,9 +156,9 @@
 |---------|-----------|-----------|---------------|---------------|------|
 | ATT-002 | 許可ファイル形式: JPEG, PNG, PDF | `openapi.yaml#uploadAttachment`, `files.md#3`, `db_schema.md#attachments#CHECK` | `test_cases/attachments.md#ATT-001〜003, ATT-007〜008` | `test_cases/attachments.md#ATT-FE-018〜022, ATT-FE-025〜026` | |
 | ATT-003 | 1 ファイルサイズ上限: 5MB | `openapi.yaml#uploadAttachment`, `db_schema.md#attachments#CHECK` | `test_cases/attachments.md#ATT-004, ATT-006` | `test_cases/attachments.md#ATT-FE-023〜024, ATT-FE-039, ATT-FE-050` | |
-| ATT-010 | ファイルダウンロードは署名付き URL 経由 | `openapi.yaml#getAttachmentDownload`, `files.md#署名付きURL` | `test_cases/attachments.md#ATT-030〜034` | `test_cases/attachments.md#ATT-FE-033, ATT-FE-049` | |
-| ATT-011 | 署名付き URL 発行前に認可チェック必須 | `openapi.yaml#getAttachmentDownload`, `authz.md#6.5` | `test_cases/attachments.md#ATT-035〜038` | - | |
-| ATT-012 | 署名付き URL の有効期限: 15 分 | `files.md#署名付きURL`, `openapi.yaml#getAttachmentDownload` | `test_cases/attachments.md#ATT-034` | `test_cases/attachments.md#ATT-FE-034` | |
+| ATT-010 | ファイルダウンロード/プレビューは署名付き URL 経由 | `openapi.yaml#getAttachmentDownload`, `openapi.yaml#getAttachmentPreview`, `files.md#署名付きURL` | `test_cases/attachments.md#ATT-030〜034, ATT-055〜060` | `test_cases/attachments.md#ATT-FE-033, ATT-FE-049` | |
+| ATT-011 | 署名付き URL 発行前に認可チェック必須 | `openapi.yaml#getAttachmentDownload`, `openapi.yaml#getAttachmentPreview`, `authz.md#6.5` | `test_cases/attachments.md#ATT-035〜038, ATT-059` | - | |
+| ATT-012 | 署名付き URL の有効期限: 15 分 | `files.md#署名付きURL`, `openapi.yaml#getAttachmentDownload`, `openapi.yaml#getAttachmentPreview` | `test_cases/attachments.md#ATT-034` | `test_cases/attachments.md#ATT-FE-034` | |
 | ATT-013 | アップロード時に MIME タイプを検証 | `openapi.yaml#uploadAttachment`, `files.md#3.2` | `test_cases/attachments.md#ATT-007〜010` | `test_cases/attachments.md#ATT-FE-021〜022, ATT-FE-026, ATT-FE-038, ATT-FE-046` | |
 | ATT-014 | S3 パスにテナント ID を含む | `files.md#3.3`, `db_schema.md#attachments.s3_key` | `test_cases/attachments.md#ATT-001` | - | S3 パスの検証は ATT-001 のレコード挿入時に暗黙的に確認 |
 | ATT-020 | 添付の追加・削除は draft 状態のみ | `openapi.yaml#uploadAttachment`, `openapi.yaml#deleteAttachment` | `test_cases/attachments.md#ATT-013〜016, ATT-048〜051` | `test_cases/attachments.md#ATT-FE-003〜004, ATT-FE-011〜012, ATT-FE-040, ATT-FE-044` | |

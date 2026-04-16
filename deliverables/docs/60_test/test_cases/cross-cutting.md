@@ -92,7 +92,8 @@
 | 経費明細 DELETE | テナントBのレポート配下の明細削除 → 404 | CRS-007 |
 | 添付ファイル POST (upload) | テナントBのレポート配下へのアップロード → 404 | CRS-008 |
 | 添付ファイル GET (list) | テナントBのレポート配下の添付一覧取得 → 404 | CRS-009 |
-| 添付ファイル GET (download) | テナントBの添付の署名付きURL取得 → 404 | CRS-010 |
+| 添付ファイル GET (download) | テナントBの添付の署名付きURL取得（ダウンロード） → 404 | CRS-010 |
+| 添付ファイル GET (preview) | テナントBの添付の署名付きURL取得（プレビュー） → 404 | CRS-010b |
 | 添付ファイル DELETE | テナントBの添付削除 → 404 | CRS-011 |
 | ワークフロー POST (approve) | テナントBのレポート承認 → 404 | CRS-012 |
 | ワークフロー POST (reject) | テナントBのレポート却下 → 404 | CRS-013 |
@@ -144,7 +145,8 @@
 |---------|------------|---------|---------|-----------|-----------|----------------|-------------------|---------|
 | CRS-008 | 統合 | handler | テナント分離 | TNT-F02, TNT-005 | authz.md#5, db_schema.md#RLS | `TestTenantIsolation_UploadAttachment_OtherTenant_404` | `userMember`（テナントA）のトークンで `POST /api/reports/{report_tenant_b_draft.id}/items/{item_tenant_b.id}/attachments` を実行 | 404 RESOURCE_NOT_FOUND |
 | CRS-009 | 統合 | handler | テナント分離 | TNT-F02, TNT-005 | authz.md#5, db_schema.md#RLS | `TestTenantIsolation_ListAttachments_OtherTenant_404` | `userMember`（テナントA）のトークンで `GET /api/reports/{report_tenant_b_draft.id}/items/{item_tenant_b.id}/attachments` を実行 | 404 RESOURCE_NOT_FOUND |
-| CRS-010 | 統合 | handler | テナント分離 | TNT-F02, TNT-005 | authz.md#5, db_schema.md#RLS | `TestTenantIsolation_GetAttachmentDownload_OtherTenant_404` | `userMember`（テナントA）のトークンで `GET /api/reports/{report_tenant_b_draft.id}/items/{item_tenant_b.id}/attachments/{attachment_tenant_b.id}` を実行 | 404 RESOURCE_NOT_FOUND |
+| CRS-010 | 統合 | handler | テナント分離 | TNT-F02, TNT-005 | authz.md#5, db_schema.md#RLS | `TestTenantIsolation_GetAttachmentDownload_OtherTenant_404` | `userMember`（テナントA）のトークンで `GET /api/reports/{report_tenant_b_draft.id}/items/{item_tenant_b.id}/attachments/{attachment_tenant_b.id}/download` を実行 | 404 RESOURCE_NOT_FOUND |
+| CRS-010b | 統合 | handler | テナント分離 | TNT-F02, TNT-005 | authz.md#5, db_schema.md#RLS | `TestTenantIsolation_GetAttachmentPreview_OtherTenant_404` | `userMember`（テナントA）のトークンで `GET /api/reports/{report_tenant_b_draft.id}/items/{item_tenant_b.id}/attachments/{attachment_tenant_b.id}/preview` を実行 | 404 RESOURCE_NOT_FOUND |
 | CRS-011 | 統合 | handler | テナント分離 | TNT-F02, TNT-005 | authz.md#5, db_schema.md#RLS | `TestTenantIsolation_DeleteAttachment_OtherTenant_404` | `userMember`（テナントA）のトークンで `DELETE /api/reports/{report_tenant_b_draft.id}/items/{item_tenant_b.id}/attachments/{attachment_tenant_b.id}` を実行 | 404 RESOURCE_NOT_FOUND |
 
 #### ワークフロー — テナント分離
@@ -213,7 +215,8 @@
 | DELETE /api/reports/{id}/items/{itemId} | deleteItem | ※ | ※ | ※ | ※ | 所有者のみ（draft のみ） |
 | POST /api/reports/{id}/items/{itemId}/attachments | uploadAttachment | ※ | ※ | ※ | ※ | 所有者のみ（draft のみ）。レート制限 10 req/min/user |
 | GET /api/reports/{id}/items/{itemId}/attachments | listAttachments | ○ | △ | ※ | ○ | authz.md §10: 所有 + submitted + 自分が approved_by/rejected_by |
-| GET /api/reports/{id}/items/{itemId}/attachments/{attId} | getAttachmentDownload | ○ | △ | ※ | ○ | authz.md §10: 所有 + submitted + 自分が approved_by/rejected_by。URL 発行前に認可チェック |
+| GET /api/reports/{id}/items/{itemId}/attachments/{attId}/download | getAttachmentDownload | ○ | △ | ※ | ○ | authz.md §10: 所有 + submitted + 自分が approved_by/rejected_by。URL 発行前に認可チェック |
+| GET /api/reports/{id}/items/{itemId}/attachments/{attId}/preview | getAttachmentPreview | ○ | △ | ※ | ○ | getAttachmentDownload と同一の認可ルール。Content-Disposition: inline |
 | DELETE /api/reports/{id}/items/{itemId}/attachments/{attId} | deleteAttachment | ※ | ※ | ※ | ※ | 所有者のみ（draft のみ） |
 | GET /api/workflow/pending | listPendingReports | × | ○ | × | × | Approver 専用。他ロールは 403 |
 | POST /api/workflow/{id}/approve | approveReport | × | ○ | × | × | Approver 専用。自己承認禁止（RBC-016）。他ロールは 403 |

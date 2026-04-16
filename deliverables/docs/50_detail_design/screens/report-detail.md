@@ -20,7 +20,7 @@
 | 対応要件ID | RPT-F03（レポート詳細取得）、RPT-F05（レポート削除）、RPT-F06（レポート提出）、ITM-F01〜F03（明細CRUD）、ATT-F01〜F04（添付ファイル）、WFL-F01（承認）、WFL-F02（却下）、WFL-F03（支払完了） |
 | 対応UC | UC-M02, UC-M03, UC-M03a, UC-M05, UC-M06, UC-M07, UC-M09, UC-A02, UC-A03, UC-AC02 |
 | 対応ロール | 全ロール（権限に準ずる） |
-| 使用API | GET /api/reports/:id, POST /api/reports/:id/items, PUT /api/reports/:id/items/:itemId, DELETE /api/reports/:id/items/:itemId, POST /api/reports/:id/items/:itemId/attachments, GET /api/reports/:id/items/:itemId/attachments/:attId, DELETE /api/reports/:id/items/:itemId/attachments/:attId, POST /api/reports/:id/submit, DELETE /api/reports/:id, POST /api/workflow/:id/approve, POST /api/workflow/:id/reject, POST /api/workflow/:id/pay |
+| 使用API | GET /api/reports/:id, POST /api/reports/:id/items, PUT /api/reports/:id/items/:itemId, DELETE /api/reports/:id/items/:itemId, POST /api/reports/:id/items/:itemId/attachments, GET /api/reports/:id/items/:itemId/attachments/:attId/download, GET /api/reports/:id/items/:itemId/attachments/:attId/preview, DELETE /api/reports/:id/items/:itemId/attachments/:attId, POST /api/reports/:id/submit, DELETE /api/reports/:id, POST /api/workflow/:id/approve, POST /api/workflow/:id/reject, POST /api/workflow/:id/pay |
 | 目的 | レポートの全情報を確認し、明細追加・提出・承認・却下・支払完了等の操作を行う中心画面 |
 
 ### 参照ドキュメント
@@ -265,8 +265,8 @@
 | --- 添付ファイル ---                 |
 | [+ ファイルを追加] <-- draft時のみ   |
 | +----------------------------+     |
-| | receipt_001.jpg  120KB [x] |     |
-| | receipt_002.pdf  450KB [x] |     |
+| | receipt_001.jpg [↓] 120KB [x] |  |
+| | receipt_002.pdf [↓] 450KB [x] |  |
 | +----------------------------+     |
 |                                    |
 | [キャンセル]  [保存する]             |
@@ -322,9 +322,10 @@
 
 | # | 項目 | 表示形式 |
 |---|------|---------|
-| 1 | ファイル名 | テキスト。クリックでダウンロード |
-| 2 | ファイルサイズ | `XX KB` / `X.X MB` |
-| 3 | 削除ボタン | [x] アイコン。status == draft かつ所有者の場合のみ表示 |
+| 1 | ファイル名 | テキスト。クリックでプレビュー（新タブ） |
+| 2 | ↓ アイコン | ダウンロードボタン。クリックでダウンロード（新タブ） |
+| 3 | ファイルサイズ | `XX KB` / `X.X MB` |
+| 4 | 削除ボタン | [x] アイコン。status == draft かつ所有者の場合のみ表示 |
 
 ### アップロード
 
@@ -351,13 +352,23 @@
 - アップロード成功: ファイル一覧に追加。トーストで「ファイルをアップロードしました」
 - アップロード失敗: エラーメッセージを表示。リトライ可能
 
-### ダウンロード
+### プレビュー
 
 | 項目 | 内容 |
 |------|------|
 | 操作方法 | ファイル名クリック |
-| API | GET /api/reports/:id/items/:itemId/attachments/:attId |
-| 挙動 | 署名付き URL を取得し、新しいタブでファイルを表示/ダウンロード |
+| API | GET /api/reports/:id/items/:itemId/attachments/:attId/preview |
+| 挙動 | クリック同期で空タブを開き、非同期取得した署名付き URL（`Content-Disposition: inline`）で location を差し替える。JPEG/PNG/PDF をブラウザ内で表示する |
+| 有効期限 | 15分（ATT-012） |
+| 認可チェック | 署名付き URL 発行前に認可チェック（ATT-011）。同一テナント + 閲覧権限を確認 |
+
+### ダウンロード
+
+| 項目 | 内容 |
+|------|------|
+| 操作方法 | ↓ アイコンボタンクリック |
+| API | GET /api/reports/:id/items/:itemId/attachments/:attId/download |
+| 挙動 | クリック同期で空タブを開き、非同期取得した署名付き URL（`Content-Disposition: attachment`）で location を差し替える。ブラウザがファイルのダウンロードを開始する |
 | 有効期限 | 15分（ATT-012） |
 | 認可チェック | 署名付き URL 発行前に認可チェック（ATT-011）。同一テナント + 閲覧権限を確認 |
 
@@ -416,6 +427,7 @@
 | 明細削除ボタン | 表示 | 非表示 | 非表示 |
 | 添付アップロード | 表示 | 非表示 | 非表示 |
 | 添付削除ボタン | 表示 | 非表示 | 非表示 |
+| 添付プレビュー | 表示 | 表示 | 表示 |
 | 添付ダウンロード | 表示 | 表示 | 表示 |
 | 明細閲覧 | 表示 | 表示 | 表示 |
 

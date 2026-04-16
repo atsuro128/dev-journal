@@ -512,7 +512,7 @@ interface AttachmentAreaProps {
 ### AttachmentList
 
 - 配置: `pages/reports/AttachmentList.tsx`
-- 責務: 添付ファイル一覧を表示する。各ファイルのファイル名（クリックでダウンロード）、ファイルサイズ、削除ボタンを表示する
+- 責務: 添付ファイル一覧を表示する。各ファイルのファイル名（クリックでプレビュー）、↓ アイコン（クリックでダウンロード）、ファイルサイズ、削除ボタンを表示する。プレビューとダウンロードは presentational コンポーネントとしてコールバックを受け取るのみで、`window.open` の呼び出しは AttachmentArea（orchestration）の責務である
 - 対応セクション: `50_detail_design/screens/report-detail.md` &sect;7
 
 ```typescript
@@ -521,7 +521,9 @@ interface AttachmentListProps {
   attachments: Attachment[];
   /** 削除ボタンを表示するか */
   canDelete: boolean;
-  /** ファイル名クリック（ダウンロード）コールバック */
+  /** ファイル名クリック（プレビュー）コールバック */
+  onPreview: (attachmentId: string) => void;
+  /** ↓ アイコンクリック（ダウンロード）コールバック */
   onDownload: (attachmentId: string) => void;
   /** 削除ボタン押下コールバック */
   onDelete: (attachmentId: string) => void;
@@ -534,6 +536,7 @@ interface AttachmentListProps {
 |-------|---|------|------|------------|
 | `attachments` | `Attachment[]` | Yes | 添付ファイルデータ | useAttachments Hook の data |
 | `canDelete` | `boolean` | Yes | 削除ボタンの表示制御 | canModify |
+| `onPreview` | `(attachmentId: string) => void` | Yes | プレビューコールバック | AttachmentArea |
 | `onDownload` | `(attachmentId: string) => void` | Yes | ダウンロードコールバック | AttachmentArea |
 | `onDelete` | `(attachmentId: string) => void` | Yes | 削除コールバック | AttachmentArea |
 | `deletingId` | `string \| null` | Yes | 削除処理中の添付 ID | AttachmentArea |
@@ -588,7 +591,7 @@ GET /api/reports/:id
       → ItemSlidePanel (props: open, mode, reportId, item, reportStatus, isOwner, パネル操作コールバック群)
         → ItemForm (props: mode, onSubmit, categories, apiError, isPending, defaultValues)
         → AttachmentArea (props: reportId, itemId, canModify)
-          → AttachmentList (props: attachments, canDelete, onDownload, onDelete)
+          → AttachmentList (props: attachments, canDelete, onPreview, onDownload, onDelete)
           → AttachmentUploader (props: reportId, itemId, onUploadSuccess)
       → ConfirmDialog (props: open, title, message, confirmLabel, ...)
 
@@ -661,12 +664,19 @@ ReportDetailPage → ConfirmDialog（確認） → useDeleteItem.mutate({ report
 GET /api/reports/:id/items/:itemId/attachments
   → useAttachments({ reportId, itemId })（← state-management.md §3 データフェッチ系）
     → AttachmentArea
-      → AttachmentList (props: attachments, canDelete, onDownload, onDelete)
+      → AttachmentList (props: attachments, canDelete, onPreview, onDownload, onDelete)
+
+[添付プレビュー]
+AttachmentList → onPreview(attachmentId)
+  → AttachmentArea: window.open('about:blank') → useAttachmentPreviewUrl refetch()
+    → 署名付き URL を取得（Content-Disposition: inline） → newWindow.location.href = url
+    → 失敗時: newWindow.close() + エラートースト
 
 [添付ダウンロード]
 AttachmentList → onDownload(attachmentId)
-  → useAttachmentDownload({ reportId, itemId, attId })（← state-management.md §3 データフェッチ系）
-    → 署名付き URL を取得 → ブラウザでファイルを開く / ダウンロード
+  → AttachmentArea: window.open('about:blank') → useAttachmentDownloadUrl refetch()
+    → 署名付き URL を取得（Content-Disposition: attachment） → newWindow.location.href = url
+    → 失敗時: newWindow.close() + エラートースト
 
 [添付アップロード]
 AttachmentArea → AttachmentUploader → useUploadAttachment.mutate({ reportId, itemId, file })
@@ -698,7 +708,8 @@ AttachmentArea → AttachmentList → onDelete(attachmentId)
 | `useUpdateItem` | 明細編集のミューテーション | `state-management.md §3 ミューテーション系` |
 | `useDeleteItem` | 明細削除のミューテーション | `state-management.md §3 ミューテーション系` |
 | `useAttachments` | 添付ファイル一覧の取得 | `state-management.md §3 データフェッチ系` |
-| `useAttachmentDownload` | 添付ファイルの署名付き URL 取得 | `state-management.md §3 データフェッチ系` |
+| `useAttachmentDownloadUrl` | 添付ファイルのダウンロード用署名付き URL 取得 | `state-management.md §3 データフェッチ系` |
+| `useAttachmentPreviewUrl` | 添付ファイルのプレビュー用署名付き URL 取得 | `state-management.md §3 データフェッチ系` |
 | `useUploadAttachment` | 添付ファイルのアップロード | `state-management.md §3 ミューテーション系` |
 | `useDeleteAttachment` | 添付ファイルの削除 | `state-management.md §3 ミューテーション系` |
 
@@ -760,6 +771,7 @@ AttachmentArea → AttachmentList → onDelete(attachmentId)
 | `ItemTable`（編集・削除列） | 所有者 AND status === draft | 常時有効 | `screens/report-detail.md` &sect;5 |
 | `AttachmentUploader` | 所有者 AND status === draft | 常時有効 | `screens/report-detail.md` &sect;7 |
 | `AttachmentList`（削除ボタン） | 所有者 AND status === draft | 常時有効 | `screens/report-detail.md` &sect;7 |
+| `AttachmentList`（プレビュー） | 全ロール、全状態 | 常時有効 | `screens/report-detail.md` &sect;7, `authz.md` &sect;6.5 |
 | `AttachmentList`（ダウンロード） | 全ロール、全状態 | 常時有効 | `screens/report-detail.md` &sect;7, `authz.md` &sect;6.5 |
 
 ---

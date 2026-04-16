@@ -1262,12 +1262,13 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
-  /api/reports/{id}/items/{itemId}/attachments/{attId}:
+  /api/reports/{id}/items/{itemId}/attachments/{attId}/download:
     get:
       tags: [attachments]
       summary: ダウンロード URL 取得
       description: |
         添付ファイルの署名付きダウンロード URL を取得する。
+        署名付き URL には `ResponseContentDisposition: attachment; filename="..."` が設定され、ブラウザはダウンロードを開始する。
         有効期限: 15分。発行前に認可チェック（ATT-011）を実施する。
 
         認可条件:
@@ -1304,7 +1305,7 @@ paths:
                 required: [data]
                 properties:
                   data:
-                    $ref: "#/components/schemas/AttachmentDownload"
+                    $ref: "#/components/schemas/AttachmentAccess"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -1316,6 +1317,59 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
+  /api/reports/{id}/items/{itemId}/attachments/{attId}/preview:
+    get:
+      tags: [attachments]
+      summary: プレビュー URL 取得
+      description: |
+        添付ファイルの署名付きプレビュー URL を取得する。
+        署名付き URL には `ResponseContentDisposition: inline; filename="..."` が設定され、ブラウザはファイルをインライン表示する。
+        有効期限: 15分。発行前に認可チェック（ATT-011）を実施する。
+        対応ファイル形式: JPEG, PNG, PDF（ブラウザネイティブで表示可能な形式すべて）。
+
+        認可条件:
+        - 許可ロール: Member, Approver, Admin, Accounting
+        - 所有者条件: レポート閲覧権限に準ずる（ATT-011）。getAttachmentDownload と同一の認可ルールを適用する
+        - 状態条件: なし（閲覧可能範囲内であれば全状態）
+        - テナント境界越え: 404 RESOURCE_NOT_FOUND
+        - 同一テナント内の権限不足: 403 FORBIDDEN
+      operationId: getAttachmentPreview
+      x-requirements:
+        - ATT-F03   # ファイルプレビュー（ダウンロードと同じ要件グループ）
+        - ATT-010   # 署名付きURL経由
+        - ATT-011   # 発行前認可チェック必須
+        - ATT-012   # 署名付きURL有効期限 15分
+      x-authz:
+        roles: [admin, approver, member, accounting]
+        ownership_required: false  # レポート閲覧権限に準ずる（Authorizer で判定）
+        tenant_boundary: true
+      parameters:
+        - $ref: "#/components/parameters/reportId"
+        - $ref: "#/components/parameters/itemId"
+        - $ref: "#/components/parameters/attachmentId"
+      responses:
+        "200":
+          description: プレビュー情報
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: "#/components/schemas/AttachmentAccess"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: ロール不足または所有権不足（FORBIDDEN）
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/reports/{id}/items/{itemId}/attachments/{attId}:
     delete:
       tags: [attachments]
       summary: 添付ファイル削除
@@ -2184,14 +2238,14 @@ components:
           format: date-time
           description: アップロード日時（ISO 8601 UTC、例: 2026-03-22T10:30:00Z）
 
-    AttachmentDownload:
+    AttachmentAccess:
       type: object
-      required: [download_url, file_name, mime_type, file_size, expires_at]
+      required: [url, file_name, mime_type, file_size, expires_at]
       properties:
-        download_url:
+        url:
           type: string
           format: uri
-          description: 署名付きダウンロード URL
+          description: 署名付き URL。Content-Disposition は発行エンドポイントで決まる（/download は attachment、/preview は inline）
         file_name:
           type: string
           description: 元ファイル名
