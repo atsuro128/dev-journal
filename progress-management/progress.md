@@ -104,6 +104,15 @@
 
 ## 課題・ブロッカー
 
+### 解決済み（2026-04-15）
+| ID | タイトル | 解決 PR |
+|----|---------|---------|
+| 097 | AppSelect の outlined 切り欠きと InputLabel 位置不整合 | PR #55 |
+| 098 | ItemSlidePanel UX 不整合 4 件（幅・閉じるボタン・アニメ・閲覧モード） | PR #56 |
+| 099 | useDeleteAttachment の invalidation が useAttachments を対象外 | PR #57 |
+| 103 | 添付削除時の確認ダイアログ欠落 | PR #57 |
+| 106 | Workflow 2 ページの同期ロールチェック欠落（ロール変更時フラッシュ表示）| PR #54 |
+
 ### 解決済み（2026-04-14）
 | ID | タイトル | 解決 PR |
 |----|---------|---------|
@@ -139,6 +148,17 @@
 | 069 | 添付ファイルアップロード後の invalidation が設計テーブルと乖離 | — |
 | 076 | Step 8 ローカル開発環境統合の漏れ（シード・migration・MinIO・README） | PR #44（8-11） |
 
+### 残存 issue（Step 11-A 実装待ち）
+| ID | タイトル | 状態 |
+|----|---------|------|
+| 096 | キャッチオール 404 ルート未実装 | 未着手 |
+| 100 | AttachmentUploader UI 課題（決着済み、実装待ち）| 方針合意済み、Group F-100 で実装予定 |
+| 101 | SMK-037 文言不一致 | Group E 対応済み、progress に記録のみ |
+| 102 | 添付プレビュー機能欠落（決着済み、実装重量級）| 方針合意済み、integration/102-attachment-preview で stacked PR 予定 |
+| 104 | UI RBAC × レスポンシブ監査マトリクス | 方針合意済み、104-A/B sub-issue 起票待ち |
+| 105 | smoke_check URL パス不一致 | 対応済み、progress に記録のみ |
+| 108 | 添付アップロード中の並行操作整合性 | 未議論（別セッション）|
+
 ### 残存 issue（運用・基盤系）
 | ID | タイトル |
 |----|---------|
@@ -152,3 +172,7 @@
 | 077 | S3_PRESIGNED_URL_EXPIRY 実装未参照（PR #44 レビューで顕在化） |
 | 078 | S3 関連変数名の設計書・実装乖離（S3_REGION vs AWS_REGION、PR #44 レビューで顕在化） |
 | 079 | env_config.md §4.x 全変数の棚卸し |
+| ops-080 | Post-MVP スコープ管理方法 |
+| 081 | Post-MVP テストカバレッジ項目 |
+| 084 | Post-MVP HttpOnly Cookie 移行 |
+| ops-107 | GHA 使用上限時のローカル CI 運用戦略 |

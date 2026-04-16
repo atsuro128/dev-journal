@@ -141,3 +141,20 @@ const handleConfirmDelete = () => {
 ## 関連
 - 099: useDeleteAttachment の invalidation 漏れ — 同じ削除フローのバグ。本 issue と同じ PR でまとめて修正すると効率的
 - screens.md 4.6 / report-detail.md §4.6: 確認ダイアログの設計上の正本
+
+---
+
+## 解決
+
+**解決日**: 2026-04-15
+**解決 PR**: #57 (`e55b66c`)
+
+### 対応内容
+
+- `AttachmentArea.tsx` の削除操作を共通 `ConfirmDialog` 経由の 2 段階フローに変更
+- `title="添付ファイルの削除"` / `message="この添付ファイルを削除しますか?"` で設計書 `screens.md` 4.6 L231 と完全一致
+- 既存の明細削除ダイアログパターン（ReportDetailPage）と同型の title + message 2 段構成
+
+### codex 指摘と対応
+
+初回レビューで「設計書は message のみ記載だが実装は title + message 追加文言で不一致」と指摘。設計書完全一致を優先して `message="削除した添付ファイルは元に戻せません。"` の追加文言を削除。

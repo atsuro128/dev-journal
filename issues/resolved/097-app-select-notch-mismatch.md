@@ -104,3 +104,20 @@ const shouldDisplayEmpty = !!placeholder;
 
 ## 関連
 - PR #51（issue 089/090/091/092 対応）はカテゴリラベル重複と placeholder 削除が論点だったが、この notched 不整合は別の事象で PR #51 のスコープ外
+
+---
+
+## 解決
+
+**解決日**: 2026-04-15
+**解決 PR**: #55 (`69ff524`)
+
+### 対応内容
+
+- `displayEmpty` を「placeholder 指定あり」または「options に `{ value: '' }` を含む」の条件で制御
+- `shrink` も displayEmpty と value の組み合わせで判定
+- 回帰テスト追加（AppSelect / AllReportsFilterBar / ReportListPage）
+
+### codex 指摘と対応
+
+初回レビューで「`displayEmpty={!!placeholder}` だと空文字 option を持つ既存フィルタ（AllReportsFilterBar / ReportListPage）で初期表示が壊れる」という回帰を指摘され、`options.some(opt => opt.value === '')` を条件に追加して修正。

@@ -112,3 +112,18 @@ onSuccess: (_data, { reportId, itemId }) => {
 ## 関連
 - 069: 添付ファイルアップロード後の invalidation が設計テーブルと乖離 — 同根のキャッシュ無効化問題だが、上流側（設計テーブルとの整合）の論点。本 issue は実装の単純な漏れに焦点を絞る
 - PR #51: ItemSlidePanel Drawer 化 — このバグは PR #51 の修正前から存在していた可能性が高い（useDeleteAttachment は変更されていない）
+
+---
+
+## 解決
+
+**解決日**: 2026-04-15
+**解決 PR**: #57 (`e55b66c`)
+
+### 対応内容
+
+- `useDeleteAttachment.ts` の onSuccess で `['reports', reportId, 'items', itemId, 'attachments']` を追加 invalidation
+- `useUploadAttachment` と完全対称化
+- 関連: 設計テーブル `state-management.md` L303 も同時更新（dev-journal コミット `9fd4628`）
+
+これにより issue 069 の差し戻しレビュー（2026-04-11）で指摘された「設計書・実装・テストの対称化」が完全解消された。

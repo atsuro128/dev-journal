@@ -151,3 +151,27 @@ PrivateRoute レベルでロール別のアクセス制御を実装する。例:
 - 088 / PR #53: 認可エラー UX 改善（Group C 修正） — 本 issue は PR #53 で取りこぼされた追加対応
 - 104: UI RBAC カバレッジ監査 — 本 issue の根本対策（PrivateRoute レベルの一元化）の親 issue
 - 105: smoke_check.md SMK-007 / SMK-025 のパス誤記 — SMK 検証の前段に必要
+
+---
+
+## 解決
+
+**解決日**: 2026-04-15
+**解決 PR**: #54 (`ac7e3d6`)
+
+### 対応内容
+
+- `ApprovalListPage.tsx`: Approver のみアクセス可能に制限（`authz.md` L334-337、`screens/workflow-pending.md` L23 準拠）
+- `PaymentListPage.tsx`: Accounting のみアクセス可能に制限（`authz.md` L376-379、`screens/workflow-payable.md` L23 準拠）
+- 両ページに `PAGE_TEST_ID` 定数を export し、テストから参照する形に統一
+- フェイルセーフの `useEffect` は残置（二重防御）
+
+### codex 指摘と対応
+
+- reviewer 指摘：「Admin を許可している実装は authz.md と矛盾、issue 106 本文も誤記」→ 修正（issue 106 本文も同時訂正）
+- codex 指摘：「APR-FE-004 の test id が実装と不一致で false positive」→ 修正（定数参照化 + 修正前 FAIL 確認による false positive 防止検証）
+
+### 学び
+
+- issue 本文の正本性を設計書（authz.md / screens/）で二重チェックする重要性 → feedback_issue_upstream_check.md に合致
+- テストの test id は実装側で定数 export し、テスト側でインポートする形が false positive 予防に効く

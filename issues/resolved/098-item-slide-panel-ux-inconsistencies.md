@@ -157,3 +157,31 @@ view モードの「読み取り専用」表現を全フィールドで統一す
 ## 関連
 - 092: ItemSlidePanel が Drawer 未使用（PR #51 で対応済み） — 本 issue は PR #51 マージ後に発見された UX 課題で、別事象
 - 097: AppSelect の outlined 切り欠き不整合 — 同じく ItemForm のカテゴリ欄まわりだが、見た目の症状は別
+
+---
+
+## 解決
+
+**解決日**: 2026-04-15
+**解決 PR**: #56 (`e4d7598`)
+
+### 対応内容（4 論点）
+
+1. **幅統一**: `PaperProps.sx = { width: { xs: '100%', sm: 480 } }`
+2. **閉じるボタン**: 右上 `IconButton + CloseIcon`、`<h2>` → `Typography variant="h6" component="h2"`
+3. **アニメ統一**: `panelState: 'closed' | 'add' | 'edit' | 'view'` 単一 state に集約。行クリック/編集時は `flushSync(() => setPanelState('closed'))` → `setPanelState('view'|'edit')` で確定的な閉→開遷移を保証（setTimeout(0) の hack は不採用）
+4. **閲覧モード**: 全フィールド readOnly 方式で統一。AppSelect に `readOnly` prop を追加し MUI Select のトップレベル readOnly に渡す。TextField 系は従来通り `inputProps.readOnly`。設計書 report-detail.md L243 の「readonly」記載と整合
+
+### codex 指摘と対応
+
+- **race 懸念**（setTimeout(0) のキャンセル漏れ）: 実機ではイベントループ順序上再現不可能だが、`flushSync` に置換して hack を撲滅。副産物として ITM-FE-098-5/6 の回帰テストを追加
+- **AppSelect readOnly のトップレベル prop 化**: codex が「inputProps.readOnly では Select の開閉制御に効かない」と指摘。MUI の InputBase.js の spread 順序を trace した結果、技術的には両経路とも有効であることを確認（PR #56 コメントに検証結果記載）。ただし公式 API に従った明示的な渡し方に統一し、ついでに AppSelect 単体テスト 3 件 + ItemForm 統合テスト 2 件のカバレッジ穴埋め
+
+### 関連 issue
+
+- **issue 108**: 添付アップロード中の並行操作整合性（本 issue の議論で派生）
+
+### 学び
+
+- `flushSync` は Vue の nextTick と近い用途だが方向が逆（nextTick は callback を更新後に実行、flushSync は更新を今すぐ同期コミット）
+- MUI Select の readOnly は `node_modules/@mui/material/` の spread 順序を trace しないと確信できない
