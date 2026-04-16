@@ -166,7 +166,7 @@
 | 104 | UI RBAC × レスポンシブ監査マトリクス | 104-A resolved、104-B 未着手 |
 | 105 | smoke_check URL パス不一致 | 対応済み、記録のみ |
 | 108 | 添付アップロード中の並行操作整合性 | スコープ拡大判明、動作確認後に方針決定 |
-| 111 | devcontainer golangci-lint v1→v2 不整合 | 未着手（backend lint ブロッカー）|
+| ~~111~~ | ~~devcontainer golangci-lint v1→v2 不整合~~ | root-project コミットで解決 |
 | 113 | architecture.md ディレクトリツリー粒度不適切 | 未着手（パッケージ粒度に抽象化 + Step 8 成果物追加）|
 
 ### 残存 issue（運用・基盤系）
