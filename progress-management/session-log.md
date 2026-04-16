@@ -1,108 +1,130 @@
 # 引き継ぎメモ
 
-## セッション: 2026-04-16 11:53〜13:10
+## セッション: 2026-04-16 13:30〜16:10
 
 ### ゴール
-- ops-107 Phase 3 実機検証（devcontainer rebuild 後）
-- 設計書・ワークフロー・work-breakdown の CI 関連記述をローカルテスト前提に一括更新
-- `/test` スキル作成
+- open issue の棚卸しと対応方針決定
+- 並列可能な issue から順に対応（109 / 104-A / 110）
+- 108 の方針議論
 
 ### 作業ログ
 
-#### Phase 3 実機検証
-1. devcontainer rebuild 後に再接続
-2. verify-egress.sh PASS 確認（既存セキュリティ維持）
-3. host gateway 5433 への接続確認 → Connection refused（ホスト到達 = firewall 通過）
-4. 許可外ポート 5432 への接続確認 → No route to host（firewall でブロック）
-5. Phase 3 全項目 PASS
+#### issue 棚卸し・方針決定
+1. `/session-start` で状態確認 → Step 11 進行中、open issue 17 件
+2. ユーザーから「優先 issue がまだあるはず」と指摘 → 全 open issue を読み直し
+3. 並列可能な issue を特定: 109 / 104-A / 110（ファイル競合なし）
+4. ops-107 を `resolved/` に移動
 
-#### 設計書・ワークフロー一括更新
-6. ops-107 の追加決定事項を議論:
-   - GHA を実質廃止するなら設計書の CI 前提記述も更新が必要
-   - `/test` スキルで手動実行 + workflow.md の規約で担保（hook 自動化はしない）
-7. Explore エージェントで CI 関連記述を洗い出し → codex にクロスチェック → 追加漏れ多数発見
-8. designer エージェント 2 台を並行起動:
-   - 設計成果物（6ファイル）+ Step 11 + workflow.md + ci.yml / deploy.yml
-   - 過去 Step work-breakdown（step3〜step10、13ファイル）
-9. ops-107 注記（「※ ops-107 により方針変更」）をユーザー指示で全箇所から削除
-10. 内部レビュー → PASS (warning 2件: 用語ゆれ + 10-H タスク名曖昧)
-11. warning 修正後コミット → codex レビュー
-12. codex レビュー → FIX (4件):
-    - High: ci.yml / deploy.yml が PR/push で自動起動 → workflow_dispatch に変更
-    - Medium: Step 11 deploy.yml 有効化前提 → 手動デプロイに修正
-    - Medium: ci.yml コメント不整合 → 「GitHub Hosted Runner 向けの参考実装」に修正
-    - Low: Local CI → ローカルテスト結果の表記統一
-13. 全 4 件修正 → codex 再レビュー → APPROVE
-14. ユーザー指摘: 「Local CI」は CI の概念として正当 → Low の表記統一を revert
+#### issue 109 対応（テスト設計書・実装間の乖離）
+5. architect が修正計画策定（ID マッピング表、セクション 2 調査、エージェント分担）
+6. セクション 2 調査結果: WFL-FE 12 件はページ統合テストに包含済み（実装漏れではない）、RPT-FE-011〜014 は要調査
+7. designer（設計書更新 7 ファイル）+ frontend-developer（実装 ID 修正、worktree）を並列起動
+8. PR #60 作成 → FE テスト全 94 ファイル PASS、build PASS
+9. 内部レビューで WFL-014 → WFL-051 の振り直しが誤りと判明（WFL-051 は既に使用中、そもそもテスト ID 重複ではなく要件参照）→ 実装を元に戻し
+10. codex レビュー: 再発防止ルール未追記 + RPT-FE-011〜014 注記漏れ → 修正してコミット
+11. PR #60 内部レビュー PASS → codex APPROVE → **マージ完了**
 
-#### `/test` スキル作成
-15. `.claude/skills/test/SKILL.md` を作成
-    - frontend: devcontainer 内完結
-    - backend: host gateway の DB 接続確認 → 失敗時はユーザーにホスト側操作を指示 → テスト実行
-    - 結果報告: PR body に貼れる「## Local CI 結果」形式
+#### issue 104-A 対応（UI カバレッジリサーチ）
+12. designer が ui_coverage_matrix.md 作成 → ギャップ 15 件特定
+13. 内部レビュー PASS → codex レビュー: 3 件指摘（分類矛盾、CT false negative、SMK 過大評価）→ 修正してコミット
+
+#### issue 110 対応（architecture.md 更新）
+14. designer が FE/BE ツリーを実装に合わせて更新
+15. 内部レビュー: `__tests__/` 注記が総称的 → 修正 → 再レビュー PASS
+16. codex レビュー: 注記文言 + domain/model/.gitkeep → 注記修正、model/ は issue 112 で対応
+
+#### issue 108 議論（添付アップロード並行操作）
+17. 案 α〜δ を提示 → ユーザーが即時アップロード方式の問題を発見
+18. アップロード = 即時永続化、フォームキャンセルしても添付は残る
+19. 新規明細では itemId がないため添付不可（設計書に明記なし = 設計漏れ）
+20. 108 のスコープが当初想定より広い → 別セッションで動作確認後に方針決定
+
+#### issue 112 起票（domain パッケージ DTO 分離）
+21. 110 対応中に domain/ の構成を確認 → dto.go がドメイン層にあるのは不適切
+22. ユーザーと議論: Step 8 で実装者への参照指示が不足していたことが根本原因
+23. 102（添付プレビュー）の前に対応する方針（新 DTO 追加前に整理）
+24. issue 112 起票
+
+#### issue 111 起票（devcontainer golangci-lint v2）
+25. backend lint 実行時に golangci-lint v1 と .golangci.yml v2 の不整合が発覚
+26. issue 111 起票
+
+#### /test スキル修正
+27. worktree パスに対応していなかった → `$BASE` 変数方式に修正
 
 ### 今セッションで作成したコミット一覧
 
-#### root-project
-- `3355156` feat: /test スキルを追加
-- `6d3dfe3` fix: /test スキルの結果セクション名を「ローカルテスト結果」に統一
-- `5d1b24f` revert: Local CI セクション名を元に戻す
-
-#### expense-saas
-- `4a0024f` docs: ci.yml / deploy.yml に参考用デモの旨のコメント追加
-- `359835e` fix: ci.yml / deploy.yml のトリガーを workflow_dispatch に変更
-
 #### dev-journal
-- `92f723e` docs: ローカルテストをメインとする方針に設計書・テスト戦略を更新
-- `f8dcbbb` fix: codex 指摘対応 — Local CI → ローカルテスト結果に統一
-- `da10354` revert: Local CI セクション名を元に戻す
+- `7f81d1f` docs: issue 109 テスト設計書の ID 追記・振り直し・代替注記
+- `2b9836e` docs: issue 104-A ui_coverage_matrix.md 作成
+- `32f70d0` docs: issue 110 architecture.md 更新
+- `63ba238` chore: ops-107 移動、108 追記、111 起票
+- `f0d61fa` fix: codex レビュー指摘対応（109 / 104-A / 110）+ issue 112 起票
 
 #### ai-dev-framework
-- `766dfa1` docs: work-breakdown と workflow をローカルテスト前提に更新
-- `7923ade` fix: codex 指摘対応 — step11 deploy.yml 有効化前提を手動デプロイに修正
+- `dcd5e2b` docs: テスト追加時のルールを workflow.md に追記（issue 109 再発防止）
+
+#### root-project
+- `644fa69` fix: /test スキルの実行パスを worktree 対応に修正
+
+#### expense-saas
+- PR #60 マージ（issue 109 テスト実装 ID 振り直し）
 
 ### 未完了
 
-- **ops-107 issue ファイルの移動**: `open/` → `resolved/` に移動 + progress.md 更新
-- **issue 109 対応**: 未着手
-- **issue 104-A 着手**: 未着手
+- **109 / 104-A / 110 の codex 再レビュー**: 指摘修正済み・コミット済み、再レビュー未実施
+- **progress.md 更新**: 今セッションの進捗を反映していない
 
 ### ブロッカー
-なし
+- **issue 111**: devcontainer の golangci-lint v1 → v2 不整合で backend lint が実行不可
 
 ### 次にやること
 
-#### 優先度 1: ops-107 クローズ
-1. ops-107 を `resolved/` に移動
-2. progress.md 更新
+#### 優先度 1: codex 再レビュー（109 / 104-A / 110）
+1. 3 件並列で codex 再レビュー実行
+2. PASS → issue を resolved に移動
 
-#### 優先度 2: issue 109 対応（テスト設計書・実装間の乖離）
-3. ID 重複 14 件の解消（最優先）
-4. 未反映 22 ID の設計書追記
-5. FE フィルタ 16 件の実装漏れ確認
+#### 優先度 2: issue 112（domain パッケージ DTO 分離）
+3. dto.go を domain/ から適切な場所に移動
+4. model/.gitkeep 削除
+5. PR フロー（テスト → レビュー → codex → マージ）
 
-#### 優先度 3: issue 104-A 着手
-6. designer で screens/*.md からマトリクス抽出 → ui_coverage_matrix.md 作成
+#### 優先度 3: issue 111（devcontainer golangci-lint v2）
+6. .devcontainer/ の設定修正
+7. devcontainer rebuild で検証
+
+#### 優先度 4: issue 102（添付プレビュー）
+8. 112 完了後に着手
+9. stacked PR 方式（設計書 → BE → FE）
+
+#### 優先度 5: issue 104-B（UI カバレッジ実装）
+10. 104-A のギャップ 12 件（修正後）のテスト追加
 
 ### 学び・気づき
 
-- **codex の形式的な指摘には押し返す** — 「Local CI」→「ローカルテスト結果」への表記統一は codex の Low 指摘だったが、CI は GHA 固有の用語ではなく概念として正当。ユーザー判断で revert。codex の指摘を鵜呑みにしない
-- **設計書の ops-107 注記は不要** — 設計書の内容自体を書き換えれば十分。「※ ops-107 により方針変更」のような注記は読者にとってノイズ
-- **ci.yml のトリガー無効化を忘れない** — 参考用デモとして残す場合でも、`on: pull_request` のままだと PR ごとに GHA が走って無料枠を消費する。`workflow_dispatch` に変更必須
+- **フローを飛ばさない** — PR #60 でローカルテスト → 内部レビューの順序を飛ばしてコミット提案に向かった。ユーザーに指摘されて是正。各 issue の対応はフロー（実装 → テスト → レビュー → コミット → codex）を事前に計画してから進めるべき
+- **スキルの手順書を事前に読む** — `/test` スキルを呼び出さず手動でテストを実行し、ビルド検証を漏らした。スキルが存在する作業は SKILL.md を読んでから実行する
+- **codex の指摘は妥当性を検証してから受け入れる** — 110 の domain/model/.gitkeep 指摘は「設計書修正」ではなく「実装の残骸削除」で対応すべきと押し返した。104-A の false negative 指摘は的確で受け入れた
+- **勝手にツールをインストールしない** — golangci-lint v2 を確認なしにインストールした。環境変更を伴う操作はユーザーに確認すべき
 
 ### 意思決定ログ
 
-#### ローカルテスト運用の全体像
-- テスト実行: `/test` スキルで指揮役が実行（手動実行オプションは廃止）
-- PR マージ条件: PR body の Local CI セクションに結果記載
-- ci.yml / deploy.yml: `workflow_dispatch`（手動実行のみ）。GitHub Hosted Runner 向けの参考実装として残す
-- 設計書・work-breakdown: 全て「ローカルテストがメイン」に統一済み
+#### issue 108 保留の判断
+- 当初は案 α（アップロード中の操作を disable）で対応予定だったが、議論中に根本問題が判明:
+  1. アップロード = 即時永続化（S3 + DB）。フォームキャンセルしても添付は残る
+  2. 新規明細では itemId がないため添付エリアが非表示（設計書に明記なし）
+- 案 α では根本問題を解決しない → 別セッションで実際の動作を確認してから方針決定
 
-#### codex の Low 指摘を revert した判断
-- 「Local CI」は CI（継続的インテグレーション）の概念として正当
-- GHA を廃止しても CI の概念自体は残る
-- PR body のセクション名として「Local CI 結果」は適切
+#### issue 112 を 102 の前に対応する判断
+- 102 で新しい DTO（AttachmentAccess）を追加予定
+- 追加前に dto.go を正しい場所に移動しておけば、新 DTO を最初から正しい場所に置ける
+- 追加後に移動すると影響範囲が増える
+
+#### domain/model/.gitkeep の扱い
+- codex は設計書に記載するか実装を整理するか選択を求めた
+- 設計書は「直置き」と書いており正しい。model/ は Step 8-2 のスキャフォールド残骸
+- 設計書修正ではなく、112 の cleanup で .gitkeep を削除する方針
 
 ## 前回セッション
 
-前回セッション（2026-04-16 11:00〜11:53）の詳細は `dev-journal/archives/session-logs/2026-04-16.md` を参照。
+前回セッション（2026-04-16 11:53〜13:10）の詳細は `dev-journal/archives/session-logs/2026-04-16.md` を参照。
