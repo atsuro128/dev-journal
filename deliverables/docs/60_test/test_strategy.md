@@ -289,7 +289,7 @@ npx playwright test
 | `auth.md` | `AUTH-` | 認証エンドポイント（signup, login, refresh, logout, me, password-reset） |
 | `reports.md` | `RPT-` | 経費レポート CRUD、状態遷移テスト |
 | `items.md` | `ITM-` | 経費明細 CRUD |
-| `attachments.md` | `ATT-` | 添付ファイル一覧取得・アップロード・ダウンロード・削除、署名付きURL認可（エンドポイント4件: uploadAttachment, listAttachments, getAttachmentDownload, deleteAttachment） |
+| `attachments.md` | `ATT-` | 添付ファイル一覧取得・アップロード・ダウンロード・プレビュー・削除、署名付きURL認可（エンドポイント5件: uploadAttachment, listAttachments, getAttachmentDownload, getAttachmentPreview, deleteAttachment） |
 | `workflow.md` | `WFL-` | 承認・却下・支払完了 |
 | `dashboard.md` | `DSH-` | ダッシュボード・カテゴリ |
 | `tenant.md` | `TNT-` | テナント情報取得・メンバー一覧 |
