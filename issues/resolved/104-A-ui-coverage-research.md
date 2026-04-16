@@ -76,3 +76,9 @@ designer
 ## 解決内容
 
 ## 解決日
+
+### 2026-04-16 Codex Issue 解決再レビュー
+
+- `dev-journal/deliverables/docs/60_test/ui_coverage_matrix.md` を確認し、全 13 画面のロール別 UI コントロール棚卸し、3 viewport のレスポンシブ挙動表、既存 CT/SMK のマーキング、重要度付きギャップリストが揃っていることを確認。
+- 前回 codex レビューで指摘したダッシュボード系の false negative は、ギャップリストで `G-I03`〜`G-I05` を取り下げたうえで理由が明記されていることを確認。
+- 104-B の入力として必要な粒度まで整理されており、追加解釈なしで下流へ引き渡せるため PASS と判定。

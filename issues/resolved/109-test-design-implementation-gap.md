@@ -106,3 +106,13 @@ issue 修正で追加されたテストが設計書に未反映:
 ## 解決内容
 
 ## 解決日
+
+### 2026-04-16 Codex Issue 解決再レビュー
+
+- 差し戻し。設計書側の ID 振り直し・追記は反映されているが、実装側に旧 ID が残っており、前回 codex 指摘の「重複解消」が完了していない。
+- 未解消 1: `attachments.md` では AttachmentArea 側の旧 `ATT-FE-007/008/009` を `ATT-FE-054/055/056` へ振り直したと記載済みだが、実装は依然として旧 ID のまま（`expense-saas/frontend/src/pages/reports/__tests__/AttachmentArea.test.tsx`）。
+- 未解消 2: `dashboard.md` では DashboardPage 側の旧 `DSH-FE-008` を `DSH-FE-039` へ振り直したと記載済みだが、実装は依然として `DSH-FE-008` のまま（`expense-saas/frontend/src/pages/dashboard/__tests__/DashboardPage.test.tsx`）。
+- 未解消 3: `tenant.md` では TenantPage / AllReportsPage 側の旧 `TNT-FE-008/009/024/025` を `TNT-FE-044/045/046/047` へ振り直したと記載済みだが、実装は依然として旧 ID のまま（`expense-saas/frontend/src/pages/admin/__tests__/TenantPage.test.tsx`, `expense-saas/frontend/src/pages/admin/__tests__/AllReportsPage.test.tsx`）。
+- 追加で修正すべき成果物: 上記 4 つの FE テストファイル。設計書の追加修正は現時点では不要。
+- 上流修正は不要。問題は実装側の追従漏れ。
+- このまま進めると Step 11-D 横断レビューでテスト ID の一意追跡が再び崩れ、設計書と実装の対応が確定できない。

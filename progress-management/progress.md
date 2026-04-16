@@ -107,6 +107,10 @@
 ### 解決済み（2026-04-16）
 | ID | タイトル | 解決 PR |
 |----|---------|---------|
+| 109 | テスト設計書・実装間の乖離 | PR #60 + #61 |
+| 110 | architecture.md ディレクトリツリー陳腐化 | dev-journal コミット |
+| 112 | domain パッケージ DTO 分離 | PR #62 |
+| 104-A | UI カバレッジリサーチ | dev-journal コミット |
 | 096 | キャッチオール 404 ルート未実装 | PR #59 |
 | 100 | AttachmentUploader UI 課題（重複ボタン + スピナー + DnD 視覚化） | PR #58 |
 
@@ -154,17 +158,16 @@
 | 069 | 添付ファイルアップロード後の invalidation が設計テーブルと乖離 | — |
 | 076 | Step 8 ローカル開発環境統合の漏れ（シード・migration・MinIO・README） | PR #44（8-11） |
 
-### 残存 issue（Step 11-A 実装待ち）
+### 残存 issue（Step 11-A 関連）
 | ID | タイトル | 状態 |
 |----|---------|------|
-| 096 | ~~キャッチオール 404 ルート未実装~~ | PR #59 で解決（2026-04-16） |
-| 100 | ~~AttachmentUploader UI 課題~~ | PR #58 で解決（2026-04-16） |
-| 101 | SMK-037 文言不一致 | Group E 対応済み、progress に記録のみ |
-| 102 | 添付プレビュー機能欠落（決着済み、実装重量級）| 方針合意済み、integration/102-attachment-preview で stacked PR 予定 |
-| 104 | UI RBAC × レスポンシブ監査マトリクス | 方針合意済み、104-A/B sub-issue 起票待ち |
-| 105 | smoke_check URL パス不一致 | 対応済み、progress に記録のみ |
-| 108 | 添付アップロード中の並行操作整合性 | 未議論（別セッション）|
-| 109 | テスト設計書・実装間の乖離（ID 重複 14 件 / 未反映 22 ID） | 未着手 |
+| 101 | SMK-037 文言不一致 | 対応済み、記録のみ |
+| 102 | 添付プレビュー機能欠落 | 方針合意済み、stacked PR 予定 |
+| 104 | UI RBAC × レスポンシブ監査マトリクス | 104-A resolved、104-B 未着手 |
+| 105 | smoke_check URL パス不一致 | 対応済み、記録のみ |
+| 108 | 添付アップロード中の並行操作整合性 | スコープ拡大判明、動作確認後に方針決定 |
+| 111 | devcontainer golangci-lint v1→v2 不整合 | 未着手（backend lint ブロッカー）|
+| 113 | architecture.md ディレクトリツリー粒度不適切 | 未着手（パッケージ粒度に抽象化 + Step 8 成果物追加）|
 
 ### 残存 issue（運用・基盤系）
 | ID | タイトル |
@@ -174,12 +177,6 @@
 | 061 | devcontainer マウントとシークレット露出の最小化 |
 | ops-062 | ワークフロースキルの粒度 |
 | 064 | MCP ジョブログが proxy allowlist でブロック |
-| 073 | work-breakdown の保証種別が test_strategy.md の実態と乖離（別セッションで対応予定） |
-| 075 | attachment_handler_test.go の unused parameter |
-| 077 | S3_PRESIGNED_URL_EXPIRY 実装未参照（PR #44 レビューで顕在化） |
-| 078 | S3 関連変数名の設計書・実装乖離（S3_REGION vs AWS_REGION、PR #44 レビューで顕在化） |
-| 079 | env_config.md §4.x 全変数の棚卸し |
 | ops-080 | Post-MVP スコープ管理方法 |
 | 081 | Post-MVP テストカバレッジ項目 |
 | 084 | Post-MVP HttpOnly Cookie 移行 |
-| ops-107 | GHA 使用上限時のローカル CI 運用戦略 |

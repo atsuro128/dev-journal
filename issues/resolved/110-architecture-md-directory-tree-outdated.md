@@ -69,3 +69,9 @@ architecture.md の §4.1 フロントエンドディレクトリツリーを、
 ## 解決内容
 
 ## 解決日
+
+### 2026-04-16 Codex Issue 解決再レビュー
+
+- `dev-journal/deliverables/docs/30_arch/architecture.md` §4.1 を確認し、`pages/` が現行のドメイン別ディレクトリ構成（`login/`, `signup/`, `password-reset/`, `auth/`, `dashboard/`, `reports/`, `admin/`, `workflow/`, `error/`）へ更新されていることを確認。
+- `components/`, `hooks/`, `api/`, `stores/`, `contexts/`, `lib/`, `test/` とフロントエンド直下の `theme.ts`, `vite.config.ts`, `package.json` なども現行構成に沿って記載されており、Issue 本文で指摘した旧フラット構造は解消されている。
+- 追加の不整合は見当たらず、設計書を参照した実装構造の把握を妨げない状態になっているため PASS と判定。
