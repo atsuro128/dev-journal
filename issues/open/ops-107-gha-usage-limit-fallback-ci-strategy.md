@@ -96,11 +96,21 @@ npm run build           # ビルド検証（オプション）
   - 実行者: 指揮役
   ```
 
-### 6. 復旧後の運用戻し
+### 6. `/test` スキル化の検討
+- ローカル CI 実行を Claude Code のスキルとして定義し、`/test frontend`、`/test backend`、`/test frontend AttachmentUploader` のようにスコープ指定で呼び出せるようにする
+- `Bash run_in_background: true` + timeout 延長で、メイン会話をブロックせず実行可能
+- GHA 復旧後も「PR レビュー前のローカル検証」として恒久的に使える
+- 検討事項:
+  - FE: `vitest run` は devcontainer 内で完結（2分前後）
+  - BE: Docker（DB + MinIO）起動が前提。devcontainer 内の docker 可否（issue 061）に依存
+  - 出力: PASS/FAIL サマリ + 失敗テスト詳細を報告するフォーマット
+  - PR body への「Local CI 実行結果」自動挿入との連携
+
+### 7. 復旧後の運用戻し
 - GHA 使用上限リセット（翌月初日）のタイミングで、PR body 手順を廃止するかどうかを判断
 - 恒久化するかは本 issue の議論で決定
 
-### 7. devcontainer の docker 可否
+### 8. devcontainer の docker 可否
 - issue 061（devcontainer mount and secret exposure minimization）と整合性を確認
 - docker.sock マウントがセキュリティ issue 061 と矛盾する場合、案 A は却下
 

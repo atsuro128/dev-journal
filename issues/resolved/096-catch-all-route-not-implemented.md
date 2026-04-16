@@ -137,5 +137,16 @@ export default function NotFoundPage() {
 
 ## 関連 issue
 
-- 088: 403 認可エラー時のフィードバック欠落 — 本 issue と合わせて対応すると、認可エラーと未定義 URL の挙動差を最小化できる（ただし 088 が案 A 採用なので完全統一にはならない）
-- 後追い対応: Step 11-A 完了後に着手
+- 088: 403 認可エラー時の���ィード��ック欠落 — 本 issue と合わせて���応すると、認可エラー���未定義 URL の挙動���を最小化できる（ただし 088 が案 A 採用なので完全統��に��ならない）
+- 後追い対��: Step 11-A 完了��に着手
+
+## 解決
+
+PR #59 でスカッシュマージ（2026-04-16）。
+- `NotFoundPage.tsx` 新設（MUI Box + Typography + React Router Link）
+- `App.tsx` に `<Route path="*" element={<NotFoundPage />} />` を PrivateRoute > AppLayoutOutlet 内末尾に追加
+- テスト 3 件追加（NFP-001〜003）
+- 内部レビュー PASS + codex APPROVE 相当
+
+## 解決日
+2026-04-16
