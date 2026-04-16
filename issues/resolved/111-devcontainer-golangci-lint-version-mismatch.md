@@ -58,4 +58,14 @@ Error: you are using a configuration file for golangci-lint v2 with golangci-lin
 
 ## 解決内容
 
+`.devcontainer/Dockerfile` と `.devcontainer/devcontainer.json` の golangci-lint バージョンを v1.64.8 → v2.11.4 に更新。`go install` のモジュールパスも v2 用（`.../golangci-lint/v2/cmd/...`）に変更。
+
+### 完了条件の確認結果
+
+- `golangci-lint version` → `v2.11.4`（Go 1.24.1 環境で toolchain auto-switch により go1.25.9 で動作）
+- `golangci-lint run ./...` → `0 issues.`（`.golangci.yml` v2 設定で正常動作）
+
+devcontainer rebuild は未実施（現在のコンテナは手動インストール済みの v2.11.4 で動作中）。次回 rebuild 時に Dockerfile の変更が反映される。
+
 ## 解決日
+2026-04-16
