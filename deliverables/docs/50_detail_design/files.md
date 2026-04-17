@@ -358,8 +358,9 @@ GET /api/reports/:id/items/:itemId/attachments/:attId/preview
 [5] 取得失敗: newWindow.close() + エラートースト表示
 ```
 
-- 実際の API 呼び出しと `window.open` 呼び出しは `AttachmentArea.tsx`（orchestration 担当）に配置
-- `AttachmentList.tsx`（presentational）は `onPreview` / `onDownload` コールバックを props で受け取るだけ
+- 実際の API 呼び出し（`useAttachmentDownloadUrl` / `useAttachmentPreviewUrl` の `refetch`）と `window.open` の呼び出しは、`AttachmentList.tsx` 内部の行コンポーネント `AttachmentItemRow` に配置する
+- `AttachmentList.tsx` は行ごとに `AttachmentItemRow` を生成し、各 `AttachmentItemRow` が per-item で上記 Hook をトップレベルに保持する。`attachments.map(...)` のループ内では Hook を呼べない（React hooks rules 違反）ため、添付 1 件ごとにコンポーネントを分割してフックのルールを満たす構造を採用する
+- `AttachmentArea.tsx` は一覧取得（`useAttachments`）・アップロード（`useUploadAttachment`）・削除（`useDeleteAttachment`）・トースト管理を担当する。プレビュー / ダウンロードで発生したエラーは `AttachmentItemRow.onError → AttachmentList.onError → AttachmentArea` の順に委譲され、`AttachmentArea` がトーストを表示する
 
 ### 4.6 認可チェック（ATT-011）
 

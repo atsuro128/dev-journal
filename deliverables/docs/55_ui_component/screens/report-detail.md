@@ -56,6 +56,7 @@ ReportDetailPage
         │   │   └── AppTextField（← common-components.md）[摘要]
         │   └── AttachmentArea
         │       ├── AttachmentList
+        │       │   └── AttachmentItemRow × N（per-item で useAttachmentDownloadUrl / useAttachmentPreviewUrl を保持）
         │       └── AttachmentUploader
         └── ConfirmDialog（← common-components.md）
 ```
@@ -489,7 +490,7 @@ interface ItemFormProps {
 ### AttachmentArea
 
 - 配置: `pages/reports/AttachmentArea.tsx`
-- 責務: 明細スライドパネル内の添付ファイル管理領域。添付ファイル一覧（AttachmentList）とアップロード機能（AttachmentUploader）を統合する。操作可否は所有者 AND draft 状態で判定する
+- 責務: 明細スライドパネル内の添付ファイル管理領域。添付ファイル一覧（AttachmentList）とアップロード機能（AttachmentUploader）を統合する orchestration 層。一覧取得（`useAttachments`）、アップロード（`useUploadAttachment`）、削除（`useDeleteAttachment`）、削除確認ダイアログの制御、トースト表示（成功・失敗）を担当する。プレビュー / ダウンロードの署名付き URL 取得と `window.open` 操作は AttachmentList 内部の AttachmentItemRow に委譲し、発生したエラー通知を `onError` コールバックで受け取ってトースト表示する。操作可否は所有者 AND draft 状態で判定する
 - 対応セクション: `50_detail_design/screens/report-detail.md` &sect;7
 
 ```typescript
@@ -512,34 +513,45 @@ interface AttachmentAreaProps {
 ### AttachmentList
 
 - 配置: `pages/reports/AttachmentList.tsx`
-- 責務: 添付ファイル一覧を表示する。各ファイルのファイル名（クリックでプレビュー）、↓ アイコン（クリックでダウンロード）、ファイルサイズ、削除ボタンを表示する。プレビューとダウンロードは presentational コンポーネントとしてコールバックを受け取るのみで、`window.open` の呼び出しは AttachmentArea（orchestration）の責務である
-- 対応セクション: `50_detail_design/screens/report-detail.md` &sect;7
+- 責務: 添付ファイル一覧のレンダリングと、**添付 1 件ごとの署名付き URL 取得 Hook（`useAttachmentDownloadUrl` / `useAttachmentPreviewUrl`）のオーケストレーション**を担う層。内部で行単位の描画コンポーネント `AttachmentItemRow` を使用し、`AttachmentItemRow` が per-item で Hook を保持し、クリック同期 `window.open` → `refetch` → `newWindow.location.href` 差し替えパターン（`50_detail_design/files.md` §4.5）を実装する。各行にはファイル名（クリックでプレビュー）、↓ アイコン（クリックでダウンロード）、ファイルサイズ、削除ボタンを表示する。エラー通知は親（AttachmentArea）にコールバックで委譲する
+- 構造に関する補足: React hooks rules（条件分岐・ループ内での Hook 呼び出し禁止）を遵守しつつ、添付ごとに独立した署名付き URL 取得を実現するため、行単位に内部コンポーネント `AttachmentItemRow` を切り出し、そのトップレベルで Hook を呼ぶ構造とする。結果として `AttachmentList` は純粋な presentational ではなく **per-item rendering + per-item hook orchestration 層**となる
+- 対応セクション: `50_detail_design/screens/report-detail.md` &sect;7、`50_detail_design/files.md` &sect;4.5
 
 ```typescript
 interface AttachmentListProps {
+  /** レポート ID（AttachmentItemRow の per-item Hook に渡す） */
+  reportId: string;
+  /** 明細 ID（AttachmentItemRow の per-item Hook に渡す） */
+  itemId: string;
   /** 添付ファイルデータ配列 */
   attachments: Attachment[];
   /** 削除ボタンを表示するか */
   canDelete: boolean;
-  /** ファイル名クリック（プレビュー）コールバック */
-  onPreview: (attachmentId: string) => void;
-  /** ↓ アイコンクリック（ダウンロード）コールバック */
-  onDownload: (attachmentId: string) => void;
   /** 削除ボタン押下コールバック */
   onDelete: (attachmentId: string) => void;
   /** 削除処理中の添付 ID（グレーアウト対象） */
   deletingId: string | null;
+  /** プレビュー・ダウンロード失敗時のエラー通知コールバック（親 AttachmentArea がトースト表示） */
+  onError: (message: string) => void;
 }
 ```
 
 | Props | 型 | 必須 | 説明 | データソース |
 |-------|---|------|------|------------|
+| `reportId` | `string` | Yes | レポート ID（per-item Hook に渡す） | AttachmentArea |
+| `itemId` | `string` | Yes | 明細 ID（per-item Hook に渡す） | AttachmentArea |
 | `attachments` | `Attachment[]` | Yes | 添付ファイルデータ | useAttachments Hook の data |
 | `canDelete` | `boolean` | Yes | 削除ボタンの表示制御 | canModify |
-| `onPreview` | `(attachmentId: string) => void` | Yes | プレビューコールバック | AttachmentArea |
-| `onDownload` | `(attachmentId: string) => void` | Yes | ダウンロードコールバック | AttachmentArea |
 | `onDelete` | `(attachmentId: string) => void` | Yes | 削除コールバック | AttachmentArea |
 | `deletingId` | `string \| null` | Yes | 削除処理中の添付 ID | AttachmentArea |
+| `onError` | `(message: string) => void` | Yes | エラー通知コールバック（トースト表示を親に委譲） | AttachmentArea |
+
+#### AttachmentItemRow（AttachmentList 内部コンポーネント）
+
+- 配置: `pages/reports/AttachmentList.tsx` 内（export しない内部コンポーネント）
+- 責務: 添付 1 件分の行を描画し、クリック時に `useAttachmentDownloadUrl` / `useAttachmentPreviewUrl` の `refetch()` を起動する。`files.md` §4.5 の「クリック同期で `window.open('about:blank')` → 非同期に URL を取得 → `newWindow.location.href` に差し替え、失敗時は `newWindow.close()` して `onError` で親に通知」パターンをこのコンポーネント内に実装する
+- 構造上の位置付け: hooks rules 遵守のため、`attachments.map(...)` でループ内に Hook を書けない制約から分離された per-item Hook ホルダー。プレビュー / ダウンロードの `onPreview` / `onDownload` 外部コールバックは持たない（オーケストレーションを内包するため不要）
+- 主な Props（内部インターフェース）: `reportId`, `itemId`, `attachment`, `canDelete`, `deletingId`, `onDelete`, `onError`
 
 ### AttachmentUploader
 
@@ -591,7 +603,8 @@ GET /api/reports/:id
       → ItemSlidePanel (props: open, mode, reportId, item, reportStatus, isOwner, パネル操作コールバック群)
         → ItemForm (props: mode, onSubmit, categories, apiError, isPending, defaultValues)
         → AttachmentArea (props: reportId, itemId, canModify)
-          → AttachmentList (props: attachments, canDelete, onPreview, onDownload, onDelete)
+          → AttachmentList (props: reportId, itemId, attachments, canDelete, onDelete, deletingId, onError)
+            → AttachmentItemRow × N (per-item で useAttachmentDownloadUrl / useAttachmentPreviewUrl を呼び、クリック同期 window.open パターンを実行)
           → AttachmentUploader (props: reportId, itemId, onUploadSuccess)
       → ConfirmDialog (props: open, title, message, confirmLabel, ...)
 
@@ -659,24 +672,29 @@ ReportDetailPage → ConfirmDialog（確認） → useDeleteItem.mutate({ report
 
 ### 添付ファイル操作のデータフロー
 
+AttachmentArea は一覧取得・アップロード・削除・トースト管理を担当し、プレビュー / ダウンロードのクリック同期 `window.open` パターン（`50_detail_design/files.md` §4.5）は `AttachmentList` 内部の `AttachmentItemRow` が per-item で実行する。これは `attachments.map(...)` のループ内では `useAttachmentDownloadUrl` / `useAttachmentPreviewUrl` を呼べない（hooks rules 違反となる）ため、添付 1 件ごとにコンポーネントを分割してトップレベルで Hook を呼ぶ構造としたためである。エラーはトースト表示の一元管理のため `AttachmentItemRow.onError → AttachmentList.onError → AttachmentArea` の順に委譲する。
+
 ```
 [添付一覧取得]
 GET /api/reports/:id/items/:itemId/attachments
   → useAttachments({ reportId, itemId })（← state-management.md §3 データフェッチ系）
     → AttachmentArea
-      → AttachmentList (props: attachments, canDelete, onPreview, onDownload, onDelete)
+      → AttachmentList (props: reportId, itemId, attachments, canDelete, onDelete, deletingId, onError)
+        → AttachmentItemRow × N
 
 [添付プレビュー]
-AttachmentList → onPreview(attachmentId)
-  → AttachmentArea: window.open('about:blank') → useAttachmentPreviewUrl refetch()
-    → 署名付き URL を取得（Content-Disposition: inline） → newWindow.location.href = url
-    → 失敗時: newWindow.close() + エラートースト
+AttachmentItemRow（ファイル名クリック）
+  → window.open('about:blank') をクリック同期で実行
+  → useAttachmentPreviewUrl.refetch()
+    → 成功: 署名付き URL（Content-Disposition: inline）を取得 → newWindow.location.href = url
+    → 失敗: newWindow.close() + onError(message) → AttachmentList → AttachmentArea がエラートースト表示
 
 [添付ダウンロード]
-AttachmentList → onDownload(attachmentId)
-  → AttachmentArea: window.open('about:blank') → useAttachmentDownloadUrl refetch()
-    → 署名付き URL を取得（Content-Disposition: attachment） → newWindow.location.href = url
-    → 失敗時: newWindow.close() + エラートースト
+AttachmentItemRow（↓ アイコンクリック）
+  → window.open('about:blank') をクリック同期で実行
+  → useAttachmentDownloadUrl.refetch()
+    → 成功: 署名付き URL（Content-Disposition: attachment）を取得 → newWindow.location.href = url
+    → 失敗: newWindow.close() + onError(message) → AttachmentList → AttachmentArea がエラートースト表示
 
 [添付アップロード]
 AttachmentArea → AttachmentUploader → useUploadAttachment.mutate({ reportId, itemId, file })
@@ -685,7 +703,7 @@ AttachmentArea → AttachmentUploader → useUploadAttachment.mutate({ reportId,
   → 失敗: AppToast でエラー表示（422 InvalidFileType / 413 FileTooLarge 等）
 
 [添付削除]
-AttachmentArea → AttachmentList → onDelete(attachmentId)
+AttachmentItemRow（削除ボタンクリック） → AttachmentList（onDelete 経由） → AttachmentArea
   → useDeleteAttachment.mutate({ reportId, itemId, attId })
     → 成功: queryClient.invalidateQueries(['reports', 'detail', reportId])
            → 添付一覧を再取得 + AppToast で成功通知
