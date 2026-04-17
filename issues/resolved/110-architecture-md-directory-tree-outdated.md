@@ -25,7 +25,7 @@ Step 3（アーキテクチャ設計）
 ### 設計書の記載（旧構造）
 ```
 pages/
-├���─ LoginPage.tsx
+├── LoginPage.tsx
 ├── DashboardPage.tsx
 ├── ReportListPage.tsx
 ├── ReportDetailPage.tsx
