@@ -28,68 +28,9 @@
 | 修正中 | レビュー指摘を対応中 | レビューで FIX 判定 |
 | 完了 | レビュー LGTM 済み | 品質ゲート PASS |
 
-## Step 8: 基盤構築 — チケット一覧
+## 完了 Step のチケット一覧
 
-| ID | タスク | 担当 | 依存 | 状態 | チケット |
-|----|--------|------|------|------|---------|
-| 8-1 | 開発環境構築 + DB | platform-builder | なし | 完了 | `tickets/step8/8-1-dev-environment.md` |
-| 8-2 | バックエンド初期化 | backend-developer | 8-1 | 完了 | `tickets/step8/8-2-backend-init.md` |
-| 8-3 | フロントエンド初期化 | frontend-developer | なし | 完了 | `tickets/step8/8-3-frontend-init.md` |
-| 8-4 | 共通ミドルウェア + ヘルスチェック | backend-developer | 8-2 | 完了 | `tickets/step8/8-4-middleware.md` |
-| 8-5 | FE-BE 連携 | frontend-developer | 8-3, 8-4 | 完了 | `tickets/step8/8-5-fe-be-integration.md` |
-| 8-6 | コード生成・スケルトン | backend-developer | 8-4 | 完了 | `tickets/step8/8-6-skeleton.md` |
-| 8-7 | 共通 UI コンポーネント実装 | frontend-developer | 8-3, 8-5 | 完了 | `tickets/step8/8-7-common-ui-components.md` |
-| 8-8 | テスト基盤 | backend-developer | 8-6 | 完了 | `tickets/step8/8-8-test-infra.md` |
-| 8-9 | CI/CD パイプライン | platform-builder | 8-2, 8-3 | 完了 | `tickets/step8/8-9-cicd.md` |
-| 8-10 | 開発者ツール | platform-builder | 8-2, 8-3 | 完了 | `tickets/step8/8-10-dev-tools.md` |
-| 8-11 | ローカル開発環境統合 | platform-builder | 8-1, 8-2, 8-3, 8-8 | 完了 | `tickets/step8/8-11-local-dev-integration.md` |
-| 8-12 | 整理 | platform-builder | なし | 完了（旧 8-11） | `tickets/step8/8-12-cleanup.md` |
-
-## Step 6: テスト設計 — 追加チケット（issue 074 対応）
-
-| ID | タスク | 担当 | 依存 | 状態 | チケット |
-|----|--------|------|------|------|---------|
-| 6-D | 手動チェックリスト定義 | designer | 6-C | 完了 | `tickets/step6/6-D-manual-checklists.md` |
-
-## Step 5.5: UI コンポーネント設計 — チケット一覧
-
-| ID | タスク | 担当 | 依存 | 状態 | チケット |
-|----|--------|------|------|------|---------|
-| 5.5-A | 共通コンポーネント設計 | designer | なし | 完了 | `tickets/step5.5/5.5-A-common-components.md` |
-| 5.5-B | 状態管理方針策定 | designer | なし | 完了 | `tickets/step5.5/5.5-B-state-management.md` |
-| 5.5-C-1 | 画面別コンポーネント設計（認証系） | designer | 5.5-A, 5.5-B | 完了 | `tickets/step5.5/5.5-C-1-auth-components.md` |
-| 5.5-C-2 | 画面別コンポーネント設計（ダッシュボード） | designer | 5.5-A, 5.5-B | 完了 | `tickets/step5.5/5.5-C-2-dashboard-components.md` |
-| 5.5-C-3 | 画面別コンポーネント設計（レポート系） | designer | 5.5-A, 5.5-B | 完了 | `tickets/step5.5/5.5-C-3-report-components.md` |
-| 5.5-C-4 | 画面別コンポーネント設計（ワークフロー系） | designer | 5.5-A, 5.5-B | 完了 | `tickets/step5.5/5.5-C-4-workflow-components.md` |
-| 5.5-C-5 | 画面別コンポーネント設計（管理系） | designer | 5.5-A, 5.5-B | 完了 | `tickets/step5.5/5.5-C-5-admin-components.md` |
-| 5.5-D | 横断レビュー | reviewer | 5.5-C-1〜5 | 完了 | `tickets/step5.5/5.5-D-cross-review.md` |
-
-## Step 9: テストコード実装 — チケット一覧
-
-| ID | タスク | 担当 | 依存 | 状態 | チケット |
-|----|--------|------|------|------|---------|
-| 9-A | 認証テスト（共通フィクスチャ含む） | test-implementer | Step 8 完了 | 完了 | `tickets/step9/9-A-auth-test.md` |
-| 9-B | レポートテスト | test-implementer | 9-A | 完了 | `tickets/step9/9-B-report-test.md` |
-| 9-C | ダッシュボードテスト | test-implementer | 9-A | 完了 | `tickets/step9/9-C-dashboard-test.md` |
-| 9-D | テナント管理テスト | test-implementer | 9-A | 完了 | `tickets/step9/9-D-tenant-test.md` |
-| 9-E | 明細テスト | test-implementer | 9-B | 完了 | `tickets/step9/9-E-items-test.md` |
-| 9-F | ワークフローテスト | test-implementer | 9-B | 完了 | `tickets/step9/9-F-workflow-test.md` |
-| 9-G | 添付ファイルテスト | test-implementer | 9-E | 完了 | `tickets/step9/9-G-attachments-test.md` |
-| 9-X | 横断レビュー | reviewer (codex) | 9-A〜9-G | 完了 | `tickets/step9/9-X-cross-review.md` |
-
-## Step 10: 機能実装 — チケット一覧
-
-| ID | タスク | 担当 | 依存 | 状態 | チケット |
-|----|--------|------|------|------|---------|
-| 10-A | 認証 | backend-developer, frontend-developer | Step 9 完了 | 完了 | `tickets/step10/10-A-auth.md` |
-| 10-B | レポート | backend-developer, frontend-developer | 10-A | 完了 | `tickets/step10/10-B-report.md` |
-| 10-C | ダッシュボード | backend-developer, frontend-developer | 10-A | 完了 | `tickets/step10/10-C-dashboard.md` |
-| 10-D | テナント管理 | backend-developer, frontend-developer | 10-A | 完了 | `tickets/step10/10-D-tenant.md` |
-| 10-E | 明細 | backend-developer, frontend-developer | 10-B | 完了 | `tickets/step10/10-E-items.md` |
-| 10-F | ワークフロー | backend-developer, frontend-developer | 10-B | 完了 | `tickets/step10/10-F-workflow.md` |
-| 10-G | 添付ファイル | backend-developer, frontend-developer | 10-E | 完了 | `tickets/step10/10-G-attachments.md` |
-| 10-H | CI 安定化 + リファクタリング | backend-developer, frontend-developer | 10-A〜10-G | 完了 | `tickets/step10/10-H-ci-stabilization.md` |
-| 10-X | 横断レビュー | reviewer (codex) | 10-H | 完了 | `tickets/step10/10-X-cross-review.md` |
+Step 5.5 / 6（追加）/ 8 / 9 / 10 のチケット一覧はアーカイブ済み（`archives/progress/steps.md` 参照）。
 
 ## Step 11: システムテスト・UAT — チケット一覧
 
@@ -104,69 +45,14 @@
 
 ## 課題・ブロッカー
 
-### 解決済み（2026-04-16）
-| ID | タイトル | 解決 PR |
-|----|---------|---------|
-| 113 | architecture.md ディレクトリツリー粒度不適切 | dev-journal コミット |
-| 104-B | UI カバレッジギャップのテスト追加 | PR #63 |
-| 101 | SMK-037 文言不一致 | 既存コミットで対応済み |
-| 105 | smoke_check URL パス不一致 | 既存コミットで対応済み |
-| 111 | devcontainer golangci-lint v1→v2 不整合 | root-project コミット |
-| 109 | テスト設計書・実装間の乖離 | PR #60 + #61 |
-| 110 | architecture.md ディレクトリツリー陳腐化 | dev-journal コミット |
-| 112 | domain パッケージ DTO 分離 | PR #62 |
-| 104-A | UI カバレッジリサーチ | dev-journal コミット |
-| 096 | キャッチオール 404 ルート未実装 | PR #59 |
-| 100 | AttachmentUploader UI 課題（重複ボタン + スピナー + DnD 視覚化） | PR #58 |
+### 解決済み（2026-04-12 〜 2026-04-16）
 
-### 解決済み（2026-04-15）
-| ID | タイトル | 解決 PR |
-|----|---------|---------|
-| 097 | AppSelect の outlined 切り欠きと InputLabel 位置不整合 | PR #55 |
-| 098 | ItemSlidePanel UX 不整合 4 件（幅・閉じるボタン・アニメ・閲覧モード） | PR #56 |
-| 099 | useDeleteAttachment の invalidation が useAttachments を対象外 | PR #57 |
-| 103 | 添付削除時の確認ダイアログ欠落 | PR #57 |
-| 106 | Workflow 2 ページの同期ロールチェック欠落（ロール変更時フラッシュ表示）| PR #54 |
-
-### 解決済み（2026-04-14）
-| ID | タイトル | 解決 PR |
-|----|---------|---------|
-| 085 | ダッシュボード「却下」カード Badge dot 意図不明 | PR #52 |
-| 086 | 承認待ち/支払待ちカードのスタイル不統一 | PR #52 |
-| 087 | Admin ダッシュボード月別合計 0 円（seed データ 3 重欠陥） | PR #50 |
-| 088 | 403 認可エラー時のフィードバック欠落（SMK-007/025 FAIL） | PR #53 |
-| 089 | 明細フォーム カテゴリラベル重複 | PR #51 |
-| 090 | 明細フォーム プリフィル未実装（blocker） | PR #51 |
-| 091 | 明細行クリック挙動未定義（閲覧モード時の添付操作禁止） | PR #51 |
-| 092 | ItemSlidePanel が Drawer 未使用（スライドしない） | PR #51 |
-| 093 | 添付一覧のサムネ/アイコン要件が smoke_check.md のみ存在 | PR #52（smoke_check.md 修正） |
-| 094 | 添付ファイルサイズが生バイト数表示 | PR #52 |
-| 095 | S3 署名付き URL の minio 内部ホスト名問題（blocker） | PR #49 |
-
-### 解決済み（2026-04-13）
-| ID | タイトル | 解決 PR |
-|----|---------|---------|
-| 083 | 認証トークンを sessionStorage に永続化（F5 リロードでログアウトしないように） | PR #48 |
-| 082 | 認証フロー UX バグ 2 件（AppLayout 未適用 + ログイン 401 リダイレクト誤動作） | PR #47 |
-
-### 解決済み（2026-04-12）
-| ID | タイトル | 解決 PR |
-|----|---------|---------|
-| 070 | App.tsx の LoginPage import がスケルトンを参照 | PR #42 |
-| 071 | pages ディレクトリ構成が3パターン混在 | PR #42 |
-| 072 | App.tsx に管理系画面のルートが未登録 | PR #43 |
-| 074 | 11-A ローカル動作確認のチェックリストが存在しない | Step 6-D 追加 |
-| 065 | 認証系エンドポイントで expense_owner 専用 DB 接続が未使用 | PR #35 |
-| 066 | フィルタ UI で AppSelect が使われていない | PR #37 |
-| 067 | auth store に currentUser を保持しており state-management.md と乖離 | PR #36 |
-| 068 | 一部ページで素の HTML 要素（button / table）が残存 | PR #34 |
-| 069 | 添付ファイルアップロード後の invalidation が設計テーブルと乖離 | — |
-| 076 | Step 8 ローカル開発環境統合の漏れ（シード・migration・MinIO・README） | PR #44（8-11） |
+アーカイブ済み（`archives/progress/issues.md` 参照）。
 
 ### 残存 issue（Step 11-A 関連）
 | ID | タイトル | 状態 |
 |----|---------|------|
-| 102 | 添付プレビュー機能欠落 | 設計書 D1〜D11 修正済み（codex PASS）、BE/FE 実装は次フェーズ |
+| 102 | 添付プレビュー機能欠落 | BE PR #64 / FE PR #65 マージ済み（integration ブランチ）、結合動作確認待ち。最終 PR（integration → master）未作成 |
 | 108 | 添付アップロード中の並行操作整合性 | スコープ拡大判明、動作確認後に方針決定 |
 
 ### 残存 issue（運用・基盤系）

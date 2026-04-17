@@ -1,106 +1,128 @@
 # 引き継ぎメモ
 
-## セッション: 2026-04-17 13:00〜16:17
+## セッション: 2026-04-17 17:00〜2026-04-18 00:03
 
 ### ゴール
-- BE テスト PASS 確認（前回の宿題）
-- 104-B 残件: smoke_check.md に SMK-095〜102 追加
-- Step 11-A ローカル動作確認着手（時間があれば）
+- issue 102（添付プレビュー機能）の BE/FE 実装
+- PR マージと issue 102 完了
 
 ### 作業ログ
 
-#### ゴール 1: BE テスト PASS 確認
-1. ユーザーに VS Code タスク「BE: full test」を依頼 → lint 0 issues / unit 全 PASS / integration 全 PASS → 完了
+#### Setup
+1. 前セッションの未コミット分（expense-saas の `docker-compose.yml` に test-results volume mount 追加）をコミット・push（`f98b8be`）
+2. architect に issue 102 実装計画策定を依頼 → `102-implementation-plan.md` 作成
+3. 統合ブランチ `integration/102-attachment-preview` を master から分岐・push
 
-#### ゴール 2: 104-B 残件 → 成果物監査・整合性修正に発展
-2. 104-B の smoke_check.md 追加に着手しようとしたところ、ユーザーから「ui_coverage_matrix.md は work-breakdown に定義されていない」と指摘
-3. 成果物監査を実施 → 3 件の不整合を発見:
-   - Step 3: ADR 0006（JWT 署名アルゴリズム）が work-breakdown 未定義
-   - Step 6: ui_coverage_matrix.md が work-breakdown 未定義、テンプレートなし
-   - Step 8: directory_structure.md が work-breakdown 未定義
-   - Step 6: smoke_check.md / uat_check.md のテンプレートなし
-4. work-breakdown 更新 + テンプレート作成（Step 3, 6, 8）
-5. codex レビュー → FIX 4 件:
-   - 3-8 の入力が下流成果物（security.md）を参照 → requirements.md に修正
-   - 6-E のフィードバックループ未定義 → 完了条件に追加
-   - 正本テーブルに ADR 0006 未追加 → 追加
-   - 8-12 タスク詳細に directory_structure.md 未反映 → 追加
-6. ユーザーから「ui_coverage_matrix.md は下流で使われていない中間成果物。work-breakdown に載せるべきでない」→ 6-E 関連を全て取り消し
-7. ui_coverage_matrix.md を deliverables/ から削除、private-materials/ に退避
-8. issue 110 ファイルの U+FFFD 文字化けを発見 → 根本原因調査
-   - Write/Edit ツールのマルチバイト UTF-8 文字化け（Claude Code プラットフォーム由来）
-   - PostToolUse hook で Write|Edit 後に U+FFFD を自動検出する仕組みを追加
-9. smoke_check.md に SMK-095〜102 を追加（designer → reviewer PASS → codex PASS）
-   - §4.10 確認ダイアログ操作（SMK-095〜098）
-   - §4.11 画面内ナビゲーションリンク（SMK-099〜100）
-   - §4.5 レスポンシブにSMK-101〜102 追加
-10. 11-A チケットに実施結果セクションを統合、11-A-smoke-results.md を廃止
-11. workflow.md の終了時手順を /session-log に一本化
-12. session-log スキルに progress.md 更新・アーカイブ手順を追加
+#### BE PR #64（step11/102-be-preview）
+4. backend-developer を worktree で起動
+5. 3 コミット実装:
+   - I5, I6: DTO/interface 刷新（`AttachmentDownload` → `AttachmentAccess`、`PresignGetObject` に disposition 引数）
+   - I1-I4: service 共通化 + `GetAttachmentPreview` 新設 + ルーティング `/download` `/preview` 分割
+   - T1, T2, T6: テスト（ATT-055〜060 + CRS-010b + service test 新設）
+6. ローカルテスト（VS Code タスク「BE: full test」）: lint 0 / unit PASS / integration PASS
+7. reviewer: PASS（参考指摘 3 件、対応任意）
+8. codex: PASS（ブロッカーなし）
+9. integration へ squash マージ（`26c86c8`）
 
-### 今セッションで作成したコミット一覧
+#### FE PR #65（step11/102-fe-preview）— 3 回の reviewer 差し戻し
+10. frontend-developer 初回実装:
+    - 型 `AttachmentAccess` / hook 2 分割（`useAttachmentDownloadUrl` / `useAttachmentPreviewUrl`、`enabled: false` + 明示 `refetch()`）
+    - AttachmentList に ↓ アイコン、AttachmentArea で `api.get` 直呼び + `window.open('about:blank')` パターン
+    - 37 tests PASS
+11. reviewer 1 回目: warning（`AttachmentArea` が hook を使わず `api.get` 直呼び → 設計乖離）
+12. **ユーザー判断 (a)**: hook 経由に是正
+13. frontend-developer 修正 1（`90a0793`）: `AttachmentArea` 内に `AttachmentItemRow` 新設、per-item で hook 呼び出し
+14. reviewer 2 回目: warning（`AttachmentList.tsx` が dead code 化、設計書 `§AttachmentList` と乖離）
+15. **ユーザー判断 (a)**: `AttachmentList` を再構築
+16. frontend-developer 修正 2（`abb964c`）: `AttachmentItemRow` を `AttachmentList` に内包、`AttachmentList` が per-item hook orchestration を担当する構造に
+17. reviewer 3 回目: PASS（info 1 件: 設計書側の後続更新が必要）
+18. **ユーザー判断 (a)**: 設計書を先に更新してから codex へ
+19. designer が設計書 3 ファイルを更新（`report-detail.md` / `files.md` / `test_cases/attachments.md`）
+20. dev-journal で前回セッションのアーカイブ漏れ + 設計書更新 + 計画書 の 3 コミット分割、5 コミットまとめて push
+21. codex 初回: **事実誤認で FIX 判定** — 本体 expense-saas が `step11/102-fe-preview` の古い HEAD（`90a0793`）のままで、codex が古いコードを読んだ
+22. 本体を pull で最新化（`abb964c`）して codex 再実行
+23. codex 再レビュー: PASS（info 1 件: 計画書が旧構成のまま）
+24. **ユーザー指示**: 計画書を issue 102 チケットに統合
+25. ops-writer が issue 102 に「実装ログ」セクションを追加、`102-implementation-plan.md` を削除（`d90fc65`）
+26. PR #65 を integration に squash マージ（`d45e387`）
+27. 本体を integration ブランチに切り替えて最新化完了
 
-#### ai-dev-framework
-| コミット | 内容 |
-|---------|------|
-| `c2661df` | fix: work-breakdown とテンプレートの整合性修正（Step 3/6/8） |
-| `a6f20b0` | fix: セッション終了時の progress.md 更新を /session-log に統合 |
+#### dev-journal の主要コミット
+- `4904356` chore: 前回セッションログのアーカイブ漏れを反映
+- `4bddeeb` docs(102): AttachmentList 再構築に合わせて設計書を更新
+- `8996bb2` docs(102): BE/FE 実装計画書を追加（後続で削除）
+- `d90fc65` docs(102): 実装計画書を issue チケットに統合、管理ファイルを整理
 
-#### dev-journal
-| コミット | 内容 |
-|---------|------|
-| `d1f4fbf` | refactor: ui_coverage_matrix.md を成果物から除外 |
-| `e427f15` | feat: smoke_check.md に SMK-095〜102 追加、11-A チケット統合 |
-
-#### root-project
-| コミット | 内容 |
-|---------|------|
-| `703b027` | feat: /session-log に progress.md 更新・アーカイブ手順を追加 |
+#### expense-saas の主要コミット
+- `f98b8be` fix: test-be サービスに test-results volume mount を追加 (ops-107)
+- `26c86c8` 102: 添付プレビューエンドポイント追加 + AttachmentAccess スキーマ移行（BE） (#64)
+- `d45e387` 102: 添付プレビュー UI 追加 + useAttachment{Download,Preview}Url 分割（FE） (#65)
 
 ### 未完了
 
-- **Step 11-A ローカル動作確認**: 未着手（本セッションでは到達できず）
-- **issue 102 BE/FE 実装**: 設計書修正済み、BE/FE 実装は未着手
-- **issue 108**: 方針未決定（動作確認後に判断）
+- **issue 102 結合動作確認**: 未実施（次セッションで実施）
+- **issue 102 最終 PR（integration → master）**: 未作成（動作確認 PASS 後）
+- **Step 11-A ローカル動作確認**: 未着手（102 完了後の別セッションで実施）
 
 ### ブロッカー
 なし
 
 ### 次にやること
 
-#### 優先度 1: Step 11-A ローカル動作確認
-1. docker compose up → smoke_check.md の全 62 項目をブラウザで実施（Phase 2 SMK-012 から再開）
-2. 発見した問題を issue 起票
+#### 優先度 1: issue 102 結合動作確認 + 最終 PR
+1. 本体の expense-saas は既に `integration/102-attachment-preview`（`d45e387`）に checkout 済み
+2. VS Code タスク「Docker: フルリセット + seed + ブラウザ(シークレット)」で起動
+3. **issue 102 固有の動作確認のみ**実施（全 62 項目は別セッション）:
+   - SMK-037 新仕様: ファイル名クリック = プレビュー（新タブ表示）、↓ アイコン = ダウンロード — JPEG/PNG/PDF 3 形式
+   - 認可マトリクス 4 ロール × 2 操作 = 8 ケース（Member/Approver/Accounting/Admin × preview/download）
+   - テナント越境: 他テナント添付にアクセス → 404
+   - ポップアップブロック時のエラートースト + `newWindow.close()` 動作
+   - 署名付き URL `expires_at` 15 分確認
+4. PASS → 最終 PR（integration/102-attachment-preview → master、squash）作成
+5. マージ後:
+   - ローカル integration ブランチ削除
+   - `dev-journal/issues/open/102-attachment-preview-missing.md` を `closed/` に移動
+   - `progress.md` 残存 issue テーブルから #102 を削除（解決済みに追記）
 
-#### 優先度 2: issue 102 BE/FE 実装
-3. 添付プレビュー機能の BE → FE 実装
+#### 優先度 2: Step 11-A ローカル動作確認（別セッション）
+- smoke_check.md 全 62 項目を実施（Phase 2 SMK-001 から実施、SMK-037 は 102 で確認済み）
+- 残 issue（#100 AttachmentUploader UI、#108 並行操作、#104 UI カバレッジ等）の動作も同時確認
+- 発見問題を issue 起票
 
 ### 学び・気づき
 
-- **中間成果物を成果物ディレクトリに置かない** — ui_coverage_matrix.md は issue 104 の作業中間成果物だったが deliverables/ に置いたことで「正式成果物なのに work-breakdown 未定義」という不整合を生み、テンプレート作成・work-breakdown 更新・codex レビューと大幅な手戻りになった。下流タスクの正式入力にならないファイルは private-materials/ 等に置くべき
-- **work-breakdown は手順書であり修正背景は不要** — タスク詳細に「Step 5 で追加判断が必要となり起票された」等の経緯を書いたが、ユーザーから「手順書に背景は不要」と指摘。再現可能な手順だけ書く
-- **管理ファイルの分散を避ける** — 11-A-smoke-results.md がチケットとは別の例外的な管理ファイルになっていた。チケットに統合して 1 ファイルに収めた
+#### 設計書の内部整合性欠陥は実装時に見抜くべき
+issue 102 の設計書（hook 経由 + AttachmentList = presentational + AttachmentArea = orchestration）は hooks rules（per-item hook 呼び出し不可）と両立不可能な構造だった。architect 計画書も「最終判断は frontend-developer に委譲」と曖昧に書いて検証を回避していた。結果として FE PR #65 で reviewer 差し戻し 2 回（hook 未使用 → AttachmentList dead code 化 → 現構造に落ち着く）という手戻りが発生。
+
+**教訓**: 設計決定時に「React hooks rules」のような破れない技術制約をチェックリスト化する。architect が「実装者に委譲」と書く時点で未検証のサインとして扱う。
+
+#### codex レビューはローカル HEAD を読む
+codex exec はカレントディレクトリの git HEAD を参照する。PR ブランチが古いままだと古いコードを読み、誤った判定を出す。**codex 実行前にローカル HEAD が最新であることを確認する**必要あり（`git pull` で ff-only、または pr checkout で最新にする）。
+
+#### 管理ファイル分散を避ける（継続）
+前回の 11-A-smoke-results.md に続き、今回も 102-implementation-plan.md が「progress-management/ 配下の宙ぶらりんファイル」になりかけた。issue チケットに統合して 1 ファイル集約を貫徹。今後も計画書は issue/チケットに統合する方針。
+
+#### 実装者が設計矛盾に気付いた時の対応
+frontend-developer は設計書の矛盾（hook 経由 + hooks rules 両立不可）を独自に回避して `api.get` 直呼びを選んだ。本来はエスカレーションして設計側を調整すべきだった。memory `feedback_escalate_on_major_issues` の適用範囲を「設計書の内部矛盾を実装時に発見した場合」にも広げる価値あり。
 
 ### 意思決定ログ
 
-#### ui_coverage_matrix.md の位置付け
-- work-breakdown の成果物ではなく、issue 104 の中間作業成果物
-- deliverables/ から削除し private-materials/ に退避
-- 理由: 下流タスクの正式入力として使用されていない
+#### issue 102 実装の構造変更
+- 当初設計: AttachmentArea orchestration（hook `refetch()` を per-item で呼ぶ）+ AttachmentList presentational
+- 技術制約: React hooks rules で per-item hook 呼び出し不可（attId が固定されるため）
+- 最終構造: AttachmentList 内に AttachmentItemRow 内部コンポーネント、per-item で hook をトップレベル呼び出し
+- 設計書（`report-detail.md` / `files.md` / `test_cases/attachments.md`）も同時更新済み
 
-#### U+FFFD 文字化け対策
-- Claude Code の Write/Edit ツールにマルチバイト UTF-8 文字化けのバグがある（プラットフォーム由来、プロジェクト側で修正不可）
-- PostToolUse hook で Write|Edit 後に自動検出する仕組みを settings.local.json に追加
+#### 統合ブランチ方式の成果
+- master を breaking change（`download_url` → `url`、URL に `/download` 追加）から守る目的で採用
+- BE → FE を stacked PR で integration に積み、結合確認後に最終 PR で squash
+- 機能したが、stacked PR レビューの差し戻しで時間消費（FE PR #65 は reviewer 3 回 + codex 2 回）
+- 次回 breaking change を伴う issue では事前に設計書の hook/コンポーネント構造を技術制約で検証する
 
-#### progress.md アーカイブ運用
-- 完了 Step チケット一覧 → archives/progress/steps.md
-- 解決済み issue テーブル → archives/progress/issues.md
-- 運用手順は /session-log スキルに統合（workflow.md から progress.md 更新の個別記述を削除）
-
-#### 11-A 実施結果のチケット統合
-- 11-A-smoke-results.md を廃止し、チケット（11-A-local-verification.md）に実施結果セクションを統合
-- 理由: 例外的な管理ファイルの排除。チケットが「そのタスクに必要な情報の 1 ファイル集約」場所
+#### 次セッションで 11-A と統合しない判断
+- SMK-037 は 11-A の一部だが、102 の結合動作確認だけ先に完了させ最終 PR を切る方針
+- 理由: integration ブランチが長期間 master から遅れるリスク回避、102 を区切りの良い単位で完了させる
 
 ## 前回セッション
 
-前回セッション（2026-04-16 21:30〜2026-04-17 00:43）の詳細は `dev-journal/archives/session-logs/2026-04-16.md` を参照。
+前回セッション（2026-04-17 13:00〜16:17）の詳細は `dev-journal/archives/session-logs/2026-04-17.md` を参照。
