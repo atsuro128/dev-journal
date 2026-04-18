@@ -1,143 +1,126 @@
 # 引き継ぎメモ
 
-## セッション: 2026-04-18 10:30〜15:12
+## セッション: 2026-04-18 22:00〜23:01
 
 ### ゴール
-- issue 102 結合動作確認（SMK-037 / 認可 / テナント越境 / ポップアップブロック / 署名付き URL）
-- 最終 PR（integration → master）マージで issue 102 完了
+- issue 108 の 3 サブトピック分割方針を決定
+- 別セッションでワークツリー対応する前提で issue 起票・チケット追記まで完了
 
 ### 作業ログ
 
-#### SMK-037 動作確認で UX 問題発覚
-1. Docker 起動 → Member でログイン → reportSubmitted で SMK-037 確認
-2. ↓ アイコン押下時も新タブ open される UX 問題発覚（空白タブが残る）
-3. master 旧実装を確認 → C パターン（signed URL を動的 `<a download>` 要素クリック）と判明
-4. ユーザーが「D（blob 取得）は設計意図とズレ」の質問 → 私の誤読を訂正（対応前は D ではなく C だった）
+#### セッション開始時の状態確認
+1. session-start で進捗確認: Step 11-A 進行中（完了 7/62、次は SMK-012）、open issue 10 件、未解決 review-findings なし
+2. ユーザー希望: 「別セッションで issue 108 をワークツリー対応させたいので、本セッションで方針決め・チケット追記までやる」
 
-#### ダウンロード実装の C パターン化
-5. architect に修正計画依頼 → issue 102 本文末尾に「追加対応ログ（2026-04-18）」として計画書追記
-6. frontend-developer + designer を並列起動（別リポジトリなので重複なし）:
-   - frontend-developer (worktree `fix/102-download-anchor-pattern`): `handleDownload` を C パターンに変更 + テスト修正 → PR #66（`22dcdd3`）
-   - designer: 設計書 6 ファイル修正（計画の 5 + 整合性のため `security.md §6.2` も）
-7. dev-journal 側 2 コミット（設計書 `8ddf9b9` / 追加対応ログ `1a51197`）
-8. reviewer 起動 → PASS（warning 2: W-1 `link.click()` スパイ欠落 / W-2 JSDoc 表現 / info 3）
-9. 指揮役判断で W-1 を PR 内対応に変更（reviewer は「別 issue 起票で OK」と提案したが、`feedback_accountability` に従い乖離を残さない方針）
-10. frontend-developer 再起動 → W-1/W-2 対応追補コミット `585b2cf`
-11. reviewer 再レビュー → PASS（残指摘 0）
+#### issue 108 の分析と分割案の提示
+3. issue 108 本文を Read → 3 サブトピック確認:
+   - A: 並行操作整合性（state lifting / AbortController）
+   - B: 即時アップロード UX（フォームキャンセルしても添付残る）
+   - C: 新規明細で添付不可（API が itemId 必須）
+4. Explore エージェントで実装・設計の現状を深掘り調査:
+   - API 構造: `/api/reports/{id}/items/{itemId}/attachments` で itemId URL 必須
+   - DB: `attachments.item_id NOT NULL FK`
+   - 設計書: 並行操作・永続化タイミング・新規明細制限の記述すべて欠落
+   - 関連 open issue: 098 / 099 / 100 が同領域で並行
+5. 初回提案: 「A / B+C」2 分割 + 設計書先行 → ユーザー「A の内容も α もよく分かっていない」
 
-#### codex レビューで stdin 問題発覚
-12. /codex-review 初回: `echo "" | cd && codex exec` の順序ミスで stdin 無限待機 → pkill
-13. 正しい順序（`cd && echo "" | codex exec`）で再実行 → PASS（対象テスト 20/20、lint PASS）
-14. /codex-review スキルの 6 箇所コマンド例 + 注記を修正 → `3e62dba`（冗長な誤りパターン解説も削除）
+#### 噛み砕いた説明と方針議論
+6. A・B・C それぞれを「現状の挙動」「対応案を表で比較」で再提示
+7. ユーザーの統合提案: 「破棄確認ダイアログ + アップロード中は保存ボタン disable + 保存しなければアップロード破棄」
+8. 批判的検討: 「メンタルモデルは正しいが B-③ レベルの大改修」「dirty tracking が ItemForm 全体に必要」「ロールバック方式 vs 保留→確定方式の技術選択」
+9. ユーザー回答（最終方針）:
+   - Q1: dirty 判定はフィールド変更のみ（添付操作はカウントしない）
+   - Q2: F5 リロード時のカスタムダイアログ可否を codex 調査依頼
+   - Q3: C は「ローカル保持 + 既存 API 順次呼び出し」（パターン A）採用 — ユーザー独自提案
+   - Q4: 全部 MVP 対応
 
-#### PR #66 マージと Docker 再起動トラブル
-15. PR #66 を integration に squash マージ（`aeb32d4`）
-16. 本体 integration 最新化
-17. ユーザーが Docker 再ビルド → worktree 配下の node_modules シンボリックリンクでビルドエラー
-18. worktree 2 つ削除 + `.dockerignore` に `.claude` 追加（`046f39b`）
+#### codex 独立調査と F5 方針確定
+10. codex に F5 ダイアログ可否を調査依頼（バックグラウンド）
+11. 結果: 私の事前結論と一致 — `beforeunload` カスタム文言は Chrome 51 / Firefox 4 / Safari 9.1 で廃止、F5/タブ閉じに MUI Dialog は不可、keydown 傍受は網羅性なし
+12. F5 の扱いを「ブラウザ標準ダイアログのみ（dirty 時に `event.preventDefault()` で発火）」に確定
 
-#### CI 運用の根本見直し（本セッションの大きな副産物）
-19. ユーザー指摘「CI 通したの？」→ 指揮役が /test スキルを実行していなかったことが判明
-20. 原因究明:
-    - エージェントの自己申告（lint/test PASS）を指揮役の検証と置き換えていた
-    - /test スキル description の「PR 作成前のローカル検証時」が誤解を招く表現
-    - workflow.md §2 の指揮役 /test 実行手順を機械的に辿らなかった
-    - /implement スキルを使わず Agent tool 直接起動していた（チケット対応スキルという縛りで）
-21. memory `feedback_no_local_test_run` を再確認 → **サブエージェントにローカル CI を実行させない**方針が正本
-22. 私の誤りは「サブエージェントに CI を実行させた」こと自体（プロンプトに含めた）
-23. ユーザーの構造提案「workflow.md に書くとサブエージェントが指示に背く必要がある。指揮役が CI 指示しない運用が根本修正」を採用
-
-#### スキル・定義の整理（5 コミット）
-24. `test` スキル description を明確化（`325522f`）: PR 作成後・reviewer 起動前に指揮役が実行、の意を明示
-25. `.gitignore` に `logs/test-results/` 追加（`2fac35a`、dev-journal）
-26. `codex-review` スキル stdin 処理コマンド例修正（`3e62dba`、既出）
-27. サブエージェント定義・ルールから CI 実行コマンド削除（`956ed40`、5 ファイル）
-28. `/implement` スキルを issue 対応・PR 追加対応に拡張 + ローカル CI 禁止ブロック追加（`6b68ff2`）
-29. `/issue` スキルを起票 / 対応 / 一覧に分離、対応フロー（本文読み → 上流確認 → 方針提案 → /implement 呼び出し → 完了処理）を明確化（`793d4ca`）
-30. `workflow.md` PR フロー §1 の /implement 引数を汎用化（`ae1d14b`、ai-dev-framework）
-
-#### SMK-037 再開と残確認
-31. Docker 再ビルド成功（`.dockerignore` 効果）
-32. SMK-037 PASS（JPEG でファイル名→新タブ inline 表示、↓ アイコン→タブ開かずダウンロード）
-33. 別件発覚「明細新規追加時にファイルアップロード不可」→ issue 108 L114 に「新規明細で添付できない」として既に記録されていたことを確認（独立 issue ではなく 108 のサブトピック、保留）
-34. 認可マトリクス 4 ロール × 2 操作 = 8 ケース全 PASS
-35. テナント越境確認: 初回 401（Cookie 認証ではなく `Authorization: Bearer` だった）→ sessionStorage からトークン取得して再 fetch で 404 PASS
-36. ポップアップブロック確認: `window.open = () => null` でシミュレート → プレビューはエラートースト / ダウンロードは影響なし、両方 PASS
-37. 署名付き URL 有効期限: 14.99 分 PASS
-
-#### 最終 PR マージ
-38. PR #67 作成（`integration/102-attachment-preview → master`）
-39. sub PR (#64/#65/#66) で既にレビュー済みのため最終 PR は追加レビューなしで squash merge（`c24bfe0`）
-40. 本体 master ff 最新化、integration ローカルブランチ削除、`/tmp/expense-pr66` worktree 削除
-41. issue 102 → `resolved/` 移動、progress.md の残存 issue テーブルから #102 削除、push（`4209ee6` in dev-journal）
-
-#### 各リポジトリ push
-42. root-project push（`793d4ca`）
-43. ai-dev-framework push（`ae1d14b`）
+#### issue 起票作業
+13. ID 採番調査: 109/110 は resolved に既存（test-design / architecture 系）→ 114/115 に変更
+14. issue 108 を再構成: タイトル「フォーム編集中の操作整合性」、課題1（並行操作 α+β cleanup）+ 課題2（ItemForm 破棄確認ダイアログ）、F5 技術調査ログ追加
+15. issue 114 新規起票: 添付の永続化タイミング仕様明示（B-②）。設計書追記 + AttachmentArea 案内文
+16. issue 115 新規起票: 新規明細での添付方法（C パターン A）。ローカル保持 + 既存 API 順次呼び出し
+17. progress.md 残存 issue テーブルに 114/115 追加、108 タイトル更新
+18. 各 issue 末尾に「次セッション着手手順」を追記（ワークツリー対応想定）
+19. dev-journal にコミット（`33c393e`）
 
 ### 未完了
-- なし（issue 102 完了）
+- なし（issue 108/114/115 の起票・方針確定は完了）
 
 ### ブロッカー
 - なし
 
 ### 次にやること
 
-#### 優先度 1: Step 11-A ローカル動作確認（smoke_check.md 全 62 項目）
-- SMK-037 は issue 102 で済み、残項目（SMK-001〜036、038〜062、101〜102）を実施
-- 残 open issue（#104 UI RBAC 可視性監査 / #108 関連の動作）の挙動も同時確認
-- 発見問題を issue 起票
+#### 優先度 1: 別セッションで issue 108/114/115 のワークツリー対応
+- 各 issue 末尾の「次セッション着手手順」を参照
+- 並列化の判断ポイント:
+  - 114（設計書 + 案内文の小規模変更）は単独で先行可能
+  - 108 と 115 は AttachmentArea/ItemForm でファイル重複あり、順次対応 or 同一 PR 推奨
+- ブランチ命名例:
+  - 108: `fix/108-form-edit-integrity`
+  - 114: `fix/114-attachment-persistence-spec`
+  - 115: `feat/115-new-item-attachment-local-buffer`
 
-#### 優先度 2: issue 108 の分割・方針決定
-- issue 108 は現在「並行操作整合性」「即時アップロード UX」「新規明細で添付不可」の 3 サブトピックが混在
-- 独立 issue に分割（A, B, C 案）するか、1 つにまとめて対応方針を決めるか判断
-- 「新規明細で添付不可」は UX として不自然（ユーザー指摘あり）
+#### 優先度 2: Step 11-A ローカル動作確認の続行
+- SMK-012 から Phase 2（Member 連続実施）を再開
+- 残項目: 54 件
+- 108/114/115 の対応とは独立して並行可能（同セッション内では切り替えコスト発生）
 
-#### 優先度 3: 残 open issue の整理・対応
+#### 優先度 3: 残 open issue の整理
 - 運用・基盤系: ops-055 / 060 / 061 / ops-062 / 064 / ops-080 / 081 / 084
-- Step 11-A 関連: #104 / #108
+- Step 11-A 関連: #104（UI RBAC 可視性監査）
 
 ### 学び・気づき
 
-#### CI 実行の責任分担を誤った（重大）
-サブエージェント（frontend-developer）のプロンプトに「ローカル検証: lint/tsc/test/build」を含めて実行させたのが根本的な誤り。memory `feedback_no_local_test_run` は「サブエージェントにローカル実行させない」を明言していた。エージェントの PASS 報告を指揮役の検証と置き換える行動ルールの逸脱が発生。
+#### 議論用語を既知前提で進めた
+issue 108 本文に書かれた「案 α/β/γ」をユーザー既知として方針提案 → ユーザーから「A の内容も α も把握してない」と指摘あり。issue 議論ログは私の作業文脈には残っているが、ユーザーは別セッションでの結論しか覚えていない。次回以降、issue 内議論用語は本文を引用 or 表で噛み砕いて提示する。
 
-**対応**: エージェント定義から CI コマンド削除、/implement スキルに「ローカル CI 禁止ブロック」追加、/test スキル description を「PR 作成後・reviewer 起動前に指揮役が実行」に明確化。将来 GHA CI に移行する場合は workflow.md §2 の 1 行書き換えで済む構造。
+#### 独立調査依頼で結論強化
+F5 ダイアログ可否について自分の結論（不可）を出した後、ユーザーの「codex にも調査させて」指示で独立検証を実施。結果が一致したことで方針を確信できた。重要な技術判断は独立検証で裏取りすると意思決定の質が上がる。
 
-#### UX 決定時の挙動検証不足（再発）
-前セッションの「React hooks rules 違反」に続き、今回も「Content-Disposition: attachment の URL を新タブで開くと空白タブが残る」UX を合意時に端末で挙動検証しなかった。設計書では「↓ アイコン = window.open(download_url)」と明記していたが、実際の UX 退化を確認せず実装に進んだ。
+#### ID 採番の事前確認漏れ
+「109/110 として起票」と事前にユーザーへ伝えたが、resolved/ に同 ID が既存だった。事前に open + resolved 両方の最大 ID 確認を怠った。次回は ID を提示する前に必ず両ディレクトリで確認する。
 
-**教訓**: UI/UX の決定時は、実装に入る前に類似パターンをブラウザで動かしてみる（手元の静的 HTML でも可）。設計書に書いた通り作っても UX が退化するパターンは少なくない。
-
-#### codex exec + run_in_background の stdin 問題
-`echo "" | cd /root-project && codex exec` の順は cd が stdin を読まないため codex にパイプが届かず `Reading additional input from stdin...` で無限待機する。正しくは `cd /root-project && echo "" | codex exec`。スキルの例示コマンドが誤っていたのが発端で、スキル経由で実行する際は例示をそのまま使っても動かない状態だった。
-
-#### 指揮役は /implement スキルを使うべき
-issue 対応時に Agent tool を直接呼び出してしまい、結果プロンプトに「ローカル検証」を入れ込む隙を作った。/implement スキルを経由していれば「ローカル CI 禁止ブロック」が自動挿入される（今回のスキル拡張後）。今後は issue 対応・PR 追加対応でも必ず /implement を使う。
-
-#### issue 108 の記録構造
-ユーザーの「明細新規追加時にアップロード不可」指摘は issue 108 の議論ログ（L114）に「追加発見」として記録されていたが、独立 issue 化されなかったため「埋もれた」状態。スコープ拡大時は独立 issue に分割する必要がある。
+#### ユーザー提案の批判的検討で方針進化
+ユーザーの「破棄確認ダイアログ統合案」「ローカル保持方式」のいずれも、批判的検討で技術制約を洗い出した上で採用判断。鵜呑みにせず代替案・トレードオフを提示することで、最終方針の精度が上がった（特に C は私の推奨「temp upload API」より、ユーザー提案「ローカル保持」のほうが筋が良かった）。
 
 ### 意思決定ログ
 
-#### C パターン採用
-- ダウンロードは master 旧実装と同じ動的 `<a download>` 要素 + click 方式に戻す
-- プレビューは window.open 方式維持
-- `<a download>` 属性はクロスオリジンでは効かない可能性があるが、BE の `Content-Disposition: attachment` で強制ダウンロード保証
+#### issue 108 の 3 分割方針（最終）
+- 108: フォーム編集中の操作整合性（並行操作 α+β cleanup + ItemForm 破棄確認）
+- 114: 添付の永続化タイミング仕様明示（即時保存方式の明確化、B-②）
+- 115: 新規明細での添付方法（ローカル保持 + 順次アップロード、C パターン A）
 
-#### 最終 PR の追加レビューなし
-- sub PR (#64/#65/#66) で既に reviewer + codex レビュー済み、結合動作確認も全 PASS
-- workflow.md PR フロー §6 通り、最終 PR (integration → master) は追加レビューなしで squash merge
+#### A の対応方針（α + β cleanup ハイブリッド）
+- アップロード中は保存ボタンのみ disable（α 最小適用）
+- パネル閉じ時に AbortController でアップロード中断（β cleanup 部分）
+- β 全面採用（global トースト化）は MVP 範囲外、γ 確認ダイアログは煩わしい
 
-#### スキル・ルール修正の構造化方針
-- 「サブエージェントに CI 指示しない」は workflow.md（指揮役ルール）ではなく、/implement スキルと各エージェント定義に集約
-- 将来 GHA CI 移行時は workflow.md §2 の指揮役手順を 1 行書き換えるだけで済むよう、CI 実施の責任ロジックを集中
-- /issue スキルの起票 / 対応 / 一覧 の分離で、スキル発動時のガイドが明確化
+#### B の対応方針（即時保存方式を仕様明示）
+- 「ファイル選択時点で S3+DB 永続化、フォーム保存と独立」を設計書に明記
+- AttachmentArea に「※添付はこの場で保存されます」案内
+- ロールバック方式（B-①）は孤児ファイルリスク、保留→確定（B-③）は MVP 範囲外
 
-#### issue 108 は保留
-- 本セッションは issue 102 最終 PR に集中
-- issue 108 の 3 サブトピック（並行操作 / 即時アップロード / 新規明細で添付不可）の分割・方針決定は次以降のセッションで対応
+#### C の対応方針（ローカル保持 + 既存 API 順次呼び出し）
+- 新規明細: File オブジェクトをフロント state に保持、保存時に明細作成 → 添付順次 POST
+- 編集モード: 即時アップロード継続（変更なし）
+- 部分失敗時: 明細は残し、失敗添付の警告トースト → ユーザーが編集モードで再試行
+- 「新規/編集で挙動分岐」を許容（モード別の案内文で UX 説明）
+
+#### F5 リロード時のダイアログ
+- カスタム MUI Dialog: 不可（codex 独立調査で確認）
+- ブラウザ標準ダイアログのみ（dirty 時に `beforeunload` で `preventDefault()` 発火）
+- keydown 傍受は網羅性不足で不採用
+
+#### Q1 dirty 判定範囲
+- ItemForm のフィールド変更のみカウント（金額・日付・カテゴリ・摘要）
+- 添付操作（追加/削除）はカウントしない（添付は分離保存方針との整合）
 
 ## 前回セッション
 
-前回セッション（2026-04-17 13:00〜16:17 および 2026-04-17 17:00〜2026-04-18 00:03）の詳細は `dev-journal/archives/session-logs/2026-04-17.md` を参照。
+前回セッション（2026-04-18 10:30〜15:12）の詳細は `dev-journal/archives/session-logs/2026-04-18.md` を参照。
