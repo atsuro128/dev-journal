@@ -346,19 +346,41 @@ GET /api/reports/:id/items/:itemId/attachments/:attId/preview
 | ResponseContentDisposition | `attachment; filename="{file_name}"` | `inline; filename="{file_name}"` | ダウンロード時は保存ダイアログ、プレビュー時はブラウザ内表示 |
 | ResponseContentType | `{mime_type}` | `{mime_type}` | DB に保存された MIME タイプ |
 
-### 4.5 フロント実装制約: 新タブ方式のポップアップブロック回避
+### 4.5 フロント実装制約: プレビューとダウンロードのクリック起動パターン
 
-プレビュー・ダウンロードともに `window.open` で新タブを開く。非同期 fetch 後に `window.open` を呼ぶとクリックイベントと切り離されてブラウザのポップアップブロックに引っかかるため、**クリック同期で空タブを先に開き、URL 取得後に location を差し替える**パターンを採用する。
+プレビューは新タブを開く必要があるため `window.open` 方式、ダウンロードは新タブを開かずダウンロードを即起動するため動的 `<a download>` 要素方式、とパターンを分ける。
+
+#### プレビュー（`window.open` 方式）
+
+非同期 fetch 後に `window.open` を呼ぶとクリックイベントと切り離されてブラウザのポップアップブロックに引っかかるため、**クリック同期で空タブを先に開き、URL 取得後に location を差し替える**パターンを採用する。
 
 ```
-[1] ユーザーがファイル名 or ↓ アイコンをクリック
+[プレビュー]
+[1] ユーザーがファイル名をクリック
 [2] クリック同期で window.open('about:blank', '_blank') を実行（空タブ）
-[3] 非同期で署名付き URL を API から取得
+[3] 非同期で署名付き URL（Content-Disposition: inline）を API から取得
 [4] 取得成功: newWindow.location.href = data.url
 [5] 取得失敗: newWindow.close() + エラートースト表示
 ```
 
-- 実際の API 呼び出し（`useAttachmentDownloadUrl` / `useAttachmentPreviewUrl` の `refetch`）と `window.open` の呼び出しは、`AttachmentList.tsx` 内部の行コンポーネント `AttachmentItemRow` に配置する
+#### ダウンロード（動的 `<a download>` 要素方式）
+
+ダウンロードは新しいタブを開く必然性がなく、空白タブが残る・すぐ閉じる等の UX 問題があるため、**動的生成した `<a>` 要素（`download` 属性付き）にクリックイベントを発行**し、ブラウザのダウンロードを起動する。`document.body.appendChild` → `click()` → `removeChild` の順序で DOM 操作し、タブを開かずダウンロードを完結させる。
+
+```
+[ダウンロード]
+[1] ユーザーが ↓ アイコンをクリック
+[2] 非同期で署名付き URL（Content-Disposition: attachment）を API から取得
+[3] 取得成功: document.createElement('a') で <a> 要素を生成し、href に署名付き URL、download 属性にファイル名を設定
+[4] document.body.appendChild(link) → link.click() → document.body.removeChild(link) を同期的に連続実行
+[5] 取得失敗: エラートースト表示（DOM 操作なし）
+```
+
+`<a download>` 属性のファイル名指定は S3 側の `response-content-disposition` で上書き済みの Content-Disposition の `filename` が優先されるため、両方が一致するよう `file_name` を渡す。Content-Disposition: attachment は BE 側の署名付き URL 発行時に付与されるため、`<a download>` 属性は補助的な役割となる。
+
+#### 共通事項
+
+- 実際の API 呼び出し（`useAttachmentDownloadUrl` / `useAttachmentPreviewUrl` の `refetch`）と上記の DOM 操作（プレビューは `window.open`、ダウンロードは `<a>` 要素生成）は、`AttachmentList.tsx` 内部の行コンポーネント `AttachmentItemRow` に配置する
 - `AttachmentList.tsx` は行ごとに `AttachmentItemRow` を生成し、各 `AttachmentItemRow` が per-item で上記 Hook をトップレベルに保持する。`attachments.map(...)` のループ内では Hook を呼べない（React hooks rules 違反）ため、添付 1 件ごとにコンポーネントを分割してフックのルールを満たす構造を採用する
 - `AttachmentArea.tsx` は一覧取得（`useAttachments`）・アップロード（`useUploadAttachment`）・削除（`useDeleteAttachment`）・トースト管理を担当する。プレビュー / ダウンロードで発生したエラーは `AttachmentItemRow.onError → AttachmentList.onError → AttachmentArea` の順に委譲され、`AttachmentArea` がトーストを表示する
 

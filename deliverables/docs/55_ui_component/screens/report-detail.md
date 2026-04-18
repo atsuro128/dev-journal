@@ -513,7 +513,7 @@ interface AttachmentAreaProps {
 ### AttachmentList
 
 - 配置: `pages/reports/AttachmentList.tsx`
-- 責務: 添付ファイル一覧のレンダリングと、**添付 1 件ごとの署名付き URL 取得 Hook（`useAttachmentDownloadUrl` / `useAttachmentPreviewUrl`）のオーケストレーション**を担う層。内部で行単位の描画コンポーネント `AttachmentItemRow` を使用し、`AttachmentItemRow` が per-item で Hook を保持し、クリック同期 `window.open` → `refetch` → `newWindow.location.href` 差し替えパターン（`50_detail_design/files.md` §4.5）を実装する。各行にはファイル名（クリックでプレビュー）、↓ アイコン（クリックでダウンロード）、ファイルサイズ、削除ボタンを表示する。エラー通知は親（AttachmentArea）にコールバックで委譲する
+- 責務: 添付ファイル一覧のレンダリングと、**添付 1 件ごとの署名付き URL 取得 Hook（`useAttachmentDownloadUrl` / `useAttachmentPreviewUrl`）のオーケストレーション**を担う層。内部で行単位の描画コンポーネント `AttachmentItemRow` を使用し、`AttachmentItemRow` が per-item で Hook を保持する。プレビューはクリック同期 `window.open('about:blank')` → `refetch` → `newWindow.location.href` 差し替えパターン、ダウンロードは `refetch` → 動的生成 `<a download>` 要素のクリック → 要素除去パターン（`50_detail_design/files.md` §4.5）を実装する。各行にはファイル名（クリックでプレビュー）、↓ アイコン（クリックでダウンロード）、ファイルサイズ、削除ボタンを表示する。エラー通知は親（AttachmentArea）にコールバックで委譲する
 - 構造に関する補足: React hooks rules（条件分岐・ループ内での Hook 呼び出し禁止）を遵守しつつ、添付ごとに独立した署名付き URL 取得を実現するため、行単位に内部コンポーネント `AttachmentItemRow` を切り出し、そのトップレベルで Hook を呼ぶ構造とする。結果として `AttachmentList` は純粋な presentational ではなく **per-item rendering + per-item hook orchestration 層**となる
 - 対応セクション: `50_detail_design/screens/report-detail.md` &sect;7、`50_detail_design/files.md` &sect;4.5
 
@@ -549,7 +549,7 @@ interface AttachmentListProps {
 #### AttachmentItemRow（AttachmentList 内部コンポーネント）
 
 - 配置: `pages/reports/AttachmentList.tsx` 内（export しない内部コンポーネント）
-- 責務: 添付 1 件分の行を描画し、クリック時に `useAttachmentDownloadUrl` / `useAttachmentPreviewUrl` の `refetch()` を起動する。`files.md` §4.5 の「クリック同期で `window.open('about:blank')` → 非同期に URL を取得 → `newWindow.location.href` に差し替え、失敗時は `newWindow.close()` して `onError` で親に通知」パターンをこのコンポーネント内に実装する
+- 責務: 添付 1 件分の行を描画し、クリック時に `useAttachmentDownloadUrl` / `useAttachmentPreviewUrl` の `refetch()` を起動する。プレビューはファイル名クリックで `files.md` §4.5 の「クリック同期で `window.open('about:blank')` → 非同期に URL を取得 → `newWindow.location.href` に差し替え、失敗時は `newWindow.close()` して `onError` で親に通知」パターンをこのコンポーネント内に実装する。ダウンロードは ↓ アイコンクリックで `files.md` §4.5 の「`refetch()` 成功後に動的生成した `<a>` 要素（`href` に署名付き URL、`download` 属性にファイル名）を `document.body.appendChild` → `click()` → `removeChild` の順で操作してダウンロードを起動する。失敗時は `onError` で親に通知（DOM 操作なし）」パターンを実装する
 - 構造上の位置付け: hooks rules 遵守のため、`attachments.map(...)` でループ内に Hook を書けない制約から分離された per-item Hook ホルダー。プレビュー / ダウンロードの `onPreview` / `onDownload` 外部コールバックは持たない（オーケストレーションを内包するため不要）
 - 主な Props（内部インターフェース）: `reportId`, `itemId`, `attachment`, `canDelete`, `deletingId`, `onDelete`, `onError`
 
@@ -672,7 +672,7 @@ ReportDetailPage → ConfirmDialog（確認） → useDeleteItem.mutate({ report
 
 ### 添付ファイル操作のデータフロー
 
-AttachmentArea は一覧取得・アップロード・削除・トースト管理を担当し、プレビュー / ダウンロードのクリック同期 `window.open` パターン（`50_detail_design/files.md` §4.5）は `AttachmentList` 内部の `AttachmentItemRow` が per-item で実行する。これは `attachments.map(...)` のループ内では `useAttachmentDownloadUrl` / `useAttachmentPreviewUrl` を呼べない（hooks rules 違反となる）ため、添付 1 件ごとにコンポーネントを分割してトップレベルで Hook を呼ぶ構造としたためである。エラーはトースト表示の一元管理のため `AttachmentItemRow.onError → AttachmentList.onError → AttachmentArea` の順に委譲する。
+AttachmentArea は一覧取得・アップロード・削除・トースト管理を担当し、プレビューのクリック同期 `window.open` パターンとダウンロードの動的 `<a download>` 要素パターン（`50_detail_design/files.md` §4.5）は `AttachmentList` 内部の `AttachmentItemRow` が per-item で実行する。これは `attachments.map(...)` のループ内では `useAttachmentDownloadUrl` / `useAttachmentPreviewUrl` を呼べない（hooks rules 違反となる）ため、添付 1 件ごとにコンポーネントを分割してトップレベルで Hook を呼ぶ構造としたためである。エラーはトースト表示の一元管理のため `AttachmentItemRow.onError → AttachmentList.onError → AttachmentArea` の順に委譲する。
 
 ```
 [添付一覧取得]
@@ -691,10 +691,12 @@ AttachmentItemRow（ファイル名クリック）
 
 [添付ダウンロード]
 AttachmentItemRow（↓ アイコンクリック）
-  → window.open('about:blank') をクリック同期で実行
   → useAttachmentDownloadUrl.refetch()
-    → 成功: 署名付き URL（Content-Disposition: attachment）を取得 → newWindow.location.href = url
-    → 失敗: newWindow.close() + onError(message) → AttachmentList → AttachmentArea がエラートースト表示
+    → 成功: 署名付き URL（Content-Disposition: attachment）を取得
+           → document.createElement('a') で <a> 要素生成（href = url, download = file_name）
+           → document.body.appendChild → link.click() → document.body.removeChild（同期的に連続実行）
+           → タブを開かずブラウザのダウンロードが起動
+    → 失敗: onError(message) → AttachmentList → AttachmentArea がエラートースト表示
 
 [添付アップロード]
 AttachmentArea → AttachmentUploader → useUploadAttachment.mutate({ reportId, itemId, file })
