@@ -206,4 +206,5 @@ https://github.com/atsuro128/expense-saas/pull/68
 
 ## 前回セッション
 
-前回セッション（2026-04-18 22:00〜23:01）の詳細は `dev-journal/archives/session-logs/2026-04-18.md` を参照。
+前回セッション（2026-04-19 夕）の詳細は `dev-journal/archives/session-logs/2026-04-19.md` を参照。
+さらに前の 2026-04-18 セッション（issue 108 分割方針決定、22:00〜23:01）は `dev-journal/archives/session-logs/2026-04-18.md` を参照。
