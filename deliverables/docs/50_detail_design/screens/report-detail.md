@@ -448,7 +448,7 @@ F5・タブ閉じ・ブラウザ閉じのケースはブラウザ標準ダイア
 | 項目 | 内容 |
 |------|------|
 | 状態伝播 | `AttachmentUploader` の uploading 状態（および削除中の処理状態）を親コンポーネント `ItemSlidePanel` に伝播する |
-| 保存ボタン制御 | `ItemSlidePanel` 側で `isPending || isUploading` を OR 演算し、「保存する」「保存して続けて追加」ボタンのみ disabled にする |
+| 保存ボタン制御 | `ItemSlidePanel` 側で `isPending || isUploading || isDeleting` を OR 演算し、「保存する」「保存して続けて追加」ボタンのみ disabled にする（§7-3「削除処理中も保存ボタンは disabled となる」と整合） |
 | 閉じる操作 | 「キャンセル」「× ボタン」「明細外クリック」は常時有効（アップロード中でも閉じられる。§6「編集中の破棄確認ダイアログ」は別途適用） |
 | フィールド編集 | アップロード中も ItemForm のフィールド編集は継続可能 |
 
