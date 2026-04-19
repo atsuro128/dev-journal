@@ -1,115 +1,209 @@
 # 引き継ぎメモ
 
-## セッション: 2026-04-20 00:49
+## セッション: 2026-04-20（並列セッション、〜01:23）
+
+本日は 2 つのセッションが並列で進行した。
+
+- **[main]** issue 108 / 114 / 115（フォーム編集中の操作整合性・添付永続化タイミング・新規明細ローカル保持）のワークツリー対応
+- **[parallel]** Step 11-A ローカル動作確認 Phase 2 続行（早朝セッション 00:49〜）
 
 ### ゴール
-- Step 11-A ローカル動作確認の続行（前回 SMK-025 から再開）
-- Phase 2（§4.3 エラー表示）の残項目を完了させる
+
+- [main] 3 issue を同一 worktree・同一 PR・直列で対応し、各 issue 完了ごとにレビューを実施。master マージ前で停止（ユーザー方針）
+- [parallel] Step 11-A Phase 2 §4.3 エラー表示の残項目を完了させる
 
 ### 作業ログ
 
-#### セッション開始時の状態確認
-1. session-start で進捗確認: Step 11-A 進行中（完了 14/62、次は SMK-025）
-2. 選択A（Step 11-A 続行）で合意
+#### [main] issue 108 / 114 / 115 対応
 
-#### Phase 2 §4.3 エラー表示の連続実施
-3. **SMK-025（403 権限不足）**: **PASS** — Member で `/approvals` 直接アクセス → トースト表示 + ダッシュボードへリダイレクト
-4. **SMK-026（404 存在しないリソース）**: **PASS** — 実装は state-management.md / report-detail.md §11 準拠で「指定されたデータが見つかりません。」+ 「レポート一覧」リンクを表示。smoke_check.md の期待文言「お探しのレポートが見つかりません」は古い → **issue 123 起票**（SMK-024 と同パターンの docs 不整合）
-5. **SMK-028（ネットワーク断絶）**: 検証プロセスが紆余曲折。
-   - 当初 F5 リロードで試し → Edge ネイティブのオフライン画面（SPA 到達前）
-   - DevTools Offline + SPA 内遷移 → メインコンテンツ空白を観察
-   - 暫定 issue 124（ネットワーク断絶時の UI 未定義）を起票
-   - ユーザー指摘で DevTools Offline は fetch を即 reject せず pending で保留することが判明
-   - さらに fetch タイムアウトの必要性を検討し、MVP では不要と判断（サーバー / LB / TCP の終端で担保される前提）
-   - **issue 124 を削除**
-   - `docker compose stop api` で再テスト → Vite proxy 経由で 500 返却、トーストに raw 英語「Internal Server Error」露出
-   - **FAIL 確定**
-   - 根本原因と範囲を切り分けて **issue 124 を再起票**（`SERVER_ERROR_MESSAGES` マッピング未適用・共通層の実装不備）
-   - **issue 125 起票**（smoke_check.md SMK-028 期待文言 / 検証手順の不整合）
-6. **SMK-029（エラートースト自動消去）**: **PASS**
-   - 成功トースト: 明細追加で計測、約 5 秒で自動消去（設計通り）
-   - エラートースト: SMK-028 再テスト時のトーストが手動クローズまで残存することを確認
-   - **副次発見**: レポート作成・編集画面で**成功トーストが全く表示されない** → **issue 126 起票**
-   - 対照確認: 明細追加 / レポート提出は成功トースト表示されており、レポート作成・編集のみ実装漏れと確定
+##### 進め方決定
+1. session-start で進捗確認（前回 2026-04-18 に issue 108/114/115 起票済、方針確定）
+2. ユーザー方針確認:
+   - 3 issue を同一 worktree で統合対応（ファイル重複回避）
+   - 直列進行（並列なし）、各 issue 完了ごとに reviewer レビュー
+   - draft PR で運用、master マージしない
+3. 各 issue のフェーズ構成:
+   - 114（軽微）: 設計書 → 機能実装（+既存 integration test に案内文 assertion）
+   - 108 / 115: 設計 → テスト設計 → テスト実装 → 機能実装（4 フェーズ、各フェーズ reviewer PASS 必須）
+4. 対応順序: 114（仕様先行）→ 108（編集中整合性）→ 115（新規モード分岐）
 
-#### 追加議論（SMK 外）
-7. ユーザーからレポートの「期間」フィールドの意味を問われる
-   - 仕様上の 3 用途（メタデータ / ソフトバリデーション / フィルタ）を説明
-   - 「明細日付を期間外 3/1 にできる」観察からソフトバリデーション（ITM-007）の実装確認
-   - `ItemForm.tsx` に期間関連ロジックが 0 件 = 警告未実装と確定
-   - **issue 127 起票**（ITM-007 実装漏れ）
+##### 114 実施
+- dev-journal: `files.md §3.1` + `report-detail.md §7 冒頭` に即時保存方式を明記（`f6785f8`）
+- expense-saas: `AttachmentArea.tsx` に常時案内文を追加（`7422c25`）
+- 内部レビューはいずれも PASS（備考スキップ）
 
-#### 記録更新
-8. 11-A チケットの結果テーブル・サマリ・発行 issue・進捗を更新（完了 18/62、PASS 13 / FAIL 6 / SKIP 1 / 未実施 42）
-9. progress.md の残存 issue テーブルに 123-127 を追記
+##### 108 実施
+- dev-journal: `report-detail.md §6 §7` に並行操作制御・破棄確認ダイアログ仕様を追記（`1a5de95`）、テスト設計 ATT-FE-057〜071（15 件）追記（`60ba690`）
+- expense-saas: テスト実装（Red 前提）→ 機能実装 + 中断トースト lift-up + AbortController 中断等
+- テスト設計フェーズで FIX（サマリー件数齟齬、§7 構造整理、削除中 disable 検証追加、Dialog 文言完全一致）
+- 機能実装フェーズで FIX（dirty 時 Dialog キャンセルでの abort 防止、useDeleteAttachment に onAborted 対称化、依存配列整理）
+- 全フェーズ PASS 後、108 フェーズ完了
+
+##### 115 実施
+- dev-journal: `report-detail.md §6 §7` + `files.md §3.1` にモード別保存処理・dirty 判定拡張・案内文を追加（`43dd5ca`）、テスト設計 ATT-FE-072〜083（12 件）追記（`3027b29`）
+- expense-saas: テスト実装 → 機能実装（モード分岐 + ローカル保持 + 順次アップロード）
+- テスト実装フェーズで派生 ID（076b/083b）の重複削除が必要になり、2 サイクル FIX
+- 機能実装フェーズで FIX（保存ボタンラベル設計書遵守、ItemForm category 自動選択 useEffect 削除、test/setup.ts グローバル fetch モック revert、QueryClientProvider フォールバック削除、AbortError try/finally）
+
+##### 最終確認
+- lint エラー修正（未使用 `_v` 引数 + unused eslint-disable）を直接対応（`5d93f86`）
+- Frontend ローカル CI 全 PASS（lint / tsc / test 94 files/576 tests / build）
+- **codex レビュー**: REQUEST CHANGES（blocker 3 件）
+  - blocker 1: 「保存して続けて追加」が順次アップロード経路を通らず添付消失
+  - blocker 2: add モードが `useCreateItem` バイパス → 二重送信可能 + エラー表示回帰
+  - blocker 3: upload/delete mutation 完了後の `abortControllerRef` 残存 → 成功済み操作に誤中断トースト
+  - 対応コミット: `a83a87d`（blocker 1/2）+ `5fad1cb`（blocker 3）
+- **codex 再レビュー**: APPROVE 相当（self-review のためコメント形式）、関連テスト 47 件 PASS
+
+##### 重要な指示逸脱・修正
+- エージェントが指示外で PR #68 を作成 → draft 化で対処
+- 以降のエージェント指示で「PR 作成・draft 解除禁止」を明示
+- 機能実装フェーズで ItemForm に category 自動選択 useEffect を勝手に追加（テスト帳尻合わせ）→ FIX で削除
+
+#### [parallel] Step 11-A Phase 2 §4.3 エラー表示
+
+- SMK-025（403 権限不足）: PASS
+- SMK-026（404 存在しないリソース）: PASS（期待文言不整合は issue 123 起票）
+- SMK-028（ネットワーク断絶）: FAIL → issue 124（実装）+ issue 125（docs）起票（途中で issue 124 削除→再起票の経緯あり）
+- SMK-029（エラートースト自動消去）: PASS（副次発見で issue 126 起票）
+- 追加議論: 期間フィールドの意味から ITM-007 実装漏れ → issue 127 起票
+- 完了 18/62（PASS 13 / FAIL 6 / SKIP 1 / 未実施 42）
 
 ### 未完了
-- Step 11-A: 18/62 完了。残 44 項目
-- 起票した issue 123-127 の実装対応は全て別セッションで行う
+
+#### [main]
+- Backend ローカル CI（VS Code タスク必要、ユーザー操作待ち）
+- PR #68 の draft 解除 → マージ判断
+- 後処理: issue 108/114/115 を `resolved/` に移動、progress.md 残存 issue テーブル更新
+
+#### [parallel]
+- Step 11-A 残 44 項目（SMK-012 など添付系は issue 108/114/115 マージ後）
+- 起票 issue 123-127 の実装対応
 
 ### ブロッカー
+
 - なし
 
 ### 次にやること
 
-#### 優先度 1: Step 11-A Phase 2 の続行
-- 次は **§4.4 添付ファイル SMK-030〜038**（9 項目）
-- ただし SMK-012（添付ローディング）を含む添付関連は issue 108/114/115 の対応待ち要素がある
-- 先に §4.5 レスポンシブ / §4.6 日本語 UI / §4.7 タイムスタンプ / §4.8 ページネーション / §4.9 キャッシュ / §4.10 確認ダイアログ を進めて、添付は後回しにする判断もあり
+#### 優先度 1: PR #68 の最終確認 → マージ（[main] の続き）
+1. **Backend ローカル CI**: VS Code「実行とデバッグ」→ **BE: full test**
+2. PASS 確認 → PR #68 を draft 解除 → マージ
+3. マージ後:
+   - issue 108 / 114 / 115 を `issues/resolved/` に移動
+   - progress.md 残存 issue から 108 / 114 / 115 を削除（または「解決済」に更新）
+   - 本 session-log.md を archives/session-logs/2026-04-20.md に退避
 
-#### 優先度 2: 本セッションで起票した issue の実装対応
-- 123（SMK-026 docs）: 軽微、docs のみ
-- 124（SERVER_ERROR_MESSAGES マッピング）: api/client.ts 共通層 + 各画面テスト更新
-- 125（SMK-028 docs）: 軽微、docs のみ
-- 126（成功トースト欠落）: ReportCreatePage / ReportEditPage の 2 ファイル + テスト
-- 127（ITM-007 警告実装）: ItemForm + 親コンポーネント + 設計書追記 + テスト
+#### 優先度 2: Step 11-A Phase 2 続行（[parallel] の続き）
+- 次は §4.4 添付ファイル SMK-030〜038（9 項目）
+- ただし SMK-012（添付ローディング）含む添付系は issue 108/114/115 マージ後に実施推奨
+- 添付を後回しにする場合は §4.5（レスポンシブ）/ §4.6（日本語 UI）/ §4.7（タイムスタンプ）/ §4.8（ページネーション）/ §4.9（キャッシュ）/ §4.10（確認ダイアログ）を先行
 
-#### 優先度 3: 既存 issue 108/114/115 の対応（別セッション進行中）
+#### 優先度 3: 起票済 issue の実装対応
+- **Step 11-A 派生（本日起票）**:
+  - 123（SMK-026 docs）: 軽微、docs のみ
+  - 124（SERVER_ERROR_MESSAGES マッピング）: api/client.ts 共通層 + 各画面テスト更新
+  - 125（SMK-028 docs）: 軽微、docs のみ
+  - 126（成功トースト欠落）: ReportCreatePage / ReportEditPage の 2 ファイル + テスト
+  - 127（ITM-007 警告実装）: ItemForm + 親コンポーネント + 設計書追記 + テスト
+- **Step 11-A 既起票**: 116-121（他セッションで起票、実装未着手）
+
+#### 優先度 4: 運用・基盤系 open issue の整理
+- ops-055 / 060 / 061 / ops-062 / 064 / ops-080 / 081 / 084 / 122
 
 ### 学び・気づき
 
-#### 検証ツールのアーティファクトと実環境の挙動を混同した
-DevTools Offline 観察で「実装バグ」を断定しかけた。ユーザー指摘により以下が判明:
-- DevTools Offline は fetch を即 reject せず pending で保留する
-- 実環境での挙動（サーバー・LB・TCP の終端）は別
-- MVP で fetch タイムアウトを未設定にしているのは許容される設計判断
+#### [main] エージェントの指示逸脱への対処
+- frontend-developer が「PR 作成禁止」指示を破って PR を作成 → ユーザーの master 非マージ方針に反する
+- draft 化で一時対処、以降のエージェント指示で「PR 作成・draft 解除禁止」を冒頭に明示
+- 教訓: 長時間タスクのエージェント指示では禁止事項を冒頭・末尾で重複して明示
 
-issue 124 を 1 回削除・再起票する往復が発生。ネットワーク系の検証は初手から実環境に近い手段（`docker compose stop api` 等）を選ぶべき。
+#### [main] レビュー複数サイクルの原因と対策
+- テスト実装で派生 ID（076b/083b/078 重複）が発生 → 「統合」指示を「新版追加」と誤解釈
+- 機能実装で設計書遵守漏れ（保存ボタンラベル vs ヘッダーバナー）
+- codex レビューで 3 blocker 追加（経路欠落・mutation バイパス・abort ref 残存）
+- 教訓: レビュー指示で「削除/統合/移設」を具体的に明記、設計書の「○○ と明記されている」引用を添える
 
-#### issue 124 の範囲整理にユーザー指摘が不可欠だった
-当初「ネットワーク断絶 UI 未定義 + 実装 + docs」を 1 issue に束ねていたが、ユーザーの「検証方法が間違っているなら issue ではなく再テスト」「タイムアウトは必要か」という指摘で構造の誤りが顕在化。最終的に論点を分離（検証手順 / 実装マッピング不足 / docs 不整合）して適切な粒度で起票できた。**起票前の論点整理はユーザーとの対話で磨かれる**。
+#### [main] テスト側の実装迎合を見逃しかけた
+- 機能実装フェーズで ItemForm に category 自動選択 useEffect を勝手に追加（テスト category 1 件渡しへの帳尻合わせ）
+- レビューで検出 → 削除 + テスト側を修正する方針で対応
+- 教訓: 「プロダクションコード変更」と「テスト修正」のどちらで対処すべきかの判断はレビュアーに問い直す
 
-#### ユーザーの素朴な疑問が実装漏れを引き出す
-レポート期間への「何の意味？」という疑問から、ITM-007（期間外警告）の実装漏れ（issue 127）が発見された。業務ドメインへの素朴な問いは実装の暗黙の前提を炙り出すシグナル。同じく SMK-029 の副次発見（成功トースト欠落）も、検証過程の違和感から issue 126 に結実した。
+#### [main] warning 残置の判断
+- ATT-FE-080 順序検証 race condition は実装確定後の再調整前提で残置
+- MUI `out-of-range value` 警告・`act(...)` 警告は blocker ではなく後続対応
+- info/warning と blocker の切り分けを適切に行えた
 
-#### 粒度最小原則（11-A 運用ルール）の有効性
-docs 不整合を「発見ごとに 1 issue」で分離起票（123, 125）するか、「smoke_check.md 監査」として傘 issue にまとめるかで議論。ユーザー判断で **都度単体起票** に統一。issue 126 / 127 も独立実装バグとして分離。
+#### [parallel] 検証ツールのアーティファクトと実環境挙動の混同
+- DevTools Offline は fetch を即 reject せず pending で保留 → 実環境とは別
+- issue 124 を 1 回削除・再起票する往復が発生。ネットワーク系の検証は `docker compose stop api` 等の実環境寄りの手段から開始すべき
+
+#### [parallel] issue の範囲整理にユーザー指摘が不可欠
+- 「検証方法が間違っているなら issue ではなく再テスト」「タイムアウトは必要か」等のユーザー指摘で構造の誤りが顕在化
+- 論点を分離（検証手順 / 実装マッピング / docs）して適切な粒度で起票できた
+
+#### [parallel] ユーザーの素朴な疑問が実装漏れを引き出す
+- レポート期間の「何の意味？」→ ITM-007 実装漏れ（issue 127）発見
+- SMK-029 の副次発見 → 成功トースト欠落（issue 126）
+- 業務ドメインへの素朴な問いは暗黙の前提を炙り出すシグナル
 
 ### 意思決定ログ
 
-#### issue 124 削除 → 再起票の経緯
-- 初稿 124: ネットワーク断絶時の UI 未定義（設計 + 実装 + docs 合体）
-- 削除理由: DevTools Offline が検証不能な疑似状態だと判明し、原因分析が誤り
-- 再起票 124: `SERVER_ERROR_MESSAGES` マッピング未適用（共通層の実装不備）にスコープを絞った
-- 再起票 125: smoke_check.md SMK-028 期待文言の docs 不整合を独立起票
+#### [main] 3 issue を同一 worktree・同一 PR で対応
+- 理由: ファイル重複（AttachmentArea / report-detail.md / ItemForm 等）のコンフリクト回避
+- 作業単位は分ける（各 issue 完了ごとに reviewer レビュー）
+- master 非マージ方針維持のため draft PR で運用
 
-#### fetch タイムアウトは MVP で不要
-- サーバー側 `http.Server` タイムアウト・AWS ALB 60s idle timeout・ブラウザ内部 TCP timeout で実環境では必ず終端する
-- SPA 層のタイムアウトは UX ハードニング項目で post-MVP 検討事項
-- 設計レビューで一度も指摘がなかった事実は「意図的な省略」を示唆（ユーザー直感が有効だった）
+#### [main] 114 のテスト設計・実装スキップ
+- 114 は仕様明示 + 案内文追加のみ（挙動変更なし）
+- 既存 integration test に案内文 assertion 1 行追加で十分と判断
 
-#### docs 不整合 issue は都度単独起票
-- SMK-024 由来は issue 122 に内包済み（既起票確認で判明）
-- SMK-026 由来は issue 123 に単独起票
-- SMK-028 由来は issue 125 に単独起票
-- 今後 smoke_check.md 不整合を追加発見したら同様に都度起票
+#### [main] codex 3 blocker 対応方針
+- blocker 1（「保存して続けて追加」）: 順次アップロード経路に接続（disabled 化ではなく実装拡張）
+- blocker 2（useCreateItem バイパス）: mutation に戻して `isPending` / `itemApiError` 制御を復元
+- blocker 3（abortControllerRef 残存）: `useMutation` の `onSettled` で ref を null 化
 
-#### issue 126 のスコープ判定
-- レポート作成・編集の 2 画面のみ成功トースト欠落、他（明細追加・レポート提出）は動作中
-- 監査として「他の mutation Hook 利用ページ（削除・承認・却下・支払・添付削除等）」も含めるかは実装対応時に判断
-- 現状は 2 画面 + 監査推奨の形でまとめる
+#### [main] lint エラー修正の型注釈方針
+- `resolve: () => {}` 形式は型推論で `() => void` になり呼び出し側の引数渡しと不整合
+- 型注釈 `const ref: { resolve: (v: Response) => void } = { resolve: () => {} }` で型の広さを明示
+- 既存の `_v: Response` 形式は ESLint 設定（`argsIgnorePattern` 未設定）で拾われるため使わない
 
-#### issue 127 のスコープ
-- ITM-007 実装漏れのみをスコープ
-- 「期間フィールドの設計妥当性そのもの」は別議論（MVP リリース判断事項）で本 issue 対象外
-- 補足セクションに参考情報として記載
+#### [parallel] issue 124 削除 → 再起票の経緯
+- 初稿 124: ネットワーク断絶 UI 未定義（設計 + 実装 + docs 合体）
+- 削除理由: DevTools Offline が検証不能な疑似状態と判明
+- 再起票 124: `SERVER_ERROR_MESSAGES` マッピング未適用（共通層の実装不備）にスコープ限定
+- 125: smoke_check.md SMK-028 docs 不整合を独立起票
+
+#### [parallel] fetch タイムアウトは MVP で不要
+- サーバー `http.Server` / AWS ALB 60s idle / ブラウザ内部 TCP timeout で終端される
+- SPA 層のタイムアウトは post-MVP の UX ハードニング項目
+
+#### [parallel] docs 不整合 issue は都度単独起票
+- SMK-024 → issue 122（既起票）
+- SMK-026 → issue 123
+- SMK-028 → issue 125
+- 今後 smoke_check.md 不整合を発見したら同様に都度起票
+
+### PR / コミット要約
+
+**PR #68（draft）**: `fix/108-114-115-form-integrity`  
+https://github.com/atsuro128/expense-saas/pull/68
+
+**dev-journal コミット**（master 直 push 済）:
+- `f6785f8` docs: 添付の永続化タイミング仕様を明示（issue 114）
+- `1a5de95` docs: フォーム編集中の破棄確認と並行操作制御仕様を追記（issue 108）
+- `60ba690` docs: issue 108 テスト設計追加・設計書微修正
+- `43dd5ca` docs: 新規明細の添付ローカル保持方式と順次アップロード仕様を追記（issue 115）
+- `3027b29` docs: issue 115 テスト設計追加
+
+**expense-saas コミット**（`fix/108-114-115-form-integrity`）:
+- `7422c25` feat: 添付の永続化タイミング案内文を AttachmentArea に追加（issue 114）
+- 108 テスト実装・機能実装（複数コミット、FIX 対応含む）
+- 115 テスト実装・機能実装（複数コミット、FIX 対応含む）
+- `5d93f86` chore: lint エラー修正
+- `a83a87d` fix: add モードの明細作成を useCreateItem に戻し「保存して続けて追加」を順次アップロード経路に接続
+- `5fad1cb` fix: upload/delete mutation の abortControllerRef を onSettled でクリア
+
+## 前回セッション
+
+前回セッション（2026-04-18 22:00〜23:01）の詳細は `dev-journal/archives/session-logs/2026-04-18.md` を参照。
