@@ -580,6 +580,42 @@ issue #108 で合意した 2 つの課題（並行操作整合性 / 破棄確認
 - ATT-FE-057 / 058 は既存 ATT-FE-028（`isUploading` 単独の disabled）と区別し、`isPending || isUploading || isDeleting` の OR 合成と閉じる/編集系の操作が有効なままであることを検証する「並行操作」観点のテスト。
 - ATT-FE-071 の `beforeunload` は仕様上カスタム文言表示不可 / MUI Dialog 表示不可のため、`event.preventDefault()` の発火有無のみを検証する（`50_detail_design/screens/report-detail.md §6` の技術制約と整合）。
 
+### 7-11. 新規明細での添付（ローカル保持 + 保存時順次アップロード、issue #115）
+
+issue #115 で合意した C パターン A（ローカル保持方式）に対応するテストケースを追記する。追加モードでは AttachmentArea が表示され、ファイル選択時には即時アップロードせずフロントのローカル state に保留し、明細フォームの「保存する」押下時に明細作成 → 保留添付の順次アップロードを実行する。編集モードの挙動（即時アップロード）は変更しない。設計の根拠は `50_detail_design/screens/report-detail.md §6「モード別の保存処理（追加モード時の順次アップロード）」/ §7「モード別の添付挙動（追加モードはローカル保持方式）」`、および `50_detail_design/files.md §3.1`。
+
+#### 7-11-1. AttachmentArea -- 追加モード表示 / ローカル保持 / 削除 / 案内文
+
+| テストID | テストレベル | 対象コンポーネント | 対象 Props / Hook | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---|---|---|---|---|---|---|---|---|---|
+| ATT-FE-072 | 単体 | AttachmentArea | `itemId: string \| null`, `mode: 'add' \| 'edit' \| 'view'` | 正常系 | ATT-F01, ATT-F02 | `50_detail_design/screens/report-detail.md §7「モード別の添付挙動」（モード別サマリ）` | `renders_attachment_area_in_add_mode_with_itemId_null` | Props: `reportId="rpt-1"`, `itemId=null`, `mode="add"`, `canModify=true`。useAttachments は呼び出されないことを期待 | AttachmentArea が表示される（ATT-FE-002 の空状態とは異なり、追加モードでは `itemId=null` でも描画される）。AttachmentUploader が表示され、AttachmentList は空状態から開始する。useAttachments は `itemId=null` のため API 呼び出しをスキップする（issue #115） |
+| ATT-FE-073 | 単体 | AttachmentArea / AttachmentUploader | ファイル選択（追加モード） | 正常系 | ATT-F01, ATT-F02 | `50_detail_design/screens/report-detail.md §7「追加モードでの添付 UI 挙動」（ファイル選択 / 一覧表示）` | `buffers_selected_file_in_local_state_in_add_mode` | Props: `reportId="rpt-1"`, `itemId=null`, `mode="add"`, `canModify=true`。有効な JPEG（1KB）を選択 | `useUploadAttachment.mutate` は呼ばれない。保留中ファイルとしてローカル state に保持され、AttachmentList 相当の一覧にファイル名・サイズ・「保存後にアップロード予定」ラベルが表示される（issue #115） |
+| ATT-FE-074 | 単体 | AttachmentArea / AttachmentUploader | クライアント側バリデーション（追加モード） | 異常系 | ATT-002, ATT-003, ATT-013 | `50_detail_design/screens/report-detail.md §7「追加モードでの添付 UI 挙動」（クライアント側バリデーション）` | `rejects_invalid_mime_or_oversize_file_in_add_mode_without_buffering` | Props: 同上。3 ケース検証: (a) GIF（`image/gif`, 1KB）を選択、(b) JPEG 5,242,881 B（5MB + 1B）を選択、(c) 5,242,880 B（ちょうど 5MB）を選択 | (a)(b) はローカル state に保留されず、MIME / サイズ違反のエラーメッセージが表示される。(c) は保留される。いずれのケースでも `useUploadAttachment.mutate` は呼ばれない（issue #115、§7「アップロードのバリデーション」V1/V2 と同一ルール） |
+| ATT-FE-075 | 単体 | AttachmentArea / AttachmentList | 保留中添付の削除 | 正常系 | ATT-F04 | `50_detail_design/screens/report-detail.md §7「追加モードでの添付 UI 挙動」（保留中添付の削除）` | `removes_pending_attachment_from_local_state_without_api_call` | Props: `reportId="rpt-1"`, `itemId=null`, `mode="add"`, `canModify=true`。JPEG 2 件を順に選択して保留 → 1 件目の「× 削除」ボタンをクリック | ローカル state から対象ファイルのみが除去され、一覧には残り 1 件が表示される。`useDeleteAttachment.mutate` は呼ばれない。削除確認ダイアログ（ATT-FE-054 系）は表示されない（issue #115） |
+| ATT-FE-076 | 単体 | AttachmentArea | `mode: 'add' \| 'edit' \| 'view'` | 正常系 | ATT-F01 | `50_detail_design/screens/report-detail.md §7「モード別の案内文」` | `shows_mode_specific_guidance_text` | Props を 2 ケース検証: (a) `mode="add"`, `itemId=null`, `canModify=true`、(b) `mode="edit"`, `itemId="item-1"`, `canModify=true` | (a) 「※ 添付ファイルは『保存する』ボタン押下後にまとめてアップロードされます。」が表示される。(b) 「※ 添付ファイルは選択した時点で保存されます。フォームをキャンセルしても添付は残ります。」が表示される（issue #115、issue #114 の既存文言を追加モードと切り替える） |
+| ATT-FE-077 | 単体 | AttachmentArea / AttachmentList | 保留中添付のダウンロード/プレビュー | 正常系 | ATT-F02, ATT-F03 | `50_detail_design/screens/report-detail.md §7「追加モードでの添付 UI 挙動」（ダウンロード / プレビュー）` | `hides_download_and_preview_for_pending_attachments` | Props: 同上（追加モード + 保留中 1 件） | 保留中の行にはファイル名のプレビューリンクおよびダウンロードアイコンが表示されず、「保存後にアップロード予定」ラベルのみ表示される。`useAttachmentPreviewUrl` / `useAttachmentDownloadUrl` は呼ばれない（issue #115） |
+
+#### 7-11-2. 編集モードの挙動不変
+
+| テストID | テストレベル | 対象コンポーネント | 対象 Props / Hook | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---|---|---|---|---|---|---|---|---|---|
+| ATT-FE-078 | 単体 | AttachmentArea / AttachmentUploader | ファイル選択（編集モード） | 正常系 | ATT-F01 | `50_detail_design/screens/report-detail.md §7「永続化タイミング（即時保存方式）」/ §7「モード別の添付挙動」（モード別サマリ）` | `keeps_edit_mode_behavior_unchanged_immediate_upload` | Props: `reportId="rpt-1"`, `itemId="item-1"`, `mode="edit"`, `canModify=true`。有効な JPEG（1KB）を選択 | ファイル選択時点で `useUploadAttachment.mutate` が `{ reportId: "rpt-1", itemId: "item-1", file }` で呼び出される（即時アップロード）。ローカル state に保留されない（issue #115、追加モードとの分岐が編集モードに波及しないことを確認） |
+
+#### 7-11-3. 保存時の順次アップロード（ItemSlidePanel / ItemForm）
+
+| テストID | テストレベル | 対象コンポーネント | 対象 Props / Hook | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---|---|---|---|---|---|---|---|---|---|
+| ATT-FE-079 | 統合 | ItemSlidePanel + ItemForm + AttachmentArea | 保存時順次アップロード（全成功） | 正常系 | ATT-F01, ITM-F01 | `50_detail_design/screens/report-detail.md §6「モード別の保存処理」（追加モードの「保存する」押下時シーケンス）` | `saves_item_then_sequentially_uploads_pending_attachments_on_save` | Props: `mode="add"`, `reportId="rpt-1"`, `canModify=true`。有効なフォーム値を入力し、保留添付 2 件（JPEG + PDF）をセット。API モック: (1) POST `/api/reports/rpt-1/items` → 201 Created、レスポンス `data.id = "item-new"`、(2) POST `/api/reports/rpt-1/items/item-new/attachments` × 2 件 → いずれも 201 Created。保存ボタンをクリック | 呼び出し順序が以下の順で行われる: (1) 明細作成 POST が先行し、レスポンスから `itemId="item-new"` を取得。(2) 取得した `itemId` で添付アップロード POST を 1 件ずつ**順次**実行する（並列ではない。2 件目の POST は 1 件目のレスポンス受信後に発火する）。全成功後にパネルがクローズし、明細一覧が再読み込みされる（`['reports', 'detail', 'rpt-1']` の invalidate）。トーストで「明細を追加しました」が表示される（issue #115、files.md §9 レート制限との整合） |
+| ATT-FE-080 | 統合 | ItemSlidePanel + ItemForm + AttachmentArea | 保存時順次アップロード（部分失敗） | 異常系 | ATT-F01, ATT-013 | `50_detail_design/screens/report-detail.md §6「モード別の保存処理」（部分失敗時のロールバック方針）` | `keeps_item_created_and_shows_warning_toast_on_partial_attachment_failure` | Props: 同上。保留添付 2 件をセット。API モック: (1) POST `/api/reports/rpt-1/items` → 201（`item_id="item-new"`）、(2) 1 件目の添付 POST → 201、(3) 2 件目の添付 POST → 500 Internal Server Error。保存ボタンをクリック | 明細は作成済みのまま維持される（明細の DELETE API は**呼ばれない**）。AppToast に「N 件の添付ファイルがアップロードに失敗しました。再試行してください」相当の警告通知が表示される。トースト表示直後にパネルがクローズし、明細一覧が再読み込みされる（トーストは画面右上の Snackbar 領域に表示継続）。呼び出し順序は「警告トースト表示 → パネルクローズ → 明細一覧再読み込み」の順であることを検証する（issue #115） |
+| ATT-FE-081 | 単体 | ItemSlidePanel + ItemForm | 順次アップロード中の UI | 正常系 | ATT-F01, ITM-F01 | `50_detail_design/screens/report-detail.md §6「順次アップロード中の UI 表示」` | `disables_save_button_and_sets_readonly_form_during_sequential_upload` | Props: `mode="add"`, `canModify=true`。保留添付 3 件をセット。API モック: POST `items` は即時 201、POST `attachments` はレスポンスを遅延させ、1 件目の完了後・2 件目進行中の状態で検証 | 「保存する」「保存して続けて追加」ボタンが disabled + スピナー付きになり、ラベルが「アップロード中... (1/3 件完了)」の形式で表示される。ItemForm の日付・金額・カテゴリ・摘要の各フィールドが readonly になる（明細作成後の順次アップロード中の二重送信・整合性崩れ防止、issue #115） |
+| ATT-FE-082 | 統合 | ItemSlidePanel + ItemForm + AttachmentArea | 順次アップロード中のパネル閉じ（AbortController） | 正常系 | ATT-F01 | `50_detail_design/screens/report-detail.md §6「順次アップロード中の UI 表示」（閉じる操作） / §7「アップロード・削除中の並行操作制御」` | `aborts_sequential_upload_and_shows_warning_toast_on_panel_close_during_upload` | Props: 同上。保留添付 3 件をセット。POST `items` → 201 完了、1 件目の添付 POST 進行中にパネル閉じ操作を 3 パターン検証: (a) × ボタン、(b) キャンセルボタン、(c) 明細外クリック（Drawer onClose） | いずれのパターンでも AbortController で進行中のアップロード POST が中断される（AbortSignal が fetch に伝播）。2 件目・3 件目の POST は発火しない。AppToast に「アップロードを中止しました」相当の警告通知が表示される。作成済み明細はロールバック**しない**（DELETE API は呼ばれない）。未アップロード分は編集モードで再アップロード可能な状態（issue #115、§7「アップロード・削除中の並行操作制御」と同じ方針を準用） |
+
+#### 7-11-4. 追加モードの破棄確認ダイアログ（保留中添付による dirty 判定）
+
+| テストID | テストレベル | 対象コンポーネント | 対象 Props / Hook | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---|---|---|---|---|---|---|---|---|---|
+| ATT-FE-083 | 単体 | ItemSlidePanel + ItemForm + AttachmentArea | dirty 判定（追加モード） | 正常系 | ATT-F01, ITM-F01 | `50_detail_design/screens/report-detail.md §6「編集中の破棄確認ダイアログ」（dirty 判定対象 -- 追加モードのみ）` | `treats_pending_attachments_as_dirty_in_add_mode` | Props: `mode="add"`, `canModify=true`。フォームフィールドは初期値のまま変更せず、有効な JPEG を 1 件だけ保留 state に追加後、パネル閉じ操作（× ボタン）を実行 | MUI Dialog（「変更を破棄しますか？」）が表示される。Drawer はまだ閉じていない。「破棄」ボタンを押下するとローカル state の保留ファイルが破棄され Drawer がクローズする。「キャンセル」ボタンを押下すると Dialog のみ閉じて保留ファイルは保持される（issue #115、追加モードは「フィールド変更 1 件以上」OR「保留中添付 1 件以上」で dirty 成立。編集モードの ATT-FE-070「添付操作は dirty 対象外」とは分岐） |
+
 ---
 
 ## 8. FE テストケース サマリー
@@ -657,8 +693,20 @@ issue #108 で合意した 2 つの課題（並行操作整合性 / 破棄確認
 | ATT-FE-069 | ItemSlidePanel + ItemForm | 正常系（Dialog キャンセルでパネル保持・内容保持、issue #108） | 高 |
 | ATT-FE-070 | ItemSlidePanel + ItemForm | 正常系（添付操作のみは dirty とみなさない、issue #108） | 中 |
 | ATT-FE-071 | ItemSlidePanel + ItemForm | 正常系（dirty 時 beforeunload で preventDefault、issue #108） | 中 |
+| ATT-FE-072 | AttachmentArea | 正常系（追加モード + itemId=null で AttachmentArea 表示、issue #115） | 高 |
+| ATT-FE-073 | AttachmentArea / AttachmentUploader | 正常系（追加モードでファイル選択をローカル state に保留、issue #115） | 高 |
+| ATT-FE-074 | AttachmentArea / AttachmentUploader | 異常系（追加モードの MIME / サイズ クライアント側バリデーション、issue #115） | 高 |
+| ATT-FE-075 | AttachmentArea / AttachmentList | 正常系（保留中添付の削除は API 未呼出・確認ダイアログなし、issue #115） | 高 |
+| ATT-FE-076 | AttachmentArea | 正常系（モード別案内文の分岐表示、issue #115） | 中 |
+| ATT-FE-077 | AttachmentArea / AttachmentList | 正常系（保留中添付のダウンロード/プレビューは非表示、issue #115） | 中 |
+| ATT-FE-078 | AttachmentArea / AttachmentUploader | 正常系（編集モードは即時アップロード挙動不変、issue #115） | 高 |
+| ATT-FE-079 | ItemSlidePanel + ItemForm + AttachmentArea 統合 | 正常系（保存時: 明細作成 → 保留添付を順次アップロード全成功、issue #115） | 高 |
+| ATT-FE-080 | ItemSlidePanel + ItemForm + AttachmentArea 統合 | 異常系（部分失敗時に明細は残し警告トースト → パネルクローズ → 一覧再読み込み、issue #115） | 高 |
+| ATT-FE-081 | ItemSlidePanel + ItemForm | 正常系（順次アップロード中は保存ボタン disabled + 「N/M 件完了」表示 + フォーム readonly、issue #115） | 高 |
+| ATT-FE-082 | ItemSlidePanel + ItemForm + AttachmentArea 統合 | 正常系（順次アップロード中のパネル閉じで AbortController 中断 + 警告トースト、issue #115） | 高 |
+| ATT-FE-083 | ItemSlidePanel + ItemForm + AttachmentArea | 正常系（追加モードは保留中添付を dirty と見なし破棄確認ダイアログ表示、issue #115） | 高 |
 
-**FE テストケース合計: 74件**（優先度「高」: 56件、優先度「中」: 18件）
+**FE テストケース合計: 86件**（優先度「高」: 66件、優先度「中」: 20件）
 
 ### FE テスト実装ガイド
 
@@ -666,15 +714,15 @@ issue #108 で合意した 2 つの課題（並行操作整合性 / 破棄確認
 
 | テストファイル | 対象 |
 |-------------|------|
-| `src/pages/reports/__tests__/AttachmentArea.test.tsx` | AttachmentArea コンポーネントテスト（ATT-FE-001〜006） |
+| `src/pages/reports/__tests__/AttachmentArea.test.tsx` | AttachmentArea コンポーネントテスト（ATT-FE-001〜006, ATT-FE-072, 075, 076, 077） |
 | `src/pages/reports/__tests__/AttachmentList.test.tsx` | AttachmentList コンポーネントテスト（ATT-FE-007〜015） |
-| `src/pages/reports/__tests__/AttachmentUploader.test.tsx` | AttachmentUploader コンポーネントテスト（ATT-FE-016〜028, ATT-FE-051〜053） |
+| `src/pages/reports/__tests__/AttachmentUploader.test.tsx` | AttachmentUploader コンポーネントテスト（ATT-FE-016〜028, ATT-FE-051〜053, ATT-FE-073, 074, 078） |
 | `src/hooks/__tests__/useAttachments.test.ts` | Hook テスト（ATT-FE-029〜044） |
 | `src/pages/reports/__tests__/AttachmentArea.integration.test.tsx` | 統合テスト（ATT-FE-045〜050） |
-| `src/pages/reports/__tests__/ItemSlidePanel.test.tsx` | ItemSlidePanel 並行操作・破棄確認テスト（ATT-FE-057, 058, 064〜071） |
+| `src/pages/reports/__tests__/ItemSlidePanel.test.tsx` | ItemSlidePanel 並行操作・破棄確認テスト（ATT-FE-057, 058, 064〜071, ATT-FE-081, 083） |
 | `src/hooks/__tests__/useUploadAttachment.test.ts` | useUploadAttachment 中断テスト（ATT-FE-059） |
 | `src/hooks/__tests__/useDeleteAttachment.test.ts` | useDeleteAttachment 中断テスト（ATT-FE-061） |
-| `src/pages/reports/__tests__/ItemSlidePanel.integration.test.tsx` | 並行操作中断トースト・明細切替統合テスト（ATT-FE-060, 062, 063） |
+| `src/pages/reports/__tests__/ItemSlidePanel.integration.test.tsx` | 並行操作中断トースト・明細切替統合テスト（ATT-FE-060, 062, 063）、追加モード保存時の順次アップロード統合テスト（ATT-FE-079, 080, 082） |
 
 #### モック方針
 
