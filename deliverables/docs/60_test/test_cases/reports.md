@@ -82,9 +82,9 @@
 
 | テストID | テストレベル | レイヤー | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
 |---------|-----------|---------|---------|-----------|-----------|--------------|-----------------|---------|
-| RPT-008 | 統合 | handler | 正常系 | RPT-F01 | openapi.yaml#createReport, db_schema.md#expense_reports | `TestCreateReport_Success` | Actor: Test Member。リクエスト: `title="出張費 3月"`, `period_from="2026-03-01"`, `period_to="2026-03-31"` | 201 Created。`status=draft`、`user_id=Test Member ID`、`tenant_id=テナントA ID` がセットされた ExpenseReportDetail を返す |
-| RPT-009 | 統合 | handler | 異常系 | RPT-F01, RPT-001 | openapi.yaml#createReport | `TestCreateReport_ValidationError_EmptyTitle` | Actor: Test Member。`title=""` | 422 VALIDATION_ERROR（title は必須） |
-| RPT-010 | 統合 | handler | 異常系 | RPT-F01, RPT-003 | openapi.yaml#createReport, db_schema.md#expense_reports#CHECK | `TestCreateReport_ValidationError_PeriodRange` | Actor: Test Member。`period_from="2026-03-31"`, `period_to="2026-03-01"`（終了が開始より前） | 422 VALIDATION_ERROR |
+| RPT-008 | 統合 | handler | 正常系 | RPT-F01 | openapi.yaml#createReport, db_schema.md#expense_reports | `TestCreateReport_Success` | Actor: Test Member。リクエスト: `title="出張費 3月"`, `period_start="2026-03-01"`, `period_end="2026-03-31"` | 201 Created。`status=draft`、`user_id=Test Member ID`、`tenant_id=テナントA ID` がセットされた ExpenseReportDetail を返す |
+| RPT-009 | 統合 | handler | 異常系 | RPT-F01, RPT-001 | openapi.yaml#createReport | `TestCreateReport_ValidationError_EmptyTitle` | Actor: Test Member。`title=""` | 422 VALIDATION_ERROR（title は必須）。`details[].field = "title"` を含む |
+| RPT-010 | 統合 | handler | 異常系 | RPT-F01, RPT-003 | openapi.yaml#createReport, db_schema.md#expense_reports#CHECK | `TestCreateReport_ValidationError_PeriodRange` | Actor: Test Member。`period_start="2026-03-31"`, `period_end="2026-03-01"`（終了が開始より前） | 422 VALIDATION_ERROR。`details` 配列が付与される（`period_start` / `period_end` の複数フィールドにまたがる論理エラーのため、`details[].field` は実装側で `period_end` もしくは `period_start` のいずれかを特定して返す） |
 | RPT-011 | 統合 | handler | 異常系 | RPT-F01 | openapi.yaml#createReport | `TestCreateReport_Unauthorized` | 認証トークンなし | 401 UNAUTHORIZED |
 | RPT-012 | 統合 | handler | 認可 | RPT-F01, RBC-010 | openapi.yaml#createReport, authz.md#4.1 | `TestCreateReport_RBAC_Approver` | Actor: Test Approver。有効なリクエストボディ | 201 Created（Approver は申請系操作可能） |
 | RPT-013 | 統合 | handler | 認可 | RPT-F01, RBC-014 | openapi.yaml#createReport, authz.md#4.4 | `TestCreateReport_RBAC_Admin` | Actor: Test Admin。有効なリクエストボディ | 201 Created（Admin は自分のレポート作成可能: RBC-014） |
@@ -100,7 +100,7 @@
 | RPT-016 | 単体 | domain | 正常系 | RPT-016 | db_schema.md#expense_reports.reference_report_id | `TestCreateReport_Resubmit_ReferenceIdSet` | ドメイン層: 再申請で作成した新規レポートを検査 | 新規レポートに `reference_report_id == 元レポートID` がセットされている（RPT-016） |
 | RPT-017 | 単体 | domain | 正常系 | RPT-F01 | openapi.yaml#createReport | `TestCreateReport_Resubmit_AttachmentsNotCopied` | ドメイン層: 元レポートの明細に添付ファイルが紐付いている状態で再申請 | 新規レポートの明細には添付ファイルがコピーされていない（添付 0 件） |
 | RPT-018 | 統合 | handler | 正常系 | RPT-F01, RPT-015 | openapi.yaml#createReport | `TestCreateReport_Resubmit_ItemsCopied` | Actor: Test Member。`reference_report_id` 指定。元レポートに明細2件あり | 201 Created。新規レポートに明細が2件コピーされている |
-| RPT-019 | 統合 | handler | 異常系 | RPT-F01, RPT-015 | openapi.yaml#createReport | `TestCreateReport_Resubmit_NonRejectedSourceFails` | Actor: Test Member。`reference_report_id` に `report_draft`（draft 状態）を指定 | 422 VALIDATION_ERROR（再申請元は rejected 状態のみ許可） |
+| RPT-019 | 統合 | handler | 異常系 | RPT-F01, RPT-015 | openapi.yaml#createReport | `TestCreateReport_Resubmit_NonRejectedSourceFails` | Actor: Test Member。`reference_report_id` に `report_draft`（draft 状態）を指定 | 422 VALIDATION_ERROR（再申請元は rejected 状態のみ許可）。`details[].field = "reference_report_id"` を含む |
 
 ---
 

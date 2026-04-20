@@ -111,7 +111,7 @@
 |---------|------------|---------|---------|-----------|-----------|---------------|-------------------|---------|
 | WFL-023 | 統合 | handler | 異常系 | WFL-F01 | openapi.yaml#approveReport | `TestApproveReport_NotFound` | Approver で認証。存在しないレポートID（`00000000-0000-0000-0000-000000000099`）を指定 | 404 RESOURCE_NOT_FOUND |
 | WFL-024 | 統合 | handler | 異常系 | WFL-F01 | openapi.yaml#approveReport | `TestApproveReport_Conflict_OptimisticLock` | Approver で認証。対象: `report_submitted`。リクエストボディの `updated_at` に古い（不一致の）タイムスタンプを指定 | 409 CONFLICT |
-| WFL-025 | 統合 | handler | 異常系 | WFL-F01 | openapi.yaml#approveReport | `TestApproveReport_MissingUpdatedAt` | Approver で認証。リクエストボディに `updated_at` フィールドなし | 400 または 422（バリデーションエラー） |
+| WFL-025 | 統合 | handler | 異常系 | WFL-F01 | openapi.yaml#approveReport | `TestApproveReport_MissingUpdatedAt` | Approver で認証。リクエストボディに `updated_at` フィールドなし | 400 または 422（バリデーションエラー）。422 VALIDATION_ERROR の場合は `details[].field = "updated_at"` を含む |
 
 ---
 
@@ -121,22 +121,22 @@
 
 | テストID | テストレベル | レイヤー | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
 |---------|------------|---------|---------|-----------|-----------|---------------|-------------------|---------|
-| WFL-026 | 統合 | handler | 正常系 | WFL-F02, WFL-012 | openapi.yaml#rejectReport, state_machine.md#T3 | `TestRejectReport_Success` | Approver で認証。対象: `report_submitted`。リクエストボディ: `{"rejection_reason": "領収書が不明瞭です", "updated_at": "<updated_at>"}` | 200 OK。レスポンスの `data.status` が `"rejected"`。`data.rejected_by` が Approver のユーザーID。`data.rejection_reason` が `"領収書が不明瞭です"` |
+| WFL-026 | 統合 | handler | 正常系 | WFL-F02, WFL-012 | openapi.yaml#rejectReport, state_machine.md#T3 | `TestRejectReport_Success` | Approver で認証。対象: `report_submitted`。リクエストボディ: `{"reason": "領収書が不明瞭です", "updated_at": "<updated_at>"}` | 200 OK。レスポンスの `data.status` が `"rejected"`。`data.rejected_by` が Approver のユーザーID。`data.rejection_reason` が `"領収書が不明瞭です"` |
 
 #### 却下理由バリデーション（state_machine.md §T3 事前条件 No.3: rejection_reason 非空）
 
 | テストID | テストレベル | レイヤー | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
 |---------|------------|---------|---------|-----------|-----------|---------------|-------------------|---------|
-| WFL-027 | 統合 | handler | 異常系 | WFL-012 | openapi.yaml#rejectReport, state_machine.md#T3 | `TestRejectReport_MissingRejectionReason` | Approver で認証。リクエストボディに `rejection_reason` フィールドなし（`{"updated_at": "<updated_at>"}` のみ） | 422 MISSING_REJECTION_REASON |
-| WFL-028 | 統合 | handler | 異常系 | WFL-012 | openapi.yaml#rejectReport, state_machine.md#T3 | `TestRejectReport_EmptyRejectionReason` | Approver で認証。リクエストボディ: `{"rejection_reason": "", "updated_at": "<updated_at>"}` | 422 MISSING_REJECTION_REASON |
-| WFL-029 | 統合 | handler | 境界値 | WFL-012 | openapi.yaml#rejectReport | `TestRejectReport_RejectionReasonMaxLength` | Approver で認証。`rejection_reason` が1000文字の文字列 | 200 OK（境界値: 上限ちょうど） |
-| WFL-030 | 統合 | handler | 境界値 | WFL-012 | openapi.yaml#rejectReport | `TestRejectReport_RejectionReasonTooLong` | Approver で認証。`rejection_reason` が1001文字の文字列 | 400 または 422（バリデーションエラー） |
+| WFL-027 | 統合 | handler | 異常系 | WFL-012 | openapi.yaml#rejectReport, state_machine.md#T3 | `TestRejectReport_MissingRejectionReason` | Approver で認証。リクエストボディに `reason` フィールドなし（`{"updated_at": "<updated_at>"}` のみ） | 422 MISSING_REJECTION_REASON |
+| WFL-028 | 統合 | handler | 異常系 | WFL-012 | openapi.yaml#rejectReport, state_machine.md#T3 | `TestRejectReport_EmptyRejectionReason` | Approver で認証。リクエストボディ: `{"reason": "", "updated_at": "<updated_at>"}` | 422 MISSING_REJECTION_REASON |
+| WFL-029 | 統合 | handler | 境界値 | WFL-012 | openapi.yaml#rejectReport | `TestRejectReport_RejectionReasonMaxLength` | Approver で認証。`reason` が1000文字の文字列 | 200 OK（境界値: 上限ちょうど） |
+| WFL-030 | 統合 | handler | 境界値 | WFL-012 | openapi.yaml#rejectReport | `TestRejectReport_RejectionReasonTooLong` | Approver で認証。`reason` が1001文字の文字列 | 400 または 422（バリデーションエラー）。422 VALIDATION_ERROR の場合は `details[].field = "reason"` を含む |
 
 #### 状態遷移の禁止パス（ハンドラ層統合テスト: X8 相当）
 
 | テストID | テストレベル | レイヤー | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
 |---------|------------|---------|---------|-----------|-----------|---------------|-------------------|---------|
-| WFL-031 | 統合 | handler | 状態遷移 | WFL-002 | openapi.yaml#rejectReport, state_machine.md#X8 | `TestRejectReport_AlreadyApproved` | Approver で認証。対象: `report_approved`（X8: approved→rejected は禁止）。リクエストボディ: `{"rejection_reason": "理由", "updated_at": "<updated_at>"}` | 422 INVALID_STATE_TRANSITION |
+| WFL-031 | 統合 | handler | 状態遷移 | WFL-002 | openapi.yaml#rejectReport, state_machine.md#X8 | `TestRejectReport_AlreadyApproved` | Approver で認証。対象: `report_approved`（X8: approved→rejected は禁止）。リクエストボディ: `{"reason": "理由", "updated_at": "<updated_at>"}` | 422 INVALID_STATE_TRANSITION |
 | WFL-032 | 統合 | handler | 状態遷移 | WFL-002 | openapi.yaml#rejectReport | `TestRejectReport_DraftState` | Approver で認証。対象: draft 状態のレポート | 422 INVALID_STATE_TRANSITION |
 | WFL-033 | 統合 | handler | 状態遷移 | WFL-004 | openapi.yaml#rejectReport, state_machine.md#X9 | `TestRejectReport_RejectedState` | Approver で認証。対象: rejected 状態のレポート（X9: 終端状態からの遷移不可） | 422 INVALID_STATE_TRANSITION |
 | WFL-034 | 統合 | handler | 状態遷移 | WFL-004 | openapi.yaml#rejectReport, state_machine.md#X10 | `TestRejectReport_PaidState` | Approver で認証。対象: paid 状態のレポート（X10: 終端状態からの遷移不可） | 422 INVALID_STATE_TRANSITION |
@@ -145,7 +145,7 @@
 
 | テストID | テストレベル | レイヤー | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
 |---------|------------|---------|---------|-----------|-----------|---------------|-------------------|---------|
-| WFL-035 | 統合 | handler | 認可 | RBC-016 | openapi.yaml#rejectReport, authz.md#4.2 | `TestRejectReport_SelfRejection` | Test Approver 本人が作成した submitted レポートを、同じ Test Approver で却下しようとする。リクエストボディ: `{"rejection_reason": "理由", "updated_at": "<updated_at>"}` | 403 SELF_APPROVAL_NOT_ALLOWED |
+| WFL-035 | 統合 | handler | 認可 | RBC-016 | openapi.yaml#rejectReport, authz.md#4.2 | `TestRejectReport_SelfRejection` | Test Approver 本人が作成した submitted レポートを、同じ Test Approver で却下しようとする。リクエストボディ: `{"reason": "理由", "updated_at": "<updated_at>"}` | 403 SELF_APPROVAL_NOT_ALLOWED |
 
 #### RBACテスト（ロール別拒否）
 
@@ -219,7 +219,7 @@
 |---------|------------|---------|---------|-----------|-----------|---------------|-------------------|---------|
 | WFL-061 | 統合 | handler | 異常系 | WFL-F03 | openapi.yaml#markReportAsPaid | `TestMarkReportAsPaid_NotFound` | Accounting で認証。存在しないレポートID を指定 | 404 RESOURCE_NOT_FOUND |
 | WFL-062 | 統合 | handler | 異常系 | WFL-F03 | openapi.yaml#markReportAsPaid | `TestMarkReportAsPaid_Conflict_OptimisticLock` | Accounting で認証。リクエストボディの `updated_at` に古いタイムスタンプを指定 | 409 CONFLICT |
-| WFL-063 | 統合 | handler | 異常系 | WFL-F03 | openapi.yaml#markReportAsPaid | `TestMarkReportAsPaid_MissingUpdatedAt` | Accounting で認証。リクエストボディに `updated_at` フィールドなし | 400 または 422（バリデーションエラー） |
+| WFL-063 | 統合 | handler | 異常系 | WFL-F03 | openapi.yaml#markReportAsPaid | `TestMarkReportAsPaid_MissingUpdatedAt` | Accounting で認証。リクエストボディに `updated_at` フィールドなし | 400 または 422（バリデーションエラー）。422 VALIDATION_ERROR の場合は `details[].field = "updated_at"` を含む |
 
 ---
 
