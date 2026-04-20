@@ -94,3 +94,57 @@ SMK-036 の手順が「ファイル形式が不正」を期待しているが、
 - issue 125: SMK-028 修正（実施済、本 issue と同じ監査プロセスで発見）
 - issue 122: SMK-024 対応（post-MVP UX 改善と一緒に管理）
 - 将来同種の不整合を追加発見した場合は都度単独 issue 起票（11-A 運用ルール継続）
+
+---
+
+## レビューコメント（2026-04-20）
+
+判定: 差し戻し
+
+### 未解消の問題
+
+- `smoke_check.md` の SMK-021 / SMK-023 / SMK-025 / SMK-027 / SMK-036 の期待文言、および SMK-036 の操作手順は正本に揃っている。
+- ただし SMK-084 の action ラベル確認条件が未完了。`dev-journal/deliverables/docs/60_test/manual_checklists/smoke_check.md` は「+ レポート作成」ボタンを期待している一方、実装の `expense-saas/frontend/src/pages/reports/ReportListTable.tsx` は空状態 action を `レポートを作成` としており、設計書・スモークチェックとの表記ゆれが残っている。
+- issue ファイル自体にも `解決内容` / `解決日` が未記載で、pending-review へ移す前提を満たしていない。
+
+### 追加で修正すべき成果物
+
+- `expense-saas/frontend/src/pages/reports/ReportListTable.tsx`
+  - 空状態 action ラベルを設計・smoke_check と一致させる、または実装方針として別ラベルにするなら設計書と smoke_check を同じ判断で更新する。
+- 必要に応じて `expense-saas/frontend/src/pages/reports/__tests__/ReportListTable.test.tsx`
+  - 空状態 action ラベルの期待を追加または更新する。
+- 本 issue ファイル
+  - 対応後に `解決内容` / `解決日` を追記する。
+
+### 上流修正の要否
+
+現時点では上流判断の修正は不要。`50_detail_design/screens/report-list.md` と `55_ui_component/screens/report-list.md` は「レポート作成」系のラベルで揃っているため、実装修正または明示的な設計変更で閉じられる。
+
+### そのまま進めた場合の影響
+
+Step 11-A の確認者が smoke_check の期待結果と実画面のボタンラベル差分を不具合として扱うか判断に迷う。スモーク確認の合否基準が固定されないため、Issue 128 の対応条件を満たしたとは判定できない。
+
+---
+
+## 解決内容（2026-04-20）
+
+本 issue の 6 件を smoke_check.md で修正完了：
+
+- **SMK-021**: 「金額は正の整数で入力してください」に整合（state-management.md L488 `INVALID_AMOUNT`）
+- **SMK-023**: SMK-021 と同文言に統一
+- **SMK-025**: 句点追加「この画面にアクセスする権限がありません。」
+- **SMK-027**: 「他のユーザーがこのレポートを更新しました。ページを再読み込みしてください。」に整合（state-management.md L468 `CONFLICT`）
+- **SMK-036**: 「JPEG, PNG, PDF のみアップロード可能です」に整合、手順に具体例（`.txt` や `.exe` を `.pdf` にリネーム）追記
+- **SMK-084**: 空状態文言「経費レポートはまだありません。レポートを作成して経費精算を始めましょう。」+ EmptyState 内の「レポートを作成」アクション導線に整合
+
+コミット: ef46060（smoke_check.md）、fe43934 後の branch
+
+### SMK-084 action ラベルの判断
+
+初回修正で「+ レポート作成」ボタン（ReportListHeader.tsx L20）を参照したが、codex 指摘で SMK-084 の観点「空状態表示」が参照すべきは EmptyState の action（ReportListTable.tsx L83 「レポートを作成」）であることを確認。設計書（report-list.md L217 / dashboard.md L337）も「レポート作成ボタン」系の記述のみで「+」記号は仕様外。EmptyState 内のアクション「レポートを作成」に修正した。
+
+ヘッダーの「+ レポート作成」ボタンのラベルは別観点（常時表示ボタン）として実装にあるが、SMK-084 のスコープ外。
+
+## 解決日
+
+2026-04-20
