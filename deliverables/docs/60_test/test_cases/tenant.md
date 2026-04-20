@@ -270,10 +270,10 @@ RBAC ミドルウェアが返す 403 は以下の形式であること（`authz.
 
 | テストID | テストレベル | 対象コンポーネント | 対象 Props / Hook | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
 |---------|-----------|------------------|------------------|---------|-----------|-----------|---------------|-----------------|---------|
-| TNT-FE-024 | 単体 | AllReportsFilterBar | filters: AllReportsFilterValues, onFilterChange, members: UserSummary[], membersLoading: boolean | 正常系 | ADM-F01 | 55_ui_component/screens/admin-all-reports.md §AllReportsFilterBar | `test_AllReportsFilterBar_renders_all_filters` | `filters = { status: "", from: null, to: null, submitterId: "" }`, `members = [{ id: "u1", name: "User1" }]`, `membersLoading = false` | ステータスセレクト、期間（開始日・終了日）の DatePicker、申請者セレクトの 4 つのフィルタ入力が描画されること |
+| TNT-FE-024 | 単体 | AllReportsFilterBar | filters: AllReportsFilterValues, onFilterChange, members: UserSummary[], membersLoading: boolean | 正常系 | ADM-F01 | 55_ui_component/screens/admin-all-reports.md §AllReportsFilterBar | `test_AllReportsFilterBar_renders_all_filters` | `filters = { status: "", from: "", to: "", submitterId: "" }`, `members = [{ id: "u1", name: "User1" }]`, `membersLoading = false` | ステータスセレクト、期間（開始日・終了日）の DatePicker、申請者セレクトの 4 つのフィルタ入力が描画されること |
 
 **備考**: AllReportsPage 側のロール不一致リダイレクトトーストテスト（issue-088 対応）は、AllReportsFilterBar 側の TNT-FE-024 と ID が重複するため TNT-FE-046 に振り直した。AllReportsFilterBar 側の TNT-FE-024（本行）はそのまま維持する。
-| TNT-FE-025 | 単体 | AllReportsFilterBar | onFilterChange | 正常系 | ADM-F01 | 55_ui_component/screens/admin-all-reports.md §AllReportsFilterBar | `test_AllReportsFilterBar_calls_onFilterChange_on_status_change` | ステータスセレクトで「提出済み」を選択する | `onFilterChange` が `{ status: "submitted", from: null, to: null, submitterId: "" }` で呼び出されること |
+| TNT-FE-025 | 単体 | AllReportsFilterBar | onFilterChange | 正常系 | ADM-F01 | 55_ui_component/screens/admin-all-reports.md §AllReportsFilterBar | `test_AllReportsFilterBar_calls_onFilterChange_on_status_change` | ステータスセレクトで「提出済み」を選択する | `onFilterChange` が `{ status: "submitted", from: "", to: "", submitterId: "" }` で呼び出されること |
 
 **備考**: AllReportsPage 側の 403 リダイレクトトーストテスト（issue-088 対応）は、AllReportsFilterBar 側の TNT-FE-025 と ID が重複するため TNT-FE-047 に振り直した。AllReportsFilterBar 側の TNT-FE-025（本行）はそのまま維持する。
 | TNT-FE-026 | 単体 | AllReportsFilterBar | onFilterChange | 正常系 | ADM-F01 | 55_ui_component/screens/admin-all-reports.md §AllReportsFilterBar | `test_AllReportsFilterBar_calls_onFilterChange_on_submitter_change` | 申請者セレクトでメンバーを選択する | `onFilterChange` が `submitterId` に選択したメンバーの ID が設定された値で呼び出されること |

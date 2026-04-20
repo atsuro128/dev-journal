@@ -134,10 +134,12 @@ interface AppDatePickerProps {
   name: string;
   /** 表示ラベル */
   label: string;
-  /** 現在の日付値（YYYY-MM-DD 形式の文字列、または null） */
-  value: string | null;
-  /** 値変更時のコールバック */
-  onChange: (value: string | null) => void;
+  /** 現在の日付値（YYYY-MM-DD 形式の文字列。未入力時は空文字 `""`） */
+  value: string;
+  /** 値変更時のコールバック（未入力時は空文字 `""` を渡す） */
+  onChange: (value: string) => void;
+  /** フォーカスアウト時のコールバック（RHF 連携用） */
+  onBlur?: () => void;
   /** エラーメッセージ */
   errorMessage?: string;
   /** 必須フィールドか */

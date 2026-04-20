@@ -274,15 +274,18 @@ T2（approve）・T3（reject）・T4（pay）の統合テストは `workflow.md
 | レポート編集画面 Hook（useReport, useUpdateReport） | RPT-FE-059〜RPT-FE-063 | 5 |
 | レポート詳細画面 レポート閲覧・操作コンポーネント | RPT-FE-064〜RPT-FE-096 | 33 |
 | レポート詳細画面 Hook（useSubmitReport, useDeleteReport） | RPT-FE-097〜RPT-FE-102 | 6 |
-| **FE 合計** | **RPT-FE-001〜RPT-FE-102, RPT-FE-090-A** | **103** |
+| 追記テスト（issue 119 ReportPeriodField onBlur） | RPT-FE-103〜RPT-FE-104 | 2 |
+| 追記テスト（issue 120 ReportForm 日本語エラー） | RPT-FE-105〜RPT-FE-106 | 2 |
+| AppDatePicker 共通 UI 単体テスト（issue 119/120） | ADT-001〜ADT-007 | 7 |
+| **FE 合計** | **RPT-FE-001〜RPT-FE-106, RPT-FE-090-A, ADT-001〜ADT-007** | **114** |
 
 ### 全体合計
 
 | 区分 | 件数 |
 |------|------|
 | BE テストケース | 90 |
-| FE テストケース | 103 |
-| **総合計** | **193** |
+| FE テストケース | 114 |
+| **総合計** | **204** |
 
 ---
 
@@ -530,6 +533,44 @@ FE テストケースは `55_ui_component/screens/*.md` のコンポーネント
 
 ---
 
+#### FE-6. 追記テスト（issue 119: onBlur 伝播 / issue 120: AppDatePicker 型統一）
+
+PR #75（issue 119/120 統合）で追加された回帰テスト。既存 `RPT-FE-043`/`RPT-FE-044`（ReportFormActions 用）と `RPT-FE-059`/`RPT-FE-060`（useReport 用）に ID 衝突していたため、以下の新 ID に振り直す。AppDatePicker の共通 UI 単体テストには新プレフィックス `ADT-` を採用する（共通 UI コンポーネント用）。
+
+##### ReportPeriodField onBlur 伝播（issue 119）
+
+| テストID | テストレベル | 対象コンポーネント | 対象 Props / Hook | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---|---|---|---|---|---|---|---|---|---|
+| RPT-FE-103 | 単体 | ReportPeriodField | control: Control（RHF、mode: 'onBlur'） | 異常系 | RPT-F01 | 55_ui_component/common-components.md §ReportPeriodField, §AppDatePicker | `test_ReportPeriodField_onBlur_triggers_periodStart_error` | 開始日フィールドを空のままフォーカスアウトする | RHF の onBlur バリデーションが発火し、開始日の AppDatePicker に必須エラーメッセージが表示される（AppDatePicker の `onBlur` prop が Controller の `field.onBlur` に接続されていることを保証） |
+| RPT-FE-104 | 単体 | ReportPeriodField | control: Control（RHF、mode: 'onBlur'） | 異常系 | RPT-F01 | 55_ui_component/common-components.md §ReportPeriodField, §AppDatePicker | `test_ReportPeriodField_onBlur_triggers_periodEnd_error` | 終了日フィールドを空のままフォーカスアウトする | RHF の onBlur バリデーションが発火し、終了日の AppDatePicker に必須エラーメッセージが表示される |
+
+##### ReportForm onBlur 日本語エラー表示（issue 120）
+
+| テストID | テストレベル | 対象コンポーネント | 対象 Props / Hook | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---|---|---|---|---|---|---|---|---|---|
+| RPT-FE-105 | 単体 | ReportForm | reportCreateSchema（Zod メッセージ: 日本語） | 異常系 | RPT-F01 | 55_ui_component/screens/report-create.md §ReportForm | `test_ReportForm_onBlur_shows_periodStart_japanese_error` | 開始日フィールドを空のままフォーカスアウトする | FormAlert ではなくフィールド直下に「開始日を入力してください」が表示される（null 経路削除後も日本語必須メッセージが維持されることを保証） |
+| RPT-FE-106 | 単体 | ReportForm | reportCreateSchema（Zod メッセージ: 日本語） | 異常系 | RPT-F01 | 55_ui_component/screens/report-create.md §ReportForm | `test_ReportForm_onBlur_shows_periodEnd_japanese_error` | 終了日フィールドを空のままフォーカスアウトする | フィールド直下に「終了日を入力してください」が表示される |
+
+##### AppDatePicker 共通 UI 単体テスト（issue 119/120）
+
+`AppDatePicker` は `components/ui/` 配下の共通 UI コンポーネント。レポート作成・編集・詳細（明細スライドパネル）、レポート一覧・テナント全レポート一覧のフィルタで横断利用されるため、reports.md に暫定収録する（将来 `common-components.md` の test_cases を独立作成する場合は移設）。
+
+| テストID | テストレベル | 対象コンポーネント | 対象 Props / Hook | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---|---|---|---|---|---|---|---|---|---|
+| ADT-001 | 単体 | AppDatePicker | label: string | 正常系 | RPT-F01 | 55_ui_component/common-components.md §AppDatePicker | `test_AppDatePicker_renders_label_and_date_input` | `label="開始日"`, `value=""` を渡す | ラベルが表示され、`type="date"` の input 要素が描画される |
+| ADT-002 | 単体 | AppDatePicker | onChange: (value: string) => void | 正常系 | RPT-F01 | 55_ui_component/common-components.md §AppDatePicker | `test_AppDatePicker_onChange_receives_string_value` | 入力フィールドに `"2026-03-01"` を入力する | onChange が `"2026-03-01"` （`string`）で呼び出される（旧仕様の `string \| null` を廃止し、必ず `string` を渡すことを保証。issue 120 対応） |
+| ADT-003 | 単体 | AppDatePicker | onChange: (value: string) => void | 正常系 | RPT-F01 | 55_ui_component/common-components.md §AppDatePicker | `test_AppDatePicker_onChange_empty_string_on_clear` | 値を入力した状態からフィールドをクリアする | onChange が空文字 `""` （`null` ではない）で呼び出される（issue 120 対応） |
+| ADT-004 | 単体 | AppDatePicker | onBlur?: () => void | 正常系 | RPT-F01 | 55_ui_component/common-components.md §AppDatePicker | `test_AppDatePicker_calls_onBlur_on_focusout` | `onBlur` モックを渡してフィールドからフォーカスアウトする | `onBlur` コールバックが 1 回呼び出される（issue 119: RHF Controller の `field.onBlur` に伝播させることを保証） |
+| ADT-005 | 単体 | AppDatePicker | onBlur?: () => void | 正常系 | RPT-F01 | 55_ui_component/common-components.md §AppDatePicker | `test_AppDatePicker_no_error_when_onBlur_undefined` | `onBlur` prop を渡さずにフィールドからフォーカスアウトする | 例外が発生せず、コンポーネントが正常にアンマウントされる（optional prop 契約の保証） |
+| ADT-006 | 単体 | AppDatePicker | errorMessage?: string | 異常系 | RPT-F01 | 55_ui_component/common-components.md §AppDatePicker | `test_AppDatePicker_renders_error_message` | `errorMessage="日付を入力してください"` を渡す | エラーテキストが helperText として表示され、`aria-invalid="true"` が設定される |
+| ADT-007 | 単体 | AppDatePicker | disabled?: boolean | 正常系 | RPT-F01 | 55_ui_component/common-components.md §AppDatePicker | `test_AppDatePicker_disables_input_when_disabled` | `disabled={true}` を渡す | input 要素が `disabled` になる |
+
+**備考**:
+- 旧 ID `RPT-FE-043` / `RPT-FE-044` は `ReportFormActions`（行 442〜443）、旧 ID `RPT-FE-059` / `RPT-FE-060` は `useReport`（行 465〜466）で既に採番済みのため変更しない。PR #75 の該当テストコードは本節の新 ID（`RPT-FE-103〜106`）に付け替えること。
+- AppDatePicker の新プレフィックス `ADT-` は既存テスト ID と衝突しないことを確認済み（`grep -rn 'ADT-0' 60_test/test_cases/` で該当なし）。
+
+---
+
 #### FE テストID一覧（サマリー）
 
 | 範囲 | テストID範囲 | 件数 |
@@ -543,7 +584,10 @@ FE テストケースは `55_ui_component/screens/*.md` のコンポーネント
 | レポート詳細画面 レポート閲覧・操作コンポーネント | RPT-FE-064 -- RPT-FE-096 | 33 |
 | レポート詳細画面 Hook（useSubmitReport, useDeleteReport） | RPT-FE-097 -- RPT-FE-102 | 6 |
 | 追記テスト（明細行クリックプリフィル） | RPT-FE-090-A | 1 |
-| **FE 合計** | **RPT-FE-001 -- RPT-FE-102, RPT-FE-090-A** | **103** |
+| 追記テスト（issue 119: onBlur 伝播） | RPT-FE-103 -- RPT-FE-104 | 2 |
+| 追記テスト（issue 120: ReportForm 日本語エラー） | RPT-FE-105 -- RPT-FE-106 | 2 |
+| AppDatePicker 共通 UI 単体テスト（issue 119/120） | ADT-001 -- ADT-007 | 7 |
+| **FE 合計** | **RPT-FE-001 -- RPT-FE-106, RPT-FE-090-A, ADT-001 -- ADT-007** | **114** |
 
 ---
 
@@ -569,12 +613,13 @@ expense-saas/frontend/src/
       OwnerActions.test.tsx          # RPT-FE-088〜RPT-FE-096
   components/report/
     __tests__/
-      ReportForm.test.tsx            # RPT-FE-028〜RPT-FE-036, RPT-FE-058
-      ReportPeriodField.test.tsx     # RPT-FE-039〜RPT-FE-042
+      ReportForm.test.tsx            # RPT-FE-028〜RPT-FE-036, RPT-FE-058, RPT-FE-105〜RPT-FE-106
+      ReportPeriodField.test.tsx     # RPT-FE-039〜RPT-FE-042, RPT-FE-103〜RPT-FE-104
       ReportFormActions.test.tsx     # RPT-FE-043〜RPT-FE-045
   components/ui/
     __tests__/
       FormAlert.test.tsx             # RPT-FE-037〜RPT-FE-038
+      AppDatePicker.test.tsx         # ADT-001〜ADT-007
   hooks/
     __tests__/
       useMyReports.test.ts           # RPT-FE-021〜RPT-FE-023
