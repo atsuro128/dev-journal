@@ -1,131 +1,183 @@
 # 引き継ぎメモ
 
-## セッション: 2026-04-20 17:53
+## セッション: 2026-04-20 16:20〜2026-04-21 00:10
 
 ### ゴール
 
-- 起票済 issue 実装（優先度 2）: 軽量 docs 123/125 + 共通層 124 + 画面単位 126/127 を本セッションで完結
-- 監査で発見した SMK 残件 6 件（128）も本セッション内で解決
-- 残 issue 116-121 は別セッション対応（handoff 資料作成）
+- 別セッション A から引き継いだ issue 116-121 の対応完全完了
+- セッション A と並行進行（124/126/127 等）との衝突回避
 
 ### 作業ログ
 
 #### 方針確定フェーズ（ユーザーと直列）
-- issue 123+125（smoke_check 文言整合、束ねて 1 PR）: SMK-026 正本整合 / SMK-028 観点名変更「バックエンド不達時の挙動」+ docker compose stop api ベース
-- issue 124（API client error mapping）: VALIDATION_ERROR はサーバー message 優先、それ以外は `SERVER_ERROR_MESSAGES[code] ?? SERVER_ERROR_MESSAGES.INTERNAL_ERROR`。設計書に無い文言は新設せず INTERNAL_ERROR フォールバック
-- issue 126（成功トースト）: `location.state.toast` 経由パターン（ReportListPage:70 踏襲）、作成/再申請「レポートを作成しました」、編集「レポートを更新しました」、監査スコープは案C（他漏れは別 issue）
-- issue 127（ITM-007 期間外警告）: 案C単独（ConfirmDialog のみ、View mode 対応なし）、文言「明細日付がレポートの対象期間外です。入力を確認してください。」、4フェーズ直列（機能設計→テスト設計→テスト実装→機能実装）
+- **issue 116**（一覧スケルトン範囲）: ReportListPage/ApprovalListPage/PaymentListPage の 3 画面、早期 return を廃止しテーブル領域のみスケルトン化、ページネーションはローディング中は非表示
+- **issue 117**（period date-time）: 方針1（DTO 型を string、service 層で `Format("2006-01-02")`）
+- **issue 118**（ItemForm リアルタイムバリデーション）: `mode: 'onBlur', reValidateMode: 'onChange'` 追加、セッション A の 127 マージ後に着手
+- **issue 119+120**（日付 onBlur / Zod null エラー）: 同一 PR 統合、AppDatePicker の value/onChange を string only に、field.onBlur を ReportPeriodField Controller で伝播、AllReportsFilterBar の filters 型追従
+- **issue 121**（422 details 欠落）: 案 3（全面移行）を工程 A（設計書追記）→ 工程 B（BE 実装）→ 工程 C（FE 型）の 3 工程に分割
 
-#### Wave 1 並列実行（4エージェント）
-- **Wave1-A** (designer, 123+125): smoke_check SMK-026/028 修正 → reviewer PASS → コミット 69b0088 → codex PASS → resolved 移動
-  - 監査で追加 6件の文言不整合発見（SMK-021/023/025/027/036/084）→ issue 128 として集約起票
-- **Wave1-B** (frontend-developer, 124): PR #70 作成 → 指揮役 CI で tsc/lint fix (bb26579) → reviewer PASS → codex APPROVE → マージ
-- **Wave1-C** (frontend-developer, 126): PR #69 作成 → reviewer PASS → codex APPROVE → マージ
-- **Wave1-D** (designer, 127 Phase 1+2): state-management.md §6.5.6 新設、screens/report-detail.md §6 追記、ItemFormProps/ItemSlidePanelProps 拡張、test_cases/items.md §10.6-B 新設（ITM-FE-099〜106 採番）
+#### Wave 1 並列（4 エージェント、FE/BE/設計独立）
+- 116 FE → PR #74
+- 117 BE → PR #73
+- 119+120 FE → PR #75
+- 121-A 設計書（test_cases に details 記述追加）→ 直接コミット
 
-#### 127 Phase 1+2 のレビュー往復
-- reviewer FIX（B-1: §6.5.6 新設でリナンバー参照切れ / W-1: ConfirmDialog 責務欄抜け）→ designer 差し戻し → 再 reviewer PASS
-- codex FIX（102: items.md §12.4 重複 / 103: ConfirmDialog マトリクス補足未反映）→ designer 差し戻し → 再 codex PASS
+#### 117 → マージ
+- reviewer PASS → codex REQUEST CHANGES（レスポンス形式検証テスト不足）→ implement 追加対応（`period_start/end` を `^\d{4}-\d{2}-\d{2}$` で検証、`T/Z` 除外）→ codex APPROVE → PR #73 マージ（`8e991e0`）
+- **BE テスト: ユーザー方針でスキップ**
 
-#### Wave 2 直列実行（127 Phase 3+4）
-- **Wave2-E1** (test-implementer): ITM-FE-099〜106 (9 テスト) failing 状態で fix/127 にコミット (50d3860)
-- **Wave2-E2** (frontend-developer): warningMessages.ts 新規 + ItemForm/ItemSlidePanel/ReportDetailPage 改修 → PR #71
-  - エージェント報告: ConfirmDialog タイトル文言を指揮役プロンプト指示「明細日付の確認」で実装したが、設計書は「入力内容の確認」→ 案 ii で実装・テストを設計書に統一（3940580）
+#### 116 → マージ
+- reviewer PASS → codex APPROVE → PR #74 マージ（`2a4f808`）
 
-#### 127 PR #71 のレビュー往復
-- reviewer FIX（blocker: rebase 漏れで issue 126 削除差分混入 + issue 124 等価コミット混入、warning: PR 本文乖離報告残存）→ `git rebase origin/master`（03abed0/bb26579 drop）+ PR 本文更新 + force-push → 再 reviewer PASS
-- MUI Dialog exit アニメーション起因で ITM-FE-101/102 が失敗 → 案 i で waitFor 追加（6bd11c5）
-- codex FIX（RFC3339 vs YYYY-MM-DD 比較不整合）→ ItemForm.isOutsidePeriod に `.slice(0, 10)` 正規化 + RFC3339 境界値テスト追加（5a198c7）→ 再 codex PASS → マージ
+#### 121-A → 多段レビュー対応
+- reviewer FIX（blocker: WFL-030 `rejection_reason`→`reason`、warning: RPT-010 `period_from/to`→`period_start/end`）→ 対応
+- 付随 findings（既存用語ドリフト）もユーザー判断で同じ issue に含める → designer で WFL-026〜035 の `rejection_reason`→`reason`、RPT-008/010 の `period_from/to`→`period_start/end` 修正（リクエスト側のみ、レスポンス側 `data.rejection_reason` は維持）
+- codex FIX 2 件（finding 104: 「400 or 422」→ 422 固定、finding 105: RPT-010 details field を period_end に固定）→ 対応 → codex 再レビュー PASS → resolved 移動
 
-#### Wave 3（issue 128 対応）
-- designer で 6件修正 → reviewer PASS（info: SMK-084 action ラベルは EmptyState 内 vs ヘッダーで差異あり、PASS 判定）→ コミット ef46060
-- codex 差し戻し（SMK-084 が「+ レポート作成」ヘッダーボタンを指していたが、観点は EmptyState action「レポートを作成」）→ 案 i で smoke_check 側を EmptyState action に修正 + issue に解決内容追記（e608071）→ 再 codex PASS → resolved 移動
+#### 119+120 → マージ
+- reviewer PASS → codex REQUEST CHANGES（blocker 2: ①AppDatePicker Props の上流契約不整合、②テスト ID 衝突 RPT-FE-043/044/059/060）→ designer が common-components.md 更新 + 新 ID 採番（RPT-FE-103〜106、ADT-001〜007）、frontend-developer が ID 書換 → codex 再レビュー APPROVE → PR #75 マージ（`2b081d4`）
 
-#### workflow.md 更新
-- ブランチ削除ポリシー明記（ai-dev-framework 44fc0c1）: `--delete-branch` なし
-- （マージ後 master 戻し手順は追加後にユーザー指示で revert）
+#### 118 → スコープ拡張 + マージ
+- 実装 → PR #76 → FE test で onBlur-5（カテゴリ未選択）失敗 → AppSelect の onBlur 未対応が原因と判明（issue 119 と同構造問題、報告書未記載）
+- **ユーザー判断で V5 は設計書通り「保存時のみ」の方針**: カテゴリ Controller では field.onBlur を渡さず、mode: 'onBlur' は保持。AppSelect 自体の onBlur prop は汎用的に追加
+- 追加 V2 金額空 onBlur テスト（ITM-FE-108 新採番、ITM-FE-107 は削除）
+- ItemForm.tsx L154 コメントを設計書（V1/V2/V6 フォーカスアウト、V3/V4/V7 入力時、V5 保存時）と整合化
+- reviewer 再レビュー PASS → codex APPROVE → PR #76 マージ（`a5543a4`）
 
-#### 引継ぎ資料作成
-- `dev-journal/progress-management/handoff-issues-116-121.md` 新規作成（667eae0）: 別セッションが 116-121 を進めるための並行セッション情報・issue 概要・方針確定プロセスガイド
+#### 121-B+C → architect 計画 → Wave 1+2 並列
+- architect: 全面移行計画（T1-T10 サブタスク、対象 55 箇所、対象 test_cases 14 ID）
+- ユーザー判断全推奨: ①A（helpers 空 details）②B（UnmarshalTypeError.Field 抽出）③統合（実装+テスト同 PR）④新設（AssertValidationErrorField ヘルパー）
+
+#### Wave 1 (121-B+C)
+- T1+T7+T6 (report+test+helper): PR #80
+- T4 (attachment): PR #79
+- T5 (helpers): PR #77
+- T10 (FE 回帰): PR #78
+
+#### PR #80 → codex 2 回反論
+- 1 回目: ListMyReports の parseReportListParams が details nil → `[]middleware.ValidationError` 返却型にリファクタ（`84fef80`）
+- 2 回目: JSON 構文エラー・EOF 時の details 省略 → **指揮役が方針②B と OpenAPI optional を根拠に反論** → codex 受理 APPROVE
+- マージ（`ea27620`）
+
+#### Wave 2 (T2+T8 item、T3+T9 workflow) — T6 ヘルパー依存で PR #80 マージ後に着手
+- T2+T8 (item): PR #81、reviewer+codex APPROVE（codex は PR #80 の反論論理を継承受理）、マージ（`da5e41c`）
+- T3+T9 (workflow): PR #82、reviewer PASS、codex REQUEST CHANGES（parseWorkflowListParams の field: "page" 固定） → `parseReportListParams` と同パターンにリファクタ（`d6b4a8c`）→ codex APPROVE → マージ（`81ac5c3`）
+
+#### PR #77/#78/#79 マージ
+- 順次 codex APPROVE → マージ（`a2abe89` / `754e3db` / `c6ec7df`）
+
+#### 後処理
+- 各 issue 116-121 を open → resolved へ移動
+- progress.md から残存 issue テーブルを空化（116-121 全完了、残存: なし）
 
 ### 未完了
 
-- なし（本セッション目標の 6 issue すべて resolved）
+- **BE ローカル CI 未実行**: 本セッションで PR #73/#77/#79/#80/#81/#82 の BE 変更を大量に入れたが、ユーザー方針でスキップ（DB 依存テストのため指揮役環境で実行困難）。**次セッション最初に VS Code task「BE: full test」を実行して検証すること**
 
 ### ブロッカー
 
-- なし
+- なし（ただし BE full test の未実行はリスク要因、上記「未完了」参照）
+
+### 次にやること
+
+#### 優先度 1: BE ローカル CI 実行（ユーザー指定）
+- VS Code の「実行とデバッグ」（Ctrl+Shift+D）→ **BE: full test**（lint + unit + integration）
+- 結果ファイル: `dev-journal/logs/test-results/{lint,unit,integration}.txt`
+- 主な検証対象:
+  - issue 117 BE 改修: service DTO period_start/end の string 化で既存テスト通過
+  - issue 121 BE 全面移行: 全 handler の 422 が details 付きで返る、test_cases の details アサーションが通る
+- 失敗があれば修正対応
+- **BE full test の実施経緯**: 本セッションは BE 大量改修のため重要だが、ユーザー方針（feedback_no_local_test_run: CI で回す、BE スキップ容認）でスキップしていた
+
+#### 優先度 2: Step 11-A の残タスク確認
+- `smoke_check.md` の未実施項目があるか progress.md で確認
+- Step 11-A 完了条件: 全項目実施済み + ブロッカー解消
+
+#### 優先度 3: Step 11-B 以降
+- 11-B（横断テスト Go）、11-C（E2E Playwright）、11-D（横断レビュー）、11-E（デプロイ）、11-F（UAT）
+- 11-A 完了宣言後に着手
 
 ### 学び・気づき
 
-#### つじつま合わせ防止の直列化（127 Phase 3→4）
-- ユーザー指定で test-implementer → frontend-developer を別エージェントで直列実行
-- Phase 3 はテスト先行 failing コミット、Phase 4 で green 化 + PR 作成の二段構え
-- エージェントが機能とテストの不整合を自動調整するリスクを回避
-- 実運用で効果あり（ConfirmDialog タイトル乖離は指揮役プロンプトミスで検出されたが、agents 間の不整合は発生せず）
+#### codex 反論の成功パターン
+- 方針②B（JSON 構文エラー時の details 空配列許容）への codex blocker 指摘に対し、指揮役から反論投稿 → codex 受理のパターンが PR #80 / #81 で 2 回成立
+- 反論の型: (1) 当初承認済み方針を明示、(2) OpenAPI optional 制約を根拠化、(3) 人工 field 名の意味論的不適切性、(4) 前例との整合性（後続 PR は「PR #80 で受理された」と参照するだけで受理されやすい）
+- 3 点の具体的な反論根拠を示すのが鍵（memory `feedback_critical_review_of_codex` の応用）
 
-#### 指揮役プロンプトの設計書突合の重要性
-- Phase 3/4 プロンプトで ConfirmDialog タイトルを独自文言「明細日付の確認」と指定 → 設計書（「入力内容の確認」）と乖離
-- Phase 4 エージェントが発見・報告してくれたため検出できたが、指示前に設計書で文言を確認すべきだった
-- PR #71 codex で RFC3339 vs YYYY-MM-DD 比較不整合も検出 → 防御コード `.slice(0, 10)` 追加
+#### issue 118 のスコープ推定不足
+- 当初 issue 118 は「mode: 'onBlur' 追加」のみの想定だったが、実際には AppSelect の onBlur 伝播問題も同根（issue 119 の AppDatePicker と同構造）で、onBlur-5 テストで検出
+- issue 起票時に「共通問題の横展開リスク」を考慮する必要がある
+- ただし、拡張時の V5 カテゴリは設計書通り「保存時のみ」だったためスコープを動的調整（ユーザー判断でカテゴリは onBlur 発火除外）
 
-#### rebase 漏れの検出と対処
-- PR #71 reviewer が rebase 漏れ（PR #69/#70 の master 取り込み無し）を blocker 指摘
-- `git rebase origin/master` で等価コミット drop + 正常 rebase → force-push で対応
-- PR 作成時の fetch origin タイミング見直しが今後の予防策
+#### BE テストスキップ方針の一貫性
+- ユーザー方針で本セッション中の BE テストを全て VS Code task スキップ → 本セッションは BE 大量変更あり → **次セッション最初に必ず実行必要**
+- セッション A は BE を触らなかったのでスキップ可だったが、本セッションは issue 117/121 で BE 全面改修あり
 
-#### メインリポジトリのブランチ確認漏れ
-- セッション開始時 expense-saas メインが `pr-70-review` 残留 → 指摘を受け master 切替
-- workflow.md に手順追加を試みたがユーザー指示で revert（ルール化よりメモリ or 運用判断に委ねる方針）
+#### セッション A との並行調整
+- 引継ぎ資料 `handoff-issues-116-121.md`（セッション A 作成）に従い、セッション A のファイル領域を回避
+- セッション A のマージ（PR #69/#70/#71/#72）後に 118 の ItemForm.tsx 改修を着手
+- progress.md はセッション A 側でも編集するため、本セッションでコミット前に git status で差分確認
+- セッション A のコミットには介入しない（特に issue 108 再オープンは触らず）
 
-#### レビュー指摘の案 i/ii/iii 方式
-- 案 ii（設計書側に合わせる）= 「実装 = 誤、設計 = 正」の方向の修正はつじつま合わせではない
-- 案 i（軽微な防御実装）は小規模修正、codex が「info」ではなく「blocker」判定した場合も同案で即対応可能
-- 論点を複数案で提示してユーザー判断を仰ぐ方式は効率的
+#### reviewer PASS でも codex で blocker 検出あり
+- reviewer は各 PR PASS 判定だったが、codex が複数 PR で blocker 検出（#73 レスポンス形式検証、#80 ListMyReports details、#82 per_page 区別、#75 AppDatePicker 上流契約）
+- 特に PR #75 の「AppDatePicker Props の上流契約不整合」は reviewer が見逃し codex が検出
+- reviewer の PASS 判定後も codex は上流資料との整合を強く検証するため、両段階とも通す重要性
 
 ### 意思決定ログ
 
-#### workflow.md §6 に `--delete-branch なし` を明記した根拠
-- 前回セッション session-log 記載「feedback_keep_merged_branch 相当」は memory 未保存
-- 本セッションで workflow.md に明文化（ai-dev-framework 44fc0c1）
-- 履歴汚染防止（PR ブランチは残す）
+#### issue 121 完了条件の境界線（JSON 構文エラー）
+- 方針②B で合意: `json.UnmarshalTypeError.Field` 抽出可能なら details 付与、それ以外は空配列
+- codex は「field='body' 等を使って必ず details を返すべき」と主張するが、**指揮役判断で**: (1) OpenAPI `Error.details` は optional、(2) ValidationError.field は「フィールド名」であり body 全体は意味論的に不適切、(3) 構文エラーはクライアントバグで特定ユーザー入力フィールドに紐付かない、(4) body-level error の仕様化は別 issue 扱い
+- この判断は PR #80 / #81 / #82 すべてで貫徹
 
-#### 127 Phase 3 のテスト設計書 ITM-FE ID 採番
-- ITM-007 はポリシー ID と混同を避けるため、items ドメインの既存最大 ITM-FE-098-8 の次 = ITM-FE-099〜106 を採番
-- designer が 8 件（境界値 2 ケース + save-and-continue + view mode 含む）を採番、ユーザー指示の 4 ケースより広く網羅
+#### V5 カテゴリの onBlur 不発火方針
+- issue 118 実装時に V5（カテゴリ）の設計書タイミングが「保存時」と判明
+- ユーザー判断: カテゴリ Controller では field.onBlur を渡さない（mode: 'onBlur' は全体設定のまま、個別 Controller 側で制御）
+- AppSelect 自体の onBlur prop は汎用的に追加（他画面で必要な場面で使える）
+- ASL-001/ASL-002 の AppSelect 単体テストで onBlur 挙動は検証
 
-#### SMK-084 の action ラベル解釈
-- 初回 designer は ReportListHeader.tsx の「+ レポート作成」を参照
-- codex 指摘で SMK-084 観点「空状態表示」は EmptyState action「レポートを作成」（ReportListTable.tsx L83）を指すと判明
-- 設計書（report-list.md L217 / dashboard.md L337）も「レポート作成ボタン」系のみで「+」は仕様外
-- smoke_check を EmptyState action に修正（e608071）
+#### 付随 findings の本 issue 取り込み判断
+- 121-A の reviewer 指摘で既存用語ドリフト（period_from/to、rejection_reason）発見
+- 「別 issue 起票」の選択肢もあったが、ユーザー判断で「同じ issue で対応」→ 対象ファイル・修正トリガーが同じ（test_cases と OpenAPI 正本の整合）ため妥当
+- 既存 RPT-008/010 の入力カラム、WFL-026〜035 のリクエストボディ側のみ修正、レスポンス側 `data.rejection_reason` は OpenAPI 準拠のため維持
+
+#### `--delete-branch` 不使用の継続
+- 前セッション（A）の意思決定に継続
+- 全マージで `gh pr merge <N> --squash`（`--delete-branch` 付与なし）
+- セッション途中でユーザーから明確な指示「delete-branch 禁止」
+
+#### BE テストスキップの理由
+- ユーザーの方針「BE テストはスキップ」（PR #73 時に決定、以降も継続）
+- 指揮役環境で DB 依存テストが実行困難（`docker compose` 使用不可、`localhost:5433` 未起動）
+- VS Code task 経由で実行する前提だが、本セッションでは実行せず次セッションに委ねる判断
 
 ### PR / コミット要約
 
-**expense-saas**:
-- PR #69 マージ（issue 126 成功トースト、squash、870fa1b、ブランチ保持）
-- PR #70 マージ（issue 124 API client error mapping、squash、dc94d54、ブランチ保持）
-- PR #71 マージ（issue 127 ITM-007 実装、squash、rebase 経由、ブランチ保持）
+**expense-saas（7 PR マージ、issue 116-121 関連）**:
+- PR #73 マージ（issue 117 period date format、squash、`8e991e0`）
+- PR #74 マージ（issue 116 list skeleton scope、squash、`2a4f808`）
+- PR #75 マージ（issue 119+120 date field form、squash、`2b081d4`）
+- PR #76 マージ（issue 118 item form realtime validation、squash、`a5543a4`）
+- PR #77 マージ（issue 121 T5 helpers、squash、`a2abe89`）
+- PR #78 マージ（issue 121 T10 FE test、squash、`754e3db`）
+- PR #79 マージ（issue 121 T4 attachment、squash、`c6ec7df`）
+- PR #80 マージ（issue 121 T1+T7+T6 report+test+helper、squash、`ea27620`）
+- PR #81 マージ（issue 121 T2+T8 item、squash、`da5e41c`）
+- PR #82 マージ（issue 121 T3+T9 workflow、squash、`81ac5c3`）
 
-**dev-journal**:
-- `69b0088` fix: smoke_check SMK-026/028 整合 + issue 128 起票（#123, #125）
-- `218b37b` chore: issue 123/125 pending-review 移動
-- `667eae0` docs: handoff-issues-116-121 資料追加
-- `08df71e` docs: issue 127 Phase 1+2 設計追記
-- `a3c038a` chore: issue 123/125 resolved 移動（codex PASS）
-- `11149f6` docs: issue 127 Phase 1+2 codex 指摘 2件対応（#102, #103）
-- `020d6be` chore: 127 Phase 1+2 findings 102/103 resolved 移動
-- `a33d8b7` chore: issue 124/126 resolved 移動 + progress.md 更新
-- `56a8300` chore: issue 127 resolved 移動 + progress.md 更新
-- `ef46060` fix: smoke_check 残件 6件整合（#128）
-- `e15bc1f` chore: issue 128 pending-review 移動
-- `e608071` fix: SMK-084 EmptyState action 整合 + 解決内容追記
-- `c0f7af9` chore: issue 128 resolved 移動（codex 再レビュー PASS）
-- `bd4bed1` chore: progress.md から issue 128 除去
-
-**ai-dev-framework**:
-- `44fc0c1` docs: PR マージ時のブランチ削除ポリシーを明記（`--delete-branch` なし）
+**dev-journal（issue 116-121 関連）**:
+- `f898530` docs(test): test_cases details 追加 + OpenAPI 用語ドリフト是正（issue 121-A）
+- `671712b` docs(test): 422 固定化と details field 決定化（issue 121-A codex 指摘対応）
+- `3fae554` docs(review-findings): 121-A 104/105 resolved 移動
+- `fc5e465` chore: issue 116/117 resolved 移動、progress 更新
+- `d062a6a` docs(design): AppDatePicker Props string 化、新テスト ID 採番（issue 119/120 codex 指摘対応）
+- `56cdfcb` docs(design): AppSelect Props onBlur 追加、新 ID 採番（issue 118 スコープ拡張）
+- `9b29ea4` docs(design): ITM-FE-107 削除、ITM-FE-108 採番（issue 118 reviewer 指摘対応）
+- `24c7997` chore: issue 118 resolved 移動、progress 更新
+- `0a3be25` chore: issue 121 resolved 移動、残存 issue 解消（Step 11-A 関連 完了）
+- 他（119+120, 127 関連は省略）
 
 ## 前回セッション
 
-前回セッション（2026-04-20 12:00〜17:07 issue 108 対応）以前の詳細は `dev-journal/archives/session-logs/2026-04-20.md` を参照。
+前回セッション（2026-04-20 17:53 issue 123-128 対応 + 116-121 引継ぎ）の詳細は `dev-journal/archives/session-logs/2026-04-20.md` を参照。
