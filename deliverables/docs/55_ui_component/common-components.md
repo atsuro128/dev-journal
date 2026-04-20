@@ -111,6 +111,8 @@ interface AppSelectProps {
   value: string;
   /** 値変更時のコールバック */
   onChange: (value: string) => void;
+  /** フォーカスアウト時のコールバック（RHF 連携用） */
+  onBlur?: () => void;
   /** プレースホルダーテキスト（未選択時に表示） */
   placeholder?: string;
   /** エラーメッセージ */

@@ -277,15 +277,16 @@ T2（approve）・T3（reject）・T4（pay）の統合テストは `workflow.md
 | 追記テスト（issue 119 ReportPeriodField onBlur） | RPT-FE-103〜RPT-FE-104 | 2 |
 | 追記テスト（issue 120 ReportForm 日本語エラー） | RPT-FE-105〜RPT-FE-106 | 2 |
 | AppDatePicker 共通 UI 単体テスト（issue 119/120） | ADT-001〜ADT-007 | 7 |
-| **FE 合計** | **RPT-FE-001〜RPT-FE-106, RPT-FE-090-A, ADT-001〜ADT-007** | **114** |
+| AppSelect 共通 UI 単体テスト（issue 118 スコープ拡張） | ASL-001〜ASL-002 | 2 |
+| **FE 合計** | **RPT-FE-001〜RPT-FE-106, RPT-FE-090-A, ADT-001〜ADT-007, ASL-001〜ASL-002** | **116** |
 
 ### 全体合計
 
 | 区分 | 件数 |
 |------|------|
 | BE テストケース | 90 |
-| FE テストケース | 114 |
-| **総合計** | **204** |
+| FE テストケース | 116 |
+| **総合計** | **206** |
 
 ---
 
@@ -569,6 +570,21 @@ PR #75（issue 119/120 統合）で追加された回帰テスト。既存 `RPT-
 - 旧 ID `RPT-FE-043` / `RPT-FE-044` は `ReportFormActions`（行 442〜443）、旧 ID `RPT-FE-059` / `RPT-FE-060` は `useReport`（行 465〜466）で既に採番済みのため変更しない。PR #75 の該当テストコードは本節の新 ID（`RPT-FE-103〜106`）に付け替えること。
 - AppDatePicker の新プレフィックス `ADT-` は既存テスト ID と衝突しないことを確認済み（`grep -rn 'ADT-0' 60_test/test_cases/` で該当なし）。
 
+##### AppSelect 共通 UI 単体テスト（issue 118 スコープ拡張）
+
+`AppSelect` は `components/ui/` 配下の共通 UI コンポーネント。レポート一覧・テナント全レポート一覧のステータス / 申請者フィルタ、明細スライドパネルのカテゴリ選択で横断利用されるため、AppDatePicker と同じく reports.md に暫定収録する（将来 `common-components.md` の test_cases を独立作成する場合は移設）。
+
+RHF（React Hook Form）の `Controller` の `field.onBlur` を `AppSelect` に伝播させるため、`onBlur?: () => void` prop のサポートを保証するテストを採番する（`AppDatePicker` の ADT-004 / ADT-005 と同等の粒度）。
+
+| テストID | テストレベル | 対象コンポーネント | 対象 Props / Hook | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---|---|---|---|---|---|---|---|---|---|
+| ASL-001 | 単体 | AppSelect | onBlur?: () => void | 正常系 | ITM-F01 | 55_ui_component/common-components.md §AppSelect | `test_AppSelect_calls_onBlur_on_focusout` | `onBlur` モックを渡してフィールドからフォーカスアウトする | `onBlur` コールバックが 1 回呼び出される（issue 118 スコープ拡張: RHF Controller の `field.onBlur` に伝播させることを保証） |
+| ASL-002 | 単体 | AppSelect | onBlur?: () => void | 正常系 | ITM-F01 | 55_ui_component/common-components.md §AppSelect | `test_AppSelect_no_error_when_onBlur_undefined` | `onBlur` prop を渡さずにフィールドからフォーカスアウトする | 例外が発生せず、コンポーネントが正常にアンマウントされる（optional prop 契約の保証） |
+
+**備考**:
+- AppSelect の新プレフィックス `ASL-` は既存テスト ID と衝突しないことを確認済み（`grep -rE '^\| ASL-|^\| SEL-' 60_test/test_cases/` で該当なし）。
+- `value` / `onChange` / `options` / `errorMessage` / `disabled` などの既存 Props の単体テストは本節では採番しない（ADT-001〜003・006〜007 と同等の網羅は、issue 118 スコープ外のため必要になった時点で別途追加する）。本節は PR #76 のローカル CI 失敗（`onBlur-5` 相当）を解消するために必要な最小範囲に限定する。
+
 ---
 
 #### FE テストID一覧（サマリー）
@@ -587,7 +603,8 @@ PR #75（issue 119/120 統合）で追加された回帰テスト。既存 `RPT-
 | 追記テスト（issue 119: onBlur 伝播） | RPT-FE-103 -- RPT-FE-104 | 2 |
 | 追記テスト（issue 120: ReportForm 日本語エラー） | RPT-FE-105 -- RPT-FE-106 | 2 |
 | AppDatePicker 共通 UI 単体テスト（issue 119/120） | ADT-001 -- ADT-007 | 7 |
-| **FE 合計** | **RPT-FE-001 -- RPT-FE-106, RPT-FE-090-A, ADT-001 -- ADT-007** | **114** |
+| AppSelect 共通 UI 単体テスト（issue 118 スコープ拡張） | ASL-001 -- ASL-002 | 2 |
+| **FE 合計** | **RPT-FE-001 -- RPT-FE-106, RPT-FE-090-A, ADT-001 -- ADT-007, ASL-001 -- ASL-002** | **116** |
 
 ---
 
@@ -620,6 +637,7 @@ expense-saas/frontend/src/
     __tests__/
       FormAlert.test.tsx             # RPT-FE-037〜RPT-FE-038
       AppDatePicker.test.tsx         # ADT-001〜ADT-007
+      AppSelect.test.tsx             # ASL-001〜ASL-002
   hooks/
     __tests__/
       useMyReports.test.ts           # RPT-FE-021〜RPT-FE-023
