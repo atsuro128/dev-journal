@@ -457,6 +457,23 @@ const (
 | ITM-FE-046 | 単体 | ItemForm | isPending: boolean | 正常系 | ITM-F01 | 55_ui_component/screens/report-detail.md §ItemForm | `does_not_call_onSubmit_when_isPending_true` | mode='add', isPending=true。保存ボタン押下を試みる | onSubmit が呼ばれない |
 | ITM-FE-047 | 単体 | ItemForm | categories: Array<{ value: string; label: string }> | 正常系 | ITM-005 | 55_ui_component/screens/report-detail.md §ItemForm | `renders_category_options_from_props` | mode='add', categories=mockCategories（6件） | カテゴリドロップダウンに 6 件の選択肢が表示される |
 
+### 10.6-B ItemForm -- 期間外警告（ITM-007、ConfirmDialog）
+
+ITM-007（明細日付がレポート対象期間外の場合の警告）に対応する ConfirmDialog の表示・挙動を検証する。表示方式は `55_ui_component/state-management.md §6.5.6` / 画面仕様は `50_detail_design/screens/report-detail.md §6「保存時の期間外警告（ITM-007）」` を参照。
+
+**ID 採番の補足**: `ITM-007` はポリシー ID（`policies.md`）として既に使用されており、テスト ID との混同を避けるため、FE テストレンジ（`ITM-FE-***`）の既存最大 ID（`ITM-FE-098-8`）に続く番号を採用する。
+
+| テストID | テストレベル | 対象コンポーネント | 対象 Props / Hook | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---|---|---|---|---|---|---|---|---|---|
+| ITM-FE-099 | 単体 | ItemForm | reportPeriodStart / reportPeriodEnd | 警告（ITM-007） | ITM-007 | 50_detail_design/screens/report-detail.md §6「保存時の期間外警告」、55_ui_component/state-management.md §6.5.6 | `shows_confirm_dialog_when_expense_date_before_period_start_on_save` | mode='add', reportPeriodStart='2026-04-01', reportPeriodEnd='2026-04-30', categories=mockCategories。expenseDate='2026-03-15'（開始日より前）、他フィールドは有効値を入力して「保存する」ボタン押下 | ConfirmDialog が表示される（本文に「明細日付がレポートの対象期間外です。入力を確認してください。」）。onSubmit は呼ばれない |
+| ITM-FE-100 | 単体 | ItemForm | reportPeriodStart / reportPeriodEnd | 警告（ITM-007） | ITM-007 | 50_detail_design/screens/report-detail.md §6「保存時の期間外警告」 | `shows_confirm_dialog_when_expense_date_after_period_end_on_save` | mode='edit', reportPeriodStart='2026-04-01', reportPeriodEnd='2026-04-30', defaultValues=mockItem。expenseDate='2026-05-05'（終了日より後）に変更して「保存する」ボタン押下 | ConfirmDialog が表示される。onSubmit は呼ばれない |
+| ITM-FE-101 | 単体 | ItemForm | onSubmit: (data) => void | 警告（ITM-007） | ITM-007 | 50_detail_design/screens/report-detail.md §6「保存時の期間外警告」 | `confirm_dialog_confirm_button_triggers_save` | mode='add', reportPeriodStart='2026-04-01', reportPeriodEnd='2026-04-30', onSubmit=vi.fn()。expenseDate='2026-03-15' で「保存する」→ ConfirmDialog 表示後に「保存する」ボタン（confirm）を押下 | onSubmit が期間外の入力値を含む ItemFormValues で呼ばれる。ConfirmDialog が閉じる |
+| ITM-FE-102 | 単体 | ItemForm | onSubmit: (data) => void | 警告（ITM-007） | ITM-007 | 50_detail_design/screens/report-detail.md §6「保存時の期間外警告」 | `confirm_dialog_cancel_button_preserves_form_and_does_not_save` | mode='add', reportPeriodStart='2026-04-01', reportPeriodEnd='2026-04-30', onSubmit=vi.fn()。expenseDate='2026-03-15', amount=1000, categoryId=<UUID>, description='タクシー代' を入力して「保存する」→ ConfirmDialog 表示後に「キャンセル」ボタンを押下 | onSubmit は呼ばれない。ConfirmDialog が閉じる。フォームの入力値（expenseDate / amount / categoryId / description）が維持されている |
+| ITM-FE-103 | 単体 | ItemForm | reportPeriodStart / reportPeriodEnd | 正常系（期間内） | ITM-007 | 50_detail_design/screens/report-detail.md §6「保存時の期間外警告」 | `does_not_show_confirm_dialog_when_expense_date_within_period` | mode='add', reportPeriodStart='2026-04-01', reportPeriodEnd='2026-04-30', onSubmit=vi.fn()。expenseDate='2026-04-15'（期間内）で全フィールド有効値入力後「保存する」押下 | ConfirmDialog は表示されない。onSubmit が即座に呼ばれる |
+| ITM-FE-104 | 単体 | ItemForm | reportPeriodStart / reportPeriodEnd | 境界値（ITM-007） | ITM-007 | 50_detail_design/screens/report-detail.md §6「保存時の期間外警告」 | `does_not_show_confirm_dialog_on_period_boundary_dates` | mode='add', reportPeriodStart='2026-04-01', reportPeriodEnd='2026-04-30'。expenseDate='2026-04-01'（開始日）および '2026-04-30'（終了日）で保存押下 | いずれのケースでも ConfirmDialog は表示されず onSubmit が呼ばれる（境界値は期間内扱い） |
+| ITM-FE-105 | 単体 | ItemForm | onSaveAndContinue: (data) => void | 警告（ITM-007） | ITM-007 | 50_detail_design/screens/report-detail.md §6「保存時の期間外警告」 | `save_and_continue_triggers_confirm_dialog_for_out_of_period_date` | mode='add', reportPeriodStart='2026-04-01', reportPeriodEnd='2026-04-30', onSaveAndContinue=vi.fn()。expenseDate='2026-03-15' で全フィールド有効値入力後「保存して続けて追加」押下 | ConfirmDialog が表示される。onSaveAndContinue は呼ばれない。確認ボタン押下後に onSaveAndContinue が呼ばれる |
+| ITM-FE-106 | 単体 | ItemForm | mode: PanelMode | 警告（ITM-007） | ITM-007 | 50_detail_design/screens/report-detail.md §6「保存時の期間外警告」 | `view_mode_does_not_show_confirm_dialog` | mode='view', reportPeriodStart='2026-04-01', reportPeriodEnd='2026-04-30', defaultValues={expenseDate: '2026-03-15', ...}（期間外） | ConfirmDialog は表示されない（閲覧モードは保存操作が存在しないため対象外） |
+
 ### 10.7 Hook テスト -- useCreateItem
 
 | テストID | テストレベル | 対象コンポーネント | 対象 Props / Hook | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
@@ -506,6 +523,7 @@ const (
 | V7 | 摘要は 500 文字以内 | ITM-FE-035, ITM-FE-036 |
 | ITM-010 | draft 以外での明細操作 UI 非表示 | ITM-FE-004, ITM-FE-008, ITM-FE-013 |
 | ITM-005 | カテゴリは固定 6 種類 | ITM-FE-047, ITM-FE-057 |
+| ITM-007 | 明細日付が対象期間外の場合、警告（ConfirmDialog）を表示するが保存は許可する | ITM-FE-099, ITM-FE-100, ITM-FE-101, ITM-FE-102, ITM-FE-103, ITM-FE-104, ITM-FE-105, ITM-FE-106 |
 
 ---
 
@@ -524,7 +542,7 @@ expense-saas/
             ItemListHeader.test.tsx    -- ITM-FE-005 ~ 009
             ItemTable.test.tsx         -- ITM-FE-010 ~ 017
             ItemSlidePanel.test.tsx    -- ITM-FE-018 ~ 025
-            ItemForm.test.tsx          -- ITM-FE-026 ~ 047
+            ItemForm.test.tsx          -- ITM-FE-026 ~ 047, ITM-FE-099 ~ 106
       hooks/
         __tests__/
           useItems.test.tsx            -- ITM-FE-048 ~ 056

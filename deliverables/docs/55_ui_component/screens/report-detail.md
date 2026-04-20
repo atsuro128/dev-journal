@@ -417,6 +417,10 @@ interface ItemSlidePanelProps {
   reportStatus: ReportStatus;
   /** 所有者フラグ（添付ファイル操作の表示制御に使用） */
   isOwner: boolean;
+  /** レポートの対象期間開始日（ITM-007 期間外警告判定のため ItemForm に渡す） */
+  reportPeriodStart: string;
+  /** レポートの対象期間終了日（ITM-007 期間外警告判定のため ItemForm に渡す） */
+  reportPeriodEnd: string;
   /** パネルを閉じるコールバック */
   onClose: () => void;
   /** 明細保存成功時のコールバック */
@@ -434,6 +438,8 @@ interface ItemSlidePanelProps {
 | `item` | `ExpenseItem \| null` | Yes | 明細データ | report.items から選択 |
 | `reportStatus` | `ReportStatus` | Yes | 添付操作の表示制御 | report.status |
 | `isOwner` | `boolean` | Yes | 添付操作の表示制御 | 親 Props |
+| `reportPeriodStart` | `string` | Yes | 対象期間開始日（ITM-007 警告判定で ItemForm に渡す） | report.period_start |
+| `reportPeriodEnd` | `string` | Yes | 対象期間終了日（ITM-007 警告判定で ItemForm に渡す） | report.period_end |
 | `onClose` | `() => void` | Yes | パネル閉じるコールバック | ReportDetailPage |
 | `onSaveSuccess` | `() => void` | Yes | 保存成功コールバック | ReportDetailPage |
 | `onSaveAndContinue` | `() => void` | Yes | 保存して続けて追加コールバック | ReportDetailPage |
@@ -441,7 +447,7 @@ interface ItemSlidePanelProps {
 ### ItemForm
 
 - 配置: `pages/reports/ItemForm.tsx`
-- 責務: 明細の入力フォーム。React Hook Form + Zod（itemCreateSchema / itemUpdateSchema）でバリデーションを行う。閲覧モードでは全フィールドを readonly にする。追加モードでは「保存して続けて追加」ボタンも表示する。API エラー（useCreateItem / useUpdateItem の error）はフォーム上部の FormAlert コンポーネント（common-components.md §FormAlert、`components/ui/FormAlert.tsx`）で表示する
+- 責務: 明細の入力フォーム。React Hook Form + Zod（itemCreateSchema / itemUpdateSchema）でバリデーションを行う。閲覧モードでは全フィールドを readonly にする。追加モードでは「保存して続けて追加」ボタンも表示する。API エラー（useCreateItem / useUpdateItem の error）はフォーム上部の FormAlert コンポーネント（common-components.md §FormAlert、`components/ui/FormAlert.tsx`）で表示する。保存ボタン押下時に `expenseDate` がレポートの対象期間外である場合、ConfirmDialog で警告を表示してからユーザー確認後に `onSubmit` / `onSaveAndContinue` を呼び出す（ITM-007、`50_detail_design/screens/report-detail.md` §6「保存時の期間外警告」参照）
 - 対応セクション: `50_detail_design/screens/report-detail.md` &sect;6
 
 ```typescript
@@ -473,6 +479,10 @@ interface ItemFormProps {
   isPending: boolean;
   /** 編集/閲覧時の初期値 */
   defaultValues?: ItemFormValues;
+  /** レポートの対象期間開始日（ITM-007 期間外警告判定に使用、YYYY-MM-DD） */
+  reportPeriodStart: string;
+  /** レポートの対象期間終了日（ITM-007 期間外警告判定に使用、YYYY-MM-DD） */
+  reportPeriodEnd: string;
 }
 ```
 
@@ -486,6 +496,8 @@ interface ItemFormProps {
 | `apiError` | `string \| null` | Yes | API エラーメッセージ | useCreateItem / useUpdateItem の error |
 | `isPending` | `boolean` | Yes | 送信中フラグ | useCreateItem / useUpdateItem の isPending |
 | `defaultValues` | `ItemFormValues` | No | 編集/閲覧時の初期値 | 親 Props |
+| `reportPeriodStart` | `string` | Yes | レポート対象期間の開始日。保存時の期間外判定（ITM-007）に使用 | ReportDetailPage → ItemSlidePanel 経由で report.period_start |
+| `reportPeriodEnd` | `string` | Yes | レポート対象期間の終了日。保存時の期間外判定（ITM-007）に使用 | ReportDetailPage → ItemSlidePanel 経由で report.period_end |
 
 ### AttachmentArea
 
@@ -600,8 +612,9 @@ GET /api/reports/:id
         → ItemTable (props: items, canEditItems, onItemClick, onEditItem, onDeleteItem)
           → AppDataGrid
         → EmptyState (props: message, action) [明細0件時]
-      → ItemSlidePanel (props: open, mode, reportId, item, reportStatus, isOwner, パネル操作コールバック群)
-        → ItemForm (props: mode, onSubmit, categories, apiError, isPending, defaultValues)
+      → ItemSlidePanel (props: open, mode, reportId, item, reportStatus, isOwner, reportPeriodStart, reportPeriodEnd, パネル操作コールバック群)
+        → ItemForm (props: mode, onSubmit, categories, apiError, isPending, defaultValues, reportPeriodStart, reportPeriodEnd)
+        → ConfirmDialog（ITM-007 期間外警告、ItemForm 内部で制御）
         → AttachmentArea (props: reportId, itemId, canModify)
           → AttachmentList (props: reportId, itemId, attachments, canDelete, onDelete, deletingId, onError)
             → AttachmentItemRow × N (per-item で useAttachmentDownloadUrl / useAttachmentPreviewUrl を呼び、クリック同期 window.open パターンを実行)
@@ -766,6 +779,7 @@ AttachmentItemRow（削除ボタンクリック） → AttachmentList（onDelete
 | `EmptyState`（← common-components.md） | ReportDetailPage 内の 404 Not Found 時 | message: 「指定されたデータが見つかりません。」、action: { label: 'レポート一覧に戻る', onClick: navigate('/reports') }。他コンテンツ（ReportInfoCard 等）は非表示 |
 | `FormAlert`（← common-components.md） | ItemForm 内の API エラー表示 | message: apiError（useCreateItem / useUpdateItem の error）、severity: 'error'。フォーム上部に配置 |
 | `ConfirmDialog`（← common-components.md） | レポートの提出・削除・承認・却下・支払完了の各確認ダイアログ | open, title, message, confirmLabel, confirmColor, inputField（却下時: 必須テキストエリア、承認時: 任意テキストエリア） |
+| `ConfirmDialog`（← common-components.md） | ItemForm 保存時の期間外警告（ITM-007） | title: 「入力内容の確認」、message: `WARNING_MESSAGES.ITEM_DATE_OUTSIDE_PERIOD_WARNING`、confirmLabel: 「保存する」、confirmColor: primary、inputField なし |
 | `AppTextField`（← common-components.md） | ItemForm 内の金額・摘要入力 | 金額: type="number"、摘要: multiline |
 | `AppSelect`（← common-components.md） | ItemForm 内のカテゴリ選択 | options: useCategories から取得した 6 カテゴリ |
 | `AppDatePicker`（← common-components.md） | ItemForm 内の日付入力 | label: 日付、required: true |

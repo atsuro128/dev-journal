@@ -200,7 +200,7 @@ interface AppSidebarProps {
 ### ConfirmDialog
 
 - 配置: `components/ui/ConfirmDialog.tsx`
-- 責務: 操作前の確認ダイアログを提供する（`screens.md` &sect;4.6 準拠）。提出・削除・承認・却下・支払完了の各操作で使用する。却下時の却下理由入力、承認時の承認コメント入力にも対応する
+- 責務: 操作前の確認ダイアログを提供する（`screens.md` &sect;4.6 準拠）。提出・削除・承認・却下・支払完了・明細保存時の期間外警告（ITM-007）の各操作で使用する。却下時の却下理由入力、承認時の承認コメント入力にも対応する
 - 使用箇所: SCR-RPT-004
 
 ```typescript
