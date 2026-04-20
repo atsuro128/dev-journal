@@ -605,7 +605,7 @@ npx vitest run --reporter=verbose src/pages/reports/__tests__/Item* src/hooks/__
 - TanStack Query の `QueryClient` はテストごとに新規作成し、`QueryClientProvider` でラップする
 - キャッシュ無効化の検証は `queryClient.getQueryState` または `queryClient.isFetching` で確認する
 
-### 12.4 フィクスチャの注意事項
+### 12.5 フィクスチャの注意事項（旧 12.4）
 
 - テストデータに機密情報を含めない
 - テナント ID は単一テナント（テナント A）のみ使用し、テナント間の混在を避ける
