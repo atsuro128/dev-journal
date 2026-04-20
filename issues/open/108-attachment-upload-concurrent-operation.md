@@ -204,14 +204,22 @@ ItemForm（明細編集フォーム）でフィールド編集中にパネルを
 ## 追加対応（2026-04-20 再オープン）
 
 ### 背景
-Step 11-A SMK-030（JPEG アップロード正常系）実施中に、AttachmentArea の常時表示案内文「※ 添付ファイルは選択した時点で保存されます。フォームをキャンセルしても添付は残ります。」が不要との判断。
+Step 11-A SMK-030 実施中に、AttachmentArea の常時表示案内文が 2 種類とも UI ノイズとの判断:
 
-この案内文は本来 issue 108 スコープ（フォーム編集中の操作整合性）として検討すべきだったが、前回対応時に issue 114 として独立起票 → 常時表示方式（B-② 案）で実装（commit `7422c25`）された。再評価の結果、常時表示は UI ノイズになるため撤去する。
+| モード | 文言 | 追加元 |
+|--------|------|--------|
+| 編集 | ※ 添付ファイルは選択した時点で保存されます。フォームをキャンセルしても添付は残ります。 | commit `7422c25`（issue 114） |
+| 追加 | ※ 添付ファイルは『保存する』ボタン押下後にまとめてアップロードされます。 | issue 115 |
+
+この案内文は本来 issue 108 スコープ（フォーム編集中の操作整合性）として検討すべきだったが、前回対応時に別 issue（114 / 115）で常時表示方式として実装された。再評価の結果、両方とも不要と判断し撤去する。
 
 ### スコープ
-- `expense-saas/frontend/src/pages/reports/AttachmentArea.tsx` から案内文（commit `7422c25` で追加した Typography）を削除
-- 関連する integration test assertion（ATT-FE-045 に統合された ATT-FE-114 相当）を削除
+- `expense-saas/frontend/src/pages/reports/AttachmentArea.tsx` から両モードの案内文 Typography（`EDIT_MODE_NOTICE` / `ADD_MODE_NOTICE` 定数・描画・testid `attachment-persistence-notice` を含む）を削除
+- `AttachmentArea.test.tsx` の **ATT-FE-076**（モード別案内文の分岐表示）テストを削除
+- `AttachmentArea.integration.test.tsx` の **ATT-FE-114** 相当 assertion（L130-134、永続化案内文の常時表示）を削除
+- 設計書 `dev-journal/deliverables/docs/60_test/test_cases/attachments.md` から ATT-FE-076 行を完全削除（§7-11-1 テーブル + §7-11 末尾の「FE テストケース合計: 86 件 → 85 件」一覧と件数更新）
 - 設計書（`files.md` §3 / `report-detail.md` §7）の即時保存仕様記述は **残す**（仕様自体は変更なし、UI での明示のみ撤去）
+- `screens/report-detail.md` §7 の「モード別の案内文」記述は整合性のため削除または「案内文は表示しない」旨に修正
 
 ### 対応しない
 - 即時保存方式自体の変更（永続化仕様は維持）
@@ -219,10 +227,11 @@ Step 11-A SMK-030（JPEG アップロード正常系）実施中に、Attachment
 - Popover / ToolTip 化（post-MVP）
 
 ### 完了条件
-- AttachmentArea から案内文が削除されている
-- 対応する test assertion が削除されている
-- 即時保存仕様の設計書記述は残っている
-- 既存テストが通過する
+- AttachmentArea から両モードの案内文が削除されている
+- ATT-FE-076 / ATT-FE-114 assertion が削除されている
+- `attachments.md` から ATT-FE-076 が削除され件数が更新されている
+- `report-detail.md` §7 の「モード別の案内文」記述が実装と整合している
+- 既存テストが通過する（`npm run test`）
 
 ## 次セッション着手手順（別セッションでワークツリー対応想定）
 
