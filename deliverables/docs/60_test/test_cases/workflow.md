@@ -111,7 +111,7 @@
 |---------|------------|---------|---------|-----------|-----------|---------------|-------------------|---------|
 | WFL-023 | 統合 | handler | 異常系 | WFL-F01 | openapi.yaml#approveReport | `TestApproveReport_NotFound` | Approver で認証。存在しないレポートID（`00000000-0000-0000-0000-000000000099`）を指定 | 404 RESOURCE_NOT_FOUND |
 | WFL-024 | 統合 | handler | 異常系 | WFL-F01 | openapi.yaml#approveReport | `TestApproveReport_Conflict_OptimisticLock` | Approver で認証。対象: `report_submitted`。リクエストボディの `updated_at` に古い（不一致の）タイムスタンプを指定 | 409 CONFLICT |
-| WFL-025 | 統合 | handler | 異常系 | WFL-F01 | openapi.yaml#approveReport | `TestApproveReport_MissingUpdatedAt` | Approver で認証。リクエストボディに `updated_at` フィールドなし | 400 または 422（バリデーションエラー）。422 VALIDATION_ERROR の場合は `details[].field = "updated_at"` を含む |
+| WFL-025 | 統合 | handler | 異常系 | WFL-F01 | openapi.yaml#approveReport | `TestApproveReport_MissingUpdatedAt` | Approver で認証。リクエストボディに `updated_at` フィールドなし | 422 VALIDATION_ERROR。`details[].field = "updated_at"` を含む |
 
 ---
 
@@ -130,7 +130,7 @@
 | WFL-027 | 統合 | handler | 異常系 | WFL-012 | openapi.yaml#rejectReport, state_machine.md#T3 | `TestRejectReport_MissingRejectionReason` | Approver で認証。リクエストボディに `reason` フィールドなし（`{"updated_at": "<updated_at>"}` のみ） | 422 MISSING_REJECTION_REASON |
 | WFL-028 | 統合 | handler | 異常系 | WFL-012 | openapi.yaml#rejectReport, state_machine.md#T3 | `TestRejectReport_EmptyRejectionReason` | Approver で認証。リクエストボディ: `{"reason": "", "updated_at": "<updated_at>"}` | 422 MISSING_REJECTION_REASON |
 | WFL-029 | 統合 | handler | 境界値 | WFL-012 | openapi.yaml#rejectReport | `TestRejectReport_RejectionReasonMaxLength` | Approver で認証。`reason` が1000文字の文字列 | 200 OK（境界値: 上限ちょうど） |
-| WFL-030 | 統合 | handler | 境界値 | WFL-012 | openapi.yaml#rejectReport | `TestRejectReport_RejectionReasonTooLong` | Approver で認証。`reason` が1001文字の文字列 | 400 または 422（バリデーションエラー）。422 VALIDATION_ERROR の場合は `details[].field = "reason"` を含む |
+| WFL-030 | 統合 | handler | 境界値 | WFL-012 | openapi.yaml#rejectReport | `TestRejectReport_RejectionReasonTooLong` | Approver で認証。`reason` が1001文字の文字列 | 422 VALIDATION_ERROR。`details[].field = "reason"` を含む |
 
 #### 状態遷移の禁止パス（ハンドラ層統合テスト: X8 相当）
 
@@ -219,7 +219,7 @@
 |---------|------------|---------|---------|-----------|-----------|---------------|-------------------|---------|
 | WFL-061 | 統合 | handler | 異常系 | WFL-F03 | openapi.yaml#markReportAsPaid | `TestMarkReportAsPaid_NotFound` | Accounting で認証。存在しないレポートID を指定 | 404 RESOURCE_NOT_FOUND |
 | WFL-062 | 統合 | handler | 異常系 | WFL-F03 | openapi.yaml#markReportAsPaid | `TestMarkReportAsPaid_Conflict_OptimisticLock` | Accounting で認証。リクエストボディの `updated_at` に古いタイムスタンプを指定 | 409 CONFLICT |
-| WFL-063 | 統合 | handler | 異常系 | WFL-F03 | openapi.yaml#markReportAsPaid | `TestMarkReportAsPaid_MissingUpdatedAt` | Accounting で認証。リクエストボディに `updated_at` フィールドなし | 400 または 422（バリデーションエラー）。422 VALIDATION_ERROR の場合は `details[].field = "updated_at"` を含む |
+| WFL-063 | 統合 | handler | 異常系 | WFL-F03 | openapi.yaml#markReportAsPaid | `TestMarkReportAsPaid_MissingUpdatedAt` | Accounting で認証。リクエストボディに `updated_at` フィールドなし | 422 VALIDATION_ERROR。`details[].field = "updated_at"` を含む |
 
 ---
 
