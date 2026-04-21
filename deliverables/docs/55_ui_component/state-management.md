@@ -535,28 +535,41 @@ export const DEFAULT_ERROR_MESSAGE =
 | INVALID_TOKEN | 認証情報が無効です。再度ログインしてください。 | 一般的な日本語メッセージ（通常は自動リダイレクトのため表示されない） |
 | TOKEN_EXPIRED | 認証の有効期限が切れました。再度ログインしてください。 | 一般的な日本語メッセージ（通常は自動リダイレクトのため表示されない） |
 
-#### 6.5.3 変換ユーティリティ関数
+#### 6.5.3 onError での err.message 使用方針（issue #124 以降）
+
+> **重要（issue #124 / PR #70、2026-04-20 以降）**: `client.ts` の `handleErrorResponse` で `SERVER_ERROR_MESSAGES` によるマッピングが導入され、`ApiClientError.message` は throw の時点で**既に正しい日本語文言にマッピング済み**になった。
+
+**現行推奨パターン**: 各コンポーネント / フックの onError では `err.message` をそのまま使う。
 
 ```typescript
-import { ERROR_MESSAGES, DEFAULT_ERROR_MESSAGE } from '@/lib/errorMessages';
-
-/**
- * 任意のエラーオブジェクトからユーザー向けメッセージを取得する。
- *
- * - ApiClientError の場合: error.code で ERROR_MESSAGES を引く
- * - VALIDATION_ERROR の場合: フィールド別メッセージは各フォームの
- *   onError で処理するため、ここではフォールバックメッセージを返す
- * - 該当コードがない場合: DEFAULT_ERROR_MESSAGE を返す
- */
-export function getErrorMessage(error: unknown): string {
-  if (error instanceof ApiClientError) {
-    return ERROR_MESSAGES[error.code] ?? DEFAULT_ERROR_MESSAGE;
-  }
-  return DEFAULT_ERROR_MESSAGE;
+// 推奨: err.message は client.ts 層でマッピング済みのためそのまま使う。
+onError: (err) => {
+  const message = err instanceof Error ? err.message : 'XX の処理に失敗しました';
+  setToast({ open: true, severity: 'error', message });
 }
 ```
 
-**VALIDATION_ERROR の扱い**: `VALIDATION_ERROR` は `details` 配列にフィールド単位のエラー情報を持つ（security.md §8.2）。各フォームの `onError` ハンドラ内で `details` をフォームフィールドにマッピングして表示するため、`getErrorMessage` はフォールバックメッセージ（「入力内容に誤りがあります。各項目を確認してください。」）を返す。
+**廃止（旧パターン）**: 以下の `getErrorMessage(error)` ヘルパー呼び出し方式は、`client.ts` 層のマッピング導入（issue #124）以前のパターンである。二重変換になるため使用しないこと。
+
+```typescript
+// 廃止: client.ts 層のマッピング前（issue #124 以前）の旧パターン。
+// import { getErrorMessage } from '@/lib/errorMessages';
+// onError: (err) => { const message = getErrorMessage(err); ... }
+```
+
+**アンチパターン（禁止）**:
+
+```typescript
+// NG: err を受け取らずハードコード文言で上書きする（SERVER_ERROR_MESSAGES の値が無視される）。
+onError: () => setItemApiError('明細のXXに失敗しました')
+
+// NG: SERVER_ERROR_MESSAGES と同一文言をコンポーネント内でハードコードする。
+const message = 'この操作を行う権限がありません。';  // SERVER_ERROR_MESSAGES.FORBIDDEN と重複
+```
+
+詳細は `.claude/rules/implementation-workflow.md` の「FE エラーハンドリング」セクションを参照。
+
+**VALIDATION_ERROR の扱い**: `VALIDATION_ERROR` は `details` 配列にフィールド単位のエラー情報を持つ（security.md §8.2）。各フォームの `onError` ハンドラ内で `details` をフォームフィールドにマッピングして表示する。`err.message` は `SERVER_ERROR_MESSAGES.VALIDATION_ERROR`（「入力内容に誤りがあります。各項目を確認してください。」）にマッピング済みなので、フォールバック表示にそのまま使える。
 
 #### 6.5.4 SEC-011 セキュリティメッセージ上書きルール
 

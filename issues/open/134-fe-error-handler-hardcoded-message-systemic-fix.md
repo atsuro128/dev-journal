@@ -230,6 +230,75 @@ reviewer / codex レビュー向けのチェック観点を追記:
   - レビュー観点チェックリストに項目追加
   - lint ルール導入（実装コスト次第、できない場合は見送り判断を記録）
 
+## 7. Phase 1 調査結果
+
+### 7.1 仮説の検証
+
+| 仮説 | 判定 | 根拠 |
+|------|------|------|
+| A: 設計書曖昧 | **部分成立（実態は「曖昧」ではなく「古い前提のまま更新されていない」）** | `55_ui_component/state-management.md` §6「エラーハンドリングの状態管理パターン」と §6.5「エラーメッセージ管理方針」は明文化されていた（`ERROR_MESSAGES` マッピング定義、`getErrorMessage(error)` ヘルパー、画面固有上書きルール §6.5.7 等）。ただし設計では **各 onError で `getErrorMessage(error)` を呼び出す** 前提になっており、**`ApiClientError.message` が既にマッピング済みである**現行実装（#124 対応）への追従がされていない。さらに `50_detail_design/screens/report-detail.md` §11 は HTTP エラー種別ごとの日本語文言を表形式で列挙しており（例: 「サーバーとの通信に失敗しました…」「この操作を行う権限がありません。」）、実装者がこの表を「コンポーネントにハードコードせよ」と解釈できる書き方になっている。実際 `ReportDetailPage.tsx:220/227/214` のハードコード文言は同表の文字列と完全一致する |
+| B: マッピング未共有 | **成立** | `.claude/rules/implementation-workflow.md` は FE 側のエラーハンドリング方針に一切触れていない（「必須参照」に `state-management.md` / `common-components.md` も含まれていない）。`error-messages.ts` と `client.ts` の `handleErrorResponse` 層マッピングは **issue #124 対応・PR #70（`dc94d5` 2026-04-20）で初めて導入された** ため、Step 10-B（2026-04-09 の `3c375e3a`）/ 10-G（2026-04-18 の `c24bfe0c`）時点では **そもそも `client.ts` 層のマッピングは存在しなかった**。当時 `err.message` は BE の英語 raw メッセージのままで、日本語文言をコンポーネントで組み立てる実装は当時の実装者にとって合理的だった。その後 #124 で前提が変わったが、既存の onError ハンドラは更新されず取り残された |
+| C: チケット指示具体すぎ | **不成立** | `progress-management/tickets/step10/10-B-report.md` / `10-G-attachments.md` を grep しても「エラー」「error」「失敗」「onError」等のキーワードは **一切ヒットしない**。チケット本文で onError 文言を具体的に指示した形跡はない。実装者は設計書（screens/report-detail.md §11）の文言表を参照して判断したと推察される（→ 仮説 A の実態） |
+| D: レビュー観点欠落 | **成立** | `work-breakdown/step10-feature-implementation/review.md` の FE レビュー観点（L77-81）は「API クライアント、認証トークン管理、共通エラーハンドリングの利用方式が Step 8 基盤と一致しているか」という抽象レベルにとどまり、「onError で `err.message` をそのまま使っているか」「ハードコード文言で上書きしていないか」「`SERVER_ERROR_MESSAGES` と同一文字列がコンポーネント内に重複していないか」等の具体観点は存在しない。`work-breakdown/step8-foundation/review.md` 側も同様。結果として PR #58・#68・#70 等のマージ時に重複・上書きが見逃された |
+
+### 7.2 主因の特定
+
+**主因は A と B の複合（時系列ズレによる設計と実装の乖離）、D（レビュー観点欠落）が再発増幅要因**:
+
+1. **Step 10-B / 10-G 実装時点（2026-04-09 〜 04-18）**: `client.ts` 層のマッピングがまだ存在せず、`screens/*.md` §11 の日本語文言表を参照して各 onError に日本語をハードコードする実装は当時合理的だった。`ReportListPage.tsx` のみ `error instanceof Error ? error.message : ...` パターンを採用していたが、これは例外的で、同 PR（`3c375e3a`）の `ReportDetailPage.tsx` では §11 表と一致するハードコード文言が主流だった
+2. **issue #124 対応時点（2026-04-20、PR #70 / `dc94d54`）**: `handleErrorResponse` で `SERVER_ERROR_MESSAGES` マッピングが導入され、**`ApiClientError.message` は throw 時点で既に日本語マッピング済み** に仕様変更された。ただしこの変更は `client.ts` と `error-messages.ts` に閉じて完結し、**既存コンポーネントの onError ハンドラを書き換える作業は含まれていなかった**。上流設計書（`state-management.md` §6.5.3 の `getErrorMessage(error)` ヘルパー、`screens/report-detail.md` §11 の文言表）も更新されなかった
+3. **レビューでの見逃し（仮説 D）**: #124 以降の PR（#68, #71, #72 等）でも既存の onError パターンを踏襲したコードが追加され続け、reviewer・codex レビューともに「新しい設計前提（`err.message` がマッピング済み）」を適用したチェックが行われなかった
+
+設計書が「曖昧」だったのではなく、**マッピングの担当レイヤーが途中で移動した（コンポーネント層 → API クライアント層）のに、上流ドキュメント・既存コード・レビュー観点のいずれもその移動を完全にフォローしきれていない**、というのが実態。
+
+### 7.3 実装時系列（抜粋）
+
+| 時期 | コミット / PR | 対象 | 内容 |
+|------|-------------|------|------|
+| 2026-04-08 | `653f84a3` / PR #19 | `ReportListPage.tsx:141` | 「正しいパターン」 `error instanceof Error ? error.message : 'データの取得に失敗しました'` がここで導入（fallback 付きで `err.message` 優先） |
+| 2026-04-09 | `3c375e3a` / Step 10-B | `ReportDetailPage.tsx:193-230` `handleActionError` | 409 / 422 / 403 / その他 の 4 分岐。**422 のみ `err.message \|\| fallbackMsg`、他はハードコード**。L220/227 の 500系文言は `error-messages.ts:INTERNAL_ERROR` と完全一致、L214 の 403 文言は `FORBIDDEN` と完全一致 |
+| 2026-04-09 | `3c375e3a` / Step 10-B | `ReportDetailPage.tsx:429/454/473/501` | `onError: () => setItemApiError('明細の XX に失敗しました')` が 4 箇所で追加。**err パラメータを受け取らず**、常に固定文言 |
+| 2026-04-09 | `3c375e3a` / Step 10-B | `AttachmentList.tsx:168`（現在位置） | `showToast('error', '削除に失敗しました')` — 添付削除 onError のハードコード文言 |
+| 2026-04-11 | `73730549` / 10-X | `AttachmentUploader.tsx:190-191` | `console.error('ファイルのアップロードに失敗しました:', err)` + `const message = 'ファイルのアップロードに失敗しました。もう一度お試しください。'` を onError に追加 |
+| 2026-04-18 | `c24bfe0c` / PR #67（issue 102） | `AttachmentList.tsx:103, 108, 131, 135` | 添付プレビュー・ダウンロードの catch で `onError('プレビューの取得に失敗しました')` / `onError('ダウンロードの取得に失敗しました')` を追加。err を受け取らず固定文言 |
+| 2026-04-20 | `d6c1c94d` / PR #68（issue #108） | `ItemSlidePanel.tsx:336` | catch 文で `createErr.message` を使うパターン（部分的に正しい）だが、fallback 文言として `'明細の保存に失敗しました。もう一度お試しください。'` をハードコード |
+| **2026-04-20** | **`dc94d54` / PR #70（issue #124）** | **`client.ts:124-150`, `error-messages.ts` 新規作成** | **`handleErrorResponse` で `SERVER_ERROR_MESSAGES` マッピングを導入。以降 `ApiClientError.message` は throw 時点で日本語マッピング済みになる。本件バグの前提条件が切り替わった分水嶺** |
+| 2026-04-20 以降 | — | 既存 onError ハンドラ | 上記分水嶺以降も **書き換えられず、設計書 `state-management.md` §6.5.3 の `getErrorMessage(error)` ヘルパー前提とも、新実装 `err.message` そのまま利用前提とも乖離した状態** |
+
+### 7.4 再発防止のターゲット確定
+
+主因（A 実態 = 古い前提残留、B 共有不足、D レビュー観点欠落）を踏まえ、Phase 2-4 で手を入れるべき箇所を確定:
+
+#### Phase 2（方針策定）の追記先
+
+- **`.claude/rules/implementation-workflow.md`**（高優先度）: 現状 FE エラーハンドリング方針は一切未記載。新規セクション「FE エラーハンドリング」を追加し、`err.message` そのまま使用の原則・推奨パターン・アンチパターンを明文化する。「必須参照」にも `55_ui_component/state-management.md` と `55_ui_component/common-components.md` を追加する
+- **`55_ui_component/state-management.md` §6.5**（必須更新）: `ApiClientError.message` が `client.ts` 層でマッピング済みになった事実（#124）を前提に更新。§6.5.3 `getErrorMessage(error)` ヘルパーの位置付けを「廃止」または「画面固有上書きのみで使用」に改訂。§6.5.7 画面固有上書きのパターンも `ApiClientError.code` 分岐ベースに簡素化
+- **`50_detail_design/screens/report-detail.md` §11**（および他 screens）: エラー種別ごとの文言表は残しつつ、冒頭に「表内の文言は `SERVER_ERROR_MESSAGES` マッピングの期待値であり、コンポーネントにハードコードするものではない」旨の注記を追加。文言出典を `error-messages.ts` にリンクする
+- **`55_ui_component/common-components.md`** の `AppToast` / `FormAlert` セクション: message prop の推奨ソース（`err.message`）を明記
+
+#### Phase 4（work-breakdown テンプレート）の追記箇所
+
+- **`step10-feature-implementation/review.md`** L77-81（フロントエンドレビュー観点）に以下を追加:
+  - onError / catch で `ApiClientError.message` をそのまま使用しているか（ハードコード文言で上書きしていないか）
+  - onError ハンドラが `err` パラメータを受け取っているか（`onError: () => ...` の無視パターンがないか）
+  - コンポーネント内の日本語エラー文言が `SERVER_ERROR_MESSAGES` と重複していないか
+- **`step8-foundation/review.md`** §8-7（共通 UI）にも同等の観点を追加（AppToast 利用側での文言ハードコード禁止）
+- **`step10-feature-implementation/main.md`** の機能実装タスクの「完了条件」共通項に「サーバーエラー時に `ApiClientError.message` を表示し、ハードコード文言で上書きしないこと（fallback 文言は許容）」を追加
+
+#### Phase 4（レビュー観点）の追加内容
+
+- reviewer / codex レビュー向け: 上記 3 観点をコードレビューチェックリストに明記
+- `screens/*.md` §11 の文言表を更新または変更した場合は、`error-messages.ts` との整合を必ず確認する手順を追加
+
+#### Phase 4（lint）の導入可否判断
+
+- **方針（推奨）**: 本格的な ESLint カスタムルール開発は実装コストに対する再発防止効果が限定的なため見送る。代わりに以下の軽量策を推奨:
+  - **CI grep チェック**: `expense-saas/frontend/src/pages/` 配下で「に失敗しました」「できません」「行えません」等のハードコード日本語エラー文言を検出し、許可リスト（`error-messages.ts` 本体・fallback 用途・空状態文言）と照合するシェルスクリプトを CI に追加
+  - **根拠**: Phase 3 で既存バグを全修正したあとは、新規コミットでハードコード文言が混入しない限り再発しない。grep ベースの軽量チェックで十分カバーでき、ESLint AST パースまで必要としない
+  - **見送る場合の補完**: レビュー観点（Phase 4）に明示することで人によるチェックを担保。lint 導入は将来の余力判断とする
+
+---
+
 ## 6. 関連
 
 - **#131**（open）: AttachmentUploader のクライアントサイドバリデーションエラー表示 UX 改善。本 issue と経路は違うが同ファイルを触るため実装時の衝突に注意
@@ -240,6 +309,20 @@ reviewer / codex レビュー向けのチェック観点を追記:
 
 ---
 
+## 8. Phase 4 判断記録
+
+### 8.1 lint ルール導入: 見送り判断
+
+**判断**: ESLint AST カスタムルールおよび CI grep チェックは**本 issue では導入しない**。
+
+**理由**:
+- **ESLint AST カスタムルール**: `onError` / catch ブロック内でのハードコード文言検出は AST パターンが複雑（引数なし `onError: () => ...` と引数あり `onError: (err) => ...` の両方を正確に区別する必要あり）。実装・メンテナンスコストに対して再発防止効果が限定的
+- **CI grep チェック**: 「に失敗しました」等のキーワードで検出するアプローチは誤検知（fallback 文言・確認ダイアログ文言・成功メッセージ等）が多く、許可リスト管理の運用コストが発生する。本プロジェクトの規模・運用体制に馴染まない
+- **補完策**: Phase 2 でルール文書（`.claude/rules/implementation-workflow.md`）および設計書（`state-management.md` §6.5.3、`screens/*.md` §11 注記）に明文化済み。Phase 4 でレビュー観点チェックリスト（`step10-feature-implementation/review.md` §5 / `step8-foundation/review.md` §5.5）にも追記済みであり、人によるチェックで十分カバーできる
+- **将来**: FE コードベースが拡大し、lint による自動検出のコスト効果が改善したタイミングで改めて検討する
+
 ## 解決内容
+
+Phase 2-4 対応完了（2026-04-21）。詳細は PR #XX を参照。
 
 ## 解決日
