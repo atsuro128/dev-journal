@@ -162,4 +162,8 @@ SMK-035（5MB 超過）についても:
 
 ## 解決内容
 
+PR #85（commit e06a521）にて対応。`AttachmentUploader.tsx` のバリデーションエラー表示を MUI `<Alert severity="error">` に変更し視覚識別を改善。エラー文言を smoke_check.md 期待値に合わせ、MIME エラーは「JPEG, PNG, PDF のみアップロード可能です」、サイズエラーは「ファイルサイズは5MB以下にしてください」に統一。SMK-033 / SMK-035 再検証 PASS。
+
 ## 解決日
+
+2026-04-22

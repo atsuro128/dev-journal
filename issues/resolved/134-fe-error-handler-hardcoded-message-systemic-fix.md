@@ -323,6 +323,8 @@ reviewer / codex レビュー向けのチェック観点を追記:
 
 ## 解決内容
 
-Phase 2-4 対応完了（2026-04-21）。詳細は PR #XX を参照。
+PR #84（commit 2ab3926）にて対応。Phase 1（原因究明）〜 Phase 4（再発防止）を完遂。FE の `AttachmentUploader.tsx` / `ItemSlidePanel.tsx` / `AttachmentList.tsx` / `AttachmentArea.tsx` / `ReportDetailPage.tsx` 計 15 箇所の onError ハンドラを `err.message` ベースに修正。`.claude/rules/implementation-workflow.md` へ FE エラーハンドリング方針を追記し、`step10-feature-implementation/review.md` にレビュー観点を追加。SMK-036 再検証にて画面トーストに正しい日本語マッピング文言が表示されることを確認。
 
 ## 解決日
+
+2026-04-22

@@ -162,4 +162,8 @@ ItemSlidePanel.tsx L521-529（Drawer 設定）:
 
 ## 解決内容
 
+PR #86（commit e73a659）にて対応。`ItemSlidePanel` の `Drawer` に `TransitionProps={{ onExited }}` を追加し、スライドアウトアニメーション完了後に親 state をリセットする方式（案 A）を採用。アニメーション中は直前モードを保持することでレイアウトフラッシュを解消。
+
 ## 解決日
+
+2026-04-22
