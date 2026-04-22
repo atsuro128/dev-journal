@@ -114,3 +114,16 @@ import Stack from '@mui/material/Stack';
 - **SMK-062**（現在 FAIL）: 本 issue で解消対象
 - **#137**（スマホ幅でレポート一覧・明細一覧がページ全体横スクロール）: 別原因（TableContainer 未使用）、本 issue とは独立。明細スライドパネルの横伸びは #137 の二次影響
 - 要別途確認: レポート一覧の期間フィルタ（`ReportListPage` のフィルタ部分で `AppDatePicker` 横並び使用がある場合は同じ問題）
+
+---
+
+## 解決内容
+
+PR #89 にて対応。`ReportPeriodField.tsx` の `Box` + `display: 'flex'` 固定レイアウトを MUI `Stack` に置換し、`direction={{ xs: 'column', sm: 'row' }}` によるブレークポイント対応を実装。スマホ幅（xs）では開始日・終了日を縦積みで全幅表示し、区切りテキスト「〜」は非表示。
+
+- 解決 PR: #89
+- マージ commit: 1369e50
+
+## 解決日
+
+2026-04-22

@@ -182,3 +182,16 @@ import ReportListTable from './ReportListTable';
 - **#137**（スマホ幅でページ全体横スクロール）: 本 issue 案 A で DataGrid 化すると ReportListPage 側は自動解消の可能性。ItemTable 側は #137 で別途対応
 - **#108 / #116 / #123 / #124 / #126**: SCR-RPT-001 系の既存修正ではステータス列の英語露出に踏み込まれていない
 - 副次: `ReportListPage.tsx` L25-29 のフィルタ用語ゆれ（却下済み / 支払完了）→ 別 issue 化候補
+
+---
+
+## 解決内容
+
+PR #92 にて #137 と合わせて対応（案 A 採用）。`ReportListPage.tsx` の生 `<Table>` ブロックを `ReportListTable`（AppDataGrid ベース）に差し替え、StatusChip による日本語ステータス表示・`¥` プレフィックス金額フォーマット・作成日列を追加。デッドコード状態だった `ReportListTable` コンポーネントが有効化され、SCR-RPT-001 の設計仕様に整合した。
+
+- 解決 PR: #92（#137 + #139 合算）
+- マージ commit: b7f4430
+
+## 解決日
+
+2026-04-22
