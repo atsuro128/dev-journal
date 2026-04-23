@@ -12,8 +12,8 @@
 |------|------|----------|
 | 運用設計（リリース） | deliverables/docs/70_operations/release.md | リリース手順 |
 | 運用設計（環境設定） | deliverables/docs/70_operations/env_config.md | 環境変数・シークレット |
-| アーキテクチャ設計 | deliverables/docs/30_architecture/architecture.md | インフラ構成 |
-| ADR-0004 | deliverables/docs/30_architecture/adr/0004-environment-config-portfolio.md | ポートフォリオ対応方針 |
+| アーキテクチャ設計 | deliverables/docs/30_arch/architecture.md | インフラ構成 |
+| ADR-0004 | deliverables/docs/30_arch/adr/0004-infra.md | ポートフォリオ対応方針 |
 | CI/CD パイプライン | expense-saas/.github/workflows/deploy.yml | デプロイステップ |
 
 ## 責務
@@ -23,6 +23,35 @@
 - ヘルスチェック疎通確認
 - スモークテスト: 主要フロー1本（申請 → 承認 → 支払）をデプロイ済み環境で手動実行
 - 含めない: 本番運用設定（監視・アラート等）、テストコードの追加
+
+## 進め方
+
+1. 11-D のレビューレポートを確認し、ブロッカーが残っていないことを確認する
+2. `release.md` / `env_config.md` / `architecture.md` / ADR-0004 を読み、デプロイ対象構成と必要な環境変数を確定する
+3. AWS リソースを構築または更新し、DB マイグレーション・S3・アプリ起動に必要な設定を投入する
+4. Docker イメージをビルドし、ECR へ push してアプリケーションをデプロイする
+5. ヘルスチェック、ログ、フロントエンド表示、API 疎通を確認する
+6. デプロイ済み環境で主要フロー1本（申請 → 承認 → 支払完了）を手動実行する
+7. 公開 URL、確認日時、確認アカウント、残課題を記録する
+
+## 実施ログ
+
+| 区分 | 対象 | 結果 | メモ |
+|------|------|------|------|
+| 事前確認 | 11-D ブロッカーなし | 未実施 | |
+| インフラ | AWS リソース構築・更新 | 未実施 | |
+| 設定 | 環境変数・シークレット | 未実施 | 値そのものは記録しない |
+| デプロイ | Docker build / ECR push / サービス更新 | 未実施 | |
+| ヘルスチェック | API / frontend | 未実施 | |
+| スモーク | 申請 → 承認 → 支払完了 | 未実施 | |
+
+## 11-F への引き継ぎ
+
+- 公開 URL
+- UAT 用アカウントとロール
+- デプロイ日時・コミット
+- 既知の非ブロッカー
+- UAT で重点確認すべき箇所
 
 ## 完了条件
 
