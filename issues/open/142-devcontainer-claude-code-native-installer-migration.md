@@ -69,7 +69,40 @@ RUN curl -fsSL https://claude.ai/install.sh | bash -s -- <version-pin-option>
 ---
 
 ## 解決内容
-<!-- pending-review へ移動する前に記入 -->
+
+Dockerfile を Anthropic 公式 native installer 経由の導入に切り替えた。
+
+### 変更内容
+
+1. `.devcontainer/Dockerfile` line 117
+   - 旧: `RUN npm install -g @anthropic-ai/claude-code@${CLAUDE_CODE_VERSION} @openai/codex@${CODEX_VERSION}`
+   - 新:
+     ```dockerfile
+     RUN npm install -g @openai/codex@${CODEX_VERSION}
+     RUN curl -fsSL https://claude.ai/install.sh | bash -s ${CLAUDE_CODE_VERSION}
+     ENV PATH=/home/node/.local/bin:$PATH
+     ```
+   - `CLAUDE_CODE_VERSION` は install.sh の位置引数で解釈される。これにより build 時点で `/home/node/.local/share/claude/versions/${CLAUDE_CODE_VERSION}` にバイナリが配置される。
+
+2. `dev-journal/references/devcontainer-docs/devcontainer-design.md` §4
+   - CLI 項目を Claude Code / Codex で導入経路別に記述
+   - 「導入物の原則」に、npm 経由導入の暗黙差し替えを避けるため Dockerfile 時点で native installer に寄せる旨を追記
+
+### 検証項目の結論
+
+- **リダイレクト先**: runtime では `downloads.claude.ai` のみ必要で allowlist 追加済（`60af7ff`）。`claude.ai` は build 時のみ使用し、docker build は in-container squid を経由しないため allowlist 追加不要と判断した。
+- **バージョン固定**: `install.sh` の位置引数で可能（例: `bash -s 2.1.96`）。`CLAUDE_CODE_VERSION` ARG で引き続き管理する。
+- **監査性**: 既存 Dockerfile で git-delta / Go / github-mcp-server を同様の `wget` ベースで導入済みのため、監査ポリシーとして新しい例外は作らない。
+- **codex との分離**: codex は npm 経由を継続。`registry.npmjs.org` はフロントエンドと codex のため必須のまま変更なし。
+
+### 受け入れ条件の充足
+
+- [x] 採用可否を判断材料と併せて決定し、設計書に記録（design doc §4 更新）
+- [x] 採用したため Dockerfile / devcontainer-design.md を 1 回のリビルドにまとめる（proxy-allowlist.txt / rationale は変更不要と判断）
+
+### 残作業
+
+ユーザー側でのコンテナリビルドと、`claude --version` が `CLAUDE_CODE_VERSION` と一致すること、および `which claude` が `/home/node/.local/bin/claude` を指すことの確認。
 
 ## 解決日
-<!-- YYYY-MM-DD -->
+2026-04-23
