@@ -294,12 +294,14 @@ allowlist は `.devcontainer/proxy-allowlist.txt` で定義する。
 現在の主な対象:
 
 - OpenAI: `chatgpt.com`, `api.openai.com`, `auth.openai.com`
-- Anthropic: `api.anthropic.com`, `platform.claude.com`
+- Anthropic: `api.anthropic.com`, `platform.claude.com`, `downloads.claude.ai`
 - Node / Go / Python / VS Code 関連
 補足:
 
 - Codex の認証だけではなく、実際のチャット送信では `chatgpt.com` への通信が必要
 - そのため `api.openai.com` と `auth.openai.com` だけでは不足する
+- Claude Code は npm 経由で導入後、`claude install` / `claude update` 実行時に native installer 形式へ移行し、version manifest・バイナリ・plugin を `downloads.claude.ai` から取得する
+- そのため `api.anthropic.com` と `platform.claude.com` だけでは更新が HTTP 403 で失敗する
 
 ## 10. upstream proxy 対応
 
