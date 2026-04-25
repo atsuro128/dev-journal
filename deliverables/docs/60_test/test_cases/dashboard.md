@@ -170,7 +170,7 @@ func setupDashboardFixtures(t *testing.T, db *sql.DB) {
     t.Helper()
     truncateAllTables(t, db)
     insertTenants(t, db)       // テナントA / テナントB
-    insertUsers(t, db)         // 4ロール × テナントA + 1名 × テナントB
+    insertUsers(t, db)         // テナントA 5 名（Admin, Approver, Member ×2, Accounting）+ テナントB 1 名
     insertReports(t, db)       // フィクスチャのレポート群
 }
 ```

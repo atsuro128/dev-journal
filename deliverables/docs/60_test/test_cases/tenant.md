@@ -136,9 +136,9 @@ func TestGetTenant_Approver_Forbidden(t *testing.T) {
 
 // TNT-006: Admin で GET /api/tenant/members → 200
 func TestListTenantMembers_Admin_OK(t *testing.T) {
-    // 前提: テナントA に 4 ユーザー登録済み
+    // 前提: テナントA に 5 ユーザー登録済み（Admin, Approver, Member, Accounting, Member Empty）
     // 実行: GET /api/tenant/members（Admin JWT）
-    // 検証: 200 OK、data が 4 件、各要素に id と name が存在
+    // 検証: 200 OK、data が 5 件、各要素に id と name が存在
 }
 ```
 
