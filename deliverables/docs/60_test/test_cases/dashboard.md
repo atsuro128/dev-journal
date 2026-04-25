@@ -107,7 +107,7 @@
 | テストID | テストレベル | レイヤー | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
 |---------|------------|---------|---------|-----------|-----------|----------------|-------------------|---------|
 | DSH-014 | 統合 | handler | 正常系 | DASH-F01, DASH-004 | openapi.yaml#getDashboard | `TestGetDashboard_Admin_TenantCounts` | `userAdmin` のトークンで `GET /api/dashboard`。テナントA 全体に `draft` × 2、`submitted` × 1、`approved` × 1、`rejected` × 1、`paid` × 1 のレポートが存在 | HTTP 200。`data.tenant_draft_count == 2`、`data.tenant_submitted_count == 1`、`data.tenant_approved_count == 1`、`data.tenant_rejected_count == 1`、`data.tenant_paid_count == 1` |
-| DSH-015 | 統合 | handler | 正常系 | DASH-F01, DASH-004 | openapi.yaml#getDashboard | `TestGetDashboard_Admin_TenantMemberCount` | `userAdmin` のトークンで `GET /api/dashboard`。テナントA に 4 名のメンバーが存在 | HTTP 200。`data.tenant_member_count == 4` |
+| DSH-015 | 統合 | handler | 正常系 | DASH-F01, DASH-004 | openapi.yaml#getDashboard | `TestGetDashboard_Admin_TenantMemberCount` | `userAdmin` のトークンで `GET /api/dashboard`。テナントA に 5 名のメンバーが存在 | HTTP 200。`data.tenant_member_count == 5` |
 | DSH-016 | 統合 | handler | 正常系 | DASH-F01, DASH-005 | openapi.yaml#getDashboard | `TestGetDashboard_Admin_MonthlySummaryPresent` | `userAdmin` のトークンで `GET /api/dashboard` | HTTP 200。`data.monthly_summary` が配列として存在する |
 | DSH-017 | 統合 | handler | 正常系 | DASH-F01, DASH-004 | openapi.yaml#getDashboard | `TestGetDashboard_Admin_NoMyDraftCount` | `userAdmin` のトークンで `GET /api/dashboard` | HTTP 200。レスポンス `data` に `my_draft_count`、`my_submitted_count`、`my_rejected_count`、`recent_reports`、`pending_approval_count`、`pending_payment_count` が含まれない（Admin は個人カウント / ワークフローカウントを持たない） |
 

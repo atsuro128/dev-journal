@@ -166,6 +166,7 @@
 | Approver | Test Approver | `test-approver@example.com` | `aaaaaaaa-2222-2222-2222-000000000002` | `TestPass1!` |
 | Member | Test Member | `test-member@example.com` | `aaaaaaaa-3333-3333-3333-000000000003` | `TestPass1!` |
 | Accounting | Test Accounting | `test-accounting@example.com` | `aaaaaaaa-4444-4444-4444-000000000004` | `TestPass1!` |
+| Member | Test Member Empty | `test-member-empty@example.com` | `aaaaaaaa-3333-3333-3333-000000000004` | `TestPass1!` |
 
 #### テナントBのユーザー（クロステナント検証用）
 

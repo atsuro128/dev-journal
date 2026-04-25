@@ -80,7 +80,7 @@
 
 | テストID | テストレベル | レイヤー | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
 |---------|-----------|---------|---------|-----------|-----------|---------------|-----------------|---------|
-| TNT-006 | 統合 | handler | 正常系 | ADM-F01 | openapi.yaml#listTenantMembers | `TestListTenantMembers_Admin_OK` | 認証済み Admin（`aaaaaaaa-1111-1111-1111-000000000001`）で `GET /api/tenant/members` を実行。テナントAに Admin, Approver, Member, Accounting の 4 ユーザーが登録済み | 200 OK。`data` が配列で、4 件のメンバーが返ること。各要素に `id`（UUID）と `name`（文字列）が含まれること（`UserSummary` スキーマ準拠） |
+| TNT-006 | 統合 | handler | 正常系 | ADM-F01 | openapi.yaml#listTenantMembers | `TestListTenantMembers_Admin_OK` | 認証済み Admin（`aaaaaaaa-1111-1111-1111-000000000001`）で `GET /api/tenant/members` を実行。テナントAに Admin, Approver, Member, Accounting, Member Empty の 5 ユーザーが登録済み | 200 OK。`data` が配列で、5 件のメンバーが返ること。各要素に `id`（UUID）と `name`（文字列）が含まれること（`UserSummary` スキーマ準拠） |
 | TNT-007 | 統合 | handler | 正常系 | ADM-F01 | openapi.yaml#listTenantMembers | `TestListTenantMembers_Accounting_OK` | 認証済み Accounting（`aaaaaaaa-4444-4444-4444-000000000004`）で `GET /api/tenant/members` を実行 | 200 OK。`data` が配列で、テナントA の全メンバーが返ること |
 | TNT-008 | 統合 | handler | テナント分離 | ADM-F01, TNT-F02 | openapi.yaml#listTenantMembers, db_schema.md#RLS | `TestListTenantMembers_ReturnsOwnTenantOnly` | 認証済み Admin（テナントA）で `GET /api/tenant/members` を実行。テナントBにも別ユーザーが登録済み | 200 OK。レスポンスに含まれるユーザーIDが全てテナントA のメンバーのみであること。テナントBのユーザー（`bbbbbbbb-3333-3333-3333-000000000003`）が含まれないこと |
 
