@@ -174,7 +174,7 @@ PUT /api/reports/:id（更新）
 | &sect;1 基本情報 | ReportEditPage | URL パス、対応 API |
 | &sect;2 レイアウト | AppLayout, AppBreadcrumbs, ReportForm | 作成画面と同じフォーム構造。ボタンラベルのみ異なる |
 | &sect;3 入力項目 | AppTextField, ReportPeriodField, AppDatePicker | 既存データでプリフィル |
-| &sect;4 バリデーションルール | ReportForm（reportUpdateSchema） | V1-V5: 作成画面と同一ルール |
+| &sect;4 バリデーションルール | ReportForm（reportUpdateSchema） | V1-V4, V5-S, V5-E: 作成画面と同一ルール（V5 は両フィールド blur で `trigger(['periodStart', 'periodEnd'])` を呼んで再評価。issue #141） |
 | &sect;5 エラー表示 | FormAlert, AppTextField, AppDatePicker | フィールドレベル + サーバーエラー |
 | &sect;6 アクセス制御 | ReportEditPage | 存在チェック、テナント境界、所有権、draft 状態チェック |
 | &sect;7 操作と遷移 | ReportFormActions, SubmitButton | 「保存する」: PUT -> 詳細画面遷移、「キャンセル」: 詳細画面に戻る。楽観的ロック |
