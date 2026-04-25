@@ -169,7 +169,24 @@ MVP（SMK-084 実施に必須）
 ---
 
 ## 解決内容
-<!-- pending-review へ移動する前に記入 -->
+
+PR #93（squash commit `d66a283`）で expense-saas 側 6 ファイルを修正:
+- `internal/seed/seed.go`: `UserMemberEmptyID` 定数 + users / memberships エントリ追加
+- `internal/testutil/fixture.go`: `UserMemberEmptyID = seed.UserMemberEmptyID` 再エクスポート
+- `internal/handler/dashboard_handler_test.go`: DSH-015 期待値 4→5
+- `internal/handler/tenant_handler_test.go`: TNT-006 期待値 4→5、TNT-008 ホワイトリストへ `UserMemberEmptyID` 追加
+- `cmd/seed/main.go`: seed 完了 slog 出力に新規ユーザー追記
+- `README.md`: テストアカウント表に「Test Member Empty」行追加
+
+dev-journal 側 4 ファイルを commit `1b63b0f` / `2b22795` で修正:
+- `deliverables/docs/60_test/test_strategy.md` §4.2: テナントAユーザー表に行追加
+- `deliverables/docs/60_test/manual_checklists/smoke_check.md` SMK-084: 対象ユーザー明記
+- `deliverables/docs/60_test/test_cases/dashboard.md` DSH-015 + L173: 5 名前提に更新
+- `deliverables/docs/60_test/test_cases/tenant.md` TNT-006 + 擬似コードコメント: 5 名前提に更新
+
+レビュー: 内部レビュー PASS（PR #93 / dev-journal 共に）+ codex レビュー PASS（dev-journal）+ codex レビュー REQUEST CHANGES（PR #93、テスト未実行指摘 → 指揮役判定で push back、マージ後 BE テストはユーザー実施）。
+
+BE テストの実行確認はマージ後にユーザー側で実施予定。
 
 ## 解決日
-<!-- YYYY-MM-DD -->
+2026-04-25
