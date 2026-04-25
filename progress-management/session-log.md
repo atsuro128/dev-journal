@@ -1,98 +1,83 @@
 # 引き継ぎメモ
 
-## セッション: 2026-04-23 〜 2026-04-25 11:34
+## セッション: 2026-04-25 11:34 〜 19:51
 
 ### ゴール
 
-- Step 11-A Phase 2（Member 連続実施）SMK 続行、SMK-051 から再開
-- FAIL / 副次発見があれば即 issue 起票
-- 完了条件: 可能な限り SMK を進めて引き継ぐ
+- issue 対応: #141 / #143 / #144 を 3 件並列で進める（設計成果物フロー → 実装 PR フロー → マージ）
+- 完了条件: 3 PR がすべて codex APPROVE されてマージされること
 
 ### 作業ログ
 
-#### Phase 2 SMK 実施（§4.6 後半・§4.7 全項目・§4.8 一部）
+#### 1. 設計成果物フロー（dev-journal）
 
-| SMK | 観点 | 判定 | 主な発見 |
-|-----|------|------|---------|
-| SMK-051 | エラーメッセージの自然さ | **FAIL** | 手順 1 PASS、手順 2 PASS（「円単位の整数で」設計通り）、手順 3 FAIL（V5 単フィールド発火 + 文言違和感）→ **#141**、手順 4 観察対象外（FE バリで 422 到達不可） |
-| SMK-052 | トースト文言の自然さ | **FAIL** | 手順 1-5/8 PASS、手順 6/7 FAIL（新規追加モードの添付トースト不在 + UI 構造が編集モードと不一致）→ **#143**、手順 9 PASS（「サーバーとの通信に失敗しました…」）。副次: report-detail.md §8 vs §11 矛盾 → docs-only 修正で完結 |
-| SMK-053 | 状態ラベル | **PASS** | #139 既に resolved（progress.md / 11-A 表が 2 日分ズレで未着手表記。session 開始時のチェック漏れ）。実装は ReportListTable + StatusChip 適用済み |
-| SMK-070 | JST 表示（提出日時） | **PASS** | 副次発見で **#144**（ReportInfoCard 常時表示 4 項目のラベル欠落 + 作成日フォーマット乖離）+ **#145**（ReportWorkflowInfo セクション見出し追加 post-MVP） |
-| SMK-071 | 日付フィールドの JST 整合 | **PASS** | 1 日ずれなし |
-| SMK-072 | 月の境界 | **PASS** | SMK-070 既往観察で確定 |
-| SMK-080 | レスポンスタイム軽量スモーク | **PASS** | 副次発見で **#146**（post-MVP 大規模クロステナント性能テスト） |
-| SMK-081 | ページ送り | **未実施** | seed=8 / per_page URL 未配線で実施不能、#147 修正後に実施予定 |
+- 3 件並列で designer エージェントに設計書改訂を依頼
+- 各 issue の採用方針:
+  - #141: V5 を V5-S/V5-E に分割、両フィールド blur で react-hook-form trigger による相互再評価、フィールド別主語文言
+  - #144: 案 B（実装の `YYYY/MM/DD HH:mm` に合わせて改訂）+ 4 項目ラベル付き表記正本化
+  - #143: 案 A（UI 一貫性優先、ローカル保留方式の実装詳細を UI に露出させない）
+- reviewer 内部レビュー → 1 コミットでまとめてコミット（`0e58a9c`）
+- codex レビュー → 3 件指摘 → 修正 + 1 コミット（`d79d5a0`）
+  - **#107（支払日 vs 支払完了日）**: codex 推奨「支払日に統一」を批判的に評価し、ドメインモデル `paid_at` 等の既存正本側「支払完了日」維持で対応（`feedback_critical_review_of_codex.md` 適用）
 
-進捗: 32/62 → **38/62**（PASS 25 / FAIL 14 / SKIP 1 / 未実施 22）
+#### 2. 実装フェーズ（PR フロー、worktree 並列）
 
-#### 起票 issue（本セッション、合計 7 件）
+- frontend-developer 3 並列で起動（各 worktree、isolation 付き）
+  - PR #95 (#141): `step11/issue-141-report-period-validation`
+  - PR #94 (#144): `step11/issue-144-report-info-card-labels`
+  - PR #96 (#143): `step11/issue-143-new-item-attachment-ux-parity`
+- ローカル CI 実行で TS6133 エラーが master 由来と判明（直近の master 直接編集による回帰、本番 CI 停止中で見過ごされていた）
+  - 別 issue **#149** 起票 → 1 行修正 → PR #97 即マージ → 3 PR を origin/master にリベース
+- #143 で TS2345 型エラー 3 件発覚（fetchMock destructuring 型注釈の問題）→ 指揮役で直接修正（`[string]` → `unknown[]`）
 
-| # | スコープ | 種別 | MVP/post |
-|---|---------|------|---------|
-| 141 | 対象期間バリデーション V5 を両フィールド発火 + フィールド別文言に改善 | 実装 + 設計書 + テスト | MVP |
-| 143 | 新規明細追加モードの添付トースト不在 + リスト UI 構造不一致（当初 #142 で起票するも ID 衝突で #143 にリネーム） | 実装 + 設計書 + テスト | MVP |
-| 144 | ReportInfoCard 常時表示 4 項目のラベル欠落 + 作成日フォーマット乖離 | 実装 + 設計書 + テスト | MVP |
-| 145 | ReportWorkflowInfo セクション見出し追加検討（文言候補 5 つ列挙、決定は対応時） | 実装 + 設計書 + テスト | post-MVP |
-| 146 | 大規模クロステナント環境での性能テスト計画（seed 数百万件、EXPLAIN、RLS 競合計測） | テスト計画 + 実証 | post-MVP |
-| 147 | per_page UI セレクタ実装 + 4 画面適用 + URL/UI 整合 + テスト追加（フルスコープに書き直し） | 実装 + 設計書 + テスト | MVP |
+#### 3. レビュー → マージ
 
-#### 進捗管理の整合化（途中で発見・修正）
+| PR | 内部 review | codex 初回 | 修正内容 | codex 再 | codex 再々 | マージ |
+|----|------------|-----------|---------|---------|------------|--------|
+| #95 (#141) | PASS | REQUEST CHANGES（trigger による必須エラー先出し） | trigger ガード + RPT-FE-110 追加 | APPROVE | — | `50045d6` |
+| #94 (#144) | PASS | REQUEST CHANGES（ReportInfoCard.test.tsx 回帰未追加） | RPT-FE-108-A/109-A 追加（折衷案 + 枝番） | REQUEST CHANGES（TZ 依存） | APPROVE | `30f0dea` |
+| #96 (#143) | PASS | APPROVE | — | — | — | `9e2b96e` |
 
-- #142 ID 衝突発見: open/ のみで最大 ID を取って採番した結果、resolved/ にあった devcontainer #142（2026-04-23 起票・即日 resolved）と衝突。本セッション起票分を **#143** にリネーム
-- 前セッション取りこぼし発見: commit `a2b2592`（2026-04-22 18:37）で #135-#139 が一括 resolved になっていたが、progress.md / 11-A チケットの残存表が「未着手」のまま放置。本セッションで残存表更新 + 11-A 発行 issue テーブルに PR 番号追記（#135→#90, #136→#91, #137→#92, #138→#89, #139→#92）+ 11-A 結果テーブル SMK-053 を PASS 反映
+- self-PR の `--approve` は GitHub に拒否され、codex は毎回 `--comment` で APPROVE 相当を投稿
 
-#### docs-only 修正
+#### 4. 後処理
 
-- `50_detail_design/screens/report-detail.md:593`: §8 アクセス制御表「レポートが存在しない」の記述を §11 EmptyState 設計と整合化（リダイレクト + トースト → メインコンテンツ EmptyState + 「レポート一覧」リンク）
+- 4 worktree 削除（agent-fix-149 / agent-a56fb0a1dd5b62125 / agent-a75c1e4d0ace8b24b / agent-a8a7ba46add523514）
+- dev-journal commit `e3345cf`:
+  - `issues/open/{141,143,144,149}` → `resolved/`
+  - `review-findings/open/{106,107,108}` → `resolved/`
+  - `test_cases/reports.md` に RPT-FE-108-A / 109-A / 110 反映、FE 合計 119 → 122
 
 ### 未完了
 
-#### SMK 残項目
-
-- §4.8 ページネーション・フィルタ: SMK-081（未実施、#147 修正後）/ SMK-082（同上）/ SMK-083（フィルタ URL 反映、独立実施可）/ SMK-084（空状態、前提データ調整必要）
-- §4.9 キャッシュ: SMK-093, SMK-094
-- §4.11 ナビリンク: SMK-099, SMK-100（Phase 5）
-- Phase 3 Approver / Phase 4 Accounting / Phase 5 未ログイン / Phase 6 Admin（未着手）
-
-#### Phase 2 末尾再検証対象（resolved 済み）
-
-- SMK-061 / SMK-062 / SMK-050 部分（#137/#138/#139 resolved 済み）
-- 本セッションでは未実施（ブラウザ操作未着手）
-
-#### 未着手 issue（実装）
-
-- #133 ログ言語ポリシー（別セッション対応予定）
-- #140 フォーム必須マーカー不統一（UX polish）
-- #141 対象期間バリデーション V5 改善
-- #143 新規追加モード添付 UX
-- #144 ReportInfoCard ラベル欠落 + 作成日フォーマット
-- #147 per_page UI セレクタ実装（フルスコープ、4 画面適用）
+- progress.md の残存 issue 表から #141 / #143 / #144 を削除する作業（途中 `git checkout` で巻き戻し、別セッションが #150 起票と合わせて反映予定）
+- 別セッションが起票した #150（認証画面リンクテキスト乖離）の progress.md 反映が未完
+- `/tmp/expense-saas-pr94` / `/tmp/pr94-review` の codex 一時 worktree 残存（codex 環境側の管理範囲）
 
 ### ブロッカー
 
-- なし（#147 は SMK-081/082 のブロッカーだが Phase 2 末尾再検証として位置付け、他 SMK は並行可能）
+- なし
 
 ### 次にやること
 
-#### 優先度 1: 残 SMK 続行（独立実施可能なもの）
+#### 優先度 1: progress.md 整合化
 
-- **SMK-083**（フィルタ URL 反映）: per_page に依存しない、即実施可
-- **SMK-093 / SMK-094**（キャッシュ整合性）: 独立実施可
-- **SMK-084**（空状態）: 前提データ調整方針を決めてから実施
+- 残存 issue 表から #141 / #143 / #144 を削除
+- #150 を残存 issue 表に追記（別セッションが起票済み）
+- session-log.md と progress.md の整合確認
 
-#### 優先度 2: 未着手 issue の実装（並列可能）
+#### 優先度 2: 残 issue 対応
 
-実装規模順に推奨:
-1. #141 対象期間バリデーション V5（FE 単発、設計書 6 ファイル改訂）
-2. #144 ReportInfoCard ラベル欠落（FE 単発 + 設計書改訂）
-3. #143 新規追加モード添付（FE + 設計書）
-4. #147 per_page UI セレクタ（FE 4 画面 + 共通コンポーネント新設 + 設計書 + テスト多数、規模大）
-5. #140 フォーム必須マーカー（規模大、慎重対応）
+- #140 フォーム必須マーカー（規模大、慎重対応）
+- #147 per_page UI セレクタ（FE 4 画面 + 共通コンポーネント新設、規模大）
+- #150 認証画面リンクテキスト乖離（規模小、別セッション主導）
 
-#### 優先度 3: Phase 2 末尾再検証
+#### 優先度 3: SMK 残項目（前セッションから継続）
 
-- #147 マージ後に SMK-081/082 を実施
-- 各 issue resolved 後に SMK-050（部分）/ 061 / 062 を再実施
+- §4.8 ページネーション・フィルタ: SMK-081/082（#147 後）/ SMK-083/084
+- §4.9 キャッシュ: SMK-093, SMK-094
+- §4.11 ナビリンク: SMK-099, SMK-100
+- Phase 3 Approver / Phase 4 Accounting / Phase 5 未ログイン / Phase 6 Admin
 
 #### 優先度 4: Step 11-B / 11-C の並列着手判断
 
@@ -100,98 +85,90 @@
 
 ### 学び・気づき
 
-#### per_page 仕様の論点整理が「実装バグ vs 設計乖離 vs UI 必要性」の三層議論になった反省
+#### 形式的指摘 vs 実質的指摘の見極め（`feedback_critical_review_of_codex.md` 応用）
 
-- 当初「`?per_page=1` が効かない」を実装バグとして即 issue 化しようとしたが、ユーザー指摘で順序が逆だった点を訂正
-  - 仕様確定（URL 反映 / UI 露出 / 標準オプション）が先、実装判断は後
-- 私が「設計通り（API 専用）」と「実装バグ」を行き来した結果、ユーザーを混乱させた
-- **教訓**: 設計乖離・UX 違和感を発見した時は、まず「設計書がそもそも何を要求しているか」を全文確認、次に「ユーザー UX 要件として何が望まれるか」を整理してから判断分岐する。実装の事実だけを見て即 issue にしない
+- codex 初回レビューの #94 / #95 指摘は形式ではなく実質的な品質ゲート問題（テスト経路の妥当性、必須エラー先出し）だったため対応必須
+- 一方、設計書改訂レビューの #107（支払日 vs 支払完了日）では codex 推奨方向を批判的に評価し、ドメインモデル既存正本側を優先する判断を下した
+- **教訓**: codex 指摘は「内部矛盾の存在」までは正しいが、修正方向はプロジェクト既存正本側を尊重することが多い
 
-#### 過去セッションでの仕様議論の薄さが露呈
+#### master 直接編集の弊害が露呈（再発防止メモ）
 
-- per_page セレクタの UI 設計（選択肢、配置、URL 連動）が **設計書時点で詰められていなかった** ため、実装段階で URL 受け側のみ実装され UI セレクタ自体が抜けた状態に
-- 同様のパターン（#136 ConfirmDialog / #139 ReportListTable / #140 required マーカー）が累積しており、Step 5.5（UI コンポーネント設計）と Step 10（実装）の間でレビューを通じた整合確認が弱かった
-- Step 11-D（横断レビュー）で codex に「設計 vs 実装の乖離監査」を明示依頼する段取りは前セッションで記録済み、本セッションでも継続妥当
+- TS6133 エラー（AttachmentArea.test.tsx の未使用 `url` 引数）が master HEAD に紛れ込んでいた
+- 直近の master 直接編集（PR フロー外）で混入したと推定。本番 CI（GitHub Actions）が停止中のため検出できず放置
+- 3 PR ローカル CI 並列実行で初めて発覚 → #149 として別 PR で対処
+- **教訓**: 軽微修正でも PR フロー経由で CI 検証を受ける運用に戻すべき。本番 CI 復旧は別 ops 系 issue で計画
 
-#### ユーザー指摘「色々雑すぎないか？」を受けた反省
+#### 実装担当者の判断委ね（折衷案）の落とし穴
 
-- SMK-081 の検証手段（`?per_page=1` 回避策）を提案する前に、その手段が動くことを検証していなかった
-- 動かないと分かった後、「per_page が壊れている」という枠組みで話を膨らませて、本質的問題（seed 件数不足）を見失わせた
-- **教訓**: 検証手段は「確実に動く既知の方法」を採用する。回避策的な手法は前提検証してから提案
+- #144 で実装担当が「ReportInfoCard と ReportBasicInfo の両方を修正する折衷案」を採用したが、テストは ReportBasicInfo.test.tsx 側のみだったため、実画面経路（ReportDetailPage → ReportInfoCard）の回帰保証が抜けていた
+- codex に指摘されて初めて気づき、ReportInfoCard.test.tsx に枝番テスト（RPT-FE-108-A/109-A）を追加
+- **教訓**: 実装担当に判断を委ねる場合、判断結果のテスト網羅も含めて完了条件として明示する
 
-#### 進捗管理の整合化漏れ（再発）
+#### TZ 固定の責務分担（仕様 vs 実装）
 
-- session 開始時に session-log.md と progress.md の整合（特に「残存 issue 表 vs issues/open/ ファイル一覧」）をチェックする習慣がない
-- 前セッション（2026-04-22）でも同種の指摘あり、再発した
-- **教訓**: session-start スキルに「open/ ディレクトリと progress.md 残存表の件数・ID 照合」をルーチン化すべき。今回 #135-#139 が 2 日間放置された
+- 設計書「JST 表示」の仕様を、テスト側で TZ 強制するのではなく実装側 `toLocaleString` に `timeZone: 'Asia/Tokyo'` を明示することで担保
+- 副次的に他のワークフロー系日時（提出日・承認日・却下日・支払完了日）も TZ 安定化される
+- **教訓**: 仕様の責務は仕様レイヤー（実装側）で担保し、テストはそれを検証する形に保つ。テスト側で TZ を固定するのは検証ロジックを緩めることになり妥当でない
 
-#### #142 ID 衝突（運用ミス）
+#### 別セッションとの並行作業
 
-- ops-writer に「open/ の最大 ID + 1」と指示し、resolved/ を見ないまま採番
-- devcontainer #142（別ワークストリーム）と衝突 → リネーム作業発生
-- **教訓**: ID 採番は **必ず open/ + resolved/ 両方の最大値**を確認。本セッション後半（#144 以降）はこのルールを徹底
+- 別セッション（#148 起票・解決、#150 起票）が並行で progress.md / 11-A-local-verification.md を編集していた
+- 私のセッションで progress.md を一時編集 → `git checkout` でリバート → 別セッションの作業（commit `4117690` 等）はコミット済みのためロスなし
+- **教訓**: 別セッションが編集中のファイルは、自身のコミット範囲から外す方が安全。複数セッション並行時は git status の M ファイルが「自分の差分」か「別セッションの差分」かを区別する習慣をつける
 
-#### post-MVP issue の運用が定着
+#### self-PR の APPROVE 制約
 
-- #145 / #146 を post-MVP として起票（#081 / #084 / #122 と同パターン、`## ⚠ MVP スコープ外` セクション + ops-080 言及）
-- post-MVP の issue 起票が「忘却防止 + MVP スコープ管理」として有効に機能している
-- 一方、ops-080（管理方式決定）の検討は引き続き未着手
+- GitHub では PR 作成者本人が同 PR を APPROVE できない（self-review 禁止）
+- reviewer / codex がレビュー投稿時に毎回試行錯誤していた → 運用ガイドに「self-PR は `--comment` 一択」を明記する余地
 
 ### 意思決定ログ
 
-#### #141 採用案 C: V5 両フィールド発火 + フィールド別文言
+#### #141 trigger ガード（PR #95 codex 指摘対応）
 
-- 当初の代替案（A: 文言統一のみ / B: 現状維持）を却下し、最も踏み込んだ案 C を採用
-- 理由: ユーザー観察「終了日 → 開始日の順で入力するとエラー出ない」UX 違和感が決定的、設計書内文言矛盾（test_cases 側 vs screens 側）も含めて統一する好機
+- 採用案: `getValues` 経由で「両フィールド入力済み」をチェックし、両方入力時のみ `trigger(['periodStart', 'periodEnd'])` を呼ぶ
+- 却下案 b: テスト setup で `process.env.TZ` 強制（本質的でない）
+- 却下案 c: テスト緩和（検証が緩む）
+- 理由: 設計書 §4 V3/V4「フォーカスアウト時」の要件を遵守しつつ、V5 相互再評価のメリットを保つ
 
-#### #143 採用案 A: 新規追加モードでもトースト文言は編集モードと完全同一
+#### #144 案 a: 実装側 JST 固定（PR #94 codex 再指摘対応）
 
-- 「ファイルをアップロードしました」「添付ファイルを削除しました」を新規モードでも表示
-- ユーザー判断: 「フロントにはアップロードしている」（実装の正直さ）+ #129 方針「実装詳細を UI に露出させない」と整合
+- 採用案: `formatDateTimeJa` / `formattedCreatedAt` に `timeZone: 'Asia/Tokyo'` を明示追加
+- 却下案 b: テスト側で TZ 固定
+- 却下案 c: テストアサーション緩和
+- 理由: 設計書「JST 表示」の責務を実装で担保するのが筋。副次的に他のワークフロー系日時も安定化される
 
-#### #144 案 B: 作成日を `YYYY/MM/DD HH:mm` で実装通り、設計書を改訂
+#### #144 折衷案: ReportInfoCard と ReportBasicInfo の両方を修正
 
-- 提出日・承認日・支払日と同じ時刻付きフォーマットに揃える、監査目線でも有用
-- 設計書 `YYYY/MM/DD` を改訂
+- 実装担当判断: ReportInfoCard.tsx は ReportBasicInfo.tsx を import せずインライン記述している実装実態のため、両方を修正
+- テスト配置: ReportBasicInfo.test.tsx に RPT-FE-108/109、ReportInfoCard.test.tsx に RPT-FE-108-A/109-A（枝番、過去 RPT-FE-090-A と同パターン）
+- インライン重複の解消は別 issue 推奨（本セッション中に未起票）
 
-#### #145 見出し文言は「決めるところまで issue 内」
+#### #149 (TS6133) を別 PR で対処
 
-- 候補 5 つ（処理履歴 / ステータス履歴 / 承認・支払情報 / ワークフロー情報 / 進捗情報）を比較表で記載、決定は対応時
-- post-MVP として起票
+- 候補: a) master 直接修正、b) 別 issue 起票 + PR、c) 3 PR のうち 1 つに同梱
+- 採用: b（原則的、master 直接編集の再発防止メモを残せる）
+- 修正規模 1 行だが、issue として記録することで「本番 CI 停止中の回帰」を可視化
 
-#### #147 フルスコープへの書き直し（重要）
+#### codex 指摘 #107（支払日 vs 支払完了日）
 
-- 当初: 「URL per_page 配線バグ + テスト穴補強」の小スコープで起票
-- 仕様議論を経て: 「per_page UI セレクタ実装 + 4 画面適用 + AppPaginationFooter 新設 + URL/UI 整合（パターン X 動的セレクタ）+ BE/FE テスト多数 + 設計書 7 ファイル改訂」に書き直し
-- 理由: ユーザー判断「UI 無しなら機能の必要性がない」「フッターに表示すべき」
-- パターン X 採用（URL ⇔ UI 完全一致、標準外値は動的選択肢として追加）で乖離解消
-
-#### report-detail.md §8 矛盾は docs-only 即時修正
-
-- 別 issue 起票せず、軽量修正として本セッション内で完結
-- 理由: 1 行修正、実装変更なし、§11 が実質正本として機能、起票オーバーヘッドが過剰
-
-#### seed 増量は不要と判断（#147 関連）
-
-- パターン X 採用により `?per_page=1` での擬似ページネーション検証が成立
-- seed 8 件のままで SMK-081/082 を実施可能
-- 「通常ユーザー UX として seed 不自然」観点もあるが、MVP スコープ膨張を避けるため見送り
+- codex 推奨: 「支払日」に統一（広範囲修正）
+- 採用: 「支払完了日」に戻す（ドメインモデル `paid_at` / openapi / Step 5.5 §ReportWorkflowInfo / SMK-097 等の既存正本側を尊重、波及最小）
+- 理由: codex は内部矛盾を正しく検出したが、修正方向の判断は既存正本側を優先
 
 ### PR / コミット要約
 
-**expense-saas**: 変更なし（SMK 実施 + #147 仕様議論のみ）
-
 **dev-journal**:
-- 起票: `issues/open/141-report-period-validation-single-field-trigger-and-ambiguous-wording.md`
-- 起票: `issues/open/143-new-item-attachment-toast-missing-and-list-ui-divergence.md`（当初 #142 で起票、衝突発覚後リネーム）
-- 起票: `issues/open/144-report-info-card-missing-labels-and-created-at-format-divergence.md`
-- 起票: `issues/open/145-post-mvp-report-workflow-info-section-heading.md`
-- 起票: `issues/open/146-post-mvp-large-scale-cross-tenant-performance-test.md`
-- 起票: `issues/open/147-per-page-ui-selector-and-paginated-list-pagination-footer.md`（#147 を当初の小スコープから書き直し）
-- 修正: `deliverables/docs/50_detail_design/screens/report-detail.md`（§8 L593 矛盾解消）
-- 更新: `progress-management/tickets/step11/11-A-local-verification.md`（SMK-051/052/053/070/071/072 結果反映、進捗サマリ更新、発行 issue テーブル #141/143/144/145/146/147 追記、#135-#139 PR 番号追記、SMK-053 を PASS 化）
-- 更新: `progress-management/progress.md`（残存 issue テーブルを #133 / #140 / #141 / #143 / #144 / #145 / #146 / #147 に整理）
-- 削除: `progress-management/session-log.md`（前セッション分を archives/session-logs/2026-04-22.md に追記）
+- `0e58a9c`: docs(design) #141 #144 #143 設計書改訂 3 件
+- `d79d5a0`: docs(design) codex 指摘対応（106 / 107 / 108）
+- `a981af8`: docs(issue) #149 起票
+- `e3345cf`: docs(close) #141 #143 #144 #149 解決後処理（issue / review-findings 移動 + test_cases 反映）
+
+**expense-saas**（PR ベース運用）:
+- PR #97 (#149) merged: `44afa38`
+- PR #96 (#143) merged: `9e2b96e`
+- PR #95 (#141) merged: `50045d6`
+- PR #94 (#144) merged: `30f0dea`
+- master HEAD: `30f0dea`（fast-forward 取り込み済）
 
 **root-project**: 変更なし
 
@@ -199,4 +176,4 @@
 
 ## 前回セッション
 
-前回セッション（2026-04-22 13:00〜14:52 + 14:55〜19:00、Step 11-A Phase 2 SMK + 9 PR マージ + #129-#139 resolved 反映）の詳細は `dev-journal/archives/session-logs/2026-04-22.md` を参照。
+前回セッション（2026-04-23 〜 2026-04-25 11:34、Step 11-A Phase 2 SMK 実施 + #141/#143/#144/#145/#146/#147 起票）の詳細は `dev-journal/archives/session-logs/2026-04-23.md` を参照。
