@@ -95,7 +95,8 @@ interface ReportInfoCardProps {
 ### ReportBasicInfo
 
 - 配置: `pages/reports/ReportBasicInfo.tsx`
-- 責務: レポートの常時表示項目（タイトル・ステータスバッジ・対象期間・合計金額・作成者・作成日）を表示する
+- 責務: レポートの常時表示項目（タイトル・ステータスバッジ・対象期間・合計金額・作成者・作成日）を表示する。対象期間・合計金額・作成者・作成日には UI 上で「対象期間:」「合計金額:」「作成者:」「作成日:」のラベル文字列を値の前に必ず表示する（ラベル表記の正本は `50_detail_design/screens/report-detail.md` §3 常時表示項目表）
+- 表示形式の正本: ラベル文言・値のフォーマット（特に作成日の `YYYY/MM/DD HH:mm`）は `50_detail_design/screens/report-detail.md` §3 に一本化する（本ファイル側では再定義しない）
 - 対応セクション: `50_detail_design/screens/report-detail.md` &sect;3（常時表示項目 #1-#6）
 
 ```typescript
