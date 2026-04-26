@@ -329,6 +329,11 @@ interface PageSizeSelectorProps {
 - ラベルとセレクトを `<InputLabel>` + `<Select labelId>` で関連付ける
 - `disabled` 時は `aria-disabled="true"` が MUI から自動付与される
 
+#### テスト用識別子（`data-testid`）
+
+- ルート（外側 `<FormControl>` または `<Box>`）: `data-testid="page-size-selector"`
+- テストからは `screen.getByTestId('page-size-selector')` で参照する（PSS-001〜005、および 4 画面の Page 結合テスト）
+
 ### AppPaginationFooter
 
 - 配置: `components/ui/AppPaginationFooter.tsx`
@@ -374,6 +379,12 @@ interface AppPaginationFooterProps {
 
 - 内部の `AppPagination` および `PageSizeSelector` のアクセシビリティ仕様を継承する
 - フッター全体に追加の `role`/`aria-*` は付与しない（MUI の Pagination / Select が個別に適切な ARIA 属性を提供する）
+
+#### テスト用識別子（`data-testid`）
+
+- ルート要素（最外殻の `<Box>`）: `data-testid="app-pagination-footer"`
+- テストからは `screen.getByTestId('app-pagination-footer')` で参照する（APF-001〜007、および 4 画面の Page 結合テスト）
+- 内部の `AppPagination` / `PageSizeSelector` の testid はそれぞれの規約に準拠
 
 ### StatusChip
 
