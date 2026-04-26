@@ -42,7 +42,9 @@ PendingApprovalsPage
         │   │       └── SelfLabel（条件付き表示）
         │   ├── EmptyState（← common-components.md）[データ0件時]
         │   └── PageSkeleton（← common-components.md）[ローディング時]
-        └── AppPagination（← common-components.md）
+        └── AppPaginationFooter（← common-components.md）
+            ├── AppPagination（← common-components.md）
+            └── PageSizeSelector（← common-components.md）
 ```
 
 ---
@@ -52,7 +54,7 @@ PendingApprovalsPage
 ### PendingApprovalsPage
 
 - 配置: `pages/approvals/PendingApprovalsPage.tsx`
-- 責務: 承認待ち一覧画面のページコンポーネント。AppLayout でラップし、PendingApprovalsContent を配置する。usePendingReports Hook を呼び出してデータを取得し、フィルタ・ページネーションの状態を管理する。Approver ロール以外のアクセスはダッシュボードにリダイレクトされる（RBAC ミドルウェアが 403 を返し、グローバルエラーハンドラがリダイレクト）
+- 責務: 承認待ち一覧画面のページコンポーネント。AppLayout でラップし、PendingApprovalsContent を配置する。usePendingReports Hook を呼び出してデータを取得する。**フィルタ条件・ページ番号（`page`）・表示件数（`per_page`）はすべて URL クエリパラメータ（`useSearchParams`）で管理する**。フィルタ変更時および `per_page` 変更時は URL クエリパラメータを更新してページ番号を 1 にリセットする（`setSearchParams` は 1 回のコールに集約）。`per_page` の NaN/負数 URL 値は FE 側で 20 にフォールバックし、範囲内不正値（0 や 101 等）は BE バリデーション（HTTP 422）に委ねる。Approver ロール以外のアクセスはダッシュボードにリダイレクトされる（RBAC ミドルウェアが 403 を返し、グローバルエラーハンドラがリダイレクト）。詳細は `state-management.md §3.1`（ページネーション URL クエリ ⇔ Hook ⇔ API URL 連動仕様）を参照
 - 対応セクション: `50_detail_design/screens/workflow-pending.md` &sect;1, &sect;12, &sect;13
 
 ```typescript
@@ -90,7 +92,7 @@ interface PendingApprovalsContentProps {
 | `pagination` | `Pagination` | Yes | ページネーション情報 | usePendingReports Hook の data.pagination |
 | `isLoading` | `boolean` | Yes | データ取得中フラグ | usePendingReports Hook の isLoading |
 | `error` | `ApiClientError \| null` | Yes | API エラー | usePendingReports Hook の error |
-| `filters` | `PendingReportListParams` | Yes | 現在のフィルタ条件 | PendingApprovalsPage の useState |
+| `filters` | `PendingReportListParams` | Yes | 現在のフィルタ条件 | PendingApprovalsPage が URL クエリパラメータ（useSearchParams）から復元 |
 | `onFilterChange` | `(filters: PendingReportListParams) => void` | Yes | フィルタ変更時のコールバック | PendingApprovalsPage |
 | `onPageChange` | `(page: number) => void` | Yes | ページ変更時のコールバック | PendingApprovalsPage |
 
@@ -190,6 +192,7 @@ Props 型定義は `common-components.md §PageTitle` を参照。
 
 ```
 GET /api/workflow/pending
+（URL クエリ ⇔ Hook 引数 ⇔ API URL の連動仕様は state-management.md §3.1 を参照）
   → usePendingReports(filters)（← state-management.md §3 データフェッチ系）
     → PendingApprovalsPage
       → PendingApprovalsContent (props: reports, pagination, isLoading, error, filters, onFilterChange, onPageChange)
@@ -203,7 +206,9 @@ GET /api/workflow/pending
             → SelfLabel (props: isOwnReport -- renderCell 内)
           → EmptyState (props: message) [0件時]
           → PageSkeleton (props: variant = "table") [ローディング時]
-        → AppPagination (props: currentPage, totalPages, onPageChange)
+        → AppPaginationFooter (props: currentPage, totalPages, onPageChange, perPage, onPerPageChange)
+          → AppPagination (props: currentPage, totalPages, onPageChange) [内部]
+          → PageSizeSelector (props: perPage, onPerPageChange) [内部]
 ```
 
 ### 使用する Hook
@@ -220,8 +225,9 @@ GET /api/workflow/pending
 | 状態 | カテゴリ | 管理方法 | スコープ |
 |------|---------|---------|---------|
 | 承認待ちレポート一覧 | サーバー | usePendingReports Hook（TanStack Query useQuery） | PendingApprovalsPage |
-| フィルタ条件（applicant_name） | UI | useState | PendingApprovalsPage |
-| 現在のページ番号（page） | UI | useState | PendingApprovalsPage |
+| フィルタ条件（applicant_name） | UI | URL クエリパラメータ（useSearchParams） | PendingApprovalsPage |
+| 現在のページ番号（page） | UI | URL クエリパラメータ（useSearchParams） | PendingApprovalsPage |
+| 現在の表示件数（per_page） | UI | URL クエリパラメータ（useSearchParams）。NaN/負数は FE 側で 20 にフォールバック（`state-management.md §3.1` 参照） | PendingApprovalsPage |
 | デバウンス中の入力値 | UI | useState + useEffect（300ms デバウンス） | PendingFilterBar 内 |
 | サイドバー開閉状態 | UI | useState | AppLayout 内 |
 
@@ -236,7 +242,7 @@ GET /api/workflow/pending
 | `AppSidebar`（← common-components.md） | AppLayout 内部 | 承認待ち一覧メニューをアクティブ表示（currentPath = "/approvals"） |
 | `AppDataGrid`（← common-components.md） | PendingReportTable 内 | columns: 申請者名・タイトル・合計金額・提出日・遷移アイコンの5列。行クリックで遷移。emptyMessage は PendingReportTable が EmptyState で別途制御 |
 | `AppTextField`（← common-components.md） | PendingFilterBar 内の申請者名フィルタ | name: "applicant_name"、label: "申請者名"。デバウンス 300ms で検索実行 |
-| `AppPagination`（← common-components.md） | PendingApprovalsContent 下部 | currentPage, totalPages を usePendingReports の pagination から取得 |
+| `AppPaginationFooter`（← common-components.md） | PendingApprovalsContent 下部のページネーションフッター（中央: ページ番号、右: 表示件数セレクタ）。常時表示（`totalPages <= 1` でも非表示にしない。内部 `AppPagination` は `count={Math.max(totalPages, 1)}`）。スマホ幅（375px）では `flex-direction: column` で縦並び | currentPage / totalPages / perPage を usePendingReports の pagination から取得。onPageChange / onPerPageChange は PendingApprovalsPage が `setSearchParams` で URL を更新（per_page 変更時は page=1 にリセット）。Props 型は `common-components.md §AppPaginationFooter / §PageSizeSelector` を参照 |
 | `EmptyState`（← common-components.md） | PendingReportTable 内（0件時） | message: フィルタ未適用時「承認待ちのレポートはありません。」、フィルタ適用中「条件に一致するレポートはありません。」。action: フィルタ適用中はリセットボタン |
 | `PageSkeleton`（← common-components.md） | PendingReportTable 内（ローディング時） | variant: "table"、rows: 5 |
 | `AppToast`（← common-components.md） | PendingApprovalsPage | サーバーエラー（500）時のトースト表示 |
@@ -263,7 +269,7 @@ GET /api/workflow/pending
 | &sect;5 表示項目（テーブルカラム） | PendingReportTable, AppDataGrid | 申請者名・タイトル・合計金額・提出日・遷移アイコンの5列 |
 | &sect;5 自己承認禁止の表示ルール | SelfLabel | 「自分」ラベル表示。行クリックは通常通り遷移可能 |
 | &sect;6 フィルタ | PendingFilterBar, AppTextField, FilterResetButton | 申請者名テキスト入力（デバウンス 300ms）+ リセットボタン |
-| &sect;7 ページネーション | AppPagination | オフセットベース、20件/ページ |
+| &sect;7 ページネーション | AppPaginationFooter（内部に AppPagination + PageSizeSelector） | オフセットベース、デフォルト 20 件/ページ、`per_page` セレクタ `[10, 20, 50, 100]`、URL クエリ `page` / `per_page` と双方向連動、常時表示。詳細は `state-management.md §3.1` 参照 |
 | &sect;8 件数表示 | PendingReportCount | 「N 件の承認待ちレポート」/ フィルタ適用中0件メッセージ |
 | &sect;9 空状態 | EmptyState | 「承認待ちのレポートはありません。」/「条件に一致するレポートはありません。」 |
 | &sect;10 ローディング | PageSkeleton | variant: "table"、5行分のスケルトン UI |

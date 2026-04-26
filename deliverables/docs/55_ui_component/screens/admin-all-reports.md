@@ -42,7 +42,9 @@ AllReportsPage
         │   │   └── StatusChip（← common-components.md）[ステータス列]
         │   ├── EmptyState（← common-components.md）
         │   └── PageSkeleton（← common-components.md）
-        └── AppPagination（← common-components.md）
+        └── AppPaginationFooter（← common-components.md）
+            ├── AppPagination（← common-components.md）
+            └── PageSizeSelector（← common-components.md）
 ```
 
 ---
@@ -52,7 +54,7 @@ AllReportsPage
 ### AllReportsPage
 
 - 配置: `pages/admin/AllReportsPage.tsx`
-- 責務: テナント全レポート一覧画面のページコンポーネント。AppLayout でラップし、useAllReports / useTenantMembers Hook を呼び出してデータを取得する。フィルタ条件とページネーション状態を管理し、子コンポーネントに伝播する。403 エラー時はダッシュボードにリダイレクトする
+- 責務: テナント全レポート一覧画面のページコンポーネント。AppLayout でラップし、useAllReports / useTenantMembers Hook を呼び出してデータを取得する。**フィルタ条件・ページ番号（`page`）・表示件数（`per_page`）はすべて URL クエリパラメータ（`useSearchParams`）で管理する**（issue #147 Q2: 旧 `useState` ベースから移行。他 3 画面と挙動を統一）。フィルタ変更時および `per_page` 変更時は URL クエリパラメータを更新してページ番号を 1 にリセットする（`setSearchParams` は 1 回のコールに集約）。`per_page` の NaN/負数 URL 値は FE 側で 20 にフォールバックし、範囲内不正値（0 や 101 等）は BE バリデーション（HTTP 422）に委ねる。403 エラー時はダッシュボードにリダイレクトする。詳細は `state-management.md §3.1`（ページネーション URL クエリ ⇔ Hook ⇔ API URL 連動仕様）を参照
 - 対応セクション: `50_detail_design/screens/admin-all-reports.md` &sect;1, &sect;3, &sect;9, &sect;10
 
 ```typescript
@@ -99,7 +101,7 @@ interface AllReportsFilterBarProps {
 
 | Props | 型 | 必須 | 説明 | データソース |
 |-------|---|------|------|------------|
-| `filters` | `AllReportsFilterValues` | Yes | 現在のフィルタ条件 | AllReportsPage の useState |
+| `filters` | `AllReportsFilterValues` | Yes | 現在のフィルタ条件 | AllReportsPage が URL クエリパラメータ（useSearchParams）から復元 |
 | `onFilterChange` | `(filters: AllReportsFilterValues) => void` | Yes | フィルタ変更コールバック | AllReportsPage |
 | `members` | `UserSummary[]` | Yes | テナント内メンバー一覧（申請者フィルタ用） | useTenantMembers Hook の data |
 | `membersLoading` | `boolean` | Yes | メンバー一覧のローディング状態 | useTenantMembers Hook の isLoading |
@@ -153,6 +155,7 @@ interface AllReportsTableProps {
 
 ```
 GET /api/reports/all?page=...&per_page=...&status=...&from=...&to=...&submitter_id=...
+（URL クエリ ⇔ Hook 引数 ⇔ API URL の連動仕様は state-management.md §3.1 を参照）
   → useAllReports(params)（← state-management.md §3 データフェッチ系）
     → AllReportsPage
       → AllReportsFilterBar (props: filters, onFilterChange, members, membersLoading)
@@ -163,7 +166,9 @@ GET /api/reports/all?page=...&per_page=...&status=...&from=...&to=...&submitter_
           → StatusChip (props: status)
         → EmptyState (props: message)
         → PageSkeleton (props: variant="table")
-      → AppPagination (props: currentPage, totalPages, onPageChange)
+      → AppPaginationFooter (props: currentPage, totalPages, onPageChange, perPage, onPerPageChange)
+        → AppPagination (props: currentPage, totalPages, onPageChange) [内部]
+        → PageSizeSelector (props: perPage, onPerPageChange) [内部]
 
 GET /api/tenant/members
   → useTenantMembers()（← state-management.md §3 データフェッチ系）
@@ -185,8 +190,9 @@ GET /api/tenant/members
 
 | 状態 | カテゴリ | 管理方法 | スコープ |
 |------|---------|---------|---------|
-| フィルタ条件（status, from, to, submitterId） | UI | useState（AllReportsFilterValues） | AllReportsPage |
-| 現在のページ番号 | UI | useState（number） | AllReportsPage |
+| フィルタ条件（status, from, to, submitterId） | UI | URL クエリパラメータ（useSearchParams）。issue #147 Q2 で旧 `useState` から移行 | AllReportsPage |
+| 現在のページ番号（page） | UI | URL クエリパラメータ（useSearchParams）。issue #147 Q2 で旧 `useState` から移行 | AllReportsPage |
+| 現在の表示件数（per_page） | UI | URL クエリパラメータ（useSearchParams）。NaN/負数は FE 側で 20 にフォールバック（`state-management.md §3.1` 参照） | AllReportsPage |
 | レポート一覧データ | サーバー | useAllReports Hook（TanStack Query useQuery） | AllReportsPage |
 | テナントメンバー一覧 | サーバー | useTenantMembers Hook（TanStack Query useQuery） | AllReportsPage |
 | 日付バリデーションエラー | UI | useState（string | null）またはローカル算出 | AllReportsFilterBar |
@@ -197,7 +203,7 @@ GET /api/tenant/members
 
 | 共通コンポーネント | 使用箇所 | カスタマイズ |
 |------------------|---------|------------|
-| `AppLayout`（← common-components.md） | AllReportsPage のルートラッパー | children に PageTitle + AllReportsFilterBar + AllReportsTable + AppPagination を配置 |
+| `AppLayout`（← common-components.md） | AllReportsPage のルートラッパー | children に PageTitle + AllReportsFilterBar + AllReportsTable + AppPaginationFooter を配置 |
 | `AppSelect`（← common-components.md） | AllReportsFilterBar 内のステータスフィルタ | options: 全て / 下書き / 提出済み / 承認済み / 却下 / 支払済み。value: filters.status |
 | `AppSelect`（← common-components.md） | AllReportsFilterBar 内の申請者フィルタ | options: 全て + useTenantMembers のメンバー一覧。value: filters.submitterId |
 | `AppDatePicker`（← common-components.md） | AllReportsFilterBar 内の期間フィルタ（開始日・終了日） | 開始日: value=filters.from、終了日: value=filters.to。終了日に日付バリデーションエラーを表示 |
@@ -205,7 +211,7 @@ GET /api/tenant/members
 | `StatusChip`（← common-components.md） | AllReportsTable の AppDataGrid ステータス列 | status: レポートの現在ステータス |
 | `EmptyState`（← common-components.md） | AllReportsTable 内のデータ0件表示 | フィルタ有無でメッセージ切替（「レポートはまだ作成されていません。」/「条件に一致するレポートはありません。フィルタを変更してお試しください。」） |
 | `PageSkeleton`（← common-components.md） | AllReportsTable 内のローディング表示 | variant="table"。初回読み込み・フィルタ変更・ページ切替時に表示 |
-| `AppPagination`（← common-components.md） | AllReportsPage の下部 | currentPage: 現在ページ、totalPages: API レスポンスの total_pages |
+| `AppPaginationFooter`（← common-components.md） | AllReportsPage の下部のページネーションフッター（中央: ページ番号、右: 表示件数セレクタ）。常時表示（`totalPages <= 1` でも非表示にしない。内部 `AppPagination` は `count={Math.max(totalPages, 1)}`）。スマホ幅（375px）では `flex-direction: column` で縦並び | currentPage / totalPages / perPage は useAllReports のレスポンス pagination から取得。onPageChange / onPerPageChange は AllReportsPage が `setSearchParams` で URL を更新（per_page 変更時は page=1 にリセット）。Props 型は `common-components.md §AppPaginationFooter / §PageSizeSelector` を参照 |
 | `AppToast`（← common-components.md） | AllReportsPage（SnackbarContext 経由） | API 通信エラー（500 系）のトースト表示 |
 
 ---
@@ -227,11 +233,11 @@ GET /api/tenant/members
 |---------------------------|------------------|------|
 | &sect;1 基本情報 | AllReportsPage | URL パス、対応 API、対応ロール |
 | &sect;3 アクセス制御 | AllReportsPage | Admin / Accounting のみ。他ロールはリダイレクト |
-| &sect;4 レイアウト | AppLayout, PageTitle, AllReportsFilterBar, AllReportsTable, AppPagination | ヘッダー + サイドナビ + メインコンテンツの標準レイアウト |
+| &sect;4 レイアウト | AppLayout, PageTitle, AllReportsFilterBar, AllReportsTable, AppPaginationFooter | ヘッダー + サイドナビ + メインコンテンツの標準レイアウト |
 | &sect;5 表示項目（ページタイトル） | PageTitle | 「全レポート」 |
 | &sect;5 表示項目（フィルタエリア） | AllReportsFilterBar | ステータス・期間・申請者の 4 フィルタ |
 | &sect;5 表示項目（レポートテーブル） | AllReportsTable, AppDataGrid, StatusChip | 申請者名・タイトル・合計金額・ステータス・提出日の 5 カラム |
-| &sect;6 ページネーション | AppPagination | オフセットベース、20 件/ページ |
+| &sect;6 ページネーション | AppPaginationFooter（内部に AppPagination + PageSizeSelector） | オフセットベース、デフォルト 20 件/ページ、`per_page` セレクタ `[10, 20, 50, 100]`、URL クエリ `page` / `per_page` と双方向連動、常時表示。詳細は `state-management.md §3.1` 参照 |
 | &sect;7 空状態 | EmptyState | フィルタ有無でメッセージ切替 |
 | &sect;8 ローディング | PageSkeleton | variant="table"。初回・フィルタ変更・ページ切替時 |
 | &sect;9 エラー表示 | AllReportsFilterBar（フィールドレベル）, AppToast（トースト） | 日付バリデーション: フィールドレベル、500 系: トースト、403: リダイレクト、401: ログイン画面リダイレクト |

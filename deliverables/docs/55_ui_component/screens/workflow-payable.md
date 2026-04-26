@@ -42,7 +42,9 @@ PayableReportsPage
         │   │       └── SelfLabel（条件付き表示）
         │   ├── EmptyState（← common-components.md）[データ0件時]
         │   └── PageSkeleton（← common-components.md）[ローディング時]
-        └── AppPagination（← common-components.md）
+        └── AppPaginationFooter（← common-components.md）
+            ├── AppPagination（← common-components.md）
+            └── PageSizeSelector（← common-components.md）
 ```
 
 ---
@@ -52,7 +54,7 @@ PayableReportsPage
 ### PayableReportsPage
 
 - 配置: `pages/payments/PayableReportsPage.tsx`
-- 責務: 支払待ち一覧画面のページコンポーネント。AppLayout でラップし、PayableReportsContent を配置する。usePayableReports Hook を呼び出してデータを取得し、フィルタ・ページネーションの状態を管理する。Accounting ロール以外のアクセスはダッシュボードにリダイレクトされる（RBAC ミドルウェアが 403 を返し、グローバルエラーハンドラがリダイレクト）
+- 責務: 支払待ち一覧画面のページコンポーネント。AppLayout でラップし、PayableReportsContent を配置する。usePayableReports Hook を呼び出してデータを取得する。**フィルタ条件・ページ番号（`page`）・表示件数（`per_page`）はすべて URL クエリパラメータ（`useSearchParams`）で管理する**。フィルタ変更時および `per_page` 変更時は URL クエリパラメータを更新してページ番号を 1 にリセットする（`setSearchParams` は 1 回のコールに集約）。`per_page` の NaN/負数 URL 値は FE 側で 20 にフォールバックし、範囲内不正値（0 や 101 等）は BE バリデーション（HTTP 422）に委ねる。Accounting ロール以外のアクセスはダッシュボードにリダイレクトされる（RBAC ミドルウェアが 403 を返し、グローバルエラーハンドラがリダイレクト）。詳細は `state-management.md §3.1`（ページネーション URL クエリ ⇔ Hook ⇔ API URL 連動仕様）を参照
 - 対応セクション: `50_detail_design/screens/workflow-payable.md` &sect;1, &sect;12, &sect;13
 
 ```typescript
@@ -90,7 +92,7 @@ interface PayableReportsContentProps {
 | `pagination` | `Pagination` | Yes | ページネーション情報 | usePayableReports Hook の data.pagination |
 | `isLoading` | `boolean` | Yes | データ取得中フラグ | usePayableReports Hook の isLoading |
 | `error` | `ApiClientError \| null` | Yes | API エラー | usePayableReports Hook の error |
-| `filters` | `PayableReportListParams` | Yes | 現在のフィルタ条件 | PayableReportsPage の useState |
+| `filters` | `PayableReportListParams` | Yes | 現在のフィルタ条件 | PayableReportsPage が URL クエリパラメータ（useSearchParams）から復元 |
 | `onFilterChange` | `(filters: PayableReportListParams) => void` | Yes | フィルタ変更時のコールバック | PayableReportsPage |
 | `onPageChange` | `(page: number) => void` | Yes | ページ変更時のコールバック | PayableReportsPage |
 
@@ -190,6 +192,7 @@ Props 型定義は `common-components.md §PageTitle` を参照。
 
 ```
 GET /api/workflow/payable
+（URL クエリ ⇔ Hook 引数 ⇔ API URL の連動仕様は state-management.md §3.1 を参照）
   → usePayableReports(filters)（← state-management.md §3 データフェッチ系）
     → PayableReportsPage
       → PayableReportsContent (props: reports, pagination, isLoading, error, filters, onFilterChange, onPageChange)
@@ -203,7 +206,9 @@ GET /api/workflow/payable
             → SelfLabel (props: isOwnReport -- renderCell 内)
           → EmptyState (props: message) [0件時]
           → PageSkeleton (props: variant = "table") [ローディング時]
-        → AppPagination (props: currentPage, totalPages, onPageChange)
+        → AppPaginationFooter (props: currentPage, totalPages, onPageChange, perPage, onPerPageChange)
+          → AppPagination (props: currentPage, totalPages, onPageChange) [内部]
+          → PageSizeSelector (props: perPage, onPerPageChange) [内部]
 ```
 
 ### 使用する Hook
@@ -220,8 +225,9 @@ GET /api/workflow/payable
 | 状態 | カテゴリ | 管理方法 | スコープ |
 |------|---------|---------|---------|
 | 支払待ちレポート一覧 | サーバー | usePayableReports Hook（TanStack Query useQuery） | PayableReportsPage |
-| フィルタ条件（applicant_name） | UI | useState | PayableReportsPage |
-| 現在のページ番号（page） | UI | useState | PayableReportsPage |
+| フィルタ条件（applicant_name） | UI | URL クエリパラメータ（useSearchParams） | PayableReportsPage |
+| 現在のページ番号（page） | UI | URL クエリパラメータ（useSearchParams） | PayableReportsPage |
+| 現在の表示件数（per_page） | UI | URL クエリパラメータ（useSearchParams）。NaN/負数は FE 側で 20 にフォールバック（`state-management.md §3.1` 参照） | PayableReportsPage |
 | デバウンス中の入力値 | UI | useState + useEffect（300ms デバウンス） | PayableFilterBar 内 |
 | サイドバー開閉状態 | UI | useState | AppLayout 内 |
 
@@ -236,7 +242,7 @@ GET /api/workflow/payable
 | `AppSidebar`（← common-components.md） | AppLayout 内部 | 支払待ち一覧メニューをアクティブ表示（currentPath = "/payments"） |
 | `AppDataGrid`（← common-components.md） | PayableReportTable 内 | columns: 申請者名・タイトル・合計金額・承認日・遷移アイコンの5列。行クリックで遷移。emptyMessage は PayableReportTable が EmptyState で別途制御 |
 | `AppTextField`（← common-components.md） | PayableFilterBar 内の申請者名フィルタ | name: "applicant_name"、label: "申請者名"。デバウンス 300ms で検索実行 |
-| `AppPagination`（← common-components.md） | PayableReportsContent 下部 | currentPage, totalPages を usePayableReports の pagination から取得 |
+| `AppPaginationFooter`（← common-components.md） | PayableReportsContent 下部のページネーションフッター（中央: ページ番号、右: 表示件数セレクタ）。常時表示（`totalPages <= 1` でも非表示にしない。内部 `AppPagination` は `count={Math.max(totalPages, 1)}`）。スマホ幅（375px）では `flex-direction: column` で縦並び | currentPage / totalPages / perPage を usePayableReports の pagination から取得。onPageChange / onPerPageChange は PayableReportsPage が `setSearchParams` で URL を更新（per_page 変更時は page=1 にリセット）。Props 型は `common-components.md §AppPaginationFooter / §PageSizeSelector` を参照 |
 | `EmptyState`（← common-components.md） | PayableReportTable 内（0件時） | message: フィルタ未適用時「支払待ちのレポートはありません。」、フィルタ適用中「条件に一致するレポートはありません。」。action: フィルタ適用中はリセットボタン |
 | `PageSkeleton`（← common-components.md） | PayableReportTable 内（ローディング時） | variant: "table"、rows: 5 |
 | `AppToast`（← common-components.md） | PayableReportsPage | サーバーエラー（500）時のトースト表示 |
@@ -263,7 +269,7 @@ GET /api/workflow/payable
 | &sect;5 表示項目（テーブルカラム） | PayableReportTable, AppDataGrid | 申請者名・タイトル・合計金額・承認日・遷移アイコンの5列。SCR-WFL-001 との差異は「提出日」→「承認日」 |
 | &sect;5 自己支払処理禁止の表示ルール | SelfLabel | 「自分」ラベル表示。行クリックは通常通り遷移可能 |
 | &sect;6 フィルタ | PayableFilterBar, AppTextField, FilterResetButton | 申請者名テキスト入力（デバウンス 300ms）+ リセットボタン |
-| &sect;7 ページネーション | AppPagination | オフセットベース、20件/ページ |
+| &sect;7 ページネーション | AppPaginationFooter（内部に AppPagination + PageSizeSelector） | オフセットベース、デフォルト 20 件/ページ、`per_page` セレクタ `[10, 20, 50, 100]`、URL クエリ `page` / `per_page` と双方向連動、常時表示。詳細は `state-management.md §3.1` 参照 |
 | &sect;8 件数表示 | PayableReportCount | 「N 件の支払待ちレポート」/ フィルタ適用中0件メッセージ |
 | &sect;9 空状態 | EmptyState | 「支払待ちのレポートはありません。」/「条件に一致するレポートはありません。」 |
 | &sect;10 ローディング | PageSkeleton | variant: "table"、5行分のスケルトン UI |

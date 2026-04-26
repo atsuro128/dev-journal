@@ -183,6 +183,9 @@ interface PayableReportListParams {
 }
 // 出力: ApiListResponse<PayableReport>
 
+// 注: useMyReports / useAllReports / usePendingReports / usePayableReports の
+// `per_page` 連動仕様は §3.1 「ページネーション URL クエリ ⇔ Hook ⇔ API URL 連動仕様」を参照
+
 // useAttachments
 // 入力: { reportId: string; itemId: string }
 // 出力: ApiResponse<Attachment[]>
@@ -205,6 +208,63 @@ interface PayableReportListParams {
 // 入力: なし
 // 出力: ApiResponse<UserSummary[]>
 ```
+
+### 3.1 ページネーション URL クエリ ⇔ Hook ⇔ API URL 連動仕様（issue #147）
+
+`useMyReports` / `useAllReports` / `usePendingReports` / `usePayableReports` の 4 Hook を利用する各画面（SCR-RPT-001, SCR-ADM-001, SCR-WFL-001, SCR-WFL-002）では、URL クエリパラメータ `page` および `per_page` を Hook の引数経由で API URL に伝播させる。本節は 4 画面で共通の連動方針を定義する。
+
+#### 連動経路
+
+```
+URL クエリ (?page=N&per_page=M)
+    ↓ useSearchParams で読取
+React 状態 (page, per_page)
+    ↓ Hook 引数として渡す
+Hook ({ page, per_page, ... })
+    ↓ TanStack Query の queryFn 内で URL 構築
+API URL (GET /api/reports?page=N&per_page=M)
+```
+
+#### 共通方針
+
+| 項目 | 仕様 |
+|------|------|
+| 標準 per_page 選択肢 | `[10, 20, 50, 100]`（FE 共通定数として `src/lib/constants.ts` 等に集約） |
+| デフォルト per_page | `20`（URL クエリ未指定時、および NaN/負数フォールバック時の値） |
+| URL → Hook 反映 | `useSearchParams` で `per_page` / `page` を読み取り、Hook に渡す。`per_page` を `parseInt` で解釈し、NaN または負数の場合は `20` にフォールバックする（issue #147 Q4: FE 側 fail-soft） |
+| 範囲内不正値の扱い | 範囲内の不正値（例: `0`, `101`）は FE で事前クランプせず、API クエリにそのまま乗せて BE のバリデーション（`per_page: 1〜100`）に委ねる（issue #147 Q4） |
+| UI → URL 反映 | `PageSizeSelector` の `onPerPageChange` で URL クエリ `per_page` を更新する |
+| per_page 変更時の page リセット | `per_page` 変更時は同時に `page=1` にリセットする（既存 status / from / to フィルタ変更時と同一パターン）。`setSearchParams` は **1 回のコールに集約**して `per_page` と `page` を同時更新する（issue #147 重要リスク 5: race 回避） |
+| 動的選択肢 | `PageSizeSelector` 側の責務として、URL の `per_page` が標準選択肢に含まれない場合は `[...standardOptions, perPage]` を昇順 + 重複除去して提示する（`common-components.md` §PageSizeSelector 参照） |
+| フッター表示 | `AppPaginationFooter` は常時表示（`totalPages <= 1` でも非表示にしない、issue #147 Q3） |
+
+#### setSearchParams 集約パターン（参考）
+
+```typescript
+// per_page 変更時のハンドラ（4 画面共通）
+const handlePerPageChange = (size: number) => {
+  const next = new URLSearchParams(searchParams.toString());
+  next.set('per_page', String(size));
+  next.set('page', '1'); // フィルタ変更と同パターン: per_page 変更時は 1 ページ目にリセット
+  setSearchParams(next); // 1 回のコールで per_page と page を同時更新（race 回避）
+};
+```
+
+#### NaN/負数フォールバックパターン（参考）
+
+```typescript
+const perPageParam = searchParams.get('per_page');
+const parsed = perPageParam !== null ? parseInt(perPageParam, 10) : NaN;
+const per_page = Number.isFinite(parsed) && parsed >= 0 ? parsed : 20;
+// 範囲内不正値（0, 101 等）はそのまま per_page に入り、API クエリ経由で BE バリデーションに到達する
+// （0 と 101 等は同じカテゴリ。一貫した挙動として両者とも BE で 422 Unprocessable Entity を返し、画面に明示エラーを表示する。`middleware.RespondValidationError` 経由）
+```
+
+#### AllReportsPage（SCR-ADM-001）の URL 駆動化（issue #147 Q2）
+
+`AllReportsPage` の `page` 状態は本 issue で `useState` から `useSearchParams` 駆動に移行する。`per_page` 配線の前提として `page` も URL 駆動化が必要なため、本 issue のスコープに含める。他 3 画面（`ReportListPage` / `ApprovalListPage` / `PaymentListPage`）は既に `useSearchParams` で `page` を管理済み。
+
+---
 
 ### ミューテーション系
 

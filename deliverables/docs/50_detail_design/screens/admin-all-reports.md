@@ -112,10 +112,18 @@
 
 - オフセットベースページネーション（`screens.md` §4.9 準拠）
 - デフォルト 20件/ページ
-- テーブル下部にページネーションコントロール（ページ番号 + 前へ/次へボタン）を表示
-- 現在のページ番号をハイライト表示し、総ページ数が多い場合は省略表示（例: 1 2 3 ... 8 9 10）
+- テーブル下部にフッター 1 行を配置（共通コンポーネント `AppPaginationFooter` を使用）
+  - 中央: ページ番号（`AppPagination`、現在ページをハイライト、総ページ数が多い場合は省略表示）
+  - 右: 表示件数セレクタ（`PageSizeSelector`、標準選択肢 `[10, 20, 50, 100]`、デフォルト 20）
+- レスポンシブ: 375px 等のスマホ幅では `flex-direction: column` で縦並びにフォールバック
+- **フッターは常時表示**（issue #147 Q3）。`totalPages <= 1` でも非表示にしない。内部 `AppPagination` は `count={Math.max(totalPages, 1)}` でページ番号「1」を常時表示する
 - API: `GET /api/reports/all?page=1&per_page=20&status=...&from=...&to=...&submitter_id=...`
+- **URL クエリ駆動化**（issue #147 Q2）: 本 issue で `page` の状態管理を `useState` から `useSearchParams` ベースへ移行する（per_page 配線の前提として `page` も URL 駆動化が必要）。他 3 画面（`/reports`, `/approvals`, `/payments`）と挙動を統一する
+- URL ⇔ UI 双方向反映: URL の `?per_page=N` 値は `PageSizeSelector` に反映（標準外値は動的に選択肢に追加）。セレクタ操作で URL クエリ `per_page` を更新
+- per_page 変更時は **page=1 にリセット**。`setSearchParams` は 1 回のコールに集約
+- per_page の NaN/負数 URL 値は FE 側で 20 にフォールバック（issue #147 Q4）。範囲内不正値は BE バリデーションに委ねる
 - フィルタ変更時に page を 1 にリセットする
+- Props 型は `55_ui_component/common-components.md` §AppPaginationFooter / §PageSizeSelector を参照
 
 ## 7. 空状態
 

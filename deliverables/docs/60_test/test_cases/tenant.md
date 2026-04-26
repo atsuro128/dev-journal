@@ -99,6 +99,16 @@
 
 ---
 
+## GET /api/reports/all（listAllReports）— ページネーション（issue #147）
+
+| テストID | テストレベル | レイヤー | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---------|-----------|---------|---------|-----------|-----------|---------------|-----------------|---------|
+| TNT-012 | 統合 | handler | 正常系 | RPT-F07, NFR-PERF-004 | openapi.yaml#listAllReports | `TestListAllReports_Pagination` | Actor: Test Admin（テナントA）。テナントA に複数ユーザーのレポートが 2 件以上存在する状態で `GET /api/reports/all?per_page=1` を実行（issue #147） | 200 OK。`data` の件数が 1。`pagination.total_pages >= 2`、`pagination.per_page == 1`（per_page 動作の保証。WFL-005 / RPT-091 と同パターン） |
+
+> 本ファイルでは `TNT-` プレフィックスを使用するため、`/api/reports/all` の per_page 統合テストもここに採番する（reports.md の RPT-091 が `/api/reports`（自分のレポート）対応のため、`/api/reports/all` は本ファイルの担当とする。RPT-020〜026 の listAllReports 採番と整合する位置付け）。
+
+---
+
 ## 実装ガイド（tenant_handler_test.go 向け）
 
 ### テストファイル配置
@@ -337,6 +347,27 @@ RBAC ミドルウェアが返す 403 は以下の形式であること（`authz.
 | TNT-FE-047 | 単体 | AllReportsPage | useAllReports | 認可 | ADM-F01 | 55_ui_component/screens/admin-all-reports.md §AllReportsPage | `test_AllReportsPage_redirects_on_403_shows_toast` | useAllReports が 403 エラーを返すようモック。useCurrentUser が Admin ロールを返すようモック | ダッシュボード（`/`）にリダイレクトされ、navigate の state.toast にトーストメッセージが含まれること（issue-088 対応） |
 
 **備考**: TNT-FE-046/047 は旧 TNT-FE-024/025（AllReportsPage 側の重複 ID）を振り直したもの。AllReportsFilterBar 側の TNT-FE-024/025 はそのまま維持する。
+
+---
+
+### 追記テスト（issue #147: AllReportsPage URL 駆動化 + per_page UI 結合）
+
+issue #147 対応として、`AllReportsPage`（SCR-ADM-001）における URL 駆動化（`useState` → `useSearchParams`）と per_page UI セレクタ結合経路を Page 結合テストとして採番する。`PageSizeSelector` / `AppPaginationFooter` の単体テストは `reports.md` §FE-6 の `PSS-001〜005` / `APF-001〜007` に集約済み。
+
+採番方針: 既存 TNT-FE 系最大 ID は `TNT-FE-047`。次番 `TNT-FE-048` から採用する。
+
+| テストID | テストレベル | 対象コンポーネント | 対象 Props / Hook | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---------|-----------|------------------|------------------|---------|-----------|-----------|---------------|-----------------|---------|
+| TNT-FE-048 | 単体 | AllReportsPage | useAllReports（MSW）、useSearchParams | 正常系 | RPT-F07 | 50_detail_design/screens/admin-all-reports.md §6, 55_ui_component/state-management.md §3.1 | `test_AllReportsPage_url_per_page_reflects_to_selector_and_api` | `/reports/all?per_page=10` で開く。MSW で `useAllReports` が 10 件 + `pagination.total_pages > 1` を返すよう設定。useCurrentUser が Admin ロールを返すようモック | テーブルに 10 件のみ描画される。フッターの `PageSizeSelector` が「10」を表示する。`useAllReports` への引数に `per_page: 10` が渡り、API URL に `?per_page=10` が含まれる |
+| TNT-FE-049 | 単体 | AllReportsPage | useAllReports（MSW）、useSearchParams | 正常系 | RPT-F07 | 50_detail_design/screens/admin-all-reports.md §6, 55_ui_component/state-management.md §3.1 | `test_AllReportsPage_selector_change_updates_url_and_resets_page` | `/reports/all?page=3&per_page=10` で開いた状態で `PageSizeSelector` から「50」を選択 | URL が `/reports/all?page=1&per_page=50` に更新される（`page=1` リセット）。`setSearchParams` は 1 回のコールに集約される（race 回避）。`PageSizeSelector` の現在値が「50」に更新される |
+| TNT-FE-050 | 単体 | AllReportsPage | useSearchParams（URL 駆動化） | 正常系 | RPT-F07 | 50_detail_design/screens/admin-all-reports.md §6（URL 駆動化）, 55_ui_component/state-management.md §3.1 | `test_AllReportsPage_page_state_is_url_driven` | `/reports/all?page=2` で開く。useCurrentUser が Admin ロールを返すようモック | `useAllReports` への引数に `page: 2` が渡る（`useState` ではなく `useSearchParams` 経由で URL から読み取られていることを保証、issue #147 Q2）。ページネーションコントロールで「3」をクリックすると URL が `/reports/all?page=3` に更新される（`useState` 由来の独立 state ではない） |
+| TNT-FE-051 | 単体 | AllReportsPage | useAllReports、useSearchParams | 正常系 | RPT-F07 | 50_detail_design/screens/admin-all-reports.md §6, 55_ui_component/state-management.md §3.1 | `test_AllReportsPage_url_invalid_per_page_falls_back_to_20` | `/reports/all?per_page=abc`（NaN ケース） / `?per_page=-5`（負数ケース） の 2 サブケース。useCurrentUser が Admin ロールを返すようモック | 両サブケースとも `useAllReports` への引数 `per_page` が `20`（FE フォールバック）になり、`PageSizeSelector` も「20」を表示する（issue #147 Q4） |
+
+**備考**:
+- 採番根拠: `TNT-FE-047` の次番から開始。
+- 実装ファイル候補: `expense-saas/frontend/src/pages/admin/__tests__/AllReportsPage.test.tsx`（**既存ファイル拡張**。実体ファイルは既に存在するため、本 issue では新規作成ではなく既存ファイルへ TNT-FE-048〜051 のテストケースを追記する形となる。issue #147 末尾「実ファイルパスの確定」の「新規作成」記述は実体確認後に既存ファイル拡張として訂正済み）。
+- TNT-FE-048〜051 は `AllReportsPage` 単独の経路を検証する。動的選択肢の単体検証は `PSS-002 / PSS-003` に集約済みのため、本節では再検証しない。
+- TNT-FE-022（既存: `resets_page_on_filter_change`）は per_page 変更ではなくフィルタ変更時の page リセット検証。本 issue で追加される TNT-FE-049 は **per_page 変更時の page リセット**を検証する別ケース。
 
 ---
 

@@ -272,14 +272,16 @@ interface AppToastProps {
 
 - 配置: `components/ui/AppPagination.tsx`
 - ベース MUI コンポーネント: `Pagination`
-- 責務: ページネーションコントロールの統一表示（`screens.md` &sect;4.9 準拠）。ページ番号 + 前へ/次へボタンを表示し、現在のページ番号をハイライトする。総ページ数が多い場合は省略表示する（例: 1 2 3 ... 8 9 10）
-- 使用箇所: SCR-RPT-001, SCR-ADM-001, SCR-WFL-001, SCR-WFL-002
+- 責務: ページ番号のみを提供するページネーションコントロール（`screens.md` &sect;4.9 準拠）。ページ番号 + 前へ/次へボタンを表示し、現在のページ番号をハイライトする。総ページ数が多い場合は省略表示する（例: 1 2 3 ... 8 9 10）
+- **per_page セレクタは扱わない**: 表示件数（per_page）の変更 UI は本コンポーネントに含めない。`PageSizeSelector` および両者を合成する `AppPaginationFooter` 側で扱う
+- **常時表示前提**: 4 画面（SCR-RPT-001, SCR-ADM-001, SCR-WFL-001, SCR-WFL-002）では `AppPaginationFooter` 経由で利用される。利用者は `count={Math.max(totalPages, 1)}` を渡すことを前提とし、本コンポーネントは「totalPages == 0」のような条件付き非表示を行わない（issue #147 Q3: フッター非表示仕様の撤廃）
+- 使用箇所: SCR-RPT-001, SCR-ADM-001, SCR-WFL-001, SCR-WFL-002（いずれも `AppPaginationFooter` 経由）
 
 ```typescript
 interface AppPaginationProps {
   /** 現在のページ番号 */
   currentPage: number;
-  /** 総ページ数 */
+  /** 総ページ数（呼び出し側で `Math.max(totalPages, 1)` を渡すこと） */
   totalPages: number;
   /** ページ変更時のコールバック */
   onPageChange: (page: number) => void;
@@ -287,6 +289,91 @@ interface AppPaginationProps {
   disabled?: boolean;
 }
 ```
+
+### PageSizeSelector
+
+- 配置: `components/ui/PageSizeSelector.tsx`
+- ベース MUI コンポーネント: `Select`
+- 責務: 1 ページあたりの表示件数（per_page）を選択する UI。標準選択肢 `[10, 20, 50, 100]` をデフォルトで提示し、URL 由来の標準外値（例: 1, 73）が現在値として渡された場合は動的に選択肢に追加して URL を正直に反映する（issue #147 採用方針 A: パターン X）
+- 使用箇所: SCR-RPT-001, SCR-ADM-001, SCR-WFL-001, SCR-WFL-002（いずれも `AppPaginationFooter` 経由）
+
+#### 配置・利用前提
+
+- 単独でも利用可能だが、本 MVP では常に `AppPaginationFooter` 内で `AppPagination` と並置する
+- ラベル「表示件数:」を MUI `<Select>` の `label`/`InputLabel` で付与する
+
+#### Props 型定義
+
+```typescript
+interface PageSizeSelectorProps {
+  /** 現在の表示件数（URL クエリ `per_page` に対応する整数） */
+  perPage: number;
+  /** 標準選択肢。デフォルト `[10, 20, 50, 100]` */
+  standardOptions?: number[];
+  /** 表示件数変更時のコールバック（呼び出し側で URL 更新と page=1 リセットを行う） */
+  onPerPageChange: (size: number) => void;
+  /** ローディング中などで無効化 */
+  disabled?: boolean;
+}
+```
+
+#### 動的選択肢の挙動（重要）
+
+- `perPage` が `standardOptions` に含まれる場合: 選択肢は `standardOptions` のまま
+- `perPage` が `standardOptions` に含まれない場合: 選択肢を `[...standardOptions, perPage]` を昇順ソートし、`Set` 等で重複除去した配列に動的拡張する（issue #147 重要リスク 1: 動的選択肢の重複ガード。MUI の MenuItem `key` 重複 warning を回避）
+- 例: `standardOptions=[10,20,50,100]`, `perPage=1` の場合 → 選択肢 `[1, 10, 20, 50, 100]`
+- 例: `standardOptions=[10,20,50,100]`, `perPage=20` の場合 → 選択肢 `[10, 20, 50, 100]`（重複追加しない）
+
+#### アクセシビリティ
+
+- ラベルとセレクトを `<InputLabel>` + `<Select labelId>` で関連付ける
+- `disabled` 時は `aria-disabled="true"` が MUI から自動付与される
+
+### AppPaginationFooter
+
+- 配置: `components/ui/AppPaginationFooter.tsx`
+- ベース MUI コンポーネント: なし（`AppPagination` + `PageSizeSelector` の合成コンポーネント）
+- 責務: 一覧画面のフッター 1 行に「中央: ページ番号（`AppPagination`）／右: 表示件数セレクタ（`PageSizeSelector`）」を並置する。レスポンシブ対応として 375px 等のスマホ幅では縦並びにフォールバックする
+- 使用箇所: SCR-RPT-001, SCR-ADM-001, SCR-WFL-001, SCR-WFL-002
+
+#### 配置・利用前提
+
+- 一覧テーブルの直下に配置する
+- **常時表示**（issue #147 Q3）: 内部 `AppPagination` には `count={Math.max(totalPages, 1)}` を渡し、`totalPages <= 1` でも非表示にせずページ番号「1」を表示する。`PageSizeSelector` も同様に常時表示する（件数変更により行数が増減した結果を確認できるようにするため）
+
+#### Props 型定義
+
+```typescript
+interface AppPaginationFooterProps {
+  /** 現在のページ番号 */
+  currentPage: number;
+  /** 総ページ数（0 や 1 でも内部で `Math.max(totalPages, 1)` を適用して常時表示） */
+  totalPages: number;
+  /** ページ変更時のコールバック */
+  onPageChange: (page: number) => void;
+  /** 現在の表示件数 */
+  perPage: number;
+  /** 表示件数変更時のコールバック（呼び出し側で URL 更新と page=1 リセットを行う） */
+  onPerPageChange: (size: number) => void;
+  /** PageSizeSelector に渡す標準選択肢（省略時は PageSizeSelector のデフォルト [10,20,50,100]） */
+  standardOptions?: number[];
+  /** ローディング中などで無効化（AppPagination / PageSizeSelector 双方に伝播） */
+  disabled?: boolean;
+}
+```
+
+#### レイアウト仕様
+
+- ルート要素: `<Box display="flex" justifyContent="space-between" alignItems="center" flexDirection={{ xs: 'column', sm: 'row' }} gap={{ xs: 1, sm: 0 }}>`
+- `xs`（< 600px、375px 端末を含む）: `flex-direction: column` で縦並び（`AppPagination` 上、`PageSizeSelector` 下）
+- `sm` 以上（>= 600px）: `flex-direction: row` で横並び（中央: `AppPagination`、右: `PageSizeSelector`）
+- `sm` 以上では中央寄せを確実にするため、**ルート要素の左側に `<Box flex={1} />` のスペーサーを配置する**（中央寄せ保証）。`space-between` により右端に `PageSizeSelector` が配置され、中央に `AppPagination` が来る構成（issue #147 §C 確定方針）。`xs` 時は縦並びレイアウトを優先するためスペーサーを非表示にする（`sx={{ display: { xs: 'none', sm: 'block' } }}` 相当）
+- 375px 縦並びテストは jsdom 上で完結しないため、`sx` prop / `flexDirection` の値検証で代替する（issue #147 重要リスク 4）
+
+#### アクセシビリティ
+
+- 内部の `AppPagination` および `PageSizeSelector` のアクセシビリティ仕様を継承する
+- フッター全体に追加の `role`/`aria-*` は付与しない（MUI の Pagination / Select が個別に適切な ARIA 属性を提供する）
 
 ### StatusChip
 
@@ -550,6 +637,8 @@ interface ReportFormActionsProps {
 | AppHeader | --- | --- | --- | --- | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ |
 | AppSidebar | --- | --- | --- | --- | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ |
 | AppPagination | --- | --- | --- | --- | --- | ○ | --- | --- | --- | ○ | ○ | ○ | --- |
+| PageSizeSelector | --- | --- | --- | --- | --- | ○ | --- | --- | --- | ○ | ○ | ○ | --- |
+| AppPaginationFooter | --- | --- | --- | --- | --- | ○ | --- | --- | --- | ○ | ○ | ○ | --- |
 | AppDataGrid | --- | --- | --- | --- | --- | ○ | --- | --- | ○ | ○ | ○ | ○ | --- |
 | AppTextField | ○ | ○ | ○ | ○ | --- | --- | ○ | ○ | ○ | ○ | ○ | --- | --- |
 | AppSelect | --- | --- | --- | --- | --- | ○ | --- | --- | ○ | --- | --- | ○ | --- |
@@ -576,7 +665,9 @@ interface ReportFormActionsProps {
 
 - **AppLayout**: 全認証済み画面（9画面）で使用。AppHeader と AppSidebar を内部で統合する
 - **AuthLayout**: 全未認証画面（4画面）で使用。AppHeader / AppSidebar は含まない
-- **AppPagination**: 一覧画面（SCR-RPT-001, SCR-ADM-001, SCR-WFL-001, SCR-WFL-002）でオフセットベースページネーションコントロールを表示する
+- **AppPagination**: 一覧画面（SCR-RPT-001, SCR-ADM-001, SCR-WFL-001, SCR-WFL-002）でオフセットベースのページ番号コントロールを表示する。本 MVP では常に `AppPaginationFooter` 経由で利用される
+- **PageSizeSelector**: 同上 4 画面で表示件数セレクタ（per_page）を提供する。標準選択肢 `[10,20,50,100]`、URL の標準外 per_page 値は動的に追加表示する
+- **AppPaginationFooter**: 同上 4 画面でフッター 1 行（中央: ページ番号、右: 表示件数セレクタ）を提供する。`xs` で縦並びにフォールバック。`totalPages <= 1` でも常時表示（issue #147 Q3）
 - **AppTextField**: 認証画面のフォーム入力、レポート作成・編集のタイトル入力、明細スライドパネルの摘要入力、承認待ち・支払待ち一覧の申請者名フィルタで使用
 - **AppSelect**: レポート一覧・テナント全レポート一覧のステータスフィルタ、テナント全レポート一覧の申請者フィルタ、明細スライドパネルのカテゴリ選択で使用
 - **AppDatePicker**: レポート一覧の期間フィルタ、レポート作成・編集の対象期間、明細スライドパネルの日付入力、テナント全レポート一覧の期間フィルタで使用
@@ -601,7 +692,9 @@ frontend/src/components/
 │   ├── AppHeader.tsx      # ヘッダー（AppBar ラッパー）
 │   └── AppSidebar.tsx     # サイドナビゲーション（Drawer ラッパー）
 ├── ui/                    # 共通 UI コンポーネント
-│   ├── AppPagination.tsx  # ページネーションコントロール（Pagination ラッパー）
+│   ├── AppPagination.tsx  # ページ番号コントロール（Pagination ラッパー、per_page セレクタは含まない）
+│   ├── PageSizeSelector.tsx       # 表示件数セレクタ（per_page、Select ラッパー、動的選択肢対応）
+│   ├── AppPaginationFooter.tsx    # ページ番号 + 表示件数セレクタを 1 行配置（xs で縦並び）
 │   ├── AppDataGrid.tsx    # DataGrid ラッパー
 │   ├── AppTextField.tsx   # TextField ラッパー
 │   ├── AppSelect.tsx      # Select ラッパー

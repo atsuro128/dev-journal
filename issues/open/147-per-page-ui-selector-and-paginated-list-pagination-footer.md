@@ -125,7 +125,7 @@ interface AppPaginationFooterProps {
 挙動:
 - `<Box display="flex" justifyContent="space-between" alignItems="center" flexDirection={{ xs: 'column', sm: 'row' }}>` でレスポンシブ
 - 内部で `<AppPagination>` + `<PageSizeSelector>` を配置
-- `totalPages <= 1` の場合は AppPagination のみ非表示、PageSizeSelector は表示維持（件数変更で件数が増減した結果を確認できるように）
+- フッターは常時表示（`totalPages <= 1` でも非表示にしない）。AppPagination は `count={Math.max(totalPages, 1)}` で常時表示し、PageSizeSelector も常時操作可能にする。**注: 末尾「2026-04-26 追加判断 §Q3」で確定方針として明示済み。本文上記の「totalPages <= 1 で AppPagination のみ非表示」は旧案として失効**
 
 ### 4 画面の修正
 
@@ -278,3 +278,42 @@ const handlePerPageChange = (size: number) => {
 - 設計書（common-components.md / state-management.md / 4 つの screens / 必要に応じて screens.md）が新仕様を反映
 - 各 test_cases に新規 ID が採番される
 - PR チェックリストに「テスト設計書の更新」項目を含める（`.claude/rules/project-rules.md` または `implementation-workflow.md` 準拠）
+
+## 2026-04-26 追加判断（着手前確定）
+
+### 確定事項
+
+#### Q1: 共通コンポーネント単体テスト ID の採番方針
+- 既存 AppDatePicker (`ADT-XXX`) / AppSelect (`ASL-XXX`) パターンを踏襲
+- 新接頭辞: `PSS` (PageSizeSelector) / `APF` (AppPaginationFooter) を新設
+- 採番先: `60_test/test_cases/reports.md` に集約（AppDatePicker / AppSelect と同位置）
+
+#### Q2: AllReportsPage の URL 駆動化を本 issue に含める
+- 現状 `useState` ベース → `useSearchParams` への移行を本 issue で対応
+- per_page 配線の前提として `page` も URL 駆動化が必要
+
+#### Q3: フッター非表示仕様の撤廃
+- 既存の `pagination &&` 等による「1 ページ未満時フッター非表示」仕様を撤廃
+- AppPaginationFooter は常時表示
+- 内部 AppPagination も `count={Math.max(totalPages, 1)}` で常時表示
+- 4 画面で挙動を統一
+
+#### Q4: per_page NaN / 不正値の FE フォールバック
+- `parseInt` で NaN / 負数の場合は 20 にフォールバック（FE 側で fail-soft）
+- 範囲内の不正値（0 や 101 等）は引き続き BE バリデーションに委ねる
+
+### 実ファイルパスの確定（architect 調査結果）
+- AdminAllReportsPage → `frontend/src/pages/admin/AllReportsPage.tsx`
+- PendingApprovalsPage → `frontend/src/pages/workflow/ApprovalListPage.tsx`
+- PayableReportsPage → `frontend/src/pages/workflow/PaymentListPage.tsx`
+- AllReportsPage 専用テストファイル `__tests__/AllReportsPage.test.tsx` は **実体既存**（`expense-saas/frontend/src/pages/admin/__tests__/AllReportsPage.test.tsx`、19,695 byte）。本 issue では既存ファイルにテストケースを追記する
+- Hook 側（useReports / useAllReports）は per_page 引数を既にサポート → **Hook 改修不要**
+
+### 重要リスク（実装フェーズで意識）
+1. 動的選択肢の重複ガード（`Set` による重複除去、key 重複 warning 回避）
+2. NaN / 負数のハンドリング（Q4 で確定 = FE 側 20 フォールバック）
+3. フッター常時表示への移行（Q3 で確定 = 既存条件付きレンダリング撤去）
+4. 375px 縦並びテストは jsdom で完結しないため `sx` prop 検証で代替
+5. `setSearchParams` の race（per_page 変更時は 1 回のコールに集約）
+6. BE 統合テストのシード件数（既存 fixture との衝突確認、対象テナントに 2 件以上必要）
+7. common-components.md の使用マトリクス・チェックリスト更新漏れ

@@ -41,7 +41,9 @@ ReportListPage
         │   ├── AppDataGrid（← common-components.md）
         │   │   └── StatusChip（← common-components.md）[各行]
         │   └── EmptyState（← common-components.md）[データ0件時]
-        └── AppPagination（← common-components.md）
+        └── AppPaginationFooter（← common-components.md）
+            ├── AppPagination（← common-components.md）
+            └── PageSizeSelector（← common-components.md）
 ```
 
 ---
@@ -51,7 +53,7 @@ ReportListPage
 ### ReportListPage
 
 - 配置: `pages/reports/ReportListPage.tsx`
-- 責務: レポート一覧画面のページコンポーネント。URL クエリパラメータからフィルタ条件を復元し、useMyReports Hook でデータを取得する。フィルタ変更時に URL クエリパラメータを更新してページ番号を 1 にリセットする。レポート作成ボタン押下時に `/reports/new` に遷移する
+- 責務: レポート一覧画面のページコンポーネント。URL クエリパラメータ（`useSearchParams`）からフィルタ条件・ページ番号（`page`）・表示件数（`per_page`）を復元し、useMyReports Hook でデータを取得する。フィルタ変更時および `per_page` 変更時に URL クエリパラメータを更新してページ番号を 1 にリセットする（`setSearchParams` は 1 回のコールに集約）。`per_page` の NaN/負数 URL 値は FE 側で 20 にフォールバックし、範囲内不正値（0 や 101 等）は BE バリデーション（HTTP 422）に委ねる。レポート作成ボタン押下時に `/reports/new` に遷移する。詳細は `state-management.md §3.1`（ページネーション URL クエリ ⇔ Hook ⇔ API URL 連動仕様）を参照
 - 対応セクション: `50_detail_design/screens/report-list.md` &sect;1, &sect;4, &sect;5, &sect;11
 
 ```typescript
@@ -170,6 +172,7 @@ interface ReportListTableProps {
 
 ```
 GET /api/reports?status=...&from=...&to=...&page=1&per_page=20
+（URL クエリ ⇔ Hook 引数 ⇔ API URL の連動仕様は state-management.md §3.1 を参照）
   → useMyReports(params)（← state-management.md §3 データフェッチ系）
     → ReportListPage
       → ReportListHeader (props: onCreateReport)
@@ -181,7 +184,9 @@ GET /api/reports?status=...&from=...&to=...&page=1&per_page=20
         → AppDataGrid (props: columns, rows, loading, emptyMessage)
           → StatusChip (props: status) [各行のステータスセル]
         → EmptyState (props: message, action) [データ0件時]
-      → AppPagination (props: currentPage, totalPages, onPageChange)
+      → AppPaginationFooter (props: currentPage, totalPages, onPageChange, perPage, onPerPageChange)
+        → AppPagination (props: currentPage, totalPages, onPageChange) [内部]
+        → PageSizeSelector (props: perPage, onPerPageChange) [内部]
 ```
 
 ### 使用する Hook
@@ -200,7 +205,8 @@ GET /api/reports?status=...&from=...&to=...&page=1&per_page=20
 | レポート一覧データ | サーバー | useMyReports Hook（TanStack Query useQuery） | ReportListPage |
 | ページネーション情報（currentPage, totalPages） | サーバー | useMyReports Hook のレスポンス pagination | ReportListPage |
 | フィルタ条件（status, from, to） | UI | URL クエリパラメータ（useSearchParams） | ReportListPage |
-| 現在のページ番号 | UI | URL クエリパラメータ（useSearchParams） | ReportListPage |
+| 現在のページ番号（page） | UI | URL クエリパラメータ（useSearchParams） | ReportListPage |
+| 現在の表示件数（per_page） | UI | URL クエリパラメータ（useSearchParams）。NaN/負数は FE 側で 20 にフォールバック（`state-management.md §3.1` 参照） | ReportListPage |
 | データ読み込み中フラグ | サーバー | useMyReports Hook の isLoading | ReportListPage |
 
 ---
@@ -215,7 +221,7 @@ GET /api/reports?status=...&from=...&to=...&page=1&per_page=20
 | `AppDataGrid`（← common-components.md） | ReportListTable 内のテーブル | columns: タイトル・対象期間・合計金額・ステータス・作成日。ステータス列は StatusChip でカスタムレンダリング |
 | `StatusChip`（← common-components.md） | ReportListTable 内の各行ステータスセル | status: レポートの status 値 |
 | `EmptyState`（← common-components.md） | ReportListTable 内のデータ 0 件時 | message: 「経費レポートはまだありません。レポートを作成して経費精算を始めましょう。」、action: レポート作成ボタン |
-| `AppPagination`（← common-components.md） | テーブル下部のページネーションコントロール | currentPage, totalPages は useMyReports のレスポンスから取得 |
+| `AppPaginationFooter`（← common-components.md） | テーブル下部のページネーションフッター（中央: ページ番号、右: 表示件数セレクタ）。常時表示（`totalPages <= 1` でも非表示にしない。内部 `AppPagination` は `count={Math.max(totalPages, 1)}`）。スマホ幅（375px）では `flex-direction: column` で縦並び | currentPage / totalPages / perPage は useMyReports のレスポンス pagination から取得。onPageChange / onPerPageChange は ReportListPage が `setSearchParams` で URL を更新（per_page 変更時は page=1 にリセット）。Props 型は `common-components.md §AppPaginationFooter / §PageSizeSelector` を参照 |
 | `PageSkeleton`（← common-components.md） | 初回読み込み時のスケルトン UI | variant: 'table' |
 | `AppToast`（← common-components.md） | API 通信エラー時のトースト通知 | severity: 'error' |
 
@@ -239,7 +245,7 @@ GET /api/reports?status=...&from=...&to=...&page=1&per_page=20
 | &sect;2 レイアウト | AppLayout, ReportListHeader, ReportListFilter, ReportListTable | 全体構成 |
 | &sect;3 表示項目 | ReportListTable, StatusChip | テーブルカラム定義、ステータスバッジ色 |
 | &sect;4 フィルタ | ReportListFilter, AppSelect, AppDatePicker | ステータス・期間フィルタ。フィルタ変更時の即時更新、URL クエリパラメータ反映 |
-| &sect;5 ページネーション | AppPagination | オフセットベース、20件/ページ |
+| &sect;5 ページネーション | AppPaginationFooter（内部に AppPagination + PageSizeSelector） | オフセットベース、デフォルト 20 件/ページ、`per_page` セレクタ `[10, 20, 50, 100]`、URL クエリ `page` / `per_page` と双方向連動、常時表示。詳細は `state-management.md §3.1` 参照 |
 | &sect;6 操作 | CreateReportButton, ReportListTable（行クリック） | レポート作成遷移、詳細表示遷移 |
 | &sect;7 空状態 | EmptyState | メッセージ + レポート作成ボタン |
 | &sect;8 ローディング | PageSkeleton | スケルトン UI（variant: 'table'） |

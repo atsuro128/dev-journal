@@ -361,7 +361,7 @@ const (
 
 **責務境界**:
 - 添付ファイル関連コンポーネント（AttachmentArea, AttachmentList, AttachmentUploader）は `attachments.md` に記載する。本ファイルには書かない。
-- 共通コンポーネント（AppDataGrid, EmptyState, FormAlert, AppTextField, AppSelect, AppDatePicker）の単体テストは `common-components.md` に記載する。本ファイルでは Props 経由の統合的な動作のみ検証する。
+- 共通コンポーネント（AppDataGrid, EmptyState, FormAlert, AppTextField, AppSelect, AppDatePicker, PageSizeSelector, AppPaginationFooter）の単体テストは `reports.md` に集約記載する（AppDatePicker は `ADT-`、AppSelect は `ASL-`、PageSizeSelector は `PSS-`、AppPaginationFooter は `APF-` の各プレフィックス）。本ファイルでは Props 経由の統合的な動作のみ検証する。
 - レポート詳細ページ全体のテスト（ReportDetailPage）は `reports.md` に記載する。
 
 ### 参照設計書

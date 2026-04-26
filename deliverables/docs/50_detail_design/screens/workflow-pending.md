@@ -116,10 +116,16 @@ Approver 自身が作成したレポートが submitted 状態で一覧に含ま
 |------|------|
 | 方式 | オフセットベースページネーション（screens.md §4.9 準拠） |
 | 1ページあたりの件数 | デフォルト 20 件 |
-| ページネーションコントロール | ページ番号 + 前へ/次へボタン。現在のページ番号をハイライト。総ページ数が多い場合は省略表示（例: 1 2 3 ... 8 9 10） |
-| API パラメータ | `page`（デフォルト 1）、`per_page`（デフォルト 20、最大 100） |
+| フッター構成 | 共通 `AppPaginationFooter` を使用。中央: ページ番号（`AppPagination`、現在ページハイライト、省略表示）、右: 表示件数セレクタ（`PageSizeSelector`、標準選択肢 `[10, 20, 50, 100]`、デフォルト 20） |
+| レスポンシブ | 375px 等のスマホ幅では `flex-direction: column` で縦並びにフォールバック |
+| 表示制御 | **フッターは常時表示**（issue #147 Q3）。`totalPages <= 1` でも非表示にしない。内部 `AppPagination` は `count={Math.max(totalPages, 1)}` でページ番号「1」を常時表示する |
+| API パラメータ | `page`（デフォルト 1）、`per_page`（デフォルト 20、最大 100。範囲外は BE バリデーションで 422） |
+| URL ⇔ UI 反映 | URL の `?per_page=N` を `PageSizeSelector` に反映（標準外値は動的に選択肢に追加）。セレクタ操作で URL クエリ `per_page` を更新 |
+| per_page 変更時 | page=1 にリセット（既存フィルタ変更と同一パターン）。`setSearchParams` は 1 回のコールに集約 |
+| FE フォールバック | per_page の NaN/負数 URL 値は FE 側で 20 にフォールバック（issue #147 Q4）。範囲内不正値は BE バリデーションに委ねる |
 | ソート順 | 提出日の降順（新しい提出が上位に表示） |
 | フィルタ変更時 | page を 1 にリセットする |
+| Props 型 | `55_ui_component/common-components.md` §AppPaginationFooter / §PageSizeSelector 参照 |
 
 ## 8. 件数表示
 
