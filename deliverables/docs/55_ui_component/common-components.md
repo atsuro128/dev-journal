@@ -457,8 +457,8 @@ interface FilterResetButtonProps {
 
 ```typescript
 interface AuthNavLink {
-  /** リンクの前に表示する説明テキスト */
-  prefix: string;
+  /** リンクの前に表示する説明テキスト（任意。省略時は label のみ表示） */
+  prefix?: string;
   /** リンクテキスト */
   label: string;
   /** 遷移先パス */
