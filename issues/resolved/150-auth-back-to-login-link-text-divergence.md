@@ -122,10 +122,25 @@ SMK-099（Phase 5、パスワードリセット要求画面の「ログイン画
 ---
 
 ## 解決内容
-<!-- pending-review へ移動する前に記入 -->
+
+採用方針: A-1（`AuthNavLink.prefix` をオプショナル化）。
+
+PR #98（squash commit `191cd95`）で expense-saas 側 4 ファイルを修正:
+- `frontend/src/pages/auth/AuthNavLinks.tsx`: `AuthNavLink.prefix` を `prefix?: string` にオプショナル化、レンダリングで `link.prefix && ...` の条件分岐追加
+- `frontend/src/pages/password-reset/PasswordResetRequestPage.tsx`: `prefix` を削除し `label: 'ログイン画面に戻る'` に変更（助詞「へ」→「に」修正）
+- `frontend/src/pages/password-reset/PasswordResetPage.tsx`: 同上
+- `frontend/src/pages/auth/__tests__/AuthNavLinks.test.tsx`: AUTH-FE-007-A テスト追加（prefix 省略時に label のみ描画 + prefix 文字列が `queryByText` で見つからないことを検証）
+
+dev-journal 側 2 ファイルを commit `153eb4a` で修正:
+- `deliverables/docs/55_ui_component/common-components.md`: `AuthNavLink.prefix` を `prefix?: string` にオプショナル化
+- `deliverables/docs/60_test/test_cases/auth.md`: AUTH-FE-007-A 追加 + カバレッジマトリクス（password-reset / password-reset-request の AuthNavLinks 行）に 007-A 追記
+
+レビュー: 内部レビュー PASS（blocker 0 / warning 0 / nit 1 受容） + codex レビュー APPROVE 相当（self-PR のため `--comment` で投稿）。
+
+マージ後の SMK-099 / SMK-100 再実施が必要。
 
 ## 解決日
-<!-- YYYY-MM-DD -->
+2026-04-26
 
 ---
 
