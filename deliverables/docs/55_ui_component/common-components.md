@@ -333,11 +333,11 @@ interface PageSizeSelectorProps {
 - テスト側で数値抽出を行う場合は `parseInt(option.textContent ?? '', 10)` を使う（`Number()` だと `NaN` になる）
 - アクセシブル名（`getByRole('option', { name: ... })`）は **`'10 件'` のように単位込み**で指定する
 
-#### サイズ・variant 方針（issue #147 再々オープン A2 案）
+#### サイズ・variant 方針（issue #147 再々オープン A2 案、確定）
 
 - `size="small"` を既定とする（MUI Select 標準の小サイズ。フッター高さを最小化）
-- `variant` は既存 `outlined` を初期方針とするが、`AppPaginationFooter` の最小高さ（52px 相当）に収まらない場合は `variant="standard"`（下線のみ）への切り替えを検討する。実装フェーズで MUI 標準フッターと並べた見え方を確認した上で確定する
-- FormControl 余白の調整（`margin="none"`、`sx={{ my: 0 }}` 等）で上下マージンを排除し、フッター高さ支配を回避する
+- `variant="outlined"` を確定採用とする（既存実装と整合、MUI X DataGrid 標準フッターの TablePagination 内 Select も outlined ベースであり標準寄せ趣旨と一致）
+- FormControl 余白を `margin="none"` + `sx={{ my: 0 }}` で完全に排除し、`AppPaginationFooter` の最小高さ（`minHeight: 52`）を Select 枠線が支配しないようにする（A2 案の主目的）
 
 #### アクセシビリティ
 
@@ -418,7 +418,7 @@ interface AppPaginationFooterProps {
   - `totalCount` 未指定時: 件数表示要素を出さず、旧仕様の左スペーサー `<Box flex={1} sx={{ display: { xs: 'none', sm: 'block' } }} />` を入れて中央寄せを保証する（`xs` 時は縦並びレイアウトを優先するためスペーサーを非表示）
   - 共通制約: `gap={{ xs: 1, sm: 0 }}` のうち `sm` で `gap: 0` としているのは、両端要素の `flex={1}` で十分な間隔が確保されるため余分な `gap` を加えないという設計判断（`gap` を入れると右寄せ要素がさらに右にずれてレイアウトが崩れる）
 - スペーサー / レイアウトは **DataGrid フッターコンテナの幅に追従する**前提。フッターコンテナは DataGrid のテーブル幅と一致するため、テーブル幅が変わっても中央寄せレイアウトは保たれる
-- **実装フェーズで動作確認する事項**: `slots.footer` で差し込んだコンポーネントは MUI X 内部の DOM フロー上にレンダリングされる。`flex` ベースの中央寄せが期待通り作用しない場合は、CSS Grid（`display: 'grid', gridTemplateColumns: '1fr auto 1fr'` 等）など代替手法への切り替えを検討する。MUI X バージョン更新時の挙動変化にも備え、レイアウト戦略は実装時に動作確認した上で確定する
+- **中央寄せ手法は `flex` ベースで確定**（issue #147 再々オープン A2 案、確定）: 上記「totalCount 指定時の両端 `flex={1}` ラッパー」「未指定時の左スペーサー `<Box flex={1}>`」を最終仕様とする。CSS Grid 等の代替案は採用しない（`flex` で十分かつ MUI 標準フッターも flex ベースのため標準寄せ趣旨と一致）
 - 375px 縦並びテストは jsdom 上で完結しないため、`sx` prop / `flexDirection` の値検証で代替する（issue #147 重要リスク 4）
 
 #### アクセシビリティ
