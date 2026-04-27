@@ -324,6 +324,13 @@ interface PageSizeSelectorProps {
 - 例: `standardOptions=[10,20,50,100]`, `perPage=1` の場合 → 選択肢 `[1, 10, 20, 50, 100]`
 - 例: `standardOptions=[10,20,50,100]`, `perPage=20` の場合 → 選択肢 `[10, 20, 50, 100]`（重複追加しない）
 
+#### 表示文字列フォーマット
+
+- 各 `<MenuItem>` の表示テキストは **`{size} 件`** とする（例: 「10 件」「20 件」「50 件」「100 件」）。日本語 UX 慣習に合わせて単位「件」を付与する
+- MUI Select の現在値表示（combobox の `textContent`）も同形式（「20 件」等）で表示される
+- テスト側で数値抽出を行う場合は `parseInt(option.textContent ?? '', 10)` を使う（`Number()` だと `NaN` になる）
+- アクセシブル名（`getByRole('option', { name: ... })`）は **`'10 件'` のように単位込み**で指定する
+
 #### アクセシビリティ
 
 - ラベルとセレクトを `<InputLabel>` + `<Select labelId>` で関連付ける
