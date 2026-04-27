@@ -116,6 +116,7 @@ Approver 自身が作成したレポートが submitted 状態で一覧に含ま
 |------|------|
 | 方式 | オフセットベースページネーション（screens.md §4.9 準拠） |
 | 1ページあたりの件数 | デフォルト 20 件 |
+| フッター配置 | **`AppDataGrid` の `slots.footer` プロパティに `AppPaginationFooter` を差し込み、DataGrid フッターコンテナに統合する**（issue #147 再オープン 2026-04-27 確定方針 D-1。クラス名定義は `55_ui_component/common-components.md` §AppDataGrid を参照）。テーブル外側の独立した `<Box>` には配置しない。本画面は `AppDataGrid` を直接利用するため、画面側で `<AppDataGrid slots={{ footer: () => <AppPaginationFooter ... /> }} />` の形で直接 `slots.footer` に渡す（issue #147 再オープン パターン ②a） |
 | フッター構成 | 共通 `AppPaginationFooter` を使用。中央: ページ番号（`AppPagination`、現在ページハイライト、省略表示）、右: 表示件数セレクタ（`PageSizeSelector`、標準選択肢 `[10, 20, 50, 100]`、デフォルト 20） |
 | レスポンシブ | 375px 等のスマホ幅では `flex-direction: column` で縦並びにフォールバック |
 | 表示制御 | **フッターは常時表示**（issue #147 Q3）。`totalPages <= 1` でも非表示にしない。内部 `AppPagination` は `count={Math.max(totalPages, 1)}` でページ番号「1」を常時表示する |

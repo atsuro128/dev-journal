@@ -372,3 +372,61 @@ const handlePerPageChange = (size: number) => {
 ## 残対応（マージ後）
 
 - BE テスト実行: ユーザー作業（VS Code タスク `BE: full test`）でマージ後に確認
+
+## 2026-04-27 再オープン
+
+### 再オープン理由
+
+Step 11-A SMK-081（ページ送り）検証で、AppPaginationFooter が「テーブルフッター位置への統合」になっておらず、テーブル要素の外側に独立した `<Box>` として配置されていることを発見。設計書 `common-components.md` L353「一覧テーブルの直下に配置する」が **テーブル内フッター位置への統合** か **テーブル外の隣接配置** かを明示していなかったため、実装が後者で確定してしまっていた。本来の意図は前者（テーブル内フッター位置への統合）。
+
+ユーザー判断: 設計書 + 実装の両方を修正する（コンポーネント化しているため 4 画面一括対応で完結する）。
+
+### 確定方針（2026-04-27 ユーザー協議で確定）
+
+技術調査の結果、本プロジェクトの 4 対象画面はいずれも MUI X `DataGrid`（`AppDataGrid` 経由）を使用しており、HTML 上は `<table>` ではなく `<div role="grid">` 構造のため、ネイティブ MUI `<TableFooter>` への統合は不可。代わりに以下を確定方針とする。
+
+- **採用案 D-1**: `AppDataGrid` の `slots.footer` プロパティに `AppPaginationFooter` を差し込み、DataGrid フッターコンテナ（`<div class="MuiDataGrid-footerContainer">`）位置に統合する
+- **実装パターン ②a**: `AppDataGrid` 自体は拡張せず、DataGrid 標準の `slots` props を活用する
+  - **直接利用パターン**（`ApprovalListPage` / `PaymentListPage`）: 画面側で `<AppDataGrid slots={{ footer: () => <AppPaginationFooter ... /> }} />` の形で直接 `slots.footer` に渡す
+  - **中間ラッパー経由パターン**（既存中間ラッパー `pages/reports/ReportListTable.tsx` / `pages/admin/AllReportsTable.tsx` を持つ画面）: 中間ラッパーに `paginationFooter?: ReactNode` 等の prop を追加し、ラッパー内部で `slots.footer` に変換して `AppDataGrid` に渡す
+
+`hideFooterPagination={true}` の併用を推奨（DataGrid 標準ページネーション UI との二重表示を避けるため。実装フェーズで最終動作確認）。
+
+### 追加対応内容
+
+#### 1. 設計書改訂
+
+- `dev-journal/deliverables/docs/55_ui_component/common-components.md`
+  - §AppDataGrid に「カスタムフッター」項を追加し、`slots.footer` 経由で `AppPaginationFooter` を統合するパターンを明示
+  - §AppPaginationFooter §配置・利用前提を「`AppDataGrid` の `slots.footer` プロパティに渡し、DataGrid フッターコンテナに統合する」と全面改訂
+  - 直接利用パターン / 中間ラッパー経由パターンの 2 系統併記
+  - `hideFooterPagination={true}` 併用推奨を明記
+  - DataGrid フッター内では外側マージン `mt={2}` 不要を明記
+- 4 画面の詳細設計（`50_detail_design/screens/{report-list, admin-all-reports, workflow-pending, workflow-payable}.md`）で、フッター配置の文言を `slots.footer` 経由統合・パターン ②a に整合させる
+- `state-management.md`（§3.1 URL ⇔ Hook ⇔ API URL 連動仕様）は配置パターンに依存しないため変更不要
+- `40_basic_design/screens.md` §4.9 は基本設計粒度では既存記述で十分のため変更不要（詳細設計に委譲）
+
+#### 2. 実装修正（4 画面一括）
+
+- `frontend/src/pages/reports/ReportListPage.tsx` + `pages/reports/ReportListTable.tsx`（中間ラッパー、`paginationFooter` prop 追加）
+- `frontend/src/pages/admin/AllReportsPage.tsx` + `pages/admin/AllReportsTable.tsx`（中間ラッパー、`paginationFooter` prop 追加）
+- `frontend/src/pages/workflow/ApprovalListPage.tsx`（直接 `slots.footer` 渡し）
+- `frontend/src/pages/workflow/PaymentListPage.tsx`（同）
+
+各画面で `AppPaginationFooter` を `AppDataGrid` の `slots.footer` 経由で配置する。中間ラッパー画面 2 件は `paginationFooter` prop を追加し、ラッパー内部で `slots.footer` に変換する。直接利用画面 2 件は画面側で `slots.footer` に直接渡す。
+
+#### 3. テスト修正
+
+- `AppPaginationFooter` コンポーネント単体テスト（APF-001〜007）: `data-testid="app-pagination-footer"` は維持されるため testid 経路は影響限定。jsdom 上の動作確認のみで完結する範囲は変更不要
+- 4 画面の Page 結合テスト: `AppPaginationFooter` の取得経路（`within(...)` 等）が DataGrid フッターコンテナ内部の DOM 階層変更で影響を受ける可能性 → 動作確認の上、必要なら追従修正
+- 中間ラッパー単体テスト（`ReportListTable.test.tsx` / `AllReportsTable.test.tsx`）: `paginationFooter` prop の受け渡し検証を追加
+
+### 完了条件（追加）
+
+- 4 画面すべてで `AppPaginationFooter` が DataGrid フッターコンテナ（`<div class="MuiDataGrid-footerContainer">`）内に配置される（DevTools で確認）
+- 設計書 `common-components.md` §AppDataGrid / §AppPaginationFooter が `slots.footer` 経由統合を明記
+- 4 画面の詳細設計が画面ごとに直接利用 / 中間ラッパー経由のパターン区別を明記
+- 375px 縦並びレスポンシブが DataGrid フッターコンテナ内でも維持される
+- `AppDataGrid` の他利用箇所（4 画面以外）への副作用なし
+- 既存テスト + 追加テストがローカル CI で PASS
+- SMK-081 を再実施し PASS であること

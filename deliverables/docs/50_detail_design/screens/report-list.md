@@ -103,7 +103,9 @@
 ## 5. ページネーション
 
 - オフセットベース、デフォルト 20件/ページ（screens.md §4.9 準拠）
-- 一覧末尾にフッター 1 行を配置（共通コンポーネント `AppPaginationFooter` を使用）
+- フッター配置: **`AppDataGrid` の `slots.footer` プロパティに `AppPaginationFooter` を差し込み、DataGrid フッターコンテナに統合する**（issue #147 再オープン 2026-04-27 確定方針 D-1。クラス名定義は `55_ui_component/common-components.md` §AppDataGrid を参照）。テーブル外側の独立した `<Box>` には配置しない
+- 本画面は中間ラッパー（`ReportListTable`）経由で `AppDataGrid` を利用する。中間ラッパーに `paginationFooter` prop を追加して内部で `slots.footer` に変換する（issue #147 再オープン パターン ②a）
+- フッター 1 行のレイアウト（共通コンポーネント `AppPaginationFooter` を使用）
   - 中央: ページ番号（`AppPagination`、現在ページをハイライト、総ページ数が多い場合は省略表示）
   - 右: 表示件数セレクタ（`PageSizeSelector`、標準選択肢 `[10, 20, 50, 100]`、デフォルト 20）
 - レスポンシブ: 375px 等のスマホ幅では `flex-direction: column` で縦並びにフォールバック
