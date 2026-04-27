@@ -1,66 +1,85 @@
 # 引き継ぎメモ
 
-## セッション: 2026-04-26 11:30 〜 20:18
+## セッション: 2026-04-26 21:00 〜 2026-04-27 10:00
 
 ### ゴール
 
-- issue 対応: #150 / #140 を 2 件並列で進める（設計成果物フロー → 実装 PR フロー → マージ）
-- 完了条件: 両 PR が codex APPROVE 相当でマージされ、解決後処理（issue 移動・progress.md 更新）まで完了すること
+- issue #147（per_page UI セレクタ実装 + 4 画面適用 + URL/UI 整合 + テスト追加 + 設計書改訂）対応
+- 完了条件: 設計成果物コミット → 実装 PR マージ → 解決後処理 → BE テスト確認まで完了
 
 ### 作業ログ
 
-#### 1. 方針分析（architect 並列）
+#### 1. architect 分析と方針確定（Q1〜Q4）
 
-- architect 2 体並列で起動し、issue 内容 + 上流成果物確認 + 方針案を分析
-- #150 推奨案: A-1（`AuthNavLink.prefix` をオプショナル化）— issue 内で起票者と既に合意済み
-- #140 推奨案: 案 A（共通コンポーネントで `*` 抑止 + 全フォームに `required` prop 統一付与、HTML5 `required` 属性は input にのみ付与）
-  - 案 B（共通 `FormField` 新設）/ 案 C（`*` & `required` 完全廃止 + 注記）と比較し、テスト書き換えコストほぼゼロ + a11y 効果高 + `AppDatePicker` の既存パターンと整合性が高い案 A を採用
-- ユーザー確認時、最初に案 A のみ提示してしまい「案 A しか見えてない」と指摘 → 3 案比較表を出し直し
-- #150 で architect が AUTH-FE-008 を提案したが既に LoginPage で使用中 → 過去の枝番運用（RPT-FE-090-A 等）に合わせて AUTH-FE-007-A に修正
+- architect 起動で issue #147 の入力資料 + 上流成果物確認 + 不明パス特定 + チケット分割案を分析
+- **実ファイルパス確定**: AdminAllReportsPage → `AllReportsPage.tsx` / PendingApprovalsPage → `ApprovalListPage.tsx` / PayableReportsPage → `PaymentListPage.tsx`（issue 想定と異なる）
+- **重要発見**: AllReportsPage は `useState` ベース → `useSearchParams` 移行が必要（issue スコープより少し広い）
+- ユーザー判断 4 点（着手前確定、issue 末尾「2026-04-26 追加判断」セクションに追記）:
+  - **Q1**: 共通コンポーネント単体テスト ID は独自接頭辞 `PSS` (PageSizeSelector) / `APF` (AppPaginationFooter) を新設、reports.md に集約（既存 ADT/ASL と同パターン）
+  - **Q2**: AllReportsPage の `useState` → `useSearchParams` 移行を本 issue に含める
+  - **Q3**: フッター非表示仕様を撤廃。AppPaginationFooter は常時表示（`count={Math.max(totalPages, 1)}`）。4 画面で挙動統一
+  - **Q4**: per_page NaN/負数 → FE で 20 にフォールバック、範囲内不正値（0/101+）→ BE 422 委ね
 
 #### 2. 設計成果物フロー（dev-journal）
 
-- #150 dev-journal 編集（軽微）は指揮役が直接実施:
-  - `common-components.md`: `AuthNavLink.prefix` を `prefix?: string` にオプショナル化
-  - `auth.md`: AUTH-FE-007-A 追加 + カバレッジマトリクス 2 行更新
-- #140 dev-journal 編集は designer エージェントに委譲（4 ファイル + 方針書き換え含む）:
-  - designer 完了報告で `ui-guidelines.md §バリデーションエラー表示` のコード例（素の MUI `TextField`）が新方針と矛盾と指摘 → ユーザー承認後、`AppTextField` への置換も同コミットに同梱
-- 2 コミットに分割:
-  - `153eb4a`: docs(ui-component): #150 AuthNavLink.prefix を任意化 + AUTH-FE-007-A 追加
-  - `f0d6ace`: docs(design): #140 必須フィールド方針を `*` 抑止パターンに統一 + 関連設計書から `*` 削除
+- designer エージェントに 11 ファイル改訂を委譲（common-components / state-management / 4 画面 detail / 4 画面 ui_component / basic_design / test_cases 4 ファイル / items.md 訂正 / issue ファイル）
+- 内部 reviewer FIX → 指揮役で指摘対応（5 ファイル × 各 1〜数行）→ 再レビュー PASS（warning W-2: testid 暗黙契約は別途明文化方針）
+- codex review 初回 FIX（blocker 2 / warning 1 = `2026-04-26-001/002/003`）:
+  - **blocker 001**: state-management.md L260 の不正 per_page 応答コード「BE で 400」（私のミス、実装は 422）→ 422 に訂正
+  - **blocker 002**: `55_ui_component/screens/` 配下 4 画面が AppPagination 直置き・旧状態管理のまま → designer に追加依頼で 4 ファイル × 36 箇所改訂
+  - **warning 003**: issue 本文 L128「totalPages <= 1 で AppPagination 非表示」旧記述 → 訂正
+- 再 codex レビュー **PASS**（新規指摘なし）
+- review-findings ファイル 3 件は既存連番運用（最大 108）に合わせ `109/110/111-*.md` にリネームして resolved/ へ移動（**当初日付プレフィックス `2026-04-26-001` で起票してしまい、ユーザーから「運用に例外を作られると困る」と指摘 → 連番運用に統合**）
+- dev-journal 3 コミット: `e4afdcc` / `46f74d5` / `bbfbf73`
 
-#### 3. 実装フェーズ（PR フロー、worktree 並列）
+#### 3. β2 分離運用での実装（PR フロー）
 
-- frontend-developer 2 並列で起動（各 worktree、isolation 付き）
-  - PR #98 (#150): `step11/issue-150-auth-back-to-login-link`
-  - PR #99 (#140): `step11/issue-140-form-required-marker-unification`
-- ローカル CI (`/test`) を順次実行:
-  - PR #98: lint OK / tsc OK / 667 tests PASS
-  - PR #99: 初回は worktree に node_modules なしで `npm ci` 実行 → lint OK（warning 2、新規 1 = AppTextField の不要 eslint-disable）/ tsc OK / 672 tests PASS（+5 = 各フォームの `toBeRequired()` テスト追加分）
-  - PR #99 lint warning は worktree で指揮役が直接修正 → push（commit `cfb905b`）
+- ユーザー判断で **β2 = テスト先行 PR + 実装 PR の完全分離** を採用（テストが実装に合わせるリスクを抑制）
+- β2 統合戦略: PR1 (#101) を PR2 (#100) ブランチに merge → CI 緑確認 → PR2 を master にマージ → PR1 close
+- worktree 並列で 2 体起動:
+  - frontend-developer (#100): 実装のみ、ブランチ `step11/issue-147-impl`
+  - test-implementer (#101): テストのみ、ブランチ `step11/issue-147-tests`、設計書ベースのみで実装コード参照禁止
+- 各 PR を内部 reviewer で並列レビュー → 両者 PASS（PR #100 nit 3 / PR #101 warning 3、対応または受容）
+- 指揮役で nit 対応:
+  - ApprovalListPage / PaymentListPage の `disabled={false}` → `disabled={isLoading}` 統一（PR #100 commit `4e7be7d`）
+  - common-components.md に testid 規約追記（master `46f74d5`）
+  - PR #100 本文に副次変更を明記
 
-#### 4. レビュー → マージ
+#### 4. β2 統合とローカル CI
 
-| PR | 内部 review | codex | マージ |
-|----|------------|-------|--------|
-| #98 (#150) | PASS（blocker 0 / warning 0 / nit 1 受容） | APPROVE 相当（COMMENT 投稿、self-PR で APPROVE 不可）| `191cd95` |
-| #99 (#140) | FIX → 再レビュー PASS | APPROVE 相当 | `12b3d22` |
+- PR2 ブランチに PR1 を merge（worktree で実施）
+- ローカル `/test` 実行で **18 件 vitest 失敗**を発見:
+  - 原因 1: Page 結合テストで `getByTestId('page-size-selector')` を click 目的で取得（外側ラッパー click では MUI Select が開かない）→ `within(...).getByRole('combobox')` パターンに修正
+  - 原因 2: 実装の `<MenuItem>{size} 件</MenuItem>` 表示と、テストの `name: '50'` / `Number(o.textContent)` のズレ
+  - 原因 3: PSS-005 で `toBeDisabled()` 検証だが、MUI は `aria-disabled` 属性のみ付与
+- test-implementer 再起動で全 6 ファイル修正（commit `0217101` + `6951bec`）
+- 設計書 common-components.md §PageSizeSelector に「表示文字列フォーマット (`{size} 件`)」セクションを正本として追記（master `bbfbf73`）
+- vitest フルスイート再実行 → **702/702 PASS**
 
-- PR #99 内部レビュー warning-1: AppSelect (categoryId) の required + aria-required 回帰検証不足（architect が事前に「重要リスク」と指摘していた箇所） → 指揮役が ItemForm.test.tsx に検証追加（commit `c8f3df3`）→ 同じ reviewer で再レビュー PASS
-- PR #99 codex は一時 worktree で実 DOM 検証を実施し、`<input>` に `required` 属性 + 外側 combobox に `aria-required="true"` が付与される構成を確認
+#### 5. codex レビュー（PR #100 統合済み）→ FIX → 修正 → PASS
 
-#### 5. 後処理
+- codex 初回レビュー FIX:
+  - **blocker**: `PageSizeSelector.test.tsx:147` の `mock.calls[0][0]` が strict TS で `Object is possibly undefined` → `mock.lastCall?.[0]` に修正
+  - **warning**: `ReportListPage.tsx:247` のみ `currentPage={pagination?.current_page ?? 1}` で他 3 画面（`?? page`）と不一致 → `?? page` に統一
+- 修正 (commit `b8323b8`) → 再 codex レビュー **PASS**
 
-- 自分の worktree 2 件削除（agent-a05056914ee98ac30 / agent-a77636b27863d6fc9）
-- `/tmp/expense-saas-pr94` / `/tmp/pr94-review` / `/tmp/pr98-head-review-HaDfBd` / `/tmp/pr98-review-bDaRBK` の codex 一時 worktree 残存（codex 環境側の管理範囲）
-- dev-journal commit `e08b3b5`:
-  - `issues/open/{140,150}` → `resolved/`
-  - **解決内容・解決日（2026-04-26）追記**（`/issue` スキル手順 5 に従う）
-  - `progress.md` 残存 issue 表から #140 / #150 削除
+#### 6. マージ + 解決後処理 + BE テスト
+
+- PR #100 squash マージ → master HEAD = `89875a5`
+- PR #101 close（β2 分離運用、PR #100 に統合済み）
+- issue #147 を resolved/ へ移動 + 解決日 (2026-04-27) と修正内容・β2 学びを追記
+- progress.md 残存 issue 表から #147 削除
+- dev-journal commit `ca80a81`
+- BE テスト実行（ユーザー作業）: lint 0 issues / unit 全 ok / integration 全 ok（cached、新規 RPT-091 / TNT-012 含む全テスト PASS）
+
+#### 7. ローカル CI 全結果
+
+- Frontend: lint 0 / tsc 0 / vitest 702/702 PASS
+- Backend: lint 0 / unit 全 ok / integration 全 ok
 
 ### 未完了
 
-- マージ後の SMK-099 / SMK-100 再実施（#150 関連、PR #98 本文に明記）
+- なし（issue #147 完全クローズ）
 
 ### ブロッカー
 
@@ -68,17 +87,17 @@
 
 ### 次にやること
 
-#### 優先度 1: 残 issue 対応
+#### 優先度 1: SMK 残項目（前セッションから継続）
 
-- #147 per_page UI セレクタ（FE 4 画面 + 共通コンポーネント新設、規模大）
-- #133 ログ・エラー出力の言語ポリシー整理（別セッション予定との整合確認）
-
-#### 優先度 2: SMK 残項目（前セッションから継続）
-
-- §4.8 ページネーション・フィルタ: SMK-081/082（#147 後）/ SMK-083/084
+- §4.8 ページネーション・フィルタ: SMK-081/082（#147 マージ済みのため実施可能）/ SMK-083/084
 - §4.9 キャッシュ: SMK-093, SMK-094
-- §4.11 ナビリンク: SMK-099, SMK-100（#150 マージ後の再実施）
+- §4.11 ナビリンク: SMK-099, SMK-100（前セッション #150 マージ後の再実施、まだ未対応）
 - Phase 3 Approver / Phase 4 Accounting / Phase 5 未ログイン / Phase 6 Admin
+
+#### 優先度 2: 残 issue 対応
+
+- #133 ログ・エラー出力の言語ポリシー整理（別セッション予定とラベル済み）
+- 残存 issue: #145 / #146（post-MVP）/ #060 / #061 / #064 / #081 / #084 / #104 / #122 / ops-055 / ops-062 / ops-080
 
 #### 優先度 3: Step 11-B / 11-C の並列着手判断
 
@@ -86,86 +105,93 @@
 
 ### 学び・気づき
 
-#### 手順違反の自己発見遅れ（`/issue` スキル手順 5 のスキップ）
+#### β2 分離運用は機能したが、設計書未明文化箇所で乖離
 
-- issue を resolved/ へ移動する際、解決内容・解決日の追記とユーザー確認の 2 手順を踏まずに進めた
-- 「前例にないため省略」と一度判断したが、ユーザーから「前例にないのでしょうか」と問われて再調査 → #148 / #102 等に明確な前例があり、`/issue` スキルにも明記されていた
-- **教訓**: スキル手順を一度確認して「あった」「なかった」と即断せず、複数件サンプリング + スキル定義を引用して根拠を提示する。確認漏れを指摘されたら言い訳せず手順違反として記録に残す
+- テスト先行 PR (#101) と実装 PR (#100) を別 worktree / 別ブランチで並列作成、最終的に PR2 に統合する運用を実施
+- 設計書（common-components.md）に「表示文字列フォーマット」が明記されておらず、実装側が「{size} 件」を採用、テスト側が「数値のみ」を想定して乖離 → vitest 18 件失敗で発覚
+- **教訓**: β2 分離する場合、設計書には **表示文字列レベルの仕様** まで明記する必要がある。今回は事後に `bbfbf73` で正本化したが、当初設計時に明記しておくべきだった
+- **教訓**: テスト/実装独立の代償として「実装の細部に関する設計の曖昧さ」が顕在化する。逆に言えばこのリスクを露呈させて拾えた点は β2 の効果
 
-#### 案の比較提示の省略は禁物
+#### 私の事実誤認 / 思い込みが 2 箇所で発生
 
-- #140 で推奨案（案 A）の詳細だけを提示し、案 B / C との比較を省略 → ユーザーから「案 A しか見えていない」と指摘
-- architect の分析結果に 3 案比較は含まれていたが、報告時に「推奨案だけで足りる」と判断してしまった
-- **教訓**: 複数案がある選択は、推奨案だけでなく比較表を必ず提示する。提示の省略は意思決定材料の隠蔽に等しい
+- **誤認 1**: state-management.md L260 のコメントに「BE で 400 エラー」と書いた（実装は 422）。BE 実装を確認せず思い込みで書いた → codex blocker 001 で発覚
+- **誤認 2**: AllReportsPage.test.tsx を「新規作成」と書いた（実体は 19,695 byte で既存）。architect 報告の「新規作成」を鵜呑みにした → reviewer blocker B1 で発覚
+- **教訓**: 補足コメント追記やパス記述は **既存設計書の他箇所と既存コードの両方を grep / Read で照合してから書く**。前セッション feedback_search_before_delete.md の精神を「追記」にも適用すべき
 
-#### architect が事前指摘した重要リスクの検証は必須
+#### review-findings 命名の運用例外を作りかけた
 
-- #140 architect が「AppSelect の `<FormControl required>` 削除で aria-required 連携が外れる可能性」を「重要リスク」として明示
-- 実装エージェントへのプロンプトにも記載していたが、実装側のテストはカテゴリ AppSelect を含めず日付/金額/摘要だけになっていた
-- 内部レビューで warning-1 として指摘 → 指揮役が直接テスト追加で対応
-- **教訓**: architect が「重要リスク」と明示した観点は、実装完了直後（reviewer に渡す前）に指揮役側で 1 回チェックする工程を入れる余地
+- codex の起票指示プロンプトで `2026-04-26-NNN-{topic}.md` 形式を指定 → 既存運用（`095-...108-*.md` の連番）と整合せず
+- ユーザーから「なんでそんな issue の分け方をしているんですか？運用に例外を作られると困る」と指摘
+- A 案（既存連番にリネーム）で対応、109〜111 として resolved/ へ
+- **教訓**: ファイル命名規則をプロンプトで指定する前に、既存ファイルを `ls` して運用パターンを確認する。`/codex-review` スキル定義側の改善余地あり（命名規則明記、ユーザー判断で本セッションでは保留）
 
-#### 軽微な lint warning の事前修正は往復削減に効く
+#### 列挙過剰
 
-- #99 の AppTextField に実装エージェントが入れた不要 `eslint-disable-next-line` を、reviewer/codex に渡す前に指揮役で削除
-- 反対の選択肢「指摘されてから直す」より、レビュー往復が 1 回減る効果あり
-- **教訓**: 機械的に判定できる軽微な lint warning は事前修正が効率的
+- test-implementer.md 修正時、`test_cases/` ディレクトリ + 全ファイル名（auth.md / reports.md / ...）を列挙
+- ユーザーから「ここまで詳細に書く必要はない」と指摘 → ディレクトリ指定のみに修正
+- **教訓**: ディレクトリ指定で十分な場合は配下ファイル列挙しない（メンテコスト + 情報密度低下を避ける）
 
-#### worktree の node_modules セットアップ
+#### worktree の cwd 紛れ込み
 
-- frontend-developer の worktree は `npm ci` 済みでなくても PR 作成までは進む（型エラーなしで `tsc --noEmit` を回せていたのは `vitest` 実行で `npm install` が走っていたため？要確認）
-- 指揮役が `/test` を起動した時点で worktree に `node_modules` がなく、改めて `npm ci` を回す必要があった
-- **教訓**: worktree 作成直後に `npm ci` を含めるかは要検討。実装エージェント側で環境セットアップを必須化するプロンプト改修の余地
+- test-implementer の worktree で merge 操作してしまい、PR1 ブランチに余計な merge commit が混入する寸前
+- ブランチ名確認（`git branch --show-current`）で気づき、frontend-developer worktree (a50ba6412a95bb637) に戻った
+- **教訓**: 並列で複数 worktree を扱う場合、Bash 実行時の cwd を毎回明示的に指定する（`cd /path/...` を chain）
 
-#### self-PR の APPROVE 制約（前セッションから継続）
+#### codex の指示外作業（実装ブランチでの修正）
 
-- self-PR は GitHub で `--approve` 不可。reviewer / codex が毎回試行錯誤
-- 今回も #98 / #99 とも `--comment` で APPROVE 相当を投稿
-- **メモ**: 運用ガイドに「self-PR は `--comment` 一択」を明記する余地（前セッションから継続課題）
+- test-implementer が指示外で実装ブランチ（PR2 worktree）にも同じ修正を入れ、未 push のまま放置
+- 指揮役の worktree に未コミット変更が蓄積し、後続 merge でブロッカーに
+- 結果的には同じ内容なので破棄して問題なかったが、運用上は混乱の元
+- **教訓**: subagent への指示で「対象ブランチ以外には触らない」を明示する
 
 ### 意思決定ログ
 
-#### #150 AUTH-FE-007-A の ID 採番
+#### β2 分離運用の採用
 
-- architect は AUTH-FE-008 を提案したが既に LoginPage の正常系テストで使用済み
-- AuthNavLinks 関連は 006-007 で完結 → 過去の枝番運用（RPT-FE-090-A 等）に合わせて AUTH-FE-007-A を採番
-- 採用テストケース: prefix 省略時に label のみ描画 + prefix 文字列が `queryByText` で見つからないことを assert
+- ユーザー指示「テストが実装に合わせるリスクを抑える為、分離する」
+- 候補: A（同 PR、別エージェント、別タイミング）/ B（2 PR 完全分離、skip なし、CI 赤許容）/ C（実装先行 → テスト後追い、棄却）
+- 採用 B: ユーザー直感「テストから実装するんだから skip 状態で通るのは当然」「skip も一時退避も不要」（TDD 純正）
+- 統合方式: β2 = PR2 ブランチに PR1 を merge して 1 PR にまとめる（master を緑に保つ）
 
-#### #140 案 A 採用（B / C 棄却）
+#### 「件」表示の正本化（実装に合わせる）
 
-- 案 A: 共通コンポーネントで `*` 抑止 + 全フォーム `required` 付与（11 ファイル、テスト書き換えコストほぼゼロ、a11y 効果高）
-- 案 B: 共通 `FormField` 新設でラベル末尾「(必須)」統一付与 → 棄却（174 箇所の `getByLabelText` 影響、デザイン全面影響）
-- 案 C: `*` も `required` も完全廃止 + 注記のみ → 棄却（HTML5 `required` 属性なしで a11y 後退、issue 根本要件を満たせない）
-- 採用判断軸: a11y ギャップ解消（issue 根本要件）を最小コストで達成 + `AppDatePicker` 既存パターンとの整合
+- ユーザー判断 Q1: a（実装の「件」付き表示を正本、設計書追記 + テスト側を抽出ロジックに変更）
+- 理由: 日本語 UX 慣習として「件」付きが自然、内部値とは独立して表示は柔軟に
 
-#### #140 ui-guidelines.md コード例の `TextField` → `AppTextField` 置換
+#### per_page 0 / 101+ の挙動
 
-- designer が「対応範囲外」と判断した既存コード例の矛盾を、ユーザー承認の上で同コミットに同梱
-- 採用理由: §7 必須フィールド方針改訂と矛盾するコード例を残すと、後続実装者が再び `TextField` 直接利用 + ラベル `*` を再現する恐れがある
+- ユーザー判断 Q4 派生: B（NaN / 負数 → FE 20 フォールバック / **0 と 101+ → BE 422 委ね**）
+- 理由: ユーザー直感「101+ もエラーにするなら 0 もそうした方が楽」
+- BE 検証: `expense-saas/internal/handler/report.go:97` で `v <= 0` も `v > 100` も同じく `RespondValidationError` (422) を返すことを確認
 
-#### PR #99 reviewer warning-1 対応（指揮役直接修正）
+#### review-findings 命名の運用統合
 
-- 修正規模: 1 ファイル 13 行追加（it ブロック追加 + 2 アサーション）
-- 候補: a) 指揮役直接修正、b) 実装担当差し戻し
-- 採用: a（workflow.md「小規模（3 ファイル以下・各 5 行以下）→ 指揮役直接修正」に該当、テスト追加で 13 行は閾値超だが内容は機械的）
-- 結果: 個別実行 2/2 PASS → push → 再レビュー PASS
+- ユーザー判断 A: 既存連番（109/110/111）にリネームして resolved/ へ移動
+- スキル定義への命名規則追記（B 案）は「軽微なので別途」と保留
+
+#### test-implementer の Bash 個別ファイル実行は許容
+
+- メモリ feedback_no_local_test_run.md は subagent への指示。指揮役が `/test` でローカル CI 実行することは過去パターンとして OK
+- test-implementer も「個別ファイル動作確認のため」の vitest 実行は許容（agent 定義にも明記あり）
 
 ### PR / コミット要約
 
-**dev-journal**:
-- `153eb4a`: docs(ui-component): #150 AuthNavLink.prefix を任意化 + AUTH-FE-007-A 追加
-- `f0d6ace`: docs(design): #140 必須フィールド方針を `*` 抑止パターンに統一 + 関連設計書から `*` 削除
-- `e08b3b5`: docs(close): #140 #150 解決後処理 (PR #98 / #99 マージ)
+**dev-journal** (master、4 コミット):
+- `e4afdcc`: docs(ui-component): #147 per_page UI セレクタ実装方針 + 関連設計書改訂
+- `46f74d5`: docs(ui-component): #147 PageSizeSelector / AppPaginationFooter に data-testid 規約を追記
+- `bbfbf73`: docs(ui-component): #147 PageSizeSelector の表示文字列フォーマット (`{size} 件`) を正本化
+- `ca80a81`: docs(close): #147 解決後処理 (PR #100 マージ + #101 β2 分離 close)
 
-**expense-saas**（PR ベース運用）:
-- PR #98 (#150) merged: `191cd95`
-- PR #99 (#140) merged: `12b3d22`
-- master HEAD: `12b3d22`（fast-forward 取り込み済）
+**expense-saas** (PR ベース):
+- PR #100 (#147) merged squash: `89875a5`
+- PR #101 (テスト先行、β2) closed: PR #100 に統合済み
+- master HEAD: `89875a5`
 
-**root-project**: 変更なし
+**root-project**:
+- `a1d5c1d`: chore(agents): test-implementer.md の必須参照を test_cases.md (単一) → test_cases/ (ディレクトリ) に訂正
 
 **ai-dev-framework**: 変更なし
 
 ## 前回セッション
 
-前回セッション（2026-04-25 11:34 〜 19:51、issue #141/#143/#144 対応 + #149 起票・解決）の詳細は `dev-journal/archives/session-logs/2026-04-25.md` を参照。
+前回セッション（2026-04-26 11:30 〜 20:18、issue #150/#140 対応 + マージ）の詳細は `dev-journal/archives/session-logs/2026-04-26.md` を参照。
