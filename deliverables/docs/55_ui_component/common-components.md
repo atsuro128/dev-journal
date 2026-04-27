@@ -430,6 +430,7 @@ interface AppPaginationFooterProps {
 
 - ルート要素（最外殻の `<Box>`）: `data-testid="app-pagination-footer"`
 - テストからは `screen.getByTestId('app-pagination-footer')` で参照する（APF-001〜007、および 4 画面の Page 結合テスト）
+- 件数表示要素（`totalCount` 指定時のみ描画）: `data-testid="app-pagination-footer-count"`（issue #147 再々オープン A2 案で追加、APF-009 / APF-010 で参照）
 - 内部の `AppPagination` / `PageSizeSelector` の testid はそれぞれの規約に準拠
 
 ### StatusChip
