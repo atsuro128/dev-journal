@@ -166,7 +166,7 @@ GET /api/reports/all?page=...&per_page=...&status=...&from=...&to=...&submitter_
           → StatusChip (props: status)
         → EmptyState (props: message)
         → PageSkeleton (props: variant="table")
-      → AppPaginationFooter (props: currentPage, totalPages, onPageChange, perPage, onPerPageChange)
+      → AppPaginationFooter (props: currentPage, totalPages, onPageChange, perPage, onPerPageChange, totalCount)
         → AppPagination (props: currentPage, totalPages, onPageChange) [内部]
         → PageSizeSelector (props: perPage, onPerPageChange) [内部]
 
@@ -211,7 +211,7 @@ GET /api/tenant/members
 | `StatusChip`（← common-components.md） | AllReportsTable の AppDataGrid ステータス列 | status: レポートの現在ステータス |
 | `EmptyState`（← common-components.md） | AllReportsTable 内のデータ0件表示 | フィルタ有無でメッセージ切替（「レポートはまだ作成されていません。」/「条件に一致するレポートはありません。フィルタを変更してお試しください。」） |
 | `PageSkeleton`（← common-components.md） | AllReportsTable 内のローディング表示 | variant="table"。初回読み込み・フィルタ変更・ページ切替時に表示 |
-| `AppPaginationFooter`（← common-components.md） | AllReportsPage の下部のページネーションフッター（中央: ページ番号、右: 表示件数セレクタ）。常時表示（`totalPages <= 1` でも非表示にしない。内部 `AppPagination` は `count={Math.max(totalPages, 1)}`）。スマホ幅（375px）では `flex-direction: column` で縦並び | currentPage / totalPages / perPage は useAllReports のレスポンス pagination から取得。onPageChange / onPerPageChange は AllReportsPage が `setSearchParams` で URL を更新（per_page 変更時は page=1 にリセット）。Props 型は `common-components.md §AppPaginationFooter / §PageSizeSelector` を参照 |
+| `AppPaginationFooter`（← common-components.md） | AllReportsPage の下部のページネーションフッター（左: 件数表示「{start} - {end} / 全 {total} 件」、中央: ページ番号、右: 表示件数セレクタ。issue #147 再々オープン A2 案で件数表示と境界線・最小高さを追加）。常時表示（`totalPages <= 1` でも非表示にしない。内部 `AppPagination` は `count={Math.max(totalPages, 1)}`）。スマホ幅（375px）では `flex-direction: column` で縦並び（順序: 件数表示 → AppPagination → PageSizeSelector） | currentPage / totalPages / perPage / totalCount は useAllReports のレスポンス pagination から取得（`totalCount={pagination?.total_count}` で渡す）。onPageChange / onPerPageChange は AllReportsPage が `setSearchParams` で URL を更新（per_page 変更時は page=1 にリセット）。件数表示の算出（start/end）は AppPaginationFooter 内部で行う。Props 型は `common-components.md §AppPaginationFooter / §PageSizeSelector` を参照 |
 | `AppToast`（← common-components.md） | AllReportsPage（SnackbarContext 経由） | API 通信エラー（500 系）のトースト表示 |
 
 ---
