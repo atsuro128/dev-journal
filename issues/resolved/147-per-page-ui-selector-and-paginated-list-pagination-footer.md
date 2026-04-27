@@ -317,3 +317,58 @@ const handlePerPageChange = (size: number) => {
 5. `setSearchParams` の race（per_page 変更時は 1 回のコールに集約）
 6. BE 統合テストのシード件数（既存 fixture との衝突確認、対象テナントに 2 件以上必要）
 7. common-components.md の使用マトリクス・チェックリスト更新漏れ
+
+## 解決日
+2026-04-27
+
+## 解決方針
+
+確定方針 Q1〜Q4（issue 末尾「2026-04-26 追加判断」）に従い、以下を実施:
+
+- **β2 分離運用**（テスト/実装の独立性確保）でテスト先行 PR (#101) と実装 PR (#100) を別ブランチで並列作成し、PR1 を PR2 に統合してマージ
+- 設計成果物（`dev-journal/`）3 コミットで先行確定 → expense-saas で実装 + テスト
+
+## 修正内容
+
+### dev-journal（設計成果物、3 コミット）
+- `e4afdcc`: `common-components.md` (PageSizeSelector / AppPaginationFooter 新規) / `state-management.md` §3.1 / 4 画面詳細設計（50 + 55）/ `40_basic_design/screens.md` §4.9 / test_cases（PSS / APF / RPT-091 / TNT-012 / RPT-FE-111〜114 / TNT-FE-048〜051 / WFL-FE-083〜090 採番）/ `items.md` L364 訂正
+- `46f74d5`: PageSizeSelector / AppPaginationFooter に `data-testid` 規約を追記（review warning W-2 対応）
+- `bbfbf73`: PageSizeSelector の表示文字列フォーマット `{size} 件` を正本化（β2 で発覚した実装/テスト乖離対応）
+
+### expense-saas（実装 + テスト、squash merge: #100 = `89875a5`）
+
+**新規実装（2 件）**:
+- `frontend/src/components/ui/PageSizeSelector.tsx`: MUI Select ベース、表示形式「{size} 件」、動的選択肢（Set 重複除去）、`disabled` 対応
+- `frontend/src/components/ui/AppPaginationFooter.tsx`: AppPagination + PageSizeSelector の合成、`xs:column` / `sm:row` レスポンシブ、`sm` 以上で左スペーサー配置
+
+**既存改修（5 件）**:
+- `AppPagination.tsx`: `totalPages <= 1 → return null` 削除（Q3 フッター常時表示）
+- `ReportListPage.tsx`: per_page URL 駆動化 + AppPaginationFooter 切り替え
+- `AllReportsPage.tsx`: `useState` → `useSearchParams` 移行（page / filters / per_page 全て URL 駆動、Q2）+ AppPaginationFooter 切り替え
+- `ApprovalListPage.tsx` / `PaymentListPage.tsx`: per_page 配線 + AppPaginationFooter 切り替え
+
+**テスト追加（7 件）**:
+- 共通: `PageSizeSelector.test.tsx` (PSS-001〜005) / `AppPaginationFooter.test.tsx` (APF-001〜007)
+- Page 結合: ReportListPage / AllReportsPage / ApprovalListPage / PaymentListPage に各 4 件追加
+- BE 統合: `report_handler_test.go` に RPT-091 / TNT-012 追加
+
+### root-project
+- `a1d5c1d`: `.claude/agents/test-implementer.md` の必須参照を `test_cases.md` (単一) → `test_cases/` (ディレクトリ) に訂正（運用上の記述ズレ修正）
+
+## β2 分離運用の学び
+
+- テスト先行 PR (#101) と実装 PR (#100) を別ブランチで並列作成し、最終的に PR2 に統合する運用を実施
+- 「実装に合わせるリスク」を抑える効果は得られたが、設計書未明文化の細部（表示文字列「件」の有無）で乖離が発生 → `bbfbf73` で設計書追記して正本化
+- 教訓: β2 分離する場合、設計書には **表示文字列レベルの仕様**まで明記する必要がある
+
+## レビュー
+
+- 内部 reviewer (PR #100): PASS（warning 1 / nit 3、対応または受容済み）
+- 内部 reviewer (PR #101): PASS（warning 3 / nit 3、対応または受容済み）
+- codex review (PR #100): 初回 FIX（blocker 1: PSS strict TS / warning 1: ReportListPage `?? page` 不一致）→ 修正 `b8323b8` → 再レビュー **PASS**
+- codex review (設計成果物): 初回 FIX（blocker 2 / warning 1）→ 修正 → 再レビュー **PASS**（resolved/109〜111 として記録）
+- ローカル CI: lint 0 errors / tsc 0 errors / vitest 702/702 PASS
+
+## 残対応（マージ後）
+
+- BE テスト実行: ユーザー作業（VS Code タスク `BE: full test`）でマージ後に確認
