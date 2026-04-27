@@ -302,6 +302,7 @@ interface AppPaginationProps {
 
 - 単独でも利用可能だが、本 MVP では常に `AppPaginationFooter` 内で `AppPagination` と並置する
 - ラベル「表示件数:」を MUI `<Select>` の `label`/`InputLabel` で付与する
+- **フッター高さを支配しない**（issue #147 再々オープン A2 案）: 本コンポーネントは `AppPaginationFooter` 内でフッター 1 行に並置されるため、Select 枠線がフッター全体の高さを引き上げないようにする。`size="small"` を維持しつつ、必要に応じて `variant="standard"`（下線のみ）の採用や FormControl 余白（`margin="none"` / `sx={{ my: 0 }}` 等）の調整で薄い見え方にする。`AppPaginationFooter` 側の `minHeight: 52`（MUI 標準フッター高さ相当）を本コンポーネントが超えないことを実装フェーズで動作確認する
 
 #### Props 型定義
 
@@ -331,6 +332,12 @@ interface PageSizeSelectorProps {
 - MUI Select の現在値表示（combobox の `textContent`）も同形式（「20 件」等）で表示される
 - テスト側で数値抽出を行う場合は `parseInt(option.textContent ?? '', 10)` を使う（`Number()` だと `NaN` になる）
 - アクセシブル名（`getByRole('option', { name: ... })`）は **`'10 件'` のように単位込み**で指定する
+
+#### サイズ・variant 方針（issue #147 再々オープン A2 案）
+
+- `size="small"` を既定とする（MUI Select 標準の小サイズ。フッター高さを最小化）
+- `variant` は既存 `outlined` を初期方針とするが、`AppPaginationFooter` の最小高さ（52px 相当）に収まらない場合は `variant="standard"`（下線のみ）への切り替えを検討する。実装フェーズで MUI 標準フッターと並べた見え方を確認した上で確定する
+- FormControl 余白の調整（`margin="none"`、`sx={{ my: 0 }}` 等）で上下マージンを排除し、フッター高さ支配を回避する
 
 #### アクセシビリティ
 
@@ -377,17 +384,41 @@ interface AppPaginationFooterProps {
   standardOptions?: number[];
   /** ローディング中などで無効化（AppPagination / PageSizeSelector 双方に伝播） */
   disabled?: boolean;
+  /**
+   * 件数表示用の総件数（issue #147 再々オープン: A2 案）。
+   * - 指定された場合、フッター左側に「{start} - {end} / 全 {total} 件」を表示する
+   * - 未指定（undefined）の場合は件数表示を非表示にする（後方互換、既存利用箇所への影響なし）
+   * - `currentPage` / `perPage` / `totalCount` から内部で start/end を算出する（呼び出し側に算出ロジックを持たせない）
+   * - API レスポンスの `pagination.total_count` をそのまま渡す想定
+   */
+  totalCount?: number;
 }
 ```
 
+##### 件数表示フォーマット
+
+- 表示形式: **「{start} - {end} / 全 {total} 件」**（例: 「11 - 20 / 全 37 件」）
+- 算出ロジック（コンポーネント内部で実施、呼び出し側には算出責務を持たせない）:
+  - `start = (currentPage - 1) * perPage + 1`
+  - `end = Math.min(currentPage * perPage, totalCount)`（端数ページの上限は `totalCount` と同値）
+  - 端数ページ例: `totalCount=37, perPage=10, currentPage=4` → 「31 - 37 / 全 37 件」
+- 0 件時: `totalCount === 0` の場合は **「0 - 0 / 全 0 件」** と表示する（非表示にはしない。フッター常時表示方針 issue #147 Q3 と整合させる。空状態でも件数 0 を明示することで「データが 0 件である」状態を MUI 標準フッターと同様に明示する）
+- `totalCount` 未指定時のみ件数表示自体を出さない（後方互換）
+
 #### レイアウト仕様
 
-- ルート要素: `<Box display="flex" justifyContent="space-between" alignItems="center" flexDirection={{ xs: 'column', sm: 'row' }} gap={{ xs: 1, sm: 0 }}>`
-- `xs`（< 600px、375px 端末を含む）: `flex-direction: column` で縦並び（`AppPagination` 上、`PageSizeSelector` 下）
-- `sm` 以上（>= 600px）: `flex-direction: row` で横並び（中央: `AppPagination`、右: `PageSizeSelector`）
-- `sm` 以上では中央寄せを確実にするため、**ルート要素の左側に `<Box flex={1} />` のスペーサーを配置する**（中央寄せ保証）。`space-between` により右端に `PageSizeSelector` が配置され、中央に `AppPagination` が来る構成（issue #147 §C 確定方針）。`xs` 時は縦並びレイアウトを優先するためスペーサーを非表示にする（`sx={{ display: { xs: 'none', sm: 'block' } }}` 相当）
-- スペーサー `flex={1}` は **DataGrid フッターコンテナの幅に追従する**前提。フッターコンテナは DataGrid のテーブル幅と一致するため、テーブル幅が変わっても中央寄せレイアウトは保たれる
-- **実装フェーズで動作確認する事項**: `slots.footer` で差し込んだコンポーネントは MUI X 内部の DOM フロー上にレンダリングされる。`<Box flex={1}>` スペーサーが期待通り中央寄せに作用しない場合は、CSS Grid（`display: 'grid', gridTemplateColumns: '1fr auto 1fr'` 等）など代替手法への切り替えを検討する。MUI X バージョン更新時の挙動変化にも備え、レイアウト戦略は実装時に動作確認した上で確定する
+- ルート要素: `<Box display="flex" alignItems="center" flexDirection={{ xs: 'column', sm: 'row' }} gap={{ xs: 1, sm: 0 }} sx={{ borderTop: '1px solid', borderColor: 'divider', minHeight: 52, px: 2, py: 0.5 }}>`
+- **境界線**（issue #147 再々オープン A2 案）: ルート要素に `borderTop: '1px solid'` + `borderColor: 'divider'` を付与する。MUI X DataGrid 標準フッター（`MuiDataGrid-footerContainer`）の border-top と揃え、リスト本体とフッターの境界を視覚的に明示する
+- **最小高さ**（issue #147 再々オープン A2 案）: `minHeight: 52` 程度（MUI 標準 `TablePagination` の高さ相当）を設定する。`px: 2` / `py: 0.5` 等の余白で `PageSizeSelector` の Select 枠線がフッター全体の高さを支配しないように調整する（再々オープン理由 2 の解消）
+- **件数表示の配置**（issue #147 再々オープン A2 案、`totalCount` 指定時のみ表示）:
+  - `xs`（< 600px、375px 端末を含む）: `flex-direction: column` で縦並び。**件数表示が一番上**、続いて `AppPagination`、最後に `PageSizeSelector` の順
+  - `sm` 以上（>= 600px）: `flex-direction: row` で横並び。**左: 件数表示**、中央: `AppPagination`、右: `PageSizeSelector`
+- `sm` 以上での中央寄せ保証:
+  - `totalCount` 指定時: 件数表示と PageSizeSelector それぞれを `<Box flex={1}>` でラップし、中央 `AppPagination` を `flex: 'none'` 相当（要素自身の幅）で配置する。両端要素の `flex={1}` 比で `1 : auto : 1` の配分が成立し、`gap` には依存しない（`gap` は要素間の隙間制御専用、中央寄せには使わない）
+  - `totalCount` 未指定時: 件数表示要素を出さず、旧仕様の左スペーサー `<Box flex={1} sx={{ display: { xs: 'none', sm: 'block' } }} />` を入れて中央寄せを保証する（`xs` 時は縦並びレイアウトを優先するためスペーサーを非表示）
+  - 共通制約: `gap={{ xs: 1, sm: 0 }}` のうち `sm` で `gap: 0` としているのは、両端要素の `flex={1}` で十分な間隔が確保されるため余分な `gap` を加えないという設計判断（`gap` を入れると右寄せ要素がさらに右にずれてレイアウトが崩れる）
+- スペーサー / レイアウトは **DataGrid フッターコンテナの幅に追従する**前提。フッターコンテナは DataGrid のテーブル幅と一致するため、テーブル幅が変わっても中央寄せレイアウトは保たれる
+- **実装フェーズで動作確認する事項**: `slots.footer` で差し込んだコンポーネントは MUI X 内部の DOM フロー上にレンダリングされる。`flex` ベースの中央寄せが期待通り作用しない場合は、CSS Grid（`display: 'grid', gridTemplateColumns: '1fr auto 1fr'` 等）など代替手法への切り替えを検討する。MUI X バージョン更新時の挙動変化にも備え、レイアウト戦略は実装時に動作確認した上で確定する
 - 375px 縦並びテストは jsdom 上で完結しないため、`sx` prop / `flexDirection` の値検証で代替する（issue #147 重要リスク 4）
 
 #### アクセシビリティ

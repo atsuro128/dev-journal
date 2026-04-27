@@ -237,6 +237,7 @@ API URL (GET /api/reports?page=N&per_page=M)
 | per_page 変更時の page リセット | `per_page` 変更時は同時に `page=1` にリセットする（既存 status / from / to フィルタ変更時と同一パターン）。`setSearchParams` は **1 回のコールに集約**して `per_page` と `page` を同時更新する（issue #147 重要リスク 5: race 回避） |
 | 動的選択肢 | `PageSizeSelector` 側の責務として、URL の `per_page` が標準選択肢に含まれない場合は `[...standardOptions, perPage]` を昇順 + 重複除去して提示する（`common-components.md` §PageSizeSelector 参照） |
 | フッター表示 | `AppPaginationFooter` は常時表示（`totalPages <= 1` でも非表示にしない、issue #147 Q3） |
+| 件数表示の経路 | API レスポンス `pagination.total_count` を `AppPaginationFooter` の `totalCount` prop にそのまま渡し、フッター左側に「{start} - {end} / 全 {total} 件」を描画する。`start` / `end` の算出は `AppPaginationFooter` 内部（`currentPage` / `perPage` / `totalCount` から計算）で行うため、画面側で算出ロジックを持たない（issue #147 再々オープン A2 案、`common-components.md` §AppPaginationFooter §件数表示フォーマット参照） |
 
 #### setSearchParams 集約パターン（参考）
 
