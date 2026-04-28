@@ -114,23 +114,23 @@ Approver 自身が作成したレポートが submitted 状態で一覧に含ま
 |------|------|
 | 方式 | オフセットベースページネーション（screens.md §4.9 準拠） |
 | 1ページあたりの件数 | デフォルト 20 件 |
-| フッター配置 | **`AppDataGrid` の `slots.footer` プロパティに `AppPaginationFooter` を差し込み、DataGrid フッターコンテナに統合する**（issue #147 再オープン 2026-04-27 確定方針 D-1。クラス名定義は `55_ui_component/common-components.md` §AppDataGrid を参照）。テーブル外側の独立した `<Box>` には配置しない。本画面は `AppDataGrid` を直接利用するため、画面側で `<AppDataGrid slots={{ footer: () => <AppPaginationFooter ... /> }} />` の形で直接 `slots.footer` に渡す（issue #147 再オープン パターン ②a） |
-| フッター構成 | 共通 `AppPaginationFooter` を使用（issue #147 再々オープン A2 案: MUI 標準寄せ）。左: 件数表示「{start} - {end} / 全 {total} 件」（例: 「11 - 20 / 全 37 件」）、中央: ページ番号（`AppPagination`、現在ページハイライト、省略表示）、右: 表示件数セレクタ（`PageSizeSelector`、標準選択肢 `[10, 20, 50, 100]`、デフォルト 20） |
+| フッター配置 | **`AppDataGrid` の `slots.footer` プロパティに `AppPaginationFooter` を差し込み、DataGrid フッターコンテナに統合する**（クラス名定義は `55_ui_component/common-components.md` §AppDataGrid を参照）。テーブル外側の独立した `<Box>` には配置しない。本画面は `AppDataGrid` を直接利用するため、画面側で `<AppDataGrid slots={{ footer: () => <AppPaginationFooter ... /> }} />` の形で直接 `slots.footer` に渡す |
+| フッター構成 | 共通 `AppPaginationFooter` を使用（MUI 標準寄せ）。左: 件数表示「{start} - {end} / 全 {total} 件」（例: 「11 - 20 / 全 37 件」）、中央: ページ番号（`AppPagination`、現在ページハイライト、省略表示）、右: 表示件数セレクタ（`PageSizeSelector`、標準選択肢 `[10, 20, 50, 100]`、デフォルト 20） |
 | 件数表示 | API レスポンスの `pagination.total_count` を `AppPaginationFooter` の `totalCount` prop に渡すことで描画される。`start` / `end` の算出は `AppPaginationFooter` 内部で行うため、画面側で算出ロジックを持たない（4 画面で表記方針を共通化） |
-| 境界線 | フッター上端に `border-top: 1px solid divider` を表示し、リスト本体とフッターを視覚的に分離する（DataGrid 標準フッターと整合、issue #147 再々オープン A2 案） |
+| 境界線 | フッター上端に `border-top: 1px solid divider` を表示し、リスト本体とフッターを視覚的に分離する（DataGrid 標準フッターと整合） |
 | レスポンシブ | 375px 等のスマホ幅では `flex-direction: column` で縦並びにフォールバック（縦並び時の順序は上から「件数表示 → AppPagination → PageSizeSelector」） |
-| 表示制御 | **フッターは常時表示**（issue #147 Q3）。`totalPages <= 1` でも非表示にしない。内部 `AppPagination` は `count={Math.max(totalPages, 1)}` でページ番号「1」を常時表示する |
+| 表示制御 | **フッターは常時表示**。`totalPages <= 1` でも非表示にしない。内部 `AppPagination` は `count={Math.max(totalPages, 1)}` でページ番号「1」を常時表示する |
 | API パラメータ | `page`（デフォルト 1）、`per_page`（デフォルト 20、最大 100。範囲外は BE バリデーションで 422） |
 | URL ⇔ UI 反映 | URL の `?per_page=N` を `PageSizeSelector` に反映（標準外値は動的に選択肢に追加）。セレクタ操作で URL クエリ `per_page` を更新 |
 | per_page 変更時 | page=1 にリセット（既存フィルタ変更と同一パターン）。`setSearchParams` は 1 回のコールに集約 |
-| FE フォールバック | per_page の NaN/負数 URL 値は FE 側で 20 にフォールバック（issue #147 Q4）。範囲内不正値は BE バリデーションに委ねる |
+| FE フォールバック | per_page の NaN/負数 URL 値は FE 側で 20 にフォールバック。範囲内不正値は BE バリデーションに委ねる |
 | ソート順 | 提出日の降順（新しい提出が上位に表示） |
 | フィルタ変更時 | page を 1 にリセットする |
 | Props 型 | `55_ui_component/common-components.md` §AppPaginationFooter / §PageSizeSelector 参照 |
 
 ## 8. 件数表示
 
-件数表示は §7 ページネーションのフッター左「{start} - {end} / 全 {total} 件」に統合された（issue #147 再々オープン A2 案）。テーブル上部の独立した件数表示は提供しない（4 画面で表示パターンを統一、業務文脈はページタイトル「承認待ち一覧」で明示）。フィルタ適用中の 0 件メッセージは §9 空状態を参照。
+件数表示は §7 ページネーションのフッター左「{start} - {end} / 全 {total} 件」に統合された。テーブル上部の独立した件数表示は提供しない（4 画面で表示パターンを統一、業務文脈はページタイトル「承認待ち一覧」で明示）。フィルタ適用中の 0 件メッセージは §9 空状態を参照。
 
 ## 9. 空状態
 
@@ -148,7 +148,7 @@ Approver 自身が作成したレポートが submitted 状態で一覧に含ま
 
 ## 11. エラー表示
 
-> **実装者注記（issue #134）**: 下表の「メッセージ」欄の日本語文言は `frontend/src/lib/error-messages.ts` の `SERVER_ERROR_MESSAGES` の期待値であり、コンポーネント内でハードコードするものではない。onError ハンドラでは `err.message` をそのまま使うこと（`.claude/rules/implementation-workflow.md` 「FE エラーハンドリング」参照）。
+> **実装者注記**: 下表の「メッセージ」欄の日本語文言は `frontend/src/lib/error-messages.ts` の `SERVER_ERROR_MESSAGES` の期待値であり、コンポーネント内でハードコードするものではない。onError ハンドラでは `err.message` をそのまま使うこと（`.claude/rules/implementation-workflow.md` 「FE エラーハンドリング」参照）。
 
 | エラー種別 | HTTP ステータス | 表示方式 | メッセージ |
 |-----------|---------------|---------|-----------|

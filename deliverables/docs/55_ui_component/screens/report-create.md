@@ -165,7 +165,7 @@ GET /api/reports/:id（元レポート取得）
 | &sect;1 基本情報 | ReportCreatePage | URL パス、対応 API |
 | &sect;2 レイアウト | AppLayout, AppBreadcrumbs, ReportForm | フォーム構造 |
 | &sect;3 入力項目 | AppTextField, ReportPeriodField, AppDatePicker | タイトル、対象期間（開始日・終了日）。再申請時のプリフィル |
-| &sect;4 バリデーションルール | ReportForm（reportCreateSchema） | V1-V4, V5-S, V5-E: クライアントサイド Zod バリデーション。V5（対象期間の相関）は `path: ['periodStart']`（V5-S）と `path: ['periodEnd']`（V5-E）の 2 経路で個別出力し、両フィールドの onBlur で `trigger(['periodStart', 'periodEnd'])` を呼んで再評価する（issue #141） |
+| &sect;4 バリデーションルール | ReportForm（reportCreateSchema） | V1-V4, V5-S, V5-E: クライアントサイド Zod バリデーション。V5（対象期間の相関）は `path: ['periodStart']`（V5-S）と `path: ['periodEnd']`（V5-E）の 2 経路で個別出力し、両フィールドの onBlur で `trigger(['periodStart', 'periodEnd'])` を呼んで再評価する |
 | &sect;5 エラー表示 | FormAlert, AppTextField, AppDatePicker | フィールドレベル: helperText、サーバーエラー: FormAlert |
 | &sect;6 操作と遷移 | ReportFormActions, SubmitButton | 「作成する」ボタン: POST -> 詳細画面遷移、「キャンセル」: 一覧に戻る |
 | &sect;7 ロール別表示差異 | - | ロールによる差異なし |

@@ -54,7 +54,7 @@ AllReportsPage
 ### AllReportsPage
 
 - 配置: `pages/admin/AllReportsPage.tsx`
-- 責務: テナント全レポート一覧画面のページコンポーネント。AppLayout でラップし、useAllReports / useTenantMembers Hook を呼び出してデータを取得する。**フィルタ条件・ページ番号（`page`）・表示件数（`per_page`）はすべて URL クエリパラメータ（`useSearchParams`）で管理する**（issue #147 Q2: 旧 `useState` ベースから移行。他 3 画面と挙動を統一）。フィルタ変更時および `per_page` 変更時は URL クエリパラメータを更新してページ番号を 1 にリセットする（`setSearchParams` は 1 回のコールに集約）。`per_page` の NaN/負数 URL 値は FE 側で 20 にフォールバックし、範囲内不正値（0 や 101 等）は BE バリデーション（HTTP 422）に委ねる。403 エラー時はダッシュボードにリダイレクトする。詳細は `state-management.md §3.1`（ページネーション URL クエリ ⇔ Hook ⇔ API URL 連動仕様）を参照
+- 責務: テナント全レポート一覧画面のページコンポーネント。AppLayout でラップし、useAllReports / useTenantMembers Hook を呼び出してデータを取得する。**フィルタ条件・ページ番号（`page`）・表示件数（`per_page`）はすべて URL クエリパラメータ（`useSearchParams`）で管理する**（旧 `useState` ベースから移行。他 3 画面と挙動を統一）。フィルタ変更時および `per_page` 変更時は URL クエリパラメータを更新してページ番号を 1 にリセットする（`setSearchParams` は 1 回のコールに集約）。`per_page` の NaN/負数 URL 値は FE 側で 20 にフォールバックし、範囲内不正値（0 や 101 等）は BE バリデーション（HTTP 422）に委ねる。403 エラー時はダッシュボードにリダイレクトする。詳細は `state-management.md §3.1`（ページネーション URL クエリ ⇔ Hook ⇔ API URL 連動仕様）を参照
 - 対応セクション: `50_detail_design/screens/admin-all-reports.md` &sect;1, &sect;3, &sect;9, &sect;10
 
 ```typescript
@@ -190,8 +190,8 @@ GET /api/tenant/members
 
 | 状態 | カテゴリ | 管理方法 | スコープ |
 |------|---------|---------|---------|
-| フィルタ条件（status, from, to, submitterId） | UI | URL クエリパラメータ（useSearchParams）。issue #147 Q2 で旧 `useState` から移行 | AllReportsPage |
-| 現在のページ番号（page） | UI | URL クエリパラメータ（useSearchParams）。issue #147 Q2 で旧 `useState` から移行 | AllReportsPage |
+| フィルタ条件（status, from, to, submitterId） | UI | URL クエリパラメータ（useSearchParams）。旧 `useState` から移行 | AllReportsPage |
+| 現在のページ番号（page） | UI | URL クエリパラメータ（useSearchParams）。旧 `useState` から移行 | AllReportsPage |
 | 現在の表示件数（per_page） | UI | URL クエリパラメータ（useSearchParams）。NaN/負数は FE 側で 20 にフォールバック（`state-management.md §3.1` 参照） | AllReportsPage |
 | レポート一覧データ | サーバー | useAllReports Hook（TanStack Query useQuery） | AllReportsPage |
 | テナントメンバー一覧 | サーバー | useTenantMembers Hook（TanStack Query useQuery） | AllReportsPage |
@@ -211,7 +211,7 @@ GET /api/tenant/members
 | `StatusChip`（← common-components.md） | AllReportsTable の AppDataGrid ステータス列 | status: レポートの現在ステータス |
 | `EmptyState`（← common-components.md） | AllReportsTable 内のデータ0件表示 | フィルタ有無でメッセージ切替（「レポートはまだ作成されていません。」/「条件に一致するレポートはありません。フィルタを変更してお試しください。」） |
 | `PageSkeleton`（← common-components.md） | AllReportsTable 内のローディング表示 | variant="table"。初回読み込み・フィルタ変更・ページ切替時に表示 |
-| `AppPaginationFooter`（← common-components.md） | AllReportsPage の下部のページネーションフッター（左: 件数表示「{start} - {end} / 全 {total} 件」、中央: ページ番号、右: 表示件数セレクタ。issue #147 再々オープン A2 案で件数表示と境界線・最小高さを追加）。常時表示（`totalPages <= 1` でも非表示にしない。内部 `AppPagination` は `count={Math.max(totalPages, 1)}`）。スマホ幅（375px）では `flex-direction: column` で縦並び（順序: 件数表示 → AppPagination → PageSizeSelector） | currentPage / totalPages / perPage / totalCount は useAllReports のレスポンス pagination から取得（`totalCount={pagination?.total_count}` で渡す）。onPageChange / onPerPageChange は AllReportsPage が `setSearchParams` で URL を更新（per_page 変更時は page=1 にリセット）。件数表示の算出（start/end）は AppPaginationFooter 内部で行う。Props 型は `common-components.md §AppPaginationFooter / §PageSizeSelector` を参照 |
+| `AppPaginationFooter`（← common-components.md） | AllReportsPage の下部のページネーションフッター（左: 件数表示「{start} - {end} / 全 {total} 件」、中央: ページ番号、右: 表示件数セレクタ）。常時表示（`totalPages <= 1` でも非表示にしない。内部 `AppPagination` は `count={Math.max(totalPages, 1)}`）。スマホ幅（375px）では `flex-direction: column` で縦並び（順序: 件数表示 → AppPagination → PageSizeSelector） | currentPage / totalPages / perPage / totalCount は useAllReports のレスポンス pagination から取得（`totalCount={pagination?.total_count}` で渡す）。onPageChange / onPerPageChange は AllReportsPage が `setSearchParams` で URL を更新（per_page 変更時は page=1 にリセット）。件数表示の算出（start/end）は AppPaginationFooter 内部で行う。Props 型は `common-components.md §AppPaginationFooter / §PageSizeSelector` を参照 |
 | `AppToast`（← common-components.md） | AllReportsPage（SnackbarContext 経由） | API 通信エラー（500 系）のトースト表示 |
 
 ---

@@ -545,8 +545,8 @@ FE テストケースは `55_ui_component/screens/*.md` のコンポーネント
 | useApproveReport | WFL-FE-069〜WFL-FE-072 | 4 件 |
 | useRejectReport | WFL-FE-073〜WFL-FE-075 | 3 件 |
 | useMarkAsPaid | WFL-FE-076〜WFL-FE-078 | 3 件 |
-| ApprovalListPage per_page UI 結合（issue #147） | WFL-FE-083〜WFL-FE-086 | 4 件 |
-| PaymentListPage per_page UI 結合（issue #147） | WFL-FE-087〜WFL-FE-090 | 4 件 |
+| ApprovalListPage per_page UI 結合 | WFL-FE-083〜WFL-FE-086 | 4 件 |
+| PaymentListPage per_page UI 結合 | WFL-FE-087〜WFL-FE-090 | 4 件 |
 | **FE 合計** | WFL-FE-001〜WFL-FE-090 | **90 件** |
 | **APR-FE 合計** | APR-FE-001〜APR-FE-004 | **4 件** |
 | **PAY-FE 合計** | PAY-FE-001〜PAY-FE-005 | **5 件** |
@@ -554,7 +554,7 @@ FE テストケースは `55_ui_component/screens/*.md` のコンポーネント
 
 ---
 
-### 追記テスト（issue-106 同期ロールチェック + 403 トースト）
+### 追記テスト（同期ロールチェック + 403 トースト）
 
 #### ApprovalListPage -- 同期ロールチェック + 403 トースト
 
@@ -562,10 +562,10 @@ FE テストケースは `55_ui_component/screens/*.md` のコンポーネント
 
 | テストID | テストレベル | 対象コンポーネント | 対象 Props / Hook | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
 |---|---|---|---|---|---|---|---|---|---|
-| APR-FE-001 | 単体 | ApprovalListPage | usePendingReports | 認可 | RBAC-F01, RBC-001 | `55_ui_component/screens/workflow-pending.md §PendingApprovalsPage` | `redirects_on_403_with_toast` | usePendingReports が 403 エラーを返す | ダッシュボード（`/dashboard`）にリダイレクトされ、navigate の state.toast にトーストメッセージ「この画面にアクセスする権限がありません。」が含まれる（issue-088 対応） |
-| APR-FE-002 | 単体 | ApprovalListPage | useCurrentUser | 認可 | RBAC-F01, RBC-001 | `55_ui_component/screens/workflow-pending.md §PendingApprovalsPage` | `sync_role_check_member_redirects` | useCurrentUser が Member ロールを返す | 同期ロールチェックにより即座にダッシュボード（`/dashboard`）にリダイレクトされる（issue-106 対応） |
-| APR-FE-003 | 単体 | ApprovalListPage | useCurrentUser | 認可 | RBAC-F01, RBC-001 | `55_ui_component/screens/workflow-pending.md §PendingApprovalsPage` | `sync_role_check_approver_renders` | useCurrentUser が Approver ロールを返す | 同期ロールチェックを通過し、通常レンダリングされる（issue-106 対応） |
-| APR-FE-004 | 単体 | ApprovalListPage | useCurrentUser | 認可 | RBAC-F01, RBC-001 | `55_ui_component/screens/workflow-pending.md §PendingApprovalsPage` | `sync_role_check_admin_redirects` | useCurrentUser が Admin ロールを返す | 同期ロールチェックにより即座にダッシュボード（`/dashboard`）にリダイレクトされる（authz.md 正本: Approver のみ許可。issue-106 対応） |
+| APR-FE-001 | 単体 | ApprovalListPage | usePendingReports | 認可 | RBAC-F01, RBC-001 | `55_ui_component/screens/workflow-pending.md §PendingApprovalsPage` | `redirects_on_403_with_toast` | usePendingReports が 403 エラーを返す | ダッシュボード（`/dashboard`）にリダイレクトされ、navigate の state.toast にトーストメッセージ「この画面にアクセスする権限がありません。」が含まれる |
+| APR-FE-002 | 単体 | ApprovalListPage | useCurrentUser | 認可 | RBAC-F01, RBC-001 | `55_ui_component/screens/workflow-pending.md §PendingApprovalsPage` | `sync_role_check_member_redirects` | useCurrentUser が Member ロールを返す | 同期ロールチェックにより即座にダッシュボード（`/dashboard`）にリダイレクトされる |
+| APR-FE-003 | 単体 | ApprovalListPage | useCurrentUser | 認可 | RBAC-F01, RBC-001 | `55_ui_component/screens/workflow-pending.md §PendingApprovalsPage` | `sync_role_check_approver_renders` | useCurrentUser が Approver ロールを返す | 同期ロールチェックを通過し、通常レンダリングされる |
+| APR-FE-004 | 単体 | ApprovalListPage | useCurrentUser | 認可 | RBAC-F01, RBC-001 | `55_ui_component/screens/workflow-pending.md §PendingApprovalsPage` | `sync_role_check_admin_redirects` | useCurrentUser が Admin ロールを返す | 同期ロールチェックにより即座にダッシュボード（`/dashboard`）にリダイレクトされる（authz.md 正本: Approver のみ許可） |
 
 #### PaymentListPage -- 同期ロールチェック + 403 トースト
 
@@ -573,17 +573,17 @@ FE テストケースは `55_ui_component/screens/*.md` のコンポーネント
 
 | テストID | テストレベル | 対象コンポーネント | 対象 Props / Hook | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
 |---|---|---|---|---|---|---|---|---|---|
-| PAY-FE-001 | 単体 | PaymentListPage | usePayableReports | 認可 | RBAC-F01, RBC-001 | `55_ui_component/screens/workflow-payable.md §PayableReportsPage` | `redirects_on_403_with_toast` | usePayableReports が 403 エラーを返す | ダッシュボード（`/dashboard`）にリダイレクトされ、navigate の state.toast にトーストメッセージ「この画面にアクセスする権限がありません。」が含まれる（issue-088 対応） |
-| PAY-FE-002 | 単体 | PaymentListPage | useCurrentUser | 認可 | RBAC-F01, RBC-001 | `55_ui_component/screens/workflow-payable.md §PayableReportsPage` | `sync_role_check_member_redirects` | useCurrentUser が Member ロールを返す | 同期ロールチェックにより即座にダッシュボード（`/dashboard`）にリダイレクトされる（issue-106 対応） |
-| PAY-FE-003 | 単体 | PaymentListPage | useCurrentUser | 認可 | RBAC-F01, RBC-001 | `55_ui_component/screens/workflow-payable.md §PayableReportsPage` | `sync_role_check_accounting_renders` | useCurrentUser が Accounting ロールを返す | 同期ロールチェックを通過し、通常レンダリングされる（issue-106 対応） |
-| PAY-FE-004 | 単体 | PaymentListPage | useCurrentUser | 認可 | RBAC-F01, RBC-001 | `55_ui_component/screens/workflow-payable.md §PayableReportsPage` | `sync_role_check_admin_redirects` | useCurrentUser が Admin ロールを返す | 同期ロールチェックにより即座にダッシュボード（`/dashboard`）にリダイレクトされる（authz.md 正本: Accounting のみ許可。issue-106 対応） |
-| PAY-FE-005 | 単体 | PaymentListPage | useCurrentUser | 認可 | RBAC-F01, RBC-001 | `55_ui_component/screens/workflow-payable.md §PayableReportsPage` | `sync_role_check_approver_redirects` | useCurrentUser が Approver ロールを返す | 同期ロールチェックにより即座にダッシュボード（`/dashboard`）にリダイレクトされる（issue-106 対応） |
+| PAY-FE-001 | 単体 | PaymentListPage | usePayableReports | 認可 | RBAC-F01, RBC-001 | `55_ui_component/screens/workflow-payable.md §PayableReportsPage` | `redirects_on_403_with_toast` | usePayableReports が 403 エラーを返す | ダッシュボード（`/dashboard`）にリダイレクトされ、navigate の state.toast にトーストメッセージ「この画面にアクセスする権限がありません。」が含まれる |
+| PAY-FE-002 | 単体 | PaymentListPage | useCurrentUser | 認可 | RBAC-F01, RBC-001 | `55_ui_component/screens/workflow-payable.md §PayableReportsPage` | `sync_role_check_member_redirects` | useCurrentUser が Member ロールを返す | 同期ロールチェックにより即座にダッシュボード（`/dashboard`）にリダイレクトされる |
+| PAY-FE-003 | 単体 | PaymentListPage | useCurrentUser | 認可 | RBAC-F01, RBC-001 | `55_ui_component/screens/workflow-payable.md §PayableReportsPage` | `sync_role_check_accounting_renders` | useCurrentUser が Accounting ロールを返す | 同期ロールチェックを通過し、通常レンダリングされる |
+| PAY-FE-004 | 単体 | PaymentListPage | useCurrentUser | 認可 | RBAC-F01, RBC-001 | `55_ui_component/screens/workflow-payable.md §PayableReportsPage` | `sync_role_check_admin_redirects` | useCurrentUser が Admin ロールを返す | 同期ロールチェックにより即座にダッシュボード（`/dashboard`）にリダイレクトされる（authz.md 正本: Accounting のみ許可） |
+| PAY-FE-005 | 単体 | PaymentListPage | useCurrentUser | 認可 | RBAC-F01, RBC-001 | `55_ui_component/screens/workflow-payable.md §PayableReportsPage` | `sync_role_check_approver_redirects` | useCurrentUser が Approver ロールを返す | 同期ロールチェックにより即座にダッシュボード（`/dashboard`）にリダイレクトされる |
 
 ---
 
-### 追記テスト（issue #147: per_page UI セレクタ + URL 駆動 Page 結合）
+### 追記テスト（per_page UI セレクタ + URL 駆動 Page 結合）
 
-issue #147 対応として、`ApprovalListPage`（SCR-WFL-001）および `PaymentListPage`（SCR-WFL-002）における URL ⇔ UI ⇔ API 連動経路を Page 結合テストとして採番する。`PageSizeSelector` / `AppPaginationFooter` の単体テストは `reports.md` §FE-6 の `PSS-001〜005` / `APF-001〜007` に集約済み。BE 側は WFL-005 / WFL-046（既存 `_Pagination` テスト）が既にカバーしているため、BE への追加は行わない。
+`ApprovalListPage`（SCR-WFL-001）および `PaymentListPage`（SCR-WFL-002）における URL ⇔ UI ⇔ API 連動経路を Page 結合テストとして採番する。`PageSizeSelector` / `AppPaginationFooter` の単体テストは `reports.md` §FE-6 の `PSS-001〜005` / `APF-001〜007` に集約済み。BE 側は WFL-005 / WFL-046（既存 `_Pagination` テスト）が既にカバーしているため、BE への追加は行わない。
 
 採番方針: 既存 WFL-FE 系最大 ID は `WFL-FE-082`（FE テスト ID サマリー参照）。次番 `WFL-FE-083` から採用する。`ApprovalListPage` 用に `WFL-FE-083〜086`、`PaymentListPage` 用に `WFL-FE-087〜090` を割り当てる。
 
@@ -593,8 +593,8 @@ issue #147 対応として、`ApprovalListPage`（SCR-WFL-001）および `Payme
 |---|---|---|---|---|---|---|---|---|---|
 | WFL-FE-083 | 単体 | ApprovalListPage | usePendingReports（MSW）、useSearchParams | 正常系 | WFL-F04 | `50_detail_design/screens/workflow-pending.md §7`, `55_ui_component/state-management.md §3.1` | `test_ApprovalListPage_url_per_page_reflects_to_selector_and_api` | `/approvals?per_page=10` で開く。MSW で `usePendingReports` が 10 件 + `pagination.total_pages > 1` を返すよう設定。useCurrentUser が Approver ロールを返すようモック | テーブルに 10 件のみ描画される。フッターの `PageSizeSelector` が「10」を表示する。`usePendingReports` への引数に `per_page: 10` が渡り、API URL に `?per_page=10` が含まれる |
 | WFL-FE-084 | 単体 | ApprovalListPage | usePendingReports（MSW）、useSearchParams | 正常系 | WFL-F04 | `50_detail_design/screens/workflow-pending.md §7`, `55_ui_component/state-management.md §3.1` | `test_ApprovalListPage_selector_change_updates_url_and_resets_page` | `/approvals?page=3&per_page=10` で開いた状態で `PageSizeSelector` から「50」を選択 | URL が `/approvals?page=1&per_page=50` に更新される（`page=1` リセット）。`setSearchParams` は 1 回のコールに集約される（race 回避）。`PageSizeSelector` の現在値が「50」に更新される |
-| WFL-FE-085 | 単体 | ApprovalListPage | usePendingReports、useSearchParams | 正常系 | WFL-F04 | `50_detail_design/screens/workflow-pending.md §7`, `55_ui_component/state-management.md §3.1` | `test_ApprovalListPage_url_non_standard_per_page_appends_to_options` | `/approvals?per_page=1` で開く（URL に標準外値）。useCurrentUser が Approver ロールを返すようモック | `PageSizeSelector` の選択肢が `[1, 10, 20, 50, 100]` に動的拡張され、現在値「1」が選択される（パターン X 動作） |
-| WFL-FE-086 | 単体 | ApprovalListPage | usePendingReports、useSearchParams | 正常系 | WFL-F04 | `50_detail_design/screens/workflow-pending.md §7`, `55_ui_component/state-management.md §3.1` | `test_ApprovalListPage_url_invalid_per_page_falls_back_to_20` | `/approvals?per_page=abc`（NaN） / `?per_page=-5`（負数） の 2 サブケース。useCurrentUser が Approver ロールを返すようモック | 両サブケースとも `usePendingReports` への引数 `per_page` が `20`（FE フォールバック）になり、`PageSizeSelector` も「20」を表示する（issue #147 Q4） |
+| WFL-FE-085 | 単体 | ApprovalListPage | usePendingReports、useSearchParams | 正常系 | WFL-F04 | `50_detail_design/screens/workflow-pending.md §7`, `55_ui_component/state-management.md §3.1` | `test_ApprovalListPage_url_non_standard_per_page_appends_to_options` | `/approvals?per_page=1` で開く（URL に標準外値）。useCurrentUser が Approver ロールを返すようモック | `PageSizeSelector` の選択肢が `[1, 10, 20, 50, 100]` に動的拡張され、現在値「1」が選択される |
+| WFL-FE-086 | 単体 | ApprovalListPage | usePendingReports、useSearchParams | 正常系 | WFL-F04 | `50_detail_design/screens/workflow-pending.md §7`, `55_ui_component/state-management.md §3.1` | `test_ApprovalListPage_url_invalid_per_page_falls_back_to_20` | `/approvals?per_page=abc`（NaN） / `?per_page=-5`（負数） の 2 サブケース。useCurrentUser が Approver ロールを返すようモック | 両サブケースとも `usePendingReports` への引数 `per_page` が `20`（FE フォールバック）になり、`PageSizeSelector` も「20」を表示する |
 
 #### PaymentListPage（SCR-WFL-002）
 
@@ -602,14 +602,14 @@ issue #147 対応として、`ApprovalListPage`（SCR-WFL-001）および `Payme
 |---|---|---|---|---|---|---|---|---|---|
 | WFL-FE-087 | 単体 | PaymentListPage | usePayableReports（MSW）、useSearchParams | 正常系 | WFL-F05 | `50_detail_design/screens/workflow-payable.md §7`, `55_ui_component/state-management.md §3.1` | `test_PaymentListPage_url_per_page_reflects_to_selector_and_api` | `/payments?per_page=10` で開く。MSW で `usePayableReports` が 10 件 + `pagination.total_pages > 1` を返すよう設定。useCurrentUser が Accounting ロールを返すようモック | テーブルに 10 件のみ描画される。フッターの `PageSizeSelector` が「10」を表示する。`usePayableReports` への引数に `per_page: 10` が渡り、API URL に `?per_page=10` が含まれる |
 | WFL-FE-088 | 単体 | PaymentListPage | usePayableReports（MSW）、useSearchParams | 正常系 | WFL-F05 | `50_detail_design/screens/workflow-payable.md §7`, `55_ui_component/state-management.md §3.1` | `test_PaymentListPage_selector_change_updates_url_and_resets_page` | `/payments?page=3&per_page=10` で開いた状態で `PageSizeSelector` から「50」を選択 | URL が `/payments?page=1&per_page=50` に更新される（`page=1` リセット）。`setSearchParams` は 1 回のコールに集約される（race 回避）。`PageSizeSelector` の現在値が「50」に更新される |
-| WFL-FE-089 | 単体 | PaymentListPage | usePayableReports、useSearchParams | 正常系 | WFL-F05 | `50_detail_design/screens/workflow-payable.md §7`, `55_ui_component/state-management.md §3.1` | `test_PaymentListPage_url_non_standard_per_page_appends_to_options` | `/payments?per_page=1` で開く（URL に標準外値）。useCurrentUser が Accounting ロールを返すようモック | `PageSizeSelector` の選択肢が `[1, 10, 20, 50, 100]` に動的拡張され、現在値「1」が選択される（パターン X 動作） |
-| WFL-FE-090 | 単体 | PaymentListPage | usePayableReports、useSearchParams | 正常系 | WFL-F05 | `50_detail_design/screens/workflow-payable.md §7`, `55_ui_component/state-management.md §3.1` | `test_PaymentListPage_url_invalid_per_page_falls_back_to_20` | `/payments?per_page=abc`（NaN） / `?per_page=-5`（負数） の 2 サブケース。useCurrentUser が Accounting ロールを返すようモック | 両サブケースとも `usePayableReports` への引数 `per_page` が `20`（FE フォールバック）になり、`PageSizeSelector` も「20」を表示する（issue #147 Q4） |
+| WFL-FE-089 | 単体 | PaymentListPage | usePayableReports、useSearchParams | 正常系 | WFL-F05 | `50_detail_design/screens/workflow-payable.md §7`, `55_ui_component/state-management.md §3.1` | `test_PaymentListPage_url_non_standard_per_page_appends_to_options` | `/payments?per_page=1` で開く（URL に標準外値）。useCurrentUser が Accounting ロールを返すようモック | `PageSizeSelector` の選択肢が `[1, 10, 20, 50, 100]` に動的拡張され、現在値「1」が選択される |
+| WFL-FE-090 | 単体 | PaymentListPage | usePayableReports、useSearchParams | 正常系 | WFL-F05 | `50_detail_design/screens/workflow-payable.md §7`, `55_ui_component/state-management.md §3.1` | `test_PaymentListPage_url_invalid_per_page_falls_back_to_20` | `/payments?per_page=abc`（NaN） / `?per_page=-5`（負数） の 2 サブケース。useCurrentUser が Accounting ロールを返すようモック | 両サブケースとも `usePayableReports` への引数 `per_page` が `20`（FE フォールバック）になり、`PageSizeSelector` も「20」を表示する |
 
 **備考**:
 - 採番根拠: `WFL-FE-082` の次番から開始。`APR-FE-` / `PAY-FE-` 系（同期ロールチェック追記）は別系統のため通番に影響しない。
-- 実装ファイル候補: `expense-saas/frontend/src/pages/workflow/__tests__/ApprovalListPage.test.tsx` / `PaymentListPage.test.tsx`（**既存ファイル拡張**。issue #147 末尾「実ファイルパスの確定」に従い、画面ファイル名 `ApprovalListPage.tsx` / `PaymentListPage.tsx` に対応する確定パス）。
-- BE per_page 動作テストは既存 `WFL-005`（`TestListPendingReports_Pagination`）/ `WFL-046`（`TestListPayableReports_Pagination`）が既にカバー済み。本 issue では BE への追加は行わない。
-- `ApprovalListPage` / `PaymentListPage` 用のフッター常時表示（Q3）の検証は `APF-002 / APF-003` に集約しているため本節では再検証しない。
+- 実装ファイル候補: `expense-saas/frontend/src/pages/workflow/__tests__/ApprovalListPage.test.tsx` / `PaymentListPage.test.tsx`（**既存ファイル拡張**。画面ファイル名 `ApprovalListPage.tsx` / `PaymentListPage.tsx` に対応する確定パス）。
+- BE per_page 動作テストは既存 `WFL-005`（`TestListPendingReports_Pagination`）/ `WFL-046`（`TestListPayableReports_Pagination`）が既にカバー済み。BE への追加は行わない。
+- `ApprovalListPage` / `PaymentListPage` 用のフッター常時表示の検証は `APF-002 / APF-003` に集約しているため本節では再検証しない。
 
 ---
 

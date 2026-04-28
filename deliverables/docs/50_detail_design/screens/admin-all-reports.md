@@ -93,7 +93,7 @@
 - 開始日が終了日より後の場合、両フィールドのフォーカスアウトおよびフィルタ送信時にバリデーションエラーを表示する。
   - 開始日フィールドの直下: 「開始日は終了日以前を指定してください」
   - 終了日フィールドの直下: 「終了日は開始日以降を指定してください」
-  - どちらのフィールドを編集しても条件違反があれば該当フィールド直下に即時エラーを表示する（report-create.md §4 V5-S / V5-E と同一方針、issue #141）
+  - どちらのフィールドを編集しても条件違反があれば該当フィールド直下に即時エラーを表示する（report-create.md §4 V5-S / V5-E と同一方針）
 
 ### レポートテーブル
 
@@ -112,21 +112,21 @@
 
 - オフセットベースページネーション（`screens.md` §4.9 準拠）
 - デフォルト 20件/ページ
-- フッター配置: **`AppDataGrid` の `slots.footer` プロパティに `AppPaginationFooter` を差し込み、DataGrid フッターコンテナに統合する**（issue #147 再オープン 2026-04-27 確定方針 D-1。クラス名定義は `55_ui_component/common-components.md` §AppDataGrid を参照）。テーブル外側の独立した `<Box>` には配置しない
-- 本画面は中間ラッパー（`AllReportsTable`）経由で `AppDataGrid` を利用する。中間ラッパーに `paginationFooter` prop を追加して内部で `slots.footer` に変換する（issue #147 再オープン パターン ②a）
-- フッター 1 行のレイアウト（共通コンポーネント `AppPaginationFooter` を使用、issue #147 再々オープン A2 案: MUI 標準寄せ）
+- フッター配置: **`AppDataGrid` の `slots.footer` プロパティに `AppPaginationFooter` を差し込み、DataGrid フッターコンテナに統合する**（クラス名定義は `55_ui_component/common-components.md` §AppDataGrid を参照）。テーブル外側の独立した `<Box>` には配置しない
+- 本画面は中間ラッパー（`AllReportsTable`）経由で `AppDataGrid` を利用する。中間ラッパーに `paginationFooter` prop を追加して内部で `slots.footer` に変換する
+- フッター 1 行のレイアウト（共通コンポーネント `AppPaginationFooter` を使用、MUI 標準寄せ）
   - 左: 件数表示「{start} - {end} / 全 {total} 件」（例: 「11 - 20 / 全 37 件」）
   - 中央: ページ番号（`AppPagination`、現在ページをハイライト、総ページ数が多い場合は省略表示）
   - 右: 表示件数セレクタ（`PageSizeSelector`、標準選択肢 `[10, 20, 50, 100]`、デフォルト 20）
-- 件数表示は API レスポンスの `pagination.total_count` を `AppPaginationFooter` の `totalCount` prop に渡すことで描画される。`start` / `end` の算出は `AppPaginationFooter` 内部で行うため、画面側で算出ロジックを持たない（issue #147 再々オープン A2 案、4 画面で表記方針を共通化）
-- 境界線: フッター上端に `border-top: 1px solid divider` を表示し、リスト本体とフッターを視覚的に分離する（DataGrid 標準フッターと整合、issue #147 再々オープン A2 案）
+- 件数表示は API レスポンスの `pagination.total_count` を `AppPaginationFooter` の `totalCount` prop に渡すことで描画される。`start` / `end` の算出は `AppPaginationFooter` 内部で行うため、画面側で算出ロジックを持たない（4 画面で表記方針を共通化）
+- 境界線: フッター上端に `border-top: 1px solid divider` を表示し、リスト本体とフッターを視覚的に分離する（DataGrid 標準フッターと整合）
 - レスポンシブ: 375px 等のスマホ幅では `flex-direction: column` で縦並びにフォールバック（縦並び時の順序は上から「件数表示 → AppPagination → PageSizeSelector」）
-- **フッターは常時表示**（issue #147 Q3）。`totalPages <= 1` でも非表示にしない。内部 `AppPagination` は `count={Math.max(totalPages, 1)}` でページ番号「1」を常時表示する
+- **フッターは常時表示**。`totalPages <= 1` でも非表示にしない。内部 `AppPagination` は `count={Math.max(totalPages, 1)}` でページ番号「1」を常時表示する
 - API: `GET /api/reports/all?page=1&per_page=20&status=...&from=...&to=...&submitter_id=...`
-- **URL クエリ駆動化**（issue #147 Q2）: 本 issue で `page` の状態管理を `useState` から `useSearchParams` ベースへ移行する（per_page 配線の前提として `page` も URL 駆動化が必要）。他 3 画面（`/reports`, `/approvals`, `/payments`）と挙動を統一する
+- **URL クエリ駆動化**: `page` の状態管理を `useState` から `useSearchParams` ベースへ移行する（per_page 配線の前提として `page` も URL 駆動化が必要）。他 3 画面（`/reports`, `/approvals`, `/payments`）と挙動を統一する
 - URL ⇔ UI 双方向反映: URL の `?per_page=N` 値は `PageSizeSelector` に反映（標準外値は動的に選択肢に追加）。セレクタ操作で URL クエリ `per_page` を更新
 - per_page 変更時は **page=1 にリセット**。`setSearchParams` は 1 回のコールに集約
-- per_page の NaN/負数 URL 値は FE 側で 20 にフォールバック（issue #147 Q4）。範囲内不正値は BE バリデーションに委ねる
+- per_page の NaN/負数 URL 値は FE 側で 20 にフォールバック。範囲内不正値は BE バリデーションに委ねる
 - フィルタ変更時に page を 1 にリセットする
 - Props 型は `55_ui_component/common-components.md` §AppPaginationFooter / §PageSizeSelector を参照
 
