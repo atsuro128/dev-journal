@@ -567,3 +567,30 @@ const pageSizeOptions = Array.from(new Set([10, 20, 50, 100, perPage])).sort((a,
 ```
 
 中央番号ボタン UI は `slotProps.basePagination.material.ActionsComponent = Pagination` で MUI 公式のカスタム手段を使う必要あり。
+
+## 再々オープン解決日
+
+2026-04-28（SMK-081 PASS 確認）
+
+## 再々オープン解決内容（A1 → B 案、2 段階で対応）
+
+### dev-journal（設計成果物）
+
+- `8e6f7b1`: PageSizeSelector variant を outlined → standard に訂正（A1 案、MUI TablePagination L260 hardcode 確認）
+- `2d3bc8a`: 設計書全体から issue 番号 / 内部識別子参照を全件削除（226 → 0 箇所、20 ファイル）
+- `7c23ca3`: PageSizeSelector のラベル「表示件数:」撤去（B 案、aria-label のみ）
+
+### expense-saas（実装、squash merge 2 件）
+
+- PR #104 (`f295f59`) A1 案: `frontend/src/components/ui/PageSizeSelector.tsx` の variant を `outlined` → `standard` に変更。PSS-006 追加（standard variant 検証）
+- PR #105 (`f82215f`) B 案: PageSizeSelector の InputLabel 撤去 + Select に `aria-label="表示件数"` 追加。AppPaginationFooter.test.tsx の APF-001/002/010 を `getByRole('combobox', { name: '表示件数' })` 経由に追従修正
+
+### SMK-081 検証結果（2026-04-28）
+
+完了条件「SMK-081 を再実施し PASS であること」を達成。
+
+### 学び
+
+- 「MUI 標準寄せ」を謳う設計判断時、必ず MUI 公式実装（node_modules ソース）と直接比較してから確定する。今回は variant=outlined を A2 案で確定 → A1 案で訂正 → B 案で再訂正 と 3 度の見直しを要した
+- 設計書には issue 番号 / 内部識別子（D-1 / ②a / Q3 / A1 案 等）を散りばめない。設計判断の根拠は文章で残し、issue 履歴は issues/ 配下に閉じる（本セッションで 226 → 0 箇所のクリーンアップを実施）
+- PR レビューや fetch を `cd /root-project && codex exec ...` で実行すると root-project の git に他リポジトリ refs が取り込まれる事故が起きる（本セッション中に発生、checkout master + branch -D + gc で復旧）。必ず `codex exec ...` で対象リポジトリ内から実行する
