@@ -333,11 +333,12 @@ interface PageSizeSelectorProps {
 - テスト側で数値抽出を行う場合は `parseInt(option.textContent ?? '', 10)` を使う（`Number()` だと `NaN` になる）
 - アクセシブル名（`getByRole('option', { name: ... })`）は **`'10 件'` のように単位込み**で指定する
 
-#### サイズ・variant 方針（issue #147 再々オープン A2 案、確定）
+#### サイズ・variant 方針（issue #147 再々オープン A1 案、確定）
 
 - `size="small"` を既定とする（MUI Select 標準の小サイズ。フッター高さを最小化）
-- `variant="outlined"` を確定採用とする（既存実装と整合、MUI X DataGrid 標準フッターの TablePagination 内 Select も outlined ベースであり標準寄せ趣旨と一致）
-- FormControl 余白を `margin="none"` + `sx={{ my: 0 }}` で完全に排除し、`AppPaginationFooter` の最小高さ（`minHeight: 52`）を Select 枠線が支配しないようにする（A2 案の主目的）
+- `variant="standard"` を確定採用とする（issue #147 再々オープン A1 案、2026-04-28 訂正）。MUI X DataGrid 標準フッター（`@mui/material/TablePagination`）の Select は `variant="standard"` をハードコードしており（`node_modules/@mui/material/TablePagination/TablePagination.js` L260 で確認）、本プロジェクトの「MUI 標準寄せ」趣旨と整合させるため `outlined` から `standard` に訂正。下線のみの薄い見た目になり、フッター内で枠線が目立たない
+- FormControl 余白を `margin="none"` + `sx={{ my: 0 }}` で完全に排除し、`AppPaginationFooter` の最小高さ（`minHeight: 52`）を Select が支配しないようにする（A1 案の主目的）
+- ラベル位置は floating label（`<InputLabel>`）を維持する独自仕様（MUI 標準は左横インラインだが、ラベル位置の標準化は B 案 = MUI TablePagination 完全採用 になるため A1 ではスコープ外）
 
 #### アクセシビリティ
 
