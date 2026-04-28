@@ -1,85 +1,66 @@
 # 引き継ぎメモ
 
-## セッション: 2026-04-26 21:00 〜 2026-04-27 10:00
+## セッション: 2026-04-27 11:00 〜 2026-04-28 14:19
 
 ### ゴール
 
-- issue #147（per_page UI セレクタ実装 + 4 画面適用 + URL/UI 整合 + テスト追加 + 設計書改訂）対応
-- 完了条件: 設計成果物コミット → 実装 PR マージ → 解決後処理 → BE テスト確認まで完了
+- 当初: SMK 残項目消化（§4.11 SMK-099 再検証 + SMK-100 → Phase 3 Approver → Phase 4 Accounting → Phase 6 Admin）
+- 途中変更: SMK-081 検証で AppPaginationFooter 配置不良が発覚し issue #147 再オープン → さらに見栄え問題で再々オープン（A2 → A1 → B 案、3 段階修正）→ SMK-081 PASS まで対応
 
 ### 作業ログ
 
-#### 1. architect 分析と方針確定（Q1〜Q4）
+#### 1. SMK-081 検証 → issue #147 再オープン (D-1 + ②a 案)
 
-- architect 起動で issue #147 の入力資料 + 上流成果物確認 + 不明パス特定 + チケット分割案を分析
-- **実ファイルパス確定**: AdminAllReportsPage → `AllReportsPage.tsx` / PendingApprovalsPage → `ApprovalListPage.tsx` / PayableReportsPage → `PaymentListPage.tsx`（issue 想定と異なる）
-- **重要発見**: AllReportsPage は `useState` ベース → `useSearchParams` 移行が必要（issue スコープより少し広い）
-- ユーザー判断 4 点（着手前確定、issue 末尾「2026-04-26 追加判断」セクションに追記）:
-  - **Q1**: 共通コンポーネント単体テスト ID は独自接頭辞 `PSS` (PageSizeSelector) / `APF` (AppPaginationFooter) を新設、reports.md に集約（既存 ADT/ASL と同パターン）
-  - **Q2**: AllReportsPage の `useState` → `useSearchParams` 移行を本 issue に含める
-  - **Q3**: フッター非表示仕様を撤廃。AppPaginationFooter は常時表示（`count={Math.max(totalPages, 1)}`）。4 画面で挙動統一
-  - **Q4**: per_page NaN/負数 → FE で 20 にフォールバック、範囲内不正値（0/101+）→ BE 422 委ね
+- レポート一覧でページ送りを検証 → ユーザー報告「フッターがテーブル外側に独立配置されている」
+- 調査: AppPaginationFooter は MUI Table の `<TableFooter>` ではなく単独 `<Box>`、4 画面が AppDataGrid (MUI X DataGrid) ベースのため `<table>` 構造ではない
+- 確定方針: D-1 (AppDataGrid の `slots.footer` 経由で DataGrid 内部フッターコンテナ統合) + ②a (中間ラッパー `paginationFooter` prop / 直接利用 `slots.footer` 直渡し)
+- 設計成果物フロー (designer → reviewer FIX → 修正 → codex review #112 → 修正 → codex PASS → コミット dev-journal `5b624fd` / `d16a410`)
+- 実装フロー (frontend-developer → ローカル CI → reviewer FIX (B-1 空状態フッター消失) → 修正 → reviewer FIX (D-1 AppDataGrid {...rest} 順序バグ) → 修正 → reviewer PASS → codex review (warning AppPagination mt:2 残存) → 修正 → codex PASS → squash merge **PR #102 = `e3142c3`**)
 
-#### 2. 設計成果物フロー（dev-journal）
+#### 2. SMK-081 再検証 → issue #147 再々オープン (A2 案)
 
-- designer エージェントに 11 ファイル改訂を委譲（common-components / state-management / 4 画面 detail / 4 画面 ui_component / basic_design / test_cases 4 ファイル / items.md 訂正 / issue ファイル）
-- 内部 reviewer FIX → 指揮役で指摘対応（5 ファイル × 各 1〜数行）→ 再レビュー PASS（warning W-2: testid 暗黙契約は別途明文化方針）
-- codex review 初回 FIX（blocker 2 / warning 1 = `2026-04-26-001/002/003`）:
-  - **blocker 001**: state-management.md L260 の不正 per_page 応答コード「BE で 400」（私のミス、実装は 422）→ 422 に訂正
-  - **blocker 002**: `55_ui_component/screens/` 配下 4 画面が AppPagination 直置き・旧状態管理のまま → designer に追加依頼で 4 ファイル × 36 箇所改訂
-  - **warning 003**: issue 本文 L128「totalPages <= 1 で AppPagination 非表示」旧記述 → 訂正
-- 再 codex レビュー **PASS**（新規指摘なし）
-- review-findings ファイル 3 件は既存連番運用（最大 108）に合わせ `109/110/111-*.md` にリネームして resolved/ へ移動（**当初日付プレフィックス `2026-04-26-001` で起票してしまい、ユーザーから「運用に例外を作られると困る」と指摘 → 連番運用に統合**）
-- dev-journal 3 コミット: `e4afdcc` / `46f74d5` / `bbfbf73`
+- ユーザー報告: フッターとリストの境界線消失 / PageSizeSelector 枠線がフッター高さを支配 / floating label 違和感
+- 「ページング+表示件数をフッターに入れる UI は一般的か」問い → 一般的（MUI X DataGrid 標準フッター = TablePagination と思想同じ）と回答
+- 過去の方針検討で MUI 標準採用案が比較対象から漏れていたことが判明（codex 相談で確認）
+- A2 案（独自実装維持 + 見た目を MUI 標準に寄せる）を採用、B 案（MUI 標準完全採用）は post-MVP 検討
+- 設計成果物フロー (designer → reviewer PASS (warning W-1: workflow §8 重複) → 指揮役で W-1 修正 (§8 撤廃) + ASCII 更新 → コミット → codex review (FIX #113 A2 仕様未確定 + #114 高さ回帰防止テスト不足) → 修正 (`outlined` 確定 / `flex` 確定 / APF-011 追加) → codex PASS → コミット dev-journal `5b624fd` 系 + `d16a410` 系)
+- 実装フロー (frontend-developer → ローカル CI → reviewer PASS (nit 2、対応済) → codex (warning 2: APF テスト弱い + 4 画面 detail 未同期) → 並列対応 (frontend-developer W-1 / 指揮役 W-2) → codex (warning W-1 残: PageSizeSelector inline sx 定数未参照) → 修正 → codex PASS → squash merge **PR #103 = `83d8496`**)
 
-#### 3. β2 分離運用での実装（PR フロー）
+#### 3. SMK-081 再検証 → A1 訂正 (variant=outlined → standard)
 
-- ユーザー判断で **β2 = テスト先行 PR + 実装 PR の完全分離** を採用（テストが実装に合わせるリスクを抑制）
-- β2 統合戦略: PR1 (#101) を PR2 (#100) ブランチに merge → CI 緑確認 → PR2 を master にマージ → PR1 close
-- worktree 並列で 2 体起動:
-  - frontend-developer (#100): 実装のみ、ブランチ `step11/issue-147-impl`
-  - test-implementer (#101): テストのみ、ブランチ `step11/issue-147-tests`、設計書ベースのみで実装コード参照禁止
-- 各 PR を内部 reviewer で並列レビュー → 両者 PASS（PR #100 nit 3 / PR #101 warning 3、対応または受容）
-- 指揮役で nit 対応:
-  - ApprovalListPage / PaymentListPage の `disabled={false}` → `disabled={isLoading}` 統一（PR #100 commit `4e7be7d`）
-  - common-components.md に testid 規約追記（master `46f74d5`）
-  - PR #100 本文に副次変更を明記
+- ユーザー報告: 「PageSizeSelector のデザインが MUI 標準と違う」
+- ユーザー指摘「ちゃんと MUI 標準を調べたの？」を受けて MUI ソース直接確認 → `node_modules/@mui/material/TablePagination/TablePagination.js` L260 で `variant: "standard"` ハードコード確認
+- A2 案で `variant="outlined"` を確定したのは私の判断ミス → A1 案 (variant=standard 訂正) に変更
+- 設計成果物 (`8e6f7b1`) → 実装 frontend-developer → reviewer PASS → codex PASS → squash merge **PR #104 = `f295f59`**
 
-#### 4. β2 統合とローカル CI
+#### 4. SMK-081 再検証 → B 案 (ラベル撤去)
 
-- PR2 ブランチに PR1 を merge（worktree で実施）
-- ローカル `/test` 実行で **18 件 vitest 失敗**を発見:
-  - 原因 1: Page 結合テストで `getByTestId('page-size-selector')` を click 目的で取得（外側ラッパー click では MUI Select が開かない）→ `within(...).getByRole('combobox')` パターンに修正
-  - 原因 2: 実装の `<MenuItem>{size} 件</MenuItem>` 表示と、テストの `name: '50'` / `Number(o.textContent)` のズレ
-  - 原因 3: PSS-005 で `toBeDisabled()` 検証だが、MUI は `aria-disabled` 属性のみ付与
-- test-implementer 再起動で全 6 ファイル修正（commit `0217101` + `6951bec`）
-- 設計書 common-components.md §PageSizeSelector に「表示文字列フォーマット (`{size} 件`)」セクションを正本として追記（master `bbfbf73`）
-- vitest フルスイート再実行 → **702/702 PASS**
+- ユーザー報告: 「Select 上の floating label が違和感」
+- 「ラベル位置も MUI 標準と違うか?」問い → MUI 標準は左横インライン、現状は floating label と回答
+- A2 (ラベル位置も MUI 標準準拠) は B 案 (TablePagination 完全採用) と等価で「中途半端な入り口」になると説明
+- ユーザー判断: B 案 (ラベル完全撤去 + aria-label のみ)。「20 件」「50 件」と単位込みで文脈担保
+- 設計成果物 (`7c23ca3`) → 実装 frontend-developer → ローカル CI → reviewer FIX + codex FIX (両者 blocker: APF テスト未追従) → 指揮役で APF 3 箇所修正 → codex PASS → squash merge **PR #105 = `f82215f`**
+- SMK-081 **PASS** 確認 (2026-04-28)
+- 解決後処理 (issues/resolved 移動 + progress.md 削除 + dev-journal `012789b`)
 
-#### 5. codex レビュー（PR #100 統合済み）→ FIX → 修正 → PASS
+#### 5. 設計書から issue 番号 / 内部識別子を全件削除
 
-- codex 初回レビュー FIX:
-  - **blocker**: `PageSizeSelector.test.tsx:147` の `mock.calls[0][0]` が strict TS で `Object is possibly undefined` → `mock.lastCall?.[0]` に修正
-  - **warning**: `ReportListPage.tsx:247` のみ `currentPage={pagination?.current_page ?? 1}` で他 3 画面（`?? page`）と不一致 → `?? page` に統一
-- 修正 (commit `b8323b8`) → 再 codex レビュー **PASS**
+- ユーザー指摘「設計書に issue 番号書いたらダメじゃないか?」
+- 影響範囲: 20 ファイル / 計 226 箇所
+- designer エージェントに一括委譲 → 残存 4 件を指揮役で追加対応 → 最終 0 箇所 → コミット `2d3bc8a`
+- 削除対象: `issue #147`, `D-1`, `②a`, `Q1〜Q4`, `A1 案`, `A2 案`, `パターン X`, `重要リスク N`, `再オープン`, `再々オープン`, `案 A` 等
+- 保持: テストケース ID (RPT-/RPT-FE-/ATT-/WFL-/TNT-/APR-FE-/PAY-FE-/ADT-/ASL-/PSS-/APF-/ADG-)、設計判断の根拠（issue 番号は消すが理由は残す）、ドキュメント間の正本リンク
 
-#### 6. マージ + 解決後処理 + BE テスト
+#### 6. root-project への expense-saas refs 誤取り込み事故 + 完全復旧
 
-- PR #100 squash マージ → master HEAD = `89875a5`
-- PR #101 close（β2 分離運用、PR #100 に統合済み）
-- issue #147 を resolved/ へ移動 + 解決日 (2026-04-27) と修正内容・β2 学びを追記
-- progress.md 残存 issue 表から #147 削除
-- dev-journal commit `ca80a81`
-- BE テスト実行（ユーザー作業）: lint 0 issues / unit 全 ok / integration 全 ok（cached、新規 RPT-091 / TNT-012 含む全テスト PASS）
-
-#### 7. ローカル CI 全結果
-
-- Frontend: lint 0 / tsc 0 / vitest 702/702 PASS
-- Backend: lint 0 / unit 全 ok / integration 全 ok
+- 発覚: ユーザー指摘「root-project のブランチを切っているんだ? コミットもおかしい」
+- 原因: 私が複数回 `cd /root-project && codex exec "PR #103 のレビュー..."` を実行 → codex が cwd /root-project に対して `git fetch https://github.com/atsuro128/expense-saas.git refs/pull/103/head:step11/issue-147-a2-footer-styling` を実行 → /root-project の git にローカルブランチ作成 → checkout step11 で 425 ファイル展開、master 追跡 49 ファイル消失（.claude/skills/, .vscode/tasks.json, AGENTS.md, CLAUDE.md, .devcontainer/, .gitignore 等）
+- 復旧: 衝突確認（現状 .claude/memory + settings.local.json のみ exists、master 追跡と非衝突）→ `git -C /root-project checkout master` (49 ファイル復元 + 425 ファイル削除) → ブランチ削除 + gc + node_modules 削除 + .claude/worktrees 削除
+- 完全復旧 (会話冒頭の git status と一致)、データ損失なし
 
 ### 未完了
 
-- なし（issue #147 完全クローズ）
+- なし (issue #147 完全クローズ、SMK-081 PASS)
 
 ### ブロッカー
 
@@ -87,111 +68,114 @@
 
 ### 次にやること
 
-#### 優先度 1: SMK 残項目（前セッションから継続）
+#### 優先度 1: SMK 残項目消化 (本セッション当初のゴール、未着手のまま)
 
-- §4.8 ページネーション・フィルタ: SMK-081/082（#147 マージ済みのため実施可能）/ SMK-083/084
-- §4.9 キャッシュ: SMK-093, SMK-094
-- §4.11 ナビリンク: SMK-099, SMK-100（前セッション #150 マージ後の再実施、まだ未対応）
-- Phase 3 Approver / Phase 4 Accounting / Phase 5 未ログイン / Phase 6 Admin
+- §4.11 ナビリンク: SMK-099 再検証（FAIL のまま）+ SMK-100
+- Phase 3 Approver: SMK-006 (ナビ非表示) / SMK-011 (二重押下) / SMK-027 (409 状態競合) / SMK-063 (スマホ承認) / SMK-091 (pending 一覧整合) / SMK-095 (承認ダイアログ) / SMK-096 (却下ダイアログ) — 7 件
+- Phase 4 Accounting: SMK-092 (payable 整合) / SMK-097 (支払完了ダイアログ) — 2 件
+- Phase 6 Admin: SMK-101 / SMK-102 (スマホ全レポート / テナント情報) — 2 件
+- 計 13 件 (Phase 5 SMK-100 は §4.11 と重複)
 
 #### 優先度 2: 残 issue 対応
 
-- #133 ログ・エラー出力の言語ポリシー整理（別セッション予定とラベル済み）
-- 残存 issue: #145 / #146（post-MVP）/ #060 / #061 / #064 / #081 / #084 / #104 / #122 / ops-055 / ops-062 / ops-080
+- 残存 issue: #133 (別セッション予定) / #145 / #146 (post-MVP) / #060 / #061 / #064 / #081 / #084 / #104 / #122 / ops-055 / ops-062 / ops-080
 
-#### 優先度 3: Step 11-B / 11-C の並列着手判断
+#### 優先度 3: Step 11-B / 11-C 並列着手判断
 
 - 11-A 残量とのリソース配分をユーザー相談
 
 ### 学び・気づき
 
-#### β2 分離運用は機能したが、設計書未明文化箇所で乖離
+#### MUI 標準寄せの設計判断は必ず公式ソース直接確認
 
-- テスト先行 PR (#101) と実装 PR (#100) を別 worktree / 別ブランチで並列作成、最終的に PR2 に統合する運用を実施
-- 設計書（common-components.md）に「表示文字列フォーマット」が明記されておらず、実装側が「{size} 件」を採用、テスト側が「数値のみ」を想定して乖離 → vitest 18 件失敗で発覚
-- **教訓**: β2 分離する場合、設計書には **表示文字列レベルの仕様** まで明記する必要がある。今回は事後に `bbfbf73` で正本化したが、当初設計時に明記しておくべきだった
-- **教訓**: テスト/実装独立の代償として「実装の細部に関する設計の曖昧さ」が顕在化する。逆に言えばこのリスクを露呈させて拾えた点は β2 の効果
+- A2 案で `variant="outlined"` を「MUI 標準寄せ」と銘打って確定 → ユーザー指摘「ちゃんと MUI 標準を調べたの? これで実装してから、やっぱり違いましたは通りませんよ?」
+- node_modules/@mui/material/TablePagination/TablePagination.js を直接 grep して L260 の `variant: "standard"` ハードコードを確認
+- **教訓**: ライブラリ標準への準拠を謳う時は必ず公式実装ソース or 公式ドキュメントを直接確認してから設計確定する。「標準ぽい」推測で書かない
+- 同様の指摘漏れが過去の architect 分析でも発生していた（独自実装 AppPaginationFooter 採用時に MUI 標準 TablePagination 採用案が比較対象から漏れていた）
 
-#### 私の事実誤認 / 思い込みが 2 箇所で発生
+#### 設計書に issue 番号 / 内部識別子を散りばめない
 
-- **誤認 1**: state-management.md L260 のコメントに「BE で 400 エラー」と書いた（実装は 422）。BE 実装を確認せず思い込みで書いた → codex blocker 001 で発覚
-- **誤認 2**: AllReportsPage.test.tsx を「新規作成」と書いた（実体は 19,695 byte で既存）。architect 報告の「新規作成」を鵜呑みにした → reviewer blocker B1 で発覚
-- **教訓**: 補足コメント追記やパス記述は **既存設計書の他箇所と既存コードの両方を grep / Read で照合してから書く**。前セッション feedback_search_before_delete.md の精神を「追記」にも適用すべき
+- 過去のコミット累積で設計書に「issue #147」「D-1」「②a」「Q3」等が 226 箇所散在
+- ユーザー指摘「設計書に issue 番号書いたらダメじゃないか?」
+- 設計書はリファレンスドキュメントとして恒久的に保たれるべき。issue は closed 後に冗長な参照が残り可読性を落とす
+- **教訓**: 設計判断の根拠は「設計書本文の論理」として残す。issue 履歴は issues/ 配下に閉じる。今後の追記でも issue 番号を本文に書かない
 
-#### review-findings 命名の運用例外を作りかけた
+#### codex exec / gh pr 系は必ず対象リポジトリ内 (cd) で実行
 
-- codex の起票指示プロンプトで `2026-04-26-NNN-{topic}.md` 形式を指定 → 既存運用（`095-...108-*.md` の連番）と整合せず
-- ユーザーから「なんでそんな issue の分け方をしているんですか？運用に例外を作られると困る」と指摘
-- A 案（既存連番にリネーム）で対応、109〜111 として resolved/ へ
-- **教訓**: ファイル命名規則をプロンプトで指定する前に、既存ファイルを `ls` して運用パターンを確認する。`/codex-review` スキル定義側の改善余地あり（命名規則明記、ユーザー判断で本セッションでは保留）
+- 私が複数回 `cd /root-project && codex exec "PR #103 のレビュー..."` を実行 → codex が /root-project の git に expense-saas refs を取り込み、checkout で 425 ファイル展開 + 49 ファイル消失
+- root-project はメタリポジトリ（CLAUDE.md / .claude/ のみ管理）、expense-saas は独立リポジトリ。cwd を間違えると別リポジトリの git に影響
+- 完全復旧可能だったが、ユーザー作業ファイル（.vscode/tasks.json 等）が一時消失して混乱
+- **教訓**: PR レビュー / fetch / 任意の git 系コマンドは必ず対象リポジトリ内 (`cd /root-project/expense-saas`) で実行する。`cd /root-project` で codex exec / gh pr は禁止
 
-#### 列挙過剰
+#### 完了条件にユーザー手動検証が含まれる場合は PASS 確認後に解決後処理
 
-- test-implementer.md 修正時、`test_cases/` ディレクトリ + 全ファイル名（auth.md / reports.md / ...）を列挙
-- ユーザーから「ここまで詳細に書く必要はない」と指摘 → ディレクトリ指定のみに修正
-- **教訓**: ディレクトリ指定で十分な場合は配下ファイル列挙しない（メンテコスト + 情報密度低下を避ける）
+- PR #102 マージ後、SMK-081 PASS 確認前に resolved 移動 + progress.md 削除 + コミットを実施 → SMK-081 で FAIL → 再々オープンする運用ミス
+- **教訓**: issue / チケットの完了条件にユーザー手動検証 (SMK / UAT 等) が含まれる場合、必ず PASS 報告を受けてから解決後処理する。再オープンする手間が増える
+- 再々オープン解決時 (B 案 PR #105 マージ後) は SMK-081 PASS 確認後に resolved 移動を実施し、運用ミスを再発させなかった
 
-#### worktree の cwd 紛れ込み
+#### frontend-developer のスコープ指定漏れ (テストファイル)
 
-- test-implementer の worktree で merge 操作してしまい、PR1 ブランチに余計な merge commit が混入する寸前
-- ブランチ名確認（`git branch --show-current`）で気づき、frontend-developer worktree (a50ba6412a95bb637) に戻った
-- **教訓**: 並列で複数 worktree を扱う場合、Bash 実行時の cwd を毎回明示的に指定する（`cd /path/...` を chain）
+- B 案でラベル撤去時、PSS テストの追従指示はしたが APF テストの追従指示が漏れた
+- codex / reviewer 双方が同じ blocker 指摘 (APF-001/002/010 が `getAllByText(/表示件数/)` のままで FAIL)
+- **教訓**: コンポーネント変更時、そのコンポーネントを利用する側 (今回は AppPaginationFooter) のテストも追従修正範囲に含めることをエージェント指示で明示する
 
-#### codex の指示外作業（実装ブランチでの修正）
+#### 設計判断の比較対象を漏らさない (architect 起動時の必須観点化候補)
 
-- test-implementer が指示外で実装ブランチ（PR2 worktree）にも同じ修正を入れ、未 push のまま放置
-- 指揮役の worktree に未コミット変更が蓄積し、後続 merge でブロッカーに
-- 結果的には同じ内容なので破棄して問題なかったが、運用上は混乱の元
-- **教訓**: subagent への指示で「対象ブランチ以外には触らない」を明示する
+- 初回 #147 の architect 分析で「MUI 標準採用 vs 独自実装」の比較が漏れた
+- 結果として A2 → A1 → B と 3 度の修正を要した（B 案でも結局 MUI 標準完全採用ではなく中途半端な独自実装が残る）
+- **教訓**: ライブラリベースのコンポーネント設計時、architect には「ライブラリ標準機能 vs 独自実装」の比較を必ず提示するよう指示する。memory 化候補
 
 ### 意思決定ログ
 
-#### β2 分離運用の採用
+#### issue #147 再オープン → 再々オープンの 4 段階方針確定
 
-- ユーザー指示「テストが実装に合わせるリスクを抑える為、分離する」
-- 候補: A（同 PR、別エージェント、別タイミング）/ B（2 PR 完全分離、skip なし、CI 赤許容）/ C（実装先行 → テスト後追い、棄却）
-- 採用 B: ユーザー直感「テストから実装するんだから skip 状態で通るのは当然」「skip も一時退避も不要」（TDD 純正）
-- 統合方式: β2 = PR2 ブランチに PR1 を merge して 1 PR にまとめる（master を緑に保つ）
+- **再オープン D-1 + ②a 案**: AppDataGrid の slots.footer 経由で DataGrid フッターコンテナに統合。中間ラッパー (ReportListTable / AllReportsTable) は paginationFooter prop 追加、直接利用 (ApprovalListPage / PaymentListPage) は slots.footer 直渡し
+- **再々オープン A2 案**: 独自実装維持 + 見た目を MUI 標準寄せ (border-top / minHeight / px / py / 件数表示「{start} - {end} / 全 {total} 件」追加)
+- **再々オープン A1 訂正**: variant=outlined → standard (MUI 標準は standard を hardcode と確認)
+- **再々オープン B 案**: ラベル撤去 + aria-label のみ (floating label 違和感解消)
 
-#### 「件」表示の正本化（実装に合わせる）
+#### B 案 vs A2 案 vs A1 案の判断軸
 
-- ユーザー判断 Q1: a（実装の「件」付き表示を正本、設計書追記 + テスト側を抽出ロジックに変更）
-- 理由: 日本語 UX 慣習として「件」付きが自然、内部値とは独立して表示は柔軟に
+- ユーザー疑問「ページング+表示件数フッター UI は一般的か」→ 一般的 (MUI 標準同思想) と回答
+- 「A2 まで進めると独自実装の存在意義が薄まる」と私が指摘 → ユーザー「A1 で良い」
+- A1 後の SMK-081 で違和感残存 → 「ラベル位置も MUI 標準と違う」「A2 (ラベル位置変更) は B 案と等価」と説明 → 「B でいい、なくても分かるよね」
 
-#### per_page 0 / 101+ の挙動
+#### root-project 復旧時の判断
 
-- ユーザー判断 Q4 派生: B（NaN / 負数 → FE 20 フォールバック / **0 と 101+ → BE 422 委ね**）
-- 理由: ユーザー直感「101+ もエラーにするなら 0 もそうした方が楽」
-- BE 検証: `expense-saas/internal/handler/report.go:97` で `v <= 0` も `v > 100` も同じく `RespondValidationError` (422) を返すことを確認
+- ユーザーから「root-project と expense-saas で同名フォルダ置き換え?」「とりあえず元の状態に戻せるなら戻して」
+- 復旧プラン C (根本調査込み) を採用、衝突確認後に checkout master + branch 削除 + gc 実施
+- node_modules / .claude/worktrees の残骸も同時クリーンアップ
 
-#### review-findings 命名の運用統合
+#### 設計書 issue 番号削除の範囲
 
-- ユーザー判断 A: 既存連番（109/110/111）にリネームして resolved/ へ移動
-- スキル定義への命名規則追記（B 案）は「軽微なので別途」と保留
-
-#### test-implementer の Bash 個別ファイル実行は許容
-
-- メモリ feedback_no_local_test_run.md は subagent への指示。指揮役が `/test` でローカル CI 実行することは過去パターンとして OK
-- test-implementer も「個別ファイル動作確認のため」の vitest 実行は許容（agent 定義にも明記あり）
+- 影響 20 ファイル / 226 箇所 → ユーザー判断「忘れそうだから今やってほしい」→ designer 一括委譲 + 指揮役で残存対応 → 最終 0 箇所
 
 ### PR / コミット要約
 
-**dev-journal** (master、4 コミット):
-- `e4afdcc`: docs(ui-component): #147 per_page UI セレクタ実装方針 + 関連設計書改訂
-- `46f74d5`: docs(ui-component): #147 PageSizeSelector / AppPaginationFooter に data-testid 規約を追記
-- `bbfbf73`: docs(ui-component): #147 PageSizeSelector の表示文字列フォーマット (`{size} 件`) を正本化
-- `ca80a81`: docs(close): #147 解決後処理 (PR #100 マージ + #101 β2 分離 close)
+**dev-journal** (master、9 コミット):
+- `5b624fd`: docs(ui-component): #147 再オープン D-1 + ②a 案設計書改訂
+- `d16a410`: docs(testing): #147 再オープン分テスト ID 採番追加 (RPT-FE-115/116, TNT-FE-052/053, ADG-001..004)
+- `c8a9b29`: docs(reopen): #147 再々オープン (SMK-081 見栄え崩れ A2 案)
+- `34a74f5`: docs(ui-component): #147 codex 指摘 #113/#114 対応 - A2 仕様 decisive 化 + APF-011 追加
+- `13d3c55`: docs(close): #147 codex review-findings 113/114 を resolved へ移動 (PASS)
+- `58c5886`: docs(ui-component): #147 再々オープン A2 案 設計書改訂 (フッター見栄えを MUI 標準寄せ + 件数表示統合)
+- `8e6f7b1`: docs(ui-component): #147 PageSizeSelector variant を outlined → standard に訂正 (A1 案)
+- `7c23ca3`: docs(ui-component): PageSizeSelector のラベル「表示件数:」を撤去 (B 案)
+- `2d3bc8a`: docs: 設計書から issue 番号 / 内部識別子参照を全件削除 (226 → 0 箇所)
+- `012789b`: docs(close): #147 再々オープン解決後処理 (SMK-081 PASS、PR #104/#105 マージ)
 
-**expense-saas** (PR ベース):
-- PR #100 (#147) merged squash: `89875a5`
-- PR #101 (テスト先行、β2) closed: PR #100 に統合済み
-- master HEAD: `89875a5`
+**expense-saas** (PR ベース、3 PR squash merge):
+- PR #102 (#147 再オープン D-1 + ②a) merged: `e3142c3`
+- PR #103 (#147 再々オープン A2) merged: `83d8496`
+- PR #104 (#147 A1 訂正) merged: `f295f59`
+- PR #105 (#147 B 案) merged: `f82215f`
+- master HEAD: `f82215f`
 
 **root-project**:
-- `a1d5c1d`: chore(agents): test-implementer.md の必須参照を test_cases.md (単一) → test_cases/ (ディレクトリ) に訂正
+- 変更なし（誤取り込み事故から完全復旧、HEAD `a1d5c1d` のまま）
 
 **ai-dev-framework**: 変更なし
 
 ## 前回セッション
 
-前回セッション（2026-04-26 11:30 〜 20:18、issue #150/#140 対応 + マージ）の詳細は `dev-journal/archives/session-logs/2026-04-26.md` を参照。
+前回セッション（2026-04-26 21:00 〜 2026-04-27 10:00、issue #147 初回対応 + マージ）の詳細は `dev-journal/archives/session-logs/2026-04-26.md` を参照。
