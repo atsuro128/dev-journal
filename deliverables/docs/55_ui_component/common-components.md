@@ -301,7 +301,7 @@ interface AppPaginationProps {
 #### 配置・利用前提
 
 - 単独でも利用可能だが、本 MVP では常に `AppPaginationFooter` 内で `AppPagination` と並置する
-- ラベル「表示件数:」を MUI `<Select>` の `label`/`InputLabel` で付与する
+- 視覚的なラベル（`<InputLabel>` 等）は付与しない。MenuItem の表示テキストが「20 件」「50 件」と単位込みで表示されるため、ラベル無しでも UI 上の意味は文脈から読み取れる。スクリーンリーダー対応として Select に `aria-label="表示件数"` を付与する
 - **フッター高さを支配しない**: 本コンポーネントは `AppPaginationFooter` 内でフッター 1 行に並置されるため、Select 枠線がフッター全体の高さを引き上げないようにする。`size="small"` を維持しつつ、必要に応じて `variant="standard"`（下線のみ）の採用や FormControl 余白（`margin="none"` / `sx={{ my: 0 }}` 等）の調整で薄い見え方にする。`AppPaginationFooter` 側の `minHeight: 52`（MUI 標準フッター高さ相当）を本コンポーネントが超えないことを実装フェーズで動作確認する
 
 #### Props 型定義
@@ -338,11 +338,11 @@ interface PageSizeSelectorProps {
 - `size="small"` を既定とする（MUI Select 標準の小サイズ。フッター高さを最小化）
 - `variant="standard"` を確定採用とする。MUI X DataGrid 標準フッター（`@mui/material/TablePagination`）の Select は `variant="standard"` をハードコードしており（`node_modules/@mui/material/TablePagination/TablePagination.js` L260 で確認）、本プロジェクトの「MUI 標準寄せ」趣旨と整合させる。下線のみの薄い見た目になり、フッター内で枠線が目立たない
 - FormControl 余白を `margin="none"` + `sx={{ my: 0 }}` で完全に排除し、`AppPaginationFooter` の最小高さ（`minHeight: 52`）を Select が支配しないようにする
-- ラベル位置は floating label（`<InputLabel>`）を維持する独自仕様（MUI 標準は左横インラインだが、ラベル位置の標準化はスコープ外）
+- ラベル無し方針: 視覚的なラベル（`<InputLabel>`）を付与せず、Select 単体で配置する。MenuItem 表示テキストが「{size} 件」形式で単位込みのため文脈から意味が読み取れる。MUI 標準 TablePagination の左横インライン形式とは異なるが、SMK-081 検証で floating label の見栄え違和感が報告されたため撤去
 
 #### アクセシビリティ
 
-- ラベルとセレクトを `<InputLabel>` + `<Select labelId>` で関連付ける
+- 視覚ラベルが無いため、Select に `inputProps={{ 'aria-label': '表示件数' }}` を付与してスクリーンリーダー対応する
 - `disabled` 時は `aria-disabled="true"` が MUI から自動付与される
 
 #### テスト用識別子（`data-testid`）
