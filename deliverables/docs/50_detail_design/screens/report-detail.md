@@ -168,7 +168,7 @@
 | A3 | 削除 | DELETE /api/reports/:id | SCR-RPT-001（report-list.md）`/reports` に遷移。トーストで「レポートを削除しました」 | エラーメッセージをトーストで表示 |
 | A4 | 再申請 | なし | SCR-RPT-002（report-create.md）`/reports/new?ref=:id` に遷移。ユーザーが作成画面で内容を確認・修正してから新規レポートを作成する | - |
 | A5 | 承認する | POST /api/workflow/:id/approve | トーストで「レポートを承認しました」。画面を再読み込みし、ステータスが approved に更新される | エラーメッセージをトーストで表示 |
-| A6 | 却下する | POST /api/workflow/:id/reject | トーストで「レポートを却下しました」。画面を再読み込みし、ステータスが rejected に更新される | エラーメッセージをトーストで表示 |
+| A6 | 却下する | POST /api/workflow/:id/reject | トーストで「レポートを却下しました」。画面を再読み込みし、ステータスが rejected に更新される | エラーメッセージをトーストで表示。ただし 422 MissingRejectionReason は却下ダイアログ内 `FormAlert` に表示（§11 D4 規定参照） |
 | A7 | 支払完了にする | POST /api/workflow/:id/pay | トーストで「支払完了を記録しました」。画面を再読み込みし、ステータスが paid に更新される | エラーメッセージをトーストで表示 |
 
 ### 楽観的ロック（全状態遷移操作共通）
@@ -221,6 +221,7 @@
 | 「この明細を削除しますか?」 | 「削除する」 | UC-M05 |
 
 - 明細削除成功時: トーストで「明細を削除しました」。明細一覧を再読み込みし、合計金額を更新する
+- 明細削除失敗時: エラーメッセージをトーストで表示
 - 明細に紐づく添付ファイルも連動して削除される
 
 ### 空状態（screens.md 4.7 準拠）
@@ -569,6 +570,7 @@ UI 構造は**編集モードの「アップロード済みファイル」と完
 | 「この添付ファイルを削除しますか?」 | 「削除する」 | UC-M03a | 編集モードのみ（DELETE API 呼び出しを伴うため） |
 
 - 削除成功時: ファイル一覧から削除。トーストで「添付ファイルを削除しました」
+- 削除失敗時（編集モード DELETE API 失敗時）: エラーメッセージをトーストで表示
 
 > **add / edit 両モード共通のトースト文言**: 上記「添付ファイルを削除しました」トーストは編集モード（DELETE API 成功時）・追加モード（ローカル state からの pending file 除去時）の両方で発火する。文言は完全同一。追加モードでは確認ダイアログを挟まず即時にローカル state から除去するが、ユーザー視点の完了通知文言は編集モードと揃えてローカル保留方式という実装詳細を UI に露出させない。
 
@@ -653,6 +655,8 @@ UI 構造は**編集モードの「アップロード済みファイル」と完
 ## 11. エラーハンドリング
 
 > **実装者注記**: 下表の「表示方法」欄に記載されている日本語文言は `frontend/src/lib/error-messages.ts` の `SERVER_ERROR_MESSAGES` の期待値であり、コンポーネント内でハードコードするものではない。onError ハンドラでは `err.message` をそのまま使うこと（`.claude/rules/implementation-workflow.md` 「FE エラーハンドリング」参照）。
+>
+> **ダイアログ起動操作のエラー表示方針**: `ConfirmDialog` 経由で実行する API mutate 操作（提出 / 削除 / 承認 / 却下 / 支払完了 / 明細削除 / 添付削除）のエラーは原則トーストで表示しダイアログは閉じる（既存のアプリ全体パターンと整合）。例外は `inputField.required` を持つ **却下ダイアログ D4** で、必須入力 422 (MissingRejectionReason) のみ `ConfirmDialog.apiError` prop 経由でダイアログ本文上部の `FormAlert` に表示し `open=true` を維持する。詳細は `common-components.md` §ConfirmDialog 内部仕様 §API エラー表示を参照。
 
 | エラー | 表示方法 | 挙動 |
 |--------|---------|------|
@@ -666,7 +670,7 @@ UI 構造は**編集モードの「アップロード済みファイル」と完
 | SelfPaymentNotAllowed（403） | トーストで「自分が作成したレポートの支払完了は記録できません」 | ボタンを再有効化 |
 | EmptyReportSubmission（422） | トーストで「明細を1件以上追加してから提出してください」 | ボタンを再有効化 |
 | NoApproverInTenant（422） | トーストで「承認者が登録されていないため提出できません」 | ボタンを再有効化 |
-| MissingRejectionReason（422） | 却下ダイアログ内に「却下理由を入力してください」 | ダイアログを開いたまま |
+| MissingRejectionReason（422） | 却下ダイアログ本文上部の `FormAlert` に「却下理由を入力してください」を表示（`ConfirmDialog.apiError` prop 経由。`common-components.md` §ConfirmDialog 内部仕様 §API エラー表示と整合） | ダイアログを開いたまま（`open=true` を維持し `apiError` を set。成功時のみ `setOpen(false)` で閉じる） |
 | InvalidFileType（422） | ファイル選択エリアに「JPEG, PNG, PDF のみアップロード可能です」 | - |
 | FileTooLarge（413） | ファイル選択エリアに「ファイルサイズは5MB以下にしてください」 | - |
 
