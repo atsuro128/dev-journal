@@ -210,6 +210,15 @@ interface AppSidebarProps {
 - 責務: 操作前の確認ダイアログを提供する（`screens.md` &sect;4.6 準拠）。提出・削除・承認・却下・支払完了・明細保存時の期間外警告（ITM-007）・編集中の変更破棄の各操作で使用する。却下時の却下理由入力、承認時の承認コメント入力にも対応する
 - 使用箇所: SCR-RPT-004
 
+#### 内部仕様（必須入力バリデーション / ちらつき防止）
+
+- **必須入力バリデーション**（issue #159 対応）: `inputField.required === true` の場合、入力フィールドは以下の挙動を取る:
+  - フォーカスアウト（`onBlur`）で「touched 状態」を立てる
+  - touched 状態かつ `!value.trim()` のとき、`inputField.errorMessage` が指定されていれば `helperText` に赤字エラー文言として表示する。未指定時はエラー文言を表示せず、文字数カウンタのみを表示する（フォールバック文言は提供しない。呼び出し側で必須項目には必ず `errorMessage` を指定すること。文言の所在を画面仕様書に紐付けて一元管理するため）
+  - 文字数超過（`value.length > maxLength`）時も同様に赤字エラー文言を `helperText` に表示する
+  - 確認ボタン（`onConfirm`）の `disabled` 制御も併用してよい（ボタン disabled = 誤送信防止の二段構え。詳細は `50_detail_design/screens/report-detail.md` &sect;4 D4 行参照）
+- **メッセージちらつき防止**（issue #156 対応）: `open=false` の間、ダイアログ内に表示される `title` / `message` は前回の値を保持する（usePrevious 内部実装）。これにより閉じる際のフェードアウトアニメーション中に文字列が即座に空になって「ちらつき」が発生する事象を防ぐ。次に `open=true` で新しい `title` / `message` が渡された時点で表示が更新される
+
 ```typescript
 interface ConfirmDialogProps {
   /** ダイアログの開閉状態 */
@@ -236,6 +245,8 @@ interface ConfirmDialogProps {
     maxLength: number;
     /** 複数行入力か */
     multiline: boolean;
+    /** バリデーションエラーメッセージ（required=true のとき、onBlur + 未入力時に helperText に表示。省略時は文字数カウンタのみ表示・エラー文言なし） */
+    errorMessage?: string;
   };
   /** 処理中かどうか（true の場合、確認ボタンを disabled + スピナー表示） */
   loading?: boolean;
