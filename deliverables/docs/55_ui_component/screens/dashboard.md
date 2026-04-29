@@ -41,10 +41,10 @@ DashboardPage
         │       └── CountCard（却下）
         │
         ├── [Approver の場合]
-        │   └── CountCard（承認待ち）— ActionCountCard
+        │   └── CountCard（承認待ち）
         │
         ├── [Accounting の場合]
-        │   └── CountCard（支払待ち）— ActionCountCard
+        │   └── CountCard（支払待ち）
         │
         ├── [Admin の場合]
         │   ├── TenantStatusCards
@@ -98,8 +98,6 @@ interface CountCardProps {
   href?: string;
   /** アクセントカラー（Admin のステータス別件数カードで使用） */
   accentColor?: 'default' | 'info' | 'success' | 'error' | 'secondary';
-  /** 要対応バッジの表示（count >= 1 のときに赤丸バッジを表示） */
-  showBadge?: boolean;
   /** 件数の単位（デフォルト: 「件」。メンバー数カードでは「人」） */
   unit?: string;
 }
@@ -111,7 +109,6 @@ interface CountCardProps {
 | `count` | `number` | Yes | 表示する件数 | `useDashboard` レスポンスの各カウントフィールド |
 | `href` | `string` | No | クリック時の遷移先パス | 固定パス + クエリパラメータ |
 | `accentColor` | `'default' \| 'info' \| 'success' \| 'error' \| 'secondary'` | No | アクセントカラー | 固定値（ステータス色マッピング） |
-| `showBadge` | `boolean` | No | 要対応バッジ表示。`count >= 1` のとき右上に赤点（dot）バッジを表示する。表示の意図は要対応件数の可視化であり、`anchorOrigin={{ vertical: 'top', horizontal: 'right' }}` + `aria-label="要対応あり"` で実装する | `count >= 1` の判定結果を親が算出 |
 | `unit` | `string` | No | 件数の単位（デフォルト:「件」） | 固定文字列 |
 
 ---
@@ -288,8 +285,8 @@ GET /api/dashboard
     → DashboardPage
       → MyReportCountCards (props: draftCount, submittedCount, rejectedCount)
       │   └── CountCard x3 (props: label, count, href)
-      → CountCard [承認待ち] (props: label, count, href, showBadge)  ※Approver
-      → CountCard [支払待ち] (props: label, count, href, showBadge)  ※Accounting
+      → CountCard [承認待ち] (props: label, count, href)  ※Approver
+      → CountCard [支払待ち] (props: label, count, href)  ※Accounting
       → TenantStatusCards (props: draftCount〜paidCount)              ※Admin
       │   └── CountCard x5 (props: label, count, href, accentColor)
       → CountCard [メンバー数] (props: label, count, unit)            ※Admin
@@ -362,8 +359,8 @@ GET /api/auth/me
 | &sect;2 レイアウト構成 | `DashboardPage` + `AppLayout` | 共通レイアウト（ヘッダー + サイドナビ + メインコンテンツ） |
 | &sect;3 ロール別表示エリア | `DashboardPage`（条件分岐ロジック） | `useCurrentUser` のロール値で分岐 |
 | &sect;4.1 カウントカード（自分のレポート） | `MyReportCountCards` -> `CountCard` x3 | Member / Approver / Accounting 向け |
-| &sect;4.2 承認待ちカウントカード | `CountCard`（showBadge 付き） | Approver のみ |
-| &sect;4.3 支払待ちカウントカード | `CountCard`（showBadge 付き） | Accounting のみ |
+| &sect;4.2 承認待ちカウントカード | `CountCard` | Approver のみ |
+| &sect;4.3 支払待ちカウントカード | `CountCard` | Accounting のみ |
 | &sect;4.4 ステータス別件数カード | `TenantStatusCards` -> `CountCard` x5 | Admin のみ。accentColor でステータス色を表現 |
 | &sect;4.5 メンバー数カード | `CountCard`（unit="人", href なし） | Admin のみ。MVP ではクリック不可 |
 | &sect;4.6 月別支出サマリー | `MonthlySummaryTable` | Approver / Accounting / Admin 向け。テーブル形式 |
@@ -388,7 +385,7 @@ GET /api/auth/me
 | 識別子 | 種別 | テスト対象の概要 |
 |--------|------|----------------|
 | `55_ui_component/screens/dashboard.md §DashboardPage` | コンポーネント単体テスト | ロール別セクション表示分岐の検証（Member / Approver / Accounting / Admin の4パターン） |
-| `55_ui_component/screens/dashboard.md §CountCard` | コンポーネント単体テスト | label / count / href / accentColor / showBadge / unit の各 Props 組み合わせ描画検証 |
+| `55_ui_component/screens/dashboard.md §CountCard` | コンポーネント単体テスト | label / count / href / accentColor / unit の各 Props 組み合わせ描画検証 |
 | `55_ui_component/screens/dashboard.md §MyReportCountCards` | コンポーネント単体テスト | 3枚のカウントカード描画、件数 0 のケース、カードクリック遷移先の検証 |
 | `55_ui_component/screens/dashboard.md §TenantStatusCards` | コンポーネント単体テスト | 5枚のステータスカード描画、アクセントカラーの適用、カードクリック遷移先の検証 |
 | `55_ui_component/screens/dashboard.md §MonthlySummaryTable` | コンポーネント単体テスト | 3ヶ月分データ表示、金額フォーマット（¥ + カンマ区切り）、年月表示形式（YYYY年M月）、降順ソートの検証 |

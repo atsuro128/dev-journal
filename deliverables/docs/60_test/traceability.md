@@ -83,7 +83,7 @@
 
 | 要件ID | 要件概要 | 設計反映先 | BE テスト反映先 | FE テスト反映先 | 備考 |
 |--------|---------|-----------|---------------|---------------|------|
-| DASH-F01 | ダッシュボード取得（ロール別集計） | `openapi.yaml#getDashboard` | `test_cases/dashboard.md#DSH-001〜018` | `test_cases/dashboard.md#DSH-FE-001〜038` | |
+| DASH-F01 | ダッシュボード取得（ロール別集計） | `openapi.yaml#getDashboard` | `test_cases/dashboard.md#DSH-001〜018` | `test_cases/dashboard.md#DSH-FE-001〜039（一部欠番あり、サブID DSH-FE-003b/004b を含む）` | |
 
 ### 1.9 テナント管理（ADM-F*）
 
