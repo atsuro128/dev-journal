@@ -128,7 +128,17 @@ MVP（UX 違和感、ユーザーが直接目にする）
 ---
 
 ## 解決内容
-<!-- pending-review へ移動する前に記入 -->
+
+**副次解消**: issue #152 で CountCard の `showBadge` プロパティと Badge wrapper を削除した結果、Badge wrapper の `display: inline-flex` が原因と推定されていた幅縮みも自動的に解消した。
+
+**実装** (PR #108, commit 6916ed0、issue #152 と同一コミット):
+- CountCard.tsx の Badge wrapper 撤去によりカード本体が直接 Grid item の幅まで広がる構造になった
+- 単独対応コミットなし（#152 で副次解消）
+
+**検証必要 SMK**:
+- SMK-006（Approver ダッシュボード）で承認待ちカードの幅が他カードと一致することを目視確認
+- Phase 4 Accounting 検証時に支払待ちカードも同基準で確認
 
 ## 解決日
-<!-- YYYY-MM-DD -->
+
+2026-04-30

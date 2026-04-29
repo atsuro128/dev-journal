@@ -150,7 +150,24 @@ MVP（業務上必要な情報判別、UX 影響大）
 ---
 
 ## 解決内容
-<!-- pending-review へ移動する前に記入 -->
+
+**採用方針**: 案 A（各列 minWidth 設定）+ AppDataGrid 共通基盤側で `overflowX: 'auto'` 対応
+
+**実装** (PR #107, commits be95274 / fb09eb4):
+- `AppDataGrid.tsx` ルート Box の sx に `overflowX: 'auto'` を追加 → 列幅合計が画面幅を超える場合に DataGrid 領域内で横スクロール可能（ページ全体スクロールにはしない）
+- `AllReportsTable.tsx`: 各列に minWidth 追加（申請者名 120 / タイトル 200 / 合計金額 100 / ステータス 100 / 提出日 110）
+- `ApprovalListPage.tsx`: 同上（提出日 110）
+- `PaymentListPage.tsx`: 同上（承認日 110）
+- `ReportListTable.tsx`: 各列に minWidth 追加（タイトル 200 / 対象期間 180 / 合計金額 100 / ステータス 100 / 作成日 110）— ユーザー判断でスコープ拡張、Member 用画面も同基盤対応
+
+**スコープ拡張の経緯**: 当初は SMK-101 で報告された AllReportsTable のみだったが、ReportListTable も同じ AppDataGrid 共通基盤を使用しており構造的に同症状である可能性が高いため、予防的に対応範囲を 4 画面に拡張。
+
+**テスト追加** (commit fb09eb4 で改善):
+- ADG-006: AppDataGrid ルート Box に `overflowX: 'auto'` が実値で渡されていることを検証（Box mock を `data-overflow-x` 属性に展開）。codex 指摘で当初の実装（tagName === 'DIV' のみ検証）を強化、回帰防止性能を実証（一時削除で FAIL → 復元で PASS）
+
+**設計書改訂** (commit 255d801):
+- `55_ui_component/common-components.md` §AppDataGrid に「ルート Box は `overflowX: 'auto'` で列幅合計が画面幅を超える場合に横スクロール」を追記
 
 ## 解決日
-<!-- YYYY-MM-DD -->
+
+2026-04-30

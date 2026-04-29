@@ -115,7 +115,19 @@ MVP（UX 一貫性、ユーザーが直接目にする）
 ---
 
 ## 解決内容
-<!-- pending-review へ移動する前に記入 -->
+
+**採用方針**: 案 B（全画面で「>」削除）
+
+**実装** (PR #107, commit be95274):
+- `ApprovalListPage.tsx`: COLUMNS から `field: 'navigate'` 列定義を削除、`ChevronRightIcon` import 削除
+- `PaymentListPage.tsx`: 同上
+- `WFL-FE-016` / `WFL-FE-045` の `data-column-count` 期待値を 5→4 に修正
+
+**設計書改訂** (commit 255d801):
+- `55_ui_component/screens/{workflow-pending,workflow-payable,report-list,admin-all-reports}.md` の 4 画面に「行末 ChevronRight アイコンは表示しない（4 画面共通方針、行クリック + cursor:pointer のみで操作可能性を表現）」を追記
+
+**注**: チケット指定ファイル名は `approval-list.md` / `payment-list.md` だったが、実ファイル名は `workflow-pending.md` / `workflow-payable.md` だった（dev-journal 60_test/test_cases/workflow.md でも実ファイル名が正本として参照されている）。
 
 ## 解決日
-<!-- YYYY-MM-DD -->
+
+2026-04-30

@@ -88,7 +88,25 @@ MVP（UX 違和感、ユーザーが直接目にする）
 ---
 
 ## 解決内容
-<!-- pending-review へ移動する前に記入 -->
+
+**採用方針**: 案 1（dot 削除）
+
+**設計判断根拠**: 件数がカード本体に既に大きく表示されており、Badge dot は情報的に冗長。要対応性は accentColor (info / warning ボーダー) で十分視覚化されている。バッジが価値を出すのは「情報が隠れている対象（アイコン / メニュー項目）」であり、件数が見えているカウントカードでは冗長になり「謎の赤点」と感じられる。#085（却下バッジ削除）も結果的にこの設計原則に整合していた。
+
+**実装** (PR #108, commit 6916ed0):
+- `CountCard.tsx` から `showBadge` プロパティと MUI `Badge` wrapper を削除（import も削除）
+- `DashboardPage.tsx` の承認待ち / 支払待ちカードの `showBadge={true}` 指定を削除
+- テスト DSH-FE-012 / 012b / 012c / 013 の 4 ケース削除、DSH-FE-014 のコメント整理
+
+**設計書改訂** (commit d3c201a):
+- `55_ui_component/screens/dashboard.md`: showBadge プロパティ・要対応バッジ記述を全削除（Props 表 / データフロー / 対応表 / テスト識別子）。コンポーネントツリー図の「ActionCountCard」サブ型呼称も削除（show Badge 削除でサブ型化の意義消失）
+- `50_detail_design/screens/dashboard.md`: §4.2/§4.3 の「件数が 1 以上の場合、要対応バッジ（赤色の丸バッジ）を表示する」記述を削除、§9.2/§9.3 ASCII 図の「N 件 ●」末尾の `●` も削除
+- `40_basic_design/screens.md`: 3.2 Approver 行の「（要対応バッジ）」記述削除
+- `60_test/test_cases/dashboard.md`: DSH-FE-012/012b/012c/013 削除、優先度サマリー表からも削除
+- `60_test/traceability.md`: DSH-FE 範囲記述を「001〜039（一部欠番あり、サブID DSH-FE-003b/004b を含む）」に補正
+
+**スコープ外（記録のみ）**: ナビメニュー側のバッジ追加議論は本対応のスコープ外、検討せず。
 
 ## 解決日
-<!-- YYYY-MM-DD -->
+
+2026-04-30

@@ -146,7 +146,31 @@ MVP（UX バグ、ユーザーが直接目にする）
 ---
 
 ## 解決内容
-<!-- pending-review へ移動する前に記入 -->
+
+**採用方針**: 案 C（ConfirmDialog 共通基盤側で対応、usePrevious で表示値を保持）
+
+**重要な発見**: issue 起票時のコード分析と現実装に乖離あり。ちらつきは `message` ではなく **`title`** 側の三項演算子フォールバックで発生していた（`ReportDetailPage.tsx:631` で `message=""` 固定済み、`title` 側に三項演算子）。usePrevious は title・message 両方に適用する必要があった。
+
+**実装** (PR #109, commits 683c076 / adc5017 / 0f23fc0):
+- `usePrevious` カスタムフック新設 (`frontend/src/hooks/usePrevious.ts`)、React 公式推奨パターン (useEffect + useRef) で StrictMode 二重実行に耐性あり
+- ConfirmDialog 内部で `title` / `message` / `confirmLabel` / `confirmColor` / `inputField` / `apiError` 全表示 props を usePrevious で保持。`open=false` の間は前回値を維持してフェードアウト中の全要素ちらつきを完全防止
+- `loading` のみ usePrevious 対象外（閉じる時 false に戻る挙動を維持）
+- 呼び出し側 API は変更不要
+
+**スコープ拡張の経緯**:
+- 当初は title/message のみ usePrevious 適用だったが、codex F2 指摘「他 props も切り替わる」を受けて全表示 props に拡張
+
+**テスト追加**:
+- usePrevious 単体テスト 6 件（型・初期値・連続更新・同値再 render）
+- ConfirmDialog の usePrevious 適用検証テスト
+
+**設計書改訂** (commits de49d82 / d2a90f8):
+- `55_ui_component/common-components.md` ConfirmDialog § に「メッセージちらつき防止」内部仕様を明記、全表示 props 保持の挙動を記述
+
+**関連修正** (副次):
+- W2 (`onConfirm` 成功時の touched リセット): adc5017 で useEffect により open=false 検出時にリセット
+- W1 (loading 未連動による多重送信): 5120cf9 で全 7 ダイアログに loading={mutation.isPending} 連動
 
 ## 解決日
-<!-- YYYY-MM-DD -->
+
+2026-04-30

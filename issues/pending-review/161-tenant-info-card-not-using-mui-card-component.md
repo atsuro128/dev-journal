@@ -173,7 +173,23 @@ MVP（設計書通りの実装、UX 影響）
 ---
 
 ## 解決内容
-<!-- pending-review へ移動する前に記入 -->
+
+**採用方針**: 設計書通り MUI `Card` / `CardContent` でラップ（案 X: PageSkeleton 共通化、案 A: dt/dd 廃止）
+
+**実装** (PR #106, commit 4225877):
+- `TenantInfoCard.tsx`: 通常表示 / 404 / loading の各ケースで `<Card><CardContent>` 構造に置換
+  - 通常表示: `<Card><CardContent><TenantInfoField /></CardContent></Card>`
+  - 404 エラー: `<Card><CardContent><Typography color="text.secondary">テナント情報が見つかりません。</Typography></CardContent></Card>`
+  - loading: 共通 `<PageSkeleton variant="card" />`（素 div + data-testid="page-skeleton-card" を撤去、AppLayout / DashboardPage / ReportDetailPage と同一パターン）
+- `TenantInfoField.tsx`: `<div><dt><dd>` を `<Box><Typography variant="caption" color="text.secondary"><Typography variant="body1">` に置換（MVP は会社名 1 項目のみで dl リストの意味が薄いため dt/dd 廃止、純粋 Box ベース）
+
+**テスト更新**:
+- TNT-FE-009 (TenantInfoCard loading): `getByTestId('page-skeleton-card')` を `getByTestId('page-skeleton')` + `toHaveAttribute('data-variant', 'card')` に更新
+- TNT-FE-007 (TenantPage loading): 同上
+- TNT-FE-008/010/011: getByText ベースのため変更不要
+
+**設計書改訂**: 不要（既存の `50_detail_design/screens/admin-tenant.md` §5 / `55_ui_component/screens/admin-tenant.md` §TenantInfoCard が既に「MUI Card で表示」と規定しており、本対応で実装が設計書に追従）
 
 ## 解決日
-<!-- YYYY-MM-DD -->
+
+2026-04-30

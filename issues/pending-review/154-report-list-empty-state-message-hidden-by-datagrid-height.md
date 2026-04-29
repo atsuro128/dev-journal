@@ -104,7 +104,23 @@ MVP（新規ユーザー導線が機能しない、UX 影響大）
 ---
 
 ## 解決内容
-<!-- pending-review へ移動する前に記入 -->
+
+**採用方針**: 推奨ケース A（AppDataGrid 共通基盤側で最小高さ確保）
+
+**実装** (PR #107, commit be95274):
+- `AppDataGrid.tsx` の DataGrid sx に `minHeight: 200` を追加（共通基盤側で件数 0 時の最小高さを確保）
+- `autoHeight` は採用しない（issue #147 のフッター常時表示と干渉するため固定 minHeight 方式）
+- 各画面側で個別に minHeight 設定する必要なし（4 一覧画面で統一挙動）
+
+**テスト追加**:
+- ADG-005: rows=[] 時に DataGrid の sx.minHeight が 200 で適用されることを検証
+
+**設計書改訂** (commit 255d801):
+- `55_ui_component/common-components.md` §AppDataGrid に「件数 0 時の最小高さ（minHeight: 200）を共通基盤側で確保」を追記
+
+**残課題** (本 issue スコープ外):
+- minHeight: 200 は本対応の選択値。EmptyState のアクションボタン付き（ReportListTable）で実機確認後に値の妥当性を再評価する余地あり
 
 ## 解決日
-<!-- YYYY-MM-DD -->
+
+2026-04-30
