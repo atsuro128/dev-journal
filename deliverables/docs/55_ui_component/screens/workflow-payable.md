@@ -139,7 +139,7 @@ interface PayableReportCountProps {
 ### PayableReportTable
 
 - 配置: `pages/payments/PayableReportTable.tsx`
-- 責務: 支払待ちレポートの一覧テーブルを表示する。AppDataGrid をラップし、カラム定義（申請者名・タイトル・合計金額・承認日・遷移アイコン）を設定する。行クリックでレポート詳細画面（SCR-RPT-004）へ遷移する。自己レポート行には「自分」ラベルを表示する。ローディング中は PageSkeleton を、0件時は EmptyState を表示する。SCR-WFL-001（承認待ち）との差異は日付カラムが「提出日」ではなく「承認日」である点
+- 責務: 支払待ちレポートの一覧テーブルを表示する。AppDataGrid をラップし、カラム定義（申請者名・タイトル・合計金額・承認日）を設定する。**行末 ChevronRight アイコンは表示しない**（issue #155、4 画面共通方針）。行クリックでレポート詳細画面（SCR-RPT-004）へ遷移する（`cursor: pointer` + hover 効果で押下可能性を表現）。自己レポート行には「自分」ラベルを表示する。ローディング中は PageSkeleton を、0件時は EmptyState を表示する。SCR-WFL-001（承認待ち）との差異は日付カラムが「提出日」ではなく「承認日」である点
 - 対応セクション: `50_detail_design/screens/workflow-payable.md` &sect;5, &sect;9, &sect;10, &sect;12
 
 ```typescript
@@ -240,7 +240,7 @@ GET /api/workflow/payable
 | `AppLayout`（← common-components.md） | PayableReportsPage のルートラッパー | children に PayableReportsContent を配置 |
 | `AppHeader`（← common-components.md） | AppLayout 内部 | 標準使用 |
 | `AppSidebar`（← common-components.md） | AppLayout 内部 | 支払待ち一覧メニューをアクティブ表示（currentPath = "/payments"） |
-| `AppDataGrid`（← common-components.md） | PayableReportTable 内 | columns: 申請者名・タイトル・合計金額・承認日・遷移アイコンの5列。行クリックで遷移。emptyMessage は PayableReportTable が EmptyState で別途制御 |
+| `AppDataGrid`（← common-components.md） | PayableReportTable 内 | columns: 申請者名・タイトル・合計金額・承認日の 4 列。行クリックで遷移（`cursor: pointer` + hover 効果で押下可能性を表現）。**行末 ChevronRight アイコンは表示しない**（issue #155、4 画面共通方針: レポート一覧 / 全レポート / 承認待ち / 支払待ち の DataGrid で行末アイコン列を持たず、視覚表現を統一する）。emptyMessage は PayableReportTable が EmptyState で別途制御 |
 | `AppTextField`（← common-components.md） | PayableFilterBar 内の申請者名フィルタ | name: "applicant_name"、label: "申請者名"。デバウンス 300ms で検索実行 |
 | `AppPaginationFooter`（← common-components.md） | PayableReportsContent 下部のページネーションフッター（左: 件数表示「{start} - {end} / 全 {total} 件」、中央: ページ番号、右: 表示件数セレクタ）。常時表示（`totalPages <= 1` でも非表示にしない。内部 `AppPagination` は `count={Math.max(totalPages, 1)}`）。スマホ幅（375px）では `flex-direction: column` で縦並び（順序: 件数表示 → AppPagination → PageSizeSelector） | currentPage / totalPages / perPage / totalCount は usePayableReports のレスポンス pagination から取得（`totalCount={pagination?.total_count}` で渡す）。onPageChange / onPerPageChange は PayableReportsPage が `setSearchParams` で URL を更新（per_page 変更時は page=1 にリセット）。件数表示の算出（start/end）は AppPaginationFooter 内部で行う。Props 型は `common-components.md §AppPaginationFooter / §PageSizeSelector` を参照 |
 | `EmptyState`（← common-components.md） | PayableReportTable 内（0件時） | message: フィルタ未適用時「支払待ちのレポートはありません。」、フィルタ適用中「条件に一致するレポートはありません。」。action: フィルタ適用中はリセットボタン |
@@ -266,7 +266,7 @@ GET /api/workflow/payable
 | &sect;1 基本情報 | PayableReportsPage | URL パス、対応 API、アクセス可能ロール |
 | &sect;3 アクションの責務分担 | - | 支払完了は SCR-RPT-004 で実行。本画面は一覧表示とナビゲーションのみ |
 | &sect;4 レイアウト | PayableReportsContent | ヘッダー + サイドナビ + メインコンテンツの構成 |
-| &sect;5 表示項目（テーブルカラム） | PayableReportTable, AppDataGrid | 申請者名・タイトル・合計金額・承認日・遷移アイコンの5列。SCR-WFL-001 との差異は「提出日」→「承認日」 |
+| &sect;5 表示項目（テーブルカラム） | PayableReportTable, AppDataGrid | 申請者名・タイトル・合計金額・承認日の 4 列。行末 ChevronRight アイコンは表示しない（issue #155、4 画面共通方針）。SCR-WFL-001 との差異は「提出日」→「承認日」 |
 | &sect;5 自己支払処理禁止の表示ルール | SelfLabel | 「自分」ラベル表示。行クリックは通常通り遷移可能 |
 | &sect;6 フィルタ | PayableFilterBar, AppTextField, FilterResetButton | 申請者名テキスト入力（デバウンス 300ms）+ リセットボタン |
 | &sect;7 ページネーション | AppPaginationFooter（内部に AppPagination + PageSizeSelector） | オフセットベース、デフォルト 20 件/ページ、`per_page` セレクタ `[10, 20, 50, 100]`、URL クエリ `page` / `per_page` と双方向連動、常時表示。詳細は `state-management.md §3.1` 参照 |
@@ -290,7 +290,7 @@ GET /api/workflow/payable
 | `55_ui_component/screens/workflow-payable.md §PayableReportsContent` | コンポーネント単体テスト | ローディング・空状態・テーブル表示の切り替え、フィルタ変更時のページリセット |
 | `55_ui_component/screens/workflow-payable.md §PayableFilterBar` | コンポーネント単体テスト | 申請者名入力のデバウンス（300ms）、フィルタリセット |
 | `55_ui_component/screens/workflow-payable.md §PayableReportCount` | コンポーネント単体テスト | 件数テキスト表示（「N 件の支払待ちレポート」）、0件時の非表示、フィルタ適用中の0件メッセージ |
-| `55_ui_component/screens/workflow-payable.md §PayableReportTable` | コンポーネント単体テスト | テーブルカラムの描画（申請者名・タイトル・合計金額・承認日・遷移アイコン）、金額フォーマット（3桁カンマ区切り）、日付フォーマット（YYYY/MM/DD）、行クリック遷移、自己レポートの「自分」ラベル表示 |
+| `55_ui_component/screens/workflow-payable.md §PayableReportTable` | コンポーネント単体テスト | テーブルカラムの描画（申請者名・タイトル・合計金額・承認日。行末 ChevronRight 列は持たない）、金額フォーマット（3桁カンマ区切り）、日付フォーマット（YYYY/MM/DD）、行クリック遷移、自己レポートの「自分」ラベル表示 |
 | `55_ui_component/screens/workflow-payable.md §SelfLabel` | コンポーネント単体テスト | isOwnReport が true の場合のみラベル表示、false の場合は非表示 |
 | `55_ui_component/screens/workflow-payable.md §FilterResetButton` | コンポーネント単体テスト | フィルタ適用中は有効、未適用時は disabled |
 | `55_ui_component/state-management.md §usePayableReports` | Hook 単体テスト | API 呼び出し（フィルタ・ページネーション パラメータ）、クエリキー `['workflow', 'payable', params]`、staleTime 30秒 |

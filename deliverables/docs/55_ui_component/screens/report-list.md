@@ -218,7 +218,7 @@ GET /api/reports?status=...&from=...&to=...&page=1&per_page=20
 | `AppLayout`（← common-components.md） | ReportListPage のルートラッパー | children にメインコンテンツを配置 |
 | `AppSelect`（← common-components.md） | ReportListFilter 内のステータスフィルタ | options: 全て / 下書き / 提出済み / 承認済み / 却下 / 支払済み |
 | `AppDatePicker`（← common-components.md） | ReportListFilter 内の対象期間フィルタ（x 2） | label: 開始日 / 終了日 |
-| `AppDataGrid`（← common-components.md） | ReportListTable 内のテーブル | columns: タイトル・対象期間・合計金額・ステータス・作成日。ステータス列は StatusChip でカスタムレンダリング |
+| `AppDataGrid`（← common-components.md） | ReportListTable 内のテーブル | columns: タイトル・対象期間・合計金額・ステータス・作成日。ステータス列は StatusChip でカスタムレンダリング。**行末 ChevronRight アイコンは表示しない**（issue #155、4 画面共通方針: レポート一覧 / 全レポート / 承認待ち / 支払待ち の DataGrid で行末アイコン列を持たず、`cursor: pointer` + hover 効果で押下可能性を表現する） |
 | `StatusChip`（← common-components.md） | ReportListTable 内の各行ステータスセル | status: レポートの status 値 |
 | `EmptyState`（← common-components.md） | ReportListTable 内のデータ 0 件時 | message: 「経費レポートはまだありません。レポートを作成して経費精算を始めましょう。」、action: レポート作成ボタン |
 | `AppPaginationFooter`（← common-components.md） | テーブル下部のページネーションフッター（左: 件数表示「{start} - {end} / 全 {total} 件」、中央: ページ番号、右: 表示件数セレクタ）。常時表示（`totalPages <= 1` でも非表示にしない。内部 `AppPagination` は `count={Math.max(totalPages, 1)}`）。スマホ幅（375px）では `flex-direction: column` で縦並び（順序: 件数表示 → AppPagination → PageSizeSelector） | currentPage / totalPages / perPage / totalCount は useMyReports のレスポンス pagination から取得（`totalCount={pagination?.total_count}` で渡す）。onPageChange / onPerPageChange は ReportListPage が `setSearchParams` で URL を更新（per_page 変更時は page=1 にリセット）。件数表示の算出（start/end）は AppPaginationFooter 内部で行う。Props 型は `common-components.md §AppPaginationFooter / §PageSizeSelector` を参照 |

@@ -207,7 +207,7 @@ GET /api/tenant/members
 | `AppSelect`（← common-components.md） | AllReportsFilterBar 内のステータスフィルタ | options: 全て / 下書き / 提出済み / 承認済み / 却下 / 支払済み。value: filters.status |
 | `AppSelect`（← common-components.md） | AllReportsFilterBar 内の申請者フィルタ | options: 全て + useTenantMembers のメンバー一覧。value: filters.submitterId |
 | `AppDatePicker`（← common-components.md） | AllReportsFilterBar 内の期間フィルタ（開始日・終了日） | 開始日: value=filters.from、終了日: value=filters.to。終了日に日付バリデーションエラーを表示 |
-| `AppDataGrid`（← common-components.md） | AllReportsTable 内のレポートテーブル | columns: 申請者名・タイトル・合計金額・ステータス・提出日。行クリック対応 |
+| `AppDataGrid`（← common-components.md） | AllReportsTable 内のレポートテーブル | columns: 申請者名・タイトル・合計金額・ステータス・提出日。行クリック対応（`cursor: pointer` + hover 効果で押下可能性を表現）。**行末 ChevronRight アイコンは表示しない**（issue #155、4 画面共通方針: レポート一覧 / 全レポート / 承認待ち / 支払待ち の DataGrid で行末アイコン列を持たず、視覚表現を統一する） |
 | `StatusChip`（← common-components.md） | AllReportsTable の AppDataGrid ステータス列 | status: レポートの現在ステータス |
 | `EmptyState`（← common-components.md） | AllReportsTable 内のデータ0件表示 | フィルタ有無でメッセージ切替（「レポートはまだ作成されていません。」/「条件に一致するレポートはありません。フィルタを変更してお試しください。」） |
 | `PageSkeleton`（← common-components.md） | AllReportsTable 内のローディング表示 | variant="table"。初回読み込み・フィルタ変更・ページ切替時に表示 |
