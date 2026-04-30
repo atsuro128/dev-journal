@@ -82,6 +82,7 @@ DashboardPage
 - 配置: `pages/dashboard/DashboardPage.tsx`
 - 責務: ダッシュボード画面のルートコンポーネント。`useDashboard` Hook でデータを取得し、`useCurrentUser` でロールを判定して、ロール別にセクションを出し分ける。ローディング中は PageSkeleton を表示し、エラー時は AppToast でメッセージを表示する
 - 対応セクション: `50_detail_design/screens/dashboard.md` &sect;1〜&sect;9 全体
+- **Admin 分岐の「メンバー数」カード**: Admin 分岐の `CountCard`（メンバー数）は `<Grid container spacing={2} data-testid="admin-member-count-cards">` + `<Grid size={{ xs: 12, sm: 4 }}>` でラップする。これにより MyReportCountCards（他ロール）と同じ視覚的幅基準（PC 幅で 1/3 幅相当）を共有する。ラップは `<Box sx={{ mt: 2 }}>` で余白を付与して TenantStatusCards と視覚的に分離する
 
 ```typescript
 // Props なし（ページコンポーネント）
@@ -151,6 +152,8 @@ interface MyReportCountCardsProps {
 - 配置: `components/dashboard/TenantStatusCards.tsx`
 - 責務: テナント全体のレポートをステータス別に集計したカード群（下書き・提出済み・承認済み・却下・支払済み）をグリッドで配置する。Admin ロールのみで表示する。各カードにステータスバッジ色をアクセントとして使用する
 - 対応セクション: `50_detail_design/screens/dashboard.md` &sect;4.4
+- **Grid 配置**: 5 枚全てに `size={{ xs: 12, sm: 6, md: 2.4 }}` を適用する。PC 幅（md ≥ 900px）では 5 等分（`12 / 5 = 2.4`）でコンテナいっぱいに横並び、タブレット幅（sm 600〜899px）では 2 列折返し、モバイル（xs < 600px）では縦積みとなる。`md: 'auto'` のような自然幅指定は使用しない（コンテンツ依存で幅が縮むため）。Grid container には `data-testid="tenant-status-cards"` を付与する
+- **責務分離**: カード幅指定はコンテナ Grid 側（TenantStatusCards）で制御する。CountCard 共通基盤には幅指定を入れない
 
 ```typescript
 interface TenantStatusCardsProps {
@@ -394,10 +397,10 @@ GET /api/auth/me
 
 | 識別子 | 種別 | テスト対象の概要 |
 |--------|------|----------------|
-| `55_ui_component/screens/dashboard.md §DashboardPage` | コンポーネント単体テスト | ロール別セクション表示分岐の検証（Member / Approver / Accounting / Admin の4パターン） |
+| `55_ui_component/screens/dashboard.md §DashboardPage` | コンポーネント単体テスト | ロール別セクション表示分岐の検証（Member / Approver / Accounting / Admin の4パターン）。Admin 表示時の Grid 配置検証（tenant-status-cards 配下の 5 リンク枚数・admin-member-count-cards 配下のメンバー数カード存在）を含む |
 | `55_ui_component/screens/dashboard.md §CountCard` | コンポーネント単体テスト | label / count / href / accentColor / unit の各 Props 組み合わせ描画検証 |
 | `55_ui_component/screens/dashboard.md §MyReportCountCards` | コンポーネント単体テスト | 3枚のカウントカード描画、件数 0 のケース、カードクリック遷移先の検証 |
-| `55_ui_component/screens/dashboard.md §TenantStatusCards` | コンポーネント単体テスト | 5枚のステータスカード描画、アクセントカラーの適用、カードクリック遷移先の検証 |
+| `55_ui_component/screens/dashboard.md §TenantStatusCards` | コンポーネント単体テスト | 5枚のステータスカード描画、アクセントカラーの適用、カードクリック遷移先の検証。Admin 表示時の Grid 配置検証（5 等分 md:2.4、Grid container の data-testid="tenant-status-cards" 存在）を含む |
 | `55_ui_component/screens/dashboard.md §MonthlySummaryTable` | コンポーネント単体テスト | 3ヶ月分データ表示、金額フォーマット（¥ + カンマ区切り）、年月表示形式（YYYY年M月）、降順ソートの検証、セクション見出し「月別支出サマリー」の描画（0 件時も見出し表示） |
 | `55_ui_component/screens/dashboard.md §RecentReportList` | コンポーネント単体テスト | 5件表示、0件時の EmptyState 表示、「すべてのレポートを見る」リンクの検証、セクション見出し「最近のレポート」の描画（0 件時も見出し表示）、列見出し（タイトル / 期間 / 金額 / ステータス）の描画 |
 | `55_ui_component/screens/dashboard.md §RecentReportRow` | コンポーネント単体テスト | タイトルリンク遷移先、対象期間フォーマット、金額フォーマット、StatusChip 描画の検証 |
