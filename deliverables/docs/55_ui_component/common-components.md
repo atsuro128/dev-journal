@@ -216,12 +216,15 @@ interface AppSidebarProps {
 #### 内部仕様（必須入力バリデーション / ちらつき防止）
 
 - **必須入力バリデーション**（issue #159 対応）: `inputField.required === true` の場合、入力フィールドは以下の挙動を取る:
+  - **初期表示時（`open=true` 遷移直後 / 入力前）**: `touched=false` のため `helperText` にエラー文言は出さず、文字数カウンタ（`0 / maxLength`）のみ表示する。確認ボタンも `loading=false` のとき初期は enabled とし、ユーザーが空のまま押下したときに初めてバリデーションを発火させる（issue #162 対応）
   - フォーカスアウト（`onBlur`）で「touched 状態」を立てる
+  - **確認ボタン押下時** にも `touched=true` を立てる。未入力（`!value.trim()`）なら `onConfirm` を呼ばず `helperText` に `inputField.errorMessage` を赤字表示する（クライアントバリデーション二段構えの UI 側。issue #162 対応）
   - touched 状態かつ `!value.trim()` のとき、`inputField.errorMessage` が指定されていれば `helperText` に赤字エラー文言として表示する。未指定時はエラー文言を表示せず、文字数カウンタのみを表示する（フォールバック文言は提供しない。呼び出し側で必須項目には必ず `errorMessage` を指定すること。文言の所在を画面仕様書に紐付けて一元管理するため）
   - 文字数超過（`value.length > maxLength`）時も同様に赤字エラー文言を `helperText` に表示する
-  - 確認ボタン（`onConfirm`）の `disabled` 制御も併用してよい（ボタン disabled = 誤送信防止の二段構え。詳細は `50_detail_design/screens/report-detail.md` &sect;4 D4 行参照）
+  - 確認ボタン `disabled` 条件は **`loading` のみ**（多重送信防止）。「未入力時 disabled」は採用しない（issue #162 で「初期から disabled」regression を招くため）。誤送信防止は確認ボタン押下時の `touched` 発火 + `onConfirm` ガードで行う
 - **メッセージちらつき防止**（issue #156 対応 / 大幅改修）: `open=false` の間、ダイアログ内に表示される全表示 props（`title` / `message` / `confirmLabel` / `confirmColor` / `inputField` / `apiError`）は前回の値を保持する（usePrevious 内部実装）。これにより閉じる際のフェードアウトアニメーション中に文字列が即座に空になって「ちらつき」が発生する事象を防ぐ。**`title` / `message` だけでなく、ボタン文言（`confirmLabel`）・色（`confirmColor`）・入力フィールド設定（`inputField`）・API エラー文言（`apiError`）も全て保持する** ことで、`workflowDialogAction = null` 等で親側 state が一斉に変わってもフェードアウト中のレイアウト・文言切替を完全防止する。`loading` のみ usePrevious 適用外（閉じる時 false に戻る挙動を維持）。次に `open=true` で新しい props が渡された時点で表示が更新される
 - **API エラー表示**（issue #159 D4 規定対応）: `apiError` prop が設定されると `<FormAlert>` でダイアログ本文上部に表示する。エラー時はダイアログを閉じず `open=true` を維持して `apiError` を set することで、設計書 `50_detail_design/screens/report-detail.md` §11 D4 MissingRejectionReason 規定（必須入力 422 時にダイアログ内エラー表示、開いたまま）に準拠する。**適用範囲は `inputField.required` を持つダイアログ（却下ダイアログ D4）のみ**。`inputField` を持たない単純確認ダイアログ（提出 / 削除 / 承認 / 支払完了 / 明細削除 / 添付削除）では原則トースト + ダイアログ即時閉じる旧パターンを維持する（アプリ全体のエラー通知パターンと整合）。API 呼び出しを伴わない確認ダイアログ（明細保存時の期間外警告 ITM-007、編集中の変更破棄）でも `apiError` は不要
+  - **責務分離（issue #162）**: `apiError` は **サーバー応答エラー専用**。クライアントサイドの未入力検出は `inputField.errorMessage` + `helperText` 経路で行い、`apiError` には流し込まない。`apiError === null` のとき `FormAlert` は何も描画せず、確認ボタン disabled の発火条件にも含めない（disabled は `loading` のみ）。`isConfirmDisabled` には `apiError` 条件は含めない
 
 ```typescript
 interface ConfirmDialogProps {
