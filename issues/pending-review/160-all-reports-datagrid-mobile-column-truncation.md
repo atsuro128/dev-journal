@@ -168,6 +168,34 @@ MVP（業務上必要な情報判別、UX 影響大）
 **設計書改訂** (commit 255d801):
 - `55_ui_component/common-components.md` §AppDataGrid に「ルート Box は `overflowX: 'auto'` で列幅合計が画面幅を超える場合に横スクロール」を追記
 
+---
+
+## 再対応の解決内容（2026-04-30 第3バッチ）
+
+**再対応理由**: SMK-101 再検証で「横スクロールしない / 列省略」が再確認され、初回修正の効果が効いていないことが判明（pending-review → open に再戻し）
+
+**真因確定（Phase 1）**:
+- 4 画面の columnDef で `flex: N` と `minWidth: M` が併用されていた
+- MUI X DataGrid の仕様で `flex` 指定列はコンテナ幅を flex 比率で分配するため、スマホ幅（375px）では各列が minWidth 以下に縮小
+- ルート Box の `overflowX: 'auto'` が設定されていても DataGrid がコンテナ内に収まるよう縮むため横スクロールが発火しない
+
+**採用方針**: 候補 A（4 画面 columnDef の `flex` 削除 + `width` 絶対値固定）
+
+**実装** (PR #114, commit `664efbc`):
+- 4 画面（AllReportsTable / ReportListTable / ApprovalListPage / PaymentListPage）の columnDef から `flex: N` を全削除し `width` 絶対値で固定
+- 列幅合計（540〜710px）が 375px を超えるため、ルート Box の `overflowX: 'auto'` が正常発火
+- AppDataGrid 共通基盤の `overflowX: 'auto'`（Box ルート）は維持
+
+**テスト**: 4 画面 columnDef 修正 + AppDataGrid.test.tsx ADG-006 維持で計 65 + 7 件 PASS
+
+**設計書改訂** (commit `40ccb0f`):
+- `55_ui_component/common-components.md` §AppDataGrid の columnDef 規定を「`flex` 併用禁止、`width` / `minWidth` 絶対値必須」に格上げ
+- 標準値（申請者名 120 / タイトル 200 / 金額 100 / ステータス 100 / 日付 110）を明文化
+
+**SMK 再検証要項目**: SMK-101
+
+**残課題（後続判断）**: PC 幅で flex 削除によりデスクトップ幅 DataGrid の右側に空白が生じる可能性。視覚確認次第で最後尾列に `flex: 1` 追加対応の可能性
+
 ## 解決日
 
 2026-04-30

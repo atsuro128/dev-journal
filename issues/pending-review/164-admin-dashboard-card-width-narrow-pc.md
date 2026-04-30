@@ -108,7 +108,31 @@ MVP（ロール別整合性、ポートフォリオデモ印象に直結）
 ---
 
 ## 解決内容
-<!-- pending-review へ移動する前に記入 -->
+
+**採用方針**: TenantStatusCards Grid 配置変更（5 等分）+ Admin メンバー数カードの Grid ラップ追加
+
+**真因確定**:
+- 真因 1: `TenantStatusCards.tsx` L34-72 の Grid `size={{ xs: 12, sm: 4, md: 'auto' }}` の `md: 'auto'` がコンテンツ自然幅扱いで縮小
+- 真因 2: `DashboardPage.tsx` L156-160 の Admin「メンバー数」CountCard が Grid ラップなしで block 要素剥き出し
+- **PR #108（commit `6916ed0`）は無関係**（issue 推定 D は false、本問題は PR #108 以前から潜在）
+
+**実装** (PR #112, commit `bc208b0`):
+- `TenantStatusCards.tsx`: Grid `size={{ xs: 12, sm: 6, md: 2.4 }}`（5 等分）に変更
+- `DashboardPage.tsx`: Admin メンバー数カードを `<Grid container>` + `<Grid size={{ xs: 12, sm: 4 }}>` でラップ
+- カード共通基盤（CountCard）に幅指定は入れず、コンテナ Grid 側で制御する責務分離維持
+
+**テスト**:
+- DSH-FE-NEW-A1（TenantStatusCards 5 枚 Grid 配置検証）+ DSH-FE-NEW-A2（Admin メンバー数 Grid ラップ検証）追加
+- DashboardPage.test.tsx + TenantStatusCards 関連 47 件 PASS
+
+**設計書改訂** (commit `9edf4a5`):
+- `55_ui_component/screens/dashboard.md` §3 / §9 に Grid 配置仕様と責務分離規定を追記
+- `50_detail_design/screens/dashboard.md` §4.4 / §4.5 / §9.4 に同等の追記
+
+**注意**: jsdom 制約により実 width 値検証は不可。視覚的な幅検証は SMK 再検証時 / DevTools セルフレビューで実施
+
+**SMK 再検証要項目**: 新規（既存 SMK では未カバー、UAT で確認）
 
 ## 解決日
-<!-- YYYY-MM-DD -->
+
+2026-04-30

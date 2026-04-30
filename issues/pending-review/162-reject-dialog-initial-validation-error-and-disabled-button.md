@@ -113,7 +113,29 @@ MVP（業務上必要な却下フローの UX 不具合、Step 11-A SMK FAIL の
 ---
 
 ## 解決内容
-<!-- pending-review へ移動する前に記入 -->
+
+**採用方針**: ConfirmDialog 共通基盤の disabled 条件を `loading` のみに絞る + 未入力ガード追加
+
+**真因確定**:
+- `ConfirmDialog.tsx` L165-166 の `isConfirmDisabled = loading || (displayInputField?.required === true && inputValue.trim() === '')` が初期 inputValue=`""` でボタン disabled にしていた
+- issue 推定 B（react-hook-form mode）は不該当（useState ベース実装のため）
+- 「初期表示で赤字エラー」は理論上 `touched=false` の初期状態では出ない（自動テスト + 手動再検証で確認）。現象は「ボタン disabled」が実体
+
+**実装** (PR #113, commit `dceec05`):
+- `ConfirmDialog.tsx` L165-166 の disabled 条件を **`isConfirmDisabled = loading` のみに絞る**
+- `handleConfirm` 内で「未入力なら `setTouched(true)` を発火し `onConfirm` を呼ばない」未入力ガード追加
+- `apiError` の責務を「サーバー応答エラー専用」として明確化
+
+**テスト改修**:
+- 既存「未入力時 disabled」を「初期表示で enabled」に書き換え
+- NEW-1〜4 追加（初期表示エラー非表示・ボタン enabled、空送信エラー、入力後クリア、`setTouched` 発火）
+- ConfirmDialog.test.tsx 29 件 + ReportDetailPage.test.tsx 40 件 PASS
+
+**設計書改訂** (commit `fa21368`):
+- `55_ui_component/common-components.md` §ConfirmDialog に責務分離（apiError = サーバー専用）と disabled 条件 = `loading` のみを明記
+
+**SMK 再検証要項目**: SMK-011 #4 / SMK-096 #2
 
 ## 解決日
-<!-- YYYY-MM-DD -->
+
+2026-04-30
