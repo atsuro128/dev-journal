@@ -110,8 +110,10 @@ SCR-{カテゴリ}-{連番}
 |--------|--------|------|-------------|-----------|---------|--------|
 | SCR-WFL-001 | 承認待ち一覧 | 承認が必要なレポートを確認 | 承認待ちレポートリスト（申請者名・タイトル・合計金額・提出日）、ページネーション | Approver | `/approvals` | UC-A01 |
 | SCR-WFL-002 | 支払待ち一覧 | 支払処理が必要なレポートを確認 | 支払待ちレポートリスト（申請者名・タイトル・合計金額・承認日）、ページネーション | Accounting | `/payments` | UC-AC01 |
+| SCR-WFL-003 | 処理済みレポート一覧 | 自分が承認/却下した過去のレポートを確認 | 処理済みレポートリスト（申請者名・タイトル・合計金額・処理結果バッジ・処理日・現在ステータスバッジ）、ページネーション | Approver | `/approvals/processed` | UC-A01 |
 
 > 承認・却下・支払完了の操作自体はレポート詳細画面（SCR-RPT-004）で行う。一覧画面からレポート詳細への遷移で操作する。
+> SCR-WFL-003（処理済みレポート一覧）は閲覧のみ。再承認・取消等の操作は提供しない。可視範囲は自分が `approved_by` または `rejected_by` に記録されているテナント内レポート（authz.md §10.1, §10.2 参照）。
 
 ### 3.5 管理系
 
@@ -135,10 +137,11 @@ SCR-{カテゴリ}-{連番}
 | 9 | SCR-RPT-004 | レポート詳細 | 全ロール（権限に準ずる） |
 | 10 | SCR-WFL-001 | 承認待ち一覧 | Approver |
 | 11 | SCR-WFL-002 | 支払待ち一覧 | Accounting |
-| 12 | SCR-ADM-001 | テナント全レポート一覧 | Admin, Accounting |
-| 13 | SCR-ADM-002 | テナント情報 | Admin |
+| 12 | SCR-WFL-003 | 処理済みレポート一覧 | Approver |
+| 13 | SCR-ADM-001 | テナント全レポート一覧 | Admin, Accounting |
+| 14 | SCR-ADM-002 | テナント情報 | Admin |
 
-合計: 13画面（MVP）
+合計: 14画面（MVP）
 
 ---
 
@@ -183,11 +186,13 @@ SCR-{カテゴリ}-{連番}
 | マイレポート | SCR-RPT-001 | ○ | ○ | ○ | ○ |
 | レポート作成 | SCR-RPT-002 | ○ | ○ | ○ | ○ |
 | 承認待ち | SCR-WFL-001 | - | ○ | - | - |
+| 処理済み | SCR-WFL-003 | - | ○ | - | - |
 | 支払待ち | SCR-WFL-002 | - | - | ○ | - |
 | 全レポート | SCR-ADM-001 | - | - | ○ | ○ |
 | テナント情報 | SCR-ADM-002 | - | - | - | ○ |
 
 > Accounting は Member としての経費申請も行うため「マイレポート」「レポート作成」を表示する（policies.md SS3.8 権限マトリクス準拠）。
+> Approver の「処理済み」は「承認待ち」の直下に配置する（業務文脈の連続性: 「これから処理する」→「処理済みを振り返る」）。画面 ID 連番順 ≠ サイドメニュー表示順とする。
 
 ### 4.4 エラー表示
 
@@ -241,6 +246,7 @@ SCR-{カテゴリ}-{連番}
 |------|----------------|
 | レポート一覧（自分） | 「経費レポートはまだありません。レポートを作成して経費精算を始めましょう。」 |
 | 承認待ち一覧 | 「承認待ちのレポートはありません。」 |
+| 処理済みレポート一覧 | 「処理済みのレポートはありません。」 |
 | 支払待ち一覧 | 「支払待ちのレポートはありません。」 |
 | テナント全レポート一覧 | 「レポートはまだ作成されていません。」 |
 | レポート詳細の明細一覧 | 「明細はまだ追加されていません。「明細追加」から経費を登録してください。」 |
@@ -264,7 +270,7 @@ SCR-{カテゴリ}-{連番}
   - 中央: ページ番号コントロール（前へ/次へ + ページ番号、現在ページをハイライト、総ページ数が多い場合は省略表示。例: 1 2 3 ... 8 9 10）
   - 右: 表示件数セレクタ（`per_page`）
 - 表示件数セレクタの選択肢は `[10, 20, 50, 100]`、デフォルトは `20`、URL クエリ `per_page` と双方向連動する。URL の標準外値は動的に選択肢へ追加する。フッターは `totalPages <= 1` でも常時表示する（4 画面で挙動を統一）。範囲外（1 未満 / 100 超）は BE バリデーションで 422、NaN/負数は FE で 20 にフォールバックする
-- 対象画面: SCR-RPT-001（マイレポート）、SCR-ADM-001（全レポート）、SCR-WFL-001（承認待ち）、SCR-WFL-002（支払待ち）
+- 対象画面: SCR-RPT-001（マイレポート）、SCR-ADM-001（全レポート）、SCR-WFL-001（承認待ち）、SCR-WFL-002（支払待ち）、SCR-WFL-003（処理済み）
 
 ---
 
@@ -283,6 +289,7 @@ SCR-{カテゴリ}-{連番}
 | SCR-RPT-004 | レポート詳細 | GET /api/reports/:id, POST /api/reports/:id/items, PUT /api/reports/:id/items/:itemId, DELETE /api/reports/:id/items/:itemId, POST /api/reports/:id/items/:itemId/attachments, DELETE /api/reports/:id/items/:itemId/attachments/:attId, POST /api/reports/:id/submit, DELETE /api/reports/:id, POST /api/workflow/:id/approve, POST /api/workflow/:id/reject, POST /api/workflow/:id/pay |
 | SCR-WFL-001 | 承認待ち一覧 | GET /api/workflow/pending |
 | SCR-WFL-002 | 支払待ち一覧 | GET /api/workflow/payable |
+| SCR-WFL-003 | 処理済みレポート一覧 | GET /api/workflow/processed |
 | SCR-ADM-001 | テナント全レポート一覧 | GET /api/reports/all, GET /api/tenant/members |
 | SCR-ADM-002 | テナント情報 | GET /api/tenant |
 

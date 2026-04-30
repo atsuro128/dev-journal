@@ -1469,6 +1469,54 @@ paths:
         "403":
           $ref: "#/components/responses/Forbidden"
 
+  /api/workflow/processed:
+    get:
+      tags: [workflow]
+      summary: 処理済みレポート一覧
+      description: |
+        Approver 用。自分が承認または却下したテナント内レポート一覧を取得する（SCR-WFL-003）。
+        他 Approver が処理したレポートは含まれない。
+
+        認可条件:
+        - 許可ロール: Approver
+        - 所有者条件: なし（自分が approved_by または rejected_by に記録されているテナント内レポートを返却）
+        - 状態条件: なし（approved / rejected / paid いずれの current_status でも返却）
+        - テナント境界越え: 該当なし（JWT の tenant_id スコープで自動フィルタ）
+        - 権限不足（Member, Admin, Accounting）: 403 FORBIDDEN
+
+        ソート: 処理日時 DESC（同値時は report_id DESC で安定化）。
+        スコープ: `tenant_id = actor.tenant_id AND (approved_by = actor.user_id OR rejected_by = actor.user_id)`。
+      operationId: listProcessedReports
+      x-requirements:
+        - WFL-F04   # 承認待ち一覧（ワークフロー一覧系として連携）
+        - RBC-011   # Approver: 同テナント submitted レポート承認/却下可能
+      x-authz:
+        roles: [approver]
+        ownership_required: false  # 自分が approved_by/rejected_by のレポート全件返却
+        tenant_boundary: true
+      parameters:
+        - $ref: "#/components/parameters/page"
+        - $ref: "#/components/parameters/per_page"
+      responses:
+        "200":
+          description: 処理済みレポート一覧
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, pagination]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ProcessedReport"
+                  pagination:
+                    $ref: "#/components/schemas/Pagination"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
   /api/workflow/{id}/approve:
     post:
       tags: [workflow]
@@ -2309,6 +2357,38 @@ components:
         is_own_report:
           type: boolean
           description: 自分が作成したレポートか（自己支払処理禁止の表示制御に使用）
+
+    ProcessedReport:
+      type: object
+      required: [id, title, total_amount, submitter, decision, decided_at, current_status]
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        total_amount:
+          type: integer
+        submitter:
+          type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+            name:
+              type: string
+        decision:
+          type: string
+          enum: [approved, rejected]
+          description: 自分の処理結果。approved_by が actor の場合 approved、rejected_by が actor の場合 rejected
+        decided_at:
+          type: string
+          format: date-time
+          description: 自分が処理した日時（approved_at または rejected_at）。decision に対応する側を返す
+        current_status:
+          type: string
+          enum: [approved, rejected, paid]
+          description: 現在のレポートステータス。承認後に paid に進んだか rejected のままかを示す
 
     RejectRequest:
       type: object

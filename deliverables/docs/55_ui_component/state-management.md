@@ -124,6 +124,7 @@ interface LoginInput {
 | `useAllReports` | `GET /api/reports/all` | `AllReportListParams` | `UseQueryResult<ApiListResponse<ExpenseReportSummary & { submitter: UserSummary }>>` | SCR-ADM-001 |
 | `usePendingReports` | `GET /api/workflow/pending` | `PendingReportListParams` | `UseQueryResult<ApiListResponse<PendingReport>>` | SCR-WFL-001 |
 | `usePayableReports` | `GET /api/workflow/payable` | `PayableReportListParams` | `UseQueryResult<ApiListResponse<PayableReport>>` | SCR-WFL-002 |
+| `useProcessedReports` | `GET /api/workflow/processed` | `ProcessedReportListParams` | `UseQueryResult<ApiListResponse<ProcessedReport>>` | SCR-WFL-003 |
 | `useAttachments` | `GET /api/reports/:id/items/:itemId/attachments` | `{ reportId: string; itemId: string }` | `UseQueryResult<ApiResponse<Attachment[]>>` | SCR-RPT-004 |
 | `useAttachmentDownloadUrl` | `GET /api/reports/:id/items/:itemId/attachments/:attId/download` | `{ reportId: string; itemId: string; attId: string }` | `UseQueryResult<ApiResponse<AttachmentAccess>>` | SCR-RPT-004 |
 | `useAttachmentPreviewUrl` | `GET /api/reports/:id/items/:itemId/attachments/:attId/preview` | `{ reportId: string; itemId: string; attId: string }` | `UseQueryResult<ApiResponse<AttachmentAccess>>` | SCR-RPT-004 |
@@ -183,8 +184,18 @@ interface PayableReportListParams {
 }
 // 出力: ApiListResponse<PayableReport>
 
+// useProcessedReports（issue #158 / 11-A-issue-158、SCR-WFL-003 用）
+interface ProcessedReportListParams {
+  page?: number;
+  per_page?: number;
+}
+// 出力: ApiListResponse<ProcessedReport>
+// 認可スコープ: tenant_id = actor.tenant_id AND (approved_by = actor.user_id OR rejected_by = actor.user_id)
+// ソート: BE 側で decided_at DESC（同値時 report_id DESC）固定。FE からのソート指定なし
+
 // 注: useMyReports / useAllReports / usePendingReports / usePayableReports の
 // `per_page` 連動仕様は §3.1 「ページネーション URL クエリ ⇔ Hook ⇔ API URL 連動仕様」を参照
+// useProcessedReports も同一の連動仕様に準拠する（page / per_page のみ。applicant_name フィルタは MVP では未実装）
 
 // useAttachments
 // 入力: { reportId: string; itemId: string }
