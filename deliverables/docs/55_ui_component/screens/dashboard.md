@@ -57,10 +57,18 @@ DashboardPage
         │
         ├── [Approver / Accounting / Admin の場合]
         │   └── MonthlySummaryTable
+        │       ├── SectionHeading（Typography variant="h6" 「月別支出サマリー」）
+        │       └── Table
+        │           ├── TableHead（列見出し: 年月 / 合計金額）
+        │           └── TableBody
         │
         └── [Member / Approver / Accounting の場合]
             └── RecentReportList
-                ├── RecentReportRow（0〜5件）
+                ├── SectionHeading（Typography variant="h6" 「最近のレポート」）
+                ├── Table
+                │   ├── TableHead（列見出し: タイトル / 期間 / 金額 / ステータス）
+                │   └── TableBody
+                │       └── RecentReportRow（0〜5件）
                 ├── EmptyState（← common-components.md、0件の場合）
                 └── ViewAllLink
 ```
@@ -173,6 +181,7 @@ interface TenantStatusCardsProps {
 
 - 配置: `components/dashboard/MonthlySummaryTable.tsx`
 - 責務: テナント全体の直近 3 ヶ月の月別合計支出金額をテーブル形式で表示する。最新月が上（降順）。金額は `¥` プレフィックス + 3桁カンマ区切りで表示する。データが存在しない月は ¥0 として表示する。Approver / Accounting / Admin ロールで表示する
+- ルート要素は `<Box>` で、上部にセクション見出し `<Typography variant="h6">月別支出サマリー</Typography>`（`sx={{ mb: 1 }}`）を配置し、その下に `<TableContainer>` を置く。0 件時もセクション見出しは表示する（0 件時は見出しの下に「データがありません」メッセージを表示）。
 - 対応セクション: `50_detail_design/screens/dashboard.md` &sect;4.6
 
 ```typescript
@@ -199,6 +208,7 @@ interface MonthlySummaryTableProps {
 
 - 配置: `components/dashboard/RecentReportList.tsx`
 - 責務: 自分が作成した直近 5 件のレポートを一覧表示する。レポートが 0 件の場合は EmptyState を表示する。一覧の下部に「すべてのレポートを見る」リンクを配置する。Member / Approver / Accounting ロールで表示する
+- ルート要素は `<Box>` で、上部にセクション見出し `<Typography variant="h6">最近のレポート</Typography>`（`sx={{ mb: 1 }}`）を配置する。`<Table>` には `<TableHead>` を含み、列見出し（タイトル / 期間 / 金額 / ステータス）を表示する。金額列は右寄せ（`align="right"`）とし、`RecentReportRow` 側の `<TableCell>` の align と整合させる。0 件時もセクション見出しは表示する（見出しの下に EmptyState を表示）。
 - 対応セクション: `50_detail_design/screens/dashboard.md` &sect;4.7
 
 ```typescript
@@ -388,8 +398,8 @@ GET /api/auth/me
 | `55_ui_component/screens/dashboard.md §CountCard` | コンポーネント単体テスト | label / count / href / accentColor / unit の各 Props 組み合わせ描画検証 |
 | `55_ui_component/screens/dashboard.md §MyReportCountCards` | コンポーネント単体テスト | 3枚のカウントカード描画、件数 0 のケース、カードクリック遷移先の検証 |
 | `55_ui_component/screens/dashboard.md §TenantStatusCards` | コンポーネント単体テスト | 5枚のステータスカード描画、アクセントカラーの適用、カードクリック遷移先の検証 |
-| `55_ui_component/screens/dashboard.md §MonthlySummaryTable` | コンポーネント単体テスト | 3ヶ月分データ表示、金額フォーマット（¥ + カンマ区切り）、年月表示形式（YYYY年M月）、降順ソートの検証 |
-| `55_ui_component/screens/dashboard.md §RecentReportList` | コンポーネント単体テスト | 5件表示、0件時の EmptyState 表示、「すべてのレポートを見る」リンクの検証 |
+| `55_ui_component/screens/dashboard.md §MonthlySummaryTable` | コンポーネント単体テスト | 3ヶ月分データ表示、金額フォーマット（¥ + カンマ区切り）、年月表示形式（YYYY年M月）、降順ソートの検証、セクション見出し「月別支出サマリー」の描画（0 件時も見出し表示） |
+| `55_ui_component/screens/dashboard.md §RecentReportList` | コンポーネント単体テスト | 5件表示、0件時の EmptyState 表示、「すべてのレポートを見る」リンクの検証、セクション見出し「最近のレポート」の描画（0 件時も見出し表示）、列見出し（タイトル / 期間 / 金額 / ステータス）の描画 |
 | `55_ui_component/screens/dashboard.md §RecentReportRow` | コンポーネント単体テスト | タイトルリンク遷移先、対象期間フォーマット、金額フォーマット、StatusChip 描画の検証 |
 | `55_ui_component/state-management.md §useDashboard` | Hook 単体テスト | API 呼び出し・キャッシュ（staleTime: 60秒）・エラーハンドリングの検証 |
 | `55_ui_component/state-management.md §useCurrentUser` | Hook 単体テスト | ユーザー情報取得・ロール判定の検証 |
