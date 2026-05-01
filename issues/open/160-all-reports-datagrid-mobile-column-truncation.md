@@ -199,3 +199,40 @@ MVP（業務上必要な情報判別、UX 影響大）
 ## 解決日
 
 2026-04-30
+
+---
+
+## 再検証結果（2026-05-01 ローカル動作確認）
+
+### 状態
+
+**FAIL**（PR #114 の対応が両面で有効に機能していなかったことを確認、revert 実施・継続調査）
+
+### 実機で判明した不備
+
+1. **PC 全画面で過剰な余白**: 列幅合計（540〜710px）が lg コンテナ（最大 1152px）を大きく下回り、各画面で 442〜612px の右側空白が発生し UI 違和感が大きい
+2. **スマホ幅でも横スクロール発火しない**: DevTools で 375px 幅に切り替えても、PR #114 が想定した「列幅合計 > 画面幅 → AppDataGrid Box の `overflowX: auto` 発火」が観測されない（MUI X v8 の挙動として、DataGrid 内部の virtualScroller が独自にコンテナ幅にフィットしているか、あるいは別の機序が働いている可能性）
+
+### 対応（リバート）
+
+PR #114 の columnDef 変更（4 画面）を **revert** する。
+
+- `pages/reports/ReportListTable.tsx` / `pages/admin/AllReportsTable.tsx` / `pages/workflow/ApprovalListPage.tsx` / `pages/workflow/PaymentListPage.tsx` を PR #114 直前（commit `664efbc^`）の状態（`flex: N` + `minWidth: M`）に復元
+- `components/ui/AppDataGrid.tsx` の Box `overflowX: 'auto'` は維持（無害、将来 columns が container を超えるケースの保険）
+- `components/ui/AppDataGrid.tsx` の `--DataGrid-overlayHeight: 'auto'`（PR #118）は独立機能として維持
+- 設計書 `55_ui_component/common-components.md` §AppDataGrid の規定を `flex` + `minWidth` 併用許容に戻す
+
+### リバート後の状態
+
+- PC 幅: flex で列が伸びるため右余白なし（PR #114 以前の挙動に戻る）
+- スマホ幅: ellipsis 症状が再発する可能性が高い（issue #160 元の症状）→ **本 issue は引き続き未解決**として open 化
+
+### 真因再分析の方向性（次セッション以降）
+
+- MUI X v8 で `flex` + `minWidth` 併用時の実動作を再観測（v6 〜 v8 で挙動が変わった可能性）
+- DataGrid 内部の `virtualScroller` のサイジングロジック調査
+- 代替案: レスポンシブで列を間引く / カードビュー切替 / `responsive` 系 props の活用
+
+### 起票日（再 open）
+
+2026-05-01
