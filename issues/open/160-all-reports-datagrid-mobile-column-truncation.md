@@ -233,6 +233,42 @@ PR #114 の columnDef 変更（4 画面）を **revert** する。
 - DataGrid 内部の `virtualScroller` のサイジングロジック調査
 - 代替案: レスポンシブで列を間引く / カードビュー切替 / `responsive` 系 props の活用
 
+### 観察された具体症状（2026-05-01）
+
+> 「スマホ用画面に変わった瞬間、テーブル幅が変わらなくなる。画面を狭めると見切れる」
+
+ブレークポイント遷移後、DataGrid の幅が viewport の縮小に追従せず、内容がクリップされる（横スクロールが発火しない）。
+
+参考: ProcessedReportsPage（SCR-WFL-003）も他 4 画面と同じ `flex + minWidth` パターンだが、ユーザーから「UI としてきれい」との評。一方で本 issue（mobile での横方向見切れ）は全画面共通の症状であり、テーブル単体の columnDef ではなく **DataGrid のサイジング機構そのもの** に起因する可能性が高い。
+
+### 調査ポイント（次セッション着手用メモ）
+
+1. **DataGrid 内部 scrollbar の可視性確認**
+   - DOM 上は `MuiDataGrid-scrollbar--horizontal` が render されている（PR #114 検証時に DevTools で確認済み）
+   - `display` / `visibility` / `pointer-events` 等で隠れていないか CSS を観察
+
+2. **AppDataGrid Box ラッパーの幅指定の見直し**
+   - 現状: `<Box sx={{ width: '100%', overflowX: 'auto' }}>` が DataGrid を内包
+   - `width: '100%'` のため Box 自身がコンテナ幅で止まり、DataGrid 内部 overflow が「Box の overflowX」として伝播していない可能性
+   - 検証案: Box の width を `'auto'` または `'fit-content'` に変えて Box が DataGrid のサイズに追従するか確認
+   - 検証案: Box ではなく親コンテナ側で `overflowX: 'auto'` を持たせる
+
+3. **MUI X v8 の DataGrid 設定**
+   - `disableColumnResize` / `columnBufferPx` 等の関連 props
+   - v8 で virtualScroller の scroll が disable されるデフォルト条件があるか
+   - `--DataGrid-rowWidth` / `--DataGrid-columnsTotalWidth` / `--DataGrid-hasScrollX` の CSS 変数とコンテナ幅の関係
+   - `--DataGrid-hasScrollX: 1` が設定されていても可視 scrollbar が出ない条件
+
+4. **代替アーキテクチャ**
+   - viewport breakpoint で `columnVisibilityModel` を切り替え（mobile では status / 日付などを非表示）
+   - mobile では DataGrid ではなく `<Card>` ベースのリスト表示に切替
+   - MUI 公式の Responsive DataGrid パターン（v8 で提供されているか要調査）
+
+### 関連コミット
+
+- PR #114 (664efbc): width 絶対値固定で解消を試みたが PC 余白過剰 + mobile 横スクロール未発火
+- PR #119 (5a12d33): PR #114 を revert、`flex + minWidth` パターンに復元
+
 ### 起票日（再 open）
 
 2026-05-01
