@@ -152,7 +152,7 @@ interface MyReportCountCardsProps {
 - 配置: `components/dashboard/TenantStatusCards.tsx`
 - 責務: テナント全体のレポートをステータス別に集計したカード群（下書き・提出済み・承認済み・却下・支払済み）をグリッドで配置する。Admin ロールのみで表示する。各カードにステータスバッジ色をアクセントとして使用する
 - 対応セクション: `50_detail_design/screens/dashboard.md` &sect;4.4
-- **Grid 配置**: 5 枚全てに `size={{ xs: 12, sm: 6, md: 2.4 }}` を適用する。PC 幅（md ≥ 900px）では 5 等分（`12 / 5 = 2.4`）でコンテナいっぱいに横並び、タブレット幅（sm 600〜899px）では 2 列折返し、モバイル（xs < 600px）では縦積みとなる。`md: 'auto'` のような自然幅指定は使用しない（コンテンツ依存で幅が縮むため）。Grid container には `data-testid="tenant-status-cards"` を付与する
+- **Grid 配置**: 5 枚全てに `size={{ xs: 12, sm: 6, md: 4 }}` を適用する。PC 幅（md ≥ 900px）では 3 等分（`md: 4`）となり、5 カードのため **3 + 2 の 2 行レイアウト**になる（他ロール MyReportCountCards の `sm: 4` 基準と整合させるため `md: 2.4` → `md: 4` に変更）。タブレット幅（sm 600〜899px）では 2 列折返し、モバイル（xs < 600px）では縦積みとなる。`md: 'auto'` のような自然幅指定は使用しない（コンテンツ依存で幅が縮むため）。Grid container には `data-testid="tenant-status-cards"` を付与する
 - **責務分離**: カード幅指定はコンテナ Grid 側（TenantStatusCards）で制御する。CountCard 共通基盤には幅指定を入れない
 
 ```typescript
