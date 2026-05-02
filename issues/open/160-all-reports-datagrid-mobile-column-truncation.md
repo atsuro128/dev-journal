@@ -272,3 +272,172 @@ PR #114 の columnDef 変更（4 画面）を **revert** する。
 ### 起票日（再 open）
 
 2026-05-01
+
+---
+
+## 真因確定と採用方針（2026-05-02、実機計測ベース）
+
+### 実機計測結果（DevTools iPhone SE 375px）
+
+`.MuiDataGrid-root` の computed style:
+
+```
+--DataGrid-hasScrollX: 0
+--DataGrid-hasScrollY: 0
+--DataGrid-rowWidth: 690px
+--DataGrid-columnsTotalWidth: 690px
+```
+
+階層別 width:
+
+| 階層 | 要素 | computed width | display |
+|---|---|---|---|
+| 親 | `<Box css-k008qs>` (PageContainer 等) | 375px | **flex** |
+| 子（AppDataGrid Box） | `<Box css-d9bexz>` (`width: '100%', overflowX: 'auto'`) | **726px** | block |
+| 孫 | `.MuiDataGrid-root` | 726px | (DataGrid) |
+
+### 真因
+
+**CSS Flexbox の `min-width: auto` の罠**:
+
+- AppDataGrid の Box ラッパー (`<Box sx={{ width: '100%', overflowX: 'auto' }}>`) は `width: '100%'` を指定している
+- しかし親が `display: flex` のため、Box は flex item として扱われる
+- Flex item のデフォルト `min-width: auto` は **コンテンツ（DataGrid 内部 726px）より縮まない**
+- 結果、Box が `width: '100%'` でなく **content size の 726px に追従して膨張**
+- DataGrid 内部判定（`columnsTotalWidth (690) > root (726)` ではない）で `hasScrollX = 0` となり scrollbar 不要と判定
+- Box の `overflowX: 'auto'` は機能しているが、Box 自身が 726px に膨らむため overflow が発火しない
+
+### architect 仮説（2026-05-01 レポート）の修正
+
+architect レポートの仮説「`columnsTotalWidth` が `rootSize.width = 343px` に追従して縮む（min violation 後の再フロー）」は実機 `columnsTotalWidth = 690px` で否定された。MUI X v8 の computeFlexColumnsWidth 内部仕様の問題ではなく、**外側の CSS Flexbox レイアウト問題** が真因。
+
+そのため architect 推奨の **案 B（columnVisibilityModel）/ 案 C（カードビュー）/ 案 E は不要**。テーブル構造を変えずに解決できる。
+
+### 採用方針: 案 F（新規、Flexbox min-width 罠の解消）
+
+**`AppDataGrid` の Box ラッパー sx に `minWidth: 0` を追加する**。
+
+```tsx
+// 修正前
+<Box sx={{ width: '100%', overflowX: 'auto' }}>
+
+// 修正後
+<Box sx={{ width: '100%', minWidth: 0, overflowX: 'auto' }}>
+```
+
+これで:
+
+- Box が flex container 内で 375px に縮まる（`min-width: auto` を 0 に上書き）
+- Box は `overflowX: 'auto'` を持つので、内部 DataGrid (726px) がはみ出して **横スクロールバー発火**
+- DataGrid 自体は触らない（columns / `flex` / `minWidth` はそのまま維持）
+- PC 幅では Box が親コンテナ（lg 1152px）まで広がるので flex 列が分配されて右余白なし
+- **テーブル構造を一切変えない**（SMK-101 期待結果「列の内容が重なって読めなくなることがない」+「横スクロール可能」を両立）
+
+### 修正対象
+
+| ファイル | 変更内容 |
+|---|---|
+| `expense-saas/frontend/src/components/ui/AppDataGrid.tsx` | Box sx に `minWidth: 0` 追加 |
+| `expense-saas/frontend/src/components/ui/__tests__/AppDataGrid.test.tsx` | minWidth: 0 が Box に渡されていることを検証する新規テスト追加 |
+| `dev-journal/deliverables/docs/55_ui_component/common-components.md` §AppDataGrid | Flexbox `min-width: auto` の罠と `minWidth: 0` が必須である根拠を追記 |
+
+### 各画面の columnDef は変更不要
+
+`flex + minWidth` パターン（PR #119 で復元済み）はそのまま維持。案 F は AppDataGrid 共通基盤側 1 行追加のみで全 5 画面（AllReportsTable / ReportListTable / ApprovalListPage / PaymentListPage / ProcessedReportsPage）に波及する。
+
+### 並行発見事項（別 issue で対応）
+
+ReportListTable (マイレポート) 画面で「ステータス / 開始日 / 終了日」のフィルタエリアが mobile 幅で横一列のまま画面幅を超える症状を観察。これは DataGrid の問題ではなく、**フィルタエリアのレイアウトが mobile 対応していない**別問題のため、別 issue として切り出して対応する。
+
+### SMK 再検証要項目
+
+SMK-101（テナント全レポート一覧 + 他 4 画面の横スクロール / 列内容判別性）
+
+### 起票日（案 F 採用）
+
+2026-05-02
+
+---
+
+## 真因再々確定と追加修正方針（2026-05-03、PR #122 マージ後の SMK 再検証 FAIL 受け）
+
+### 状態
+
+PR #122（AppDataGrid Box に `minWidth: 0` 追加）マージ後の SMK-101 再検証で **依然として FAIL**（横スクロール発火せず、Box が 726px のまま）を確認。実機計測で真因の場所が誤っていたことが判明。
+
+### 計測対象の取り違え（前回の誤り）
+
+「2026-05-02 真因確定」セクションで「Box (`css-d9bexz`) 726px = AppDataGrid の Box ラッパー」と特定したが、**実際の DOM 階層では `css-d9bexz` は `<main>` 要素**だった。HTML 構造を改めて読み解いた結果：
+
+```
+<main class="MuiBox-root css-d9bexz">    ← 726px、flex-grow: 1（これが本当の元凶）
+  <div class="MuiToolbar-root">
+  <div class="MuiContainer-root MuiContainer-maxWidthLg">
+    <div class="MuiBox-root css-0">
+      <div data-testid="report-list-table">
+        <div class="MuiBox-root css-2t1ku1">  ← AppDataGrid Box（PR #122 で minWidth: 0 + overflowX: auto 追加済み、ここは正しく機能）
+          <div class="MuiDataGrid-root">      ← 690px (columnsTotalWidth)
+```
+
+`<main>` が flex item として `min-width: auto` で content (DataGrid 690px + Container padding) に追従して 726px に膨張していたため、その内側の AppDataGrid Box が `minWidth: 0` を持っていても **既に外側で 726px に広がっており発火しない**状態だった。
+
+### 真因の場所
+
+`/root-project/expense-saas/frontend/src/components/layout/AppLayout.tsx` L95-102:
+
+```tsx
+<Box
+  component="main"
+  sx={{
+    flexGrow: 1,
+    width: { md: `calc(100% - ${DRAWER_WIDTH}px)` },  // mobile (xs) で width 未指定
+    // minWidth: 0 が無いため flex item の min-width: auto で content に追従して膨張
+  }}
+>
+```
+
+mobile（xs）では `width` が未指定のため、`flexGrow: 1` + `min-width: auto` の組合せで content size に追従して膨張する CSS Flexbox の罠。
+
+### PR #122 の評価（再評価）
+
+**完全に無駄ではない**。AppLayout の `<main>` を 375px に縮めた後、内側の AppDataGrid Box で `overflowX: 'auto'` + `minWidth: 0` が「内部 DataGrid (690px) を overflow させて横スクロールバー発火」する **最後の砦** として機能する。ただし AppLayout 側の修正なしには発火しないため、**PR #122 単独では効果ゼロ** だった。
+
+PR #122 の修正と設計書改訂自体は CSS Flexbox 仕様として正しく、レイアウト改善の保険として維持する。
+
+### 採用方針: 案 F'（AppLayout の `<main>` にも `minWidth: 0` 追加）
+
+`AppLayout.tsx` の `<Box component="main">` の sx に `minWidth: 0` を追加する：
+
+```tsx
+sx={{
+  flexGrow: 1,
+  minWidth: 0,  // 追加
+  width: { md: `calc(100% - ${DRAWER_WIDTH}px)` },
+}}
+```
+
+これで mobile でも `<main>` が viewport (375px) に収まり、内側の Container / Box / AppDataGrid Box が連鎖して 375px に縮み、AppDataGrid Box の `overflowX: 'auto'` で内部 DataGrid (690px) が overflow して横スクロールバー発火する。
+
+### 修正対象ファイル
+
+| ファイル | 変更内容 |
+|---|---|
+| `expense-saas/frontend/src/components/layout/AppLayout.tsx` | `<Box component="main">` の sx に `minWidth: 0` 追加 |
+| 必要に応じて該当する AppLayout のテスト | minWidth: 0 が main に渡されていることを検証する新規テスト追加 |
+| `dev-journal/deliverables/docs/55_ui_component/common-components.md` § AppLayout（または該当セクション） | `<main>` に `minWidth: 0` を必須とする根拠を追記。AppDataGrid §の規定（PR #122 で追加）と一貫性を取る |
+
+### 影響範囲
+
+`AppLayout` は全画面の基盤コンポーネントのため、修正は **全ページに波及**する。影響として：
+
+- mobile では `<main>` が viewport に収まる（DataGrid 系に限らず、内部 content がはみ出すケース全般で改善）
+- PC（md 以上）では既存の `width: calc(100% - DRAWER_WIDTH)` がそのまま効くため挙動変化なし
+- 副作用リスク: `flexGrow: 1` と組み合わせた `minWidth: 0` は flex item の標準的なテクニックで、レイアウトが崩れる可能性は低い
+
+### SMK 再検証要項目（変更なし）
+
+SMK-101（テナント全レポート一覧 + 他 4 画面の横スクロール / 列内容判別性）
+
+### 起票日（案 F' 追加修正）
+
+2026-05-03

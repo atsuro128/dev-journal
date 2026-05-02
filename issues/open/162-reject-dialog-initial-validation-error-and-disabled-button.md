@@ -139,3 +139,62 @@ MVP（業務上必要な却下フローの UX 不具合、Step 11-A SMK FAIL の
 ## 解決日
 
 2026-04-30
+
+---
+
+## 再対応（2026-05-02、Step 11-A SMK-011 #4 再検証で再発確認）
+
+### 状態
+
+**FAIL**（PR #113 の修正は 2/3 で残り 1 経路を取り逃したことを確認、再 open）
+
+### 再現症状
+
+却下確認ダイアログを開いた瞬間（理由未入力の初期状態）から:
+
+- 「却下理由を入力してください」のエラー文言がフィールド下に赤字で表示される
+- 「却下する」ボタンは押下可能（PR #113 の disabled 修正は効いている）
+- ただし押下しても何も起きない（`handleConfirm` 内の未入力ガードで return される、これも PR #113 の正常動作）
+
+リロード後・初回オープン時から発生（state 引き継ぎではない）。
+
+### 真因（再分析）
+
+PR #113 で取りこぼした経路:
+
+1. `TextField` の `autoFocus` (ConfirmDialog.tsx L194) でフォーカスが当たる
+2. MUI Dialog の FocusTrap 機構で Dialog 内の他要素にフォーカスが移動
+3. TextField から **blur イベント発火**
+4. `onBlur={() => setTouched(true)}` (L212) で `touched=true`
+5. 初回 paint 時点で既に `isInvalid=true` → 赤字エラー表示
+
+ユーザー観察「ダイアログを開いてもフォーカスされていない」= autoFocus が一瞬当たった直後に FocusTrap でフォーカスが他に移っている状態を裏付け。
+
+### 前回検証の不備
+
+- jsdom 環境では autoFocus → FocusTrap の blur 連鎖が発火しないため、自動テスト（ConfirmDialog.test.tsx 29 件）では検出不可
+- 前回の手動再検証も「現象は disabled 化のみ」と誤認、エラー文言の経路を確認していなかった
+
+### 採用方針
+
+**案 A: TextField の `autoFocus` 削除**（最小変更で根本解決）
+
+- 検討した代替案 D（`TransitionProps.onEntered` + `useRef` でプログラム的にフォーカス、UX 維持）はコード変更が増える + transition タイミングの v8 エッジケースリスクがあるため不採用
+- UX デメリット: ダイアログを開いた後 TextField を 1 クリックする手間が増える（却下は Approver の意識的操作なので影響軽微）
+- `onBlur` は維持: ユーザーが手動でフィールドに触ってから他に移動した場合の touched 発火は UX 的に有用（押下前に未入力エラーを誘導）
+
+### 修正対象
+
+| ファイル | 変更内容 |
+|---|---|
+| `expense-saas/frontend/src/components/ui/ConfirmDialog.tsx` | TextField の `autoFocus` 削除、修正履歴コメントに #162 再対応を追記 |
+| `expense-saas/frontend/src/components/ui/__tests__/ConfirmDialog.test.tsx` | autoFocus 削除を確認するテスト追加（initial render で touched=false / error 非表示を実機相当で確認） |
+| `dev-journal/deliverables/docs/55_ui_component/common-components.md` §ConfirmDialog | autoFocus 規定があれば削除、autoFocus 不採用の理由を記載 |
+
+### SMK 再検証要項目
+
+SMK-011 #4 / SMK-096 #2
+
+### 起票日（再 open）
+
+2026-05-02

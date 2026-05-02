@@ -1,175 +1,165 @@
 # 引き継ぎメモ
 
-## セッション: 2026-05-01 10:46 〜 2026-05-02 00:07
+## セッション: 2026-05-02 10:00 〜 2026-05-03 01:43
 
 ### ゴール
 
-- Step 11-A クローズ向け、ユーザー側 SMK 再検証 + DevTools 視覚確認 + BE: full test 完遂
-- 全 PASS なら 6 件 issue（#154 / #157 / #158 / #160 / #162 / #164）を resolved 移動 + Step 11-A 完了化
+- Step 11-A クローズ向けに残 SMK 検証 + #160 真因再分析を並行で進める
+- 全 PASS なら 6 件 issue を resolved 移動 + Step 11-A 完了化
+- このセッションは PR マージまでで切り上げ（SMK 再検証は次セッションへ持越）
 
 ### 作業ログ
 
-#### 1. BE: full test 結果対応（#158 ルート登録漏れ）
+#### 1. #160 真因再分析の架空仮説 → 実機計測で否定 → 真の真因確定
 
-ユーザーが先行で BE: full test 実行 → integration test で `TestListProcessedReports_*` 13 件すべて 404 FAIL を検出。
+architect レポート委譲で「flex の min violation 後の再フローで hasScrollX 未発火」仮説を取得。代替案（B: columnVisibilityModel / C: カードビュー / E: 案 B+保険等）を提示したが、ユーザー指摘「テーブル構造を変えず横スクロール発火が本来要件」で方向修正。
 
-- 真因: `expense-saas/internal/testutil/http.go` の approver グループに `/api/workflow/processed` のルート登録漏れ（main.go と差分監査で 1 行漏れと確定）
-- 対応: PR #115（commit `08b6655`）で 1 行追加（`approver.Get("/api/workflow/processed", workflowHandler.ListProcessedReports)`）
-- 修正は #158 の延長として処理（新規 issue 起票せず）。ユーザー指示「前回対応のissueが原因だから新規起票はしない」に従い軽量な PR 1 本で完結
-- レビュー飛ばし squash merge
+実機計測 1 巡目で「Box (`css-d9bexz`) 726px / 親 (`css-k008qs`) 375px / 親 display=flex」を確認 → 「親 flex 内で子 Box の min-width:auto 罠」と仮定 → PR #122 で AppDataGrid Box に minWidth:0 + overflowX:auto 追加。
 
-#### 2. BE: full test 二次対応（#158 テストフィクスチャ整合性）
+PR #122 マージ後の SMK-101 再検証で **依然 FAIL**。再計測で `css-d9bexz` の computed style を確認すると `flex-grow: 1` のみ → AppDataGrid Box ではないことが判明。HTML 階層を読み直して **`<main>` 要素そのもの**だったと特定。
 
-PR #115 マージ後、ユーザー再実行 → 13 件 → **2 件 FAIL に減少**。残った 2 件:
-- `TestListProcessedReports_TenantIsolation` (WFL-069): expected 0, got 5
-- `TestListProcessedReports_OnlyApprovedByActor` (WFL-070): expected current_status=approved, got paid
+真因確定: AppLayout の `<Box component="main">` が `flexGrow: 1` + `min-width: auto` で content (DataGrid 内部) に追従して 726px に膨張していた。PR #124 で AppLayout に minWidth:0 追加。
 
-- 真因: `SeedFixtures` が tenant A 用に approver 処理済み 5 件（うち paid 含む）を投入していることを 2 テストが考慮していなかった
-- 対応: PR #116（commit `748e33f`）で WFL-069 / WFL-070 を独立テナント方式（他 4 テスト WFL-071/072/074/075 と同じ）に統一
-- ユーザー再実行 → BE 全 PASS
+#### 2. #162 却下ダイアログ regression 再対応 (autoFocus 削除)
 
-#### 3. SMK-006 #4 検証フェーズで minHeight 試行錯誤（#154）
+SMK-011 #4 検証で「却下理由欄を開いた瞬間からバリデーションエラー」を確認。前回 PR #113 の修正は disabled 解消は OK だが、touched=true が初期から立つ現象が残存。
 
-ユーザー実機検証で 0 件 EmptyState とフッター間に余白がない事象を観察。長い試行錯誤の末に minHeight: 361 で確定:
+真因: TextField の `autoFocus` + MUI Dialog FocusTrap の連鎖で blur 発火 → `setTouched(true)`。jsdom では再現できないため自動テストでは検出不可。
 
-| PR | 内容 | 結果 |
-|---|---|---|
-| PR #117 (`95fe7f3`) | minHeight 300 → 400 | 過大（centering slack 19.25px × 2 = 38.5px） |
-| PR #118 (`b80c6c8`) | minHeight 削除 + `--DataGrid-overlayHeight: 'auto'` | 機能せず（v8 で fallback 104px に落ちて EmptyState 見切れ → 表「ぺちゃんこ」） |
-| PR #120 (`586523a`) | PR #118 を git revert + minHeight 400 → 361 | **PASS**（overlayWrapperInner と EmptyState の高さが一致、slack 0、py-bottom 48px の自然余白で button-footer 間が確保） |
+ユーザー指摘「autoFocus 切れないの？」で案 D（TransitionProps.onEntered）より案 A（autoFocus 削除）を採用。PR #121 で 1 行削除 + focus spy パターンのテスト追加。codex 指摘で当初の `not.toHaveAttribute('autofocus')` テストが gard として機能しないことが判明 → focus spy パターンに書き換え（autoFocus を戻すと FAIL することを実証済み）。
 
-361 の根拠: ColumnHeader 56 + EmptyState 必要量 236.5 + filler 15 + AppPaginationFooter 53 = 360.5 → 丸めて 361。
+#### 3. #166 SMK-104/105 用フィクスチャ追加
 
-ユーザー目視確認で SMK-006 #4 PASS → #154 を `resolved/` に移動。
+SMK-104 検証時に「テナント B Approver」「テナント A 第二 Approver」「Approver2 処理レポート」が seed.go に存在しないことを発見。新規 issue #166 起票 → PR #123 で seed.go 追加 + dashboard_handler_test.go の期待値更新（DSH-011/014/015）。
 
-#### 4. PR #114 (#160) リバート判断
+reviewer 1 回目: DSH-011 / DSH-015 漏れ指摘 → 修正 (commit 22e3598)。
+reviewer 2 回目: DSH-014 漏れ追加指摘 → 指揮役直接修正 (commit cf48722)。
+reviewer 3 回目: PASS。
 
-SMK-006 検証中に副次発見: スクリーンショットで横スクロール発生 + ユーザー報告「PC で全画面表示したときに余白が多すぎて UI がおかしい」「スマホ用画面に変わった瞬間テーブル幅が変わらない」
+codex 1 回目: ReportTenantBApprovedID の補完 UPDATE が必要と指摘（既存 DB seed 再実行で approved_by が NULL のまま残る問題） → backend-developer が DO NOTHING + 補完 UPDATE 採用 (commit 1aeb73d)。
+codex 2 回目: regression テスト追加要求が未対応と指摘 → backend-developer が seed_test.go に TestSeed_ReportTenantBApproved_BackfillExistingRow 追加 (commit d449603)。
+codex 3 回目: PASS。
 
-- 4 画面 column 幅合計確認: 540〜710px（PC で 442〜612px の右余白、スマホで横スクロール未発火）
-- PR #114 の意図（mobile 横スクロール発火）は実機で実証されていなかった
-- 対応: PR #119（commit `5a12d33`）で 4 画面 columnDef を `git checkout 664efbc^` で PR #114 直前（`flex` + `minWidth`）に復元
-- AppDataGrid Box `overflowX: 'auto'` は無害なため維持
-- issue #160 を `pending-review/` → `open/` に再戻し、調査ポイント 4 項目を追記（次セッション着手用）
+#### 4. #164 Admin カード幅 再対応
 
-#### 5. issue #154 → resolved 移動 + progress.md 更新
+DevTools 視覚確認で「Admin だけ 5 カードが 1 行に詰まっている」を確認。他ロール (Member/Approver/Accounting) は 1 行目 3 カード (1/3 幅) なのに、Admin だけ 1 行 5 カード (1/5 幅 = `md:2.4`) で視覚的に細い。
 
-PR #120 マージ後、ユーザーから SMK-006 #4 PASS 確認 → #154 ファイルに「三次対応（2026-05-02）」セクション追記 → `resolved/` 移動。progress.md の Step 11-A 状態と pending-review 表を更新（commit `ff5f43b`）。
+PR #125 で TenantStatusCards の Grid を `md:2.4` → `md:4` に変更し、5 カード × 1/3 幅 = 3+2 の 2 行レイアウトに統一。reviewer 1 回目で詳細設計書 (50_detail_design/screens/dashboard.md) の改訂漏れ 3 箇所指摘 → 指揮役直接修正 (dev-journal commit 9884c5d)。reviewer 再レビュー / codex 共に PASS。
+
+#### 5. #165 マイレポートフィルタエリア mobile overflow を新規起票
+
+#160 真因調査中の副次発見。ReportListTable のフィルタエリア（ステータス / 開始日 / 終了日）が mobile 幅で横一列のまま画面幅を超える。新規 issue #165 として起票（修正案 A: Stack direction レスポンシブ化、未着手）。
+
+#### 6. PR マージ完了
+
+5 PR マージ完了:
+- PR #121 (#162 autoFocus 削除) → master `3e81f077`
+- PR #122 (#160 案 F: AppDataGrid Box minWidth:0) → master `1d586e28`
+- PR #123 (#166 fixture 追加) → master `b4c577c7`
+- PR #124 (#160 案 F': AppLayout main minWidth:0) → master `1b3c587c`
+- PR #125 (#164 TenantStatusCards Grid 3+2) → master `80962cd8`
 
 ### 未完了
 
-- **ユーザー実施事項（次セッション着手時）**:
-  - SMK-011 #4 / SMK-096 #2 再検証（#162）
-  - SMK-103 / 104 / 105 新規実施（#158）
-  - DevTools 視覚確認（#157 ダッシュボード見出し / #164 Admin カード幅）
-- 全 PASS で残 4 件 issue（#157 / #158 / #162 / #164）を `resolved/` 移動 → **Step 11-A クローズ**
-- issue #160 真因再分析（next session）
+- **ユーザー実施事項（次セッション着手時、必須）**:
+  - docker compose リビルド（`docker compose build web && docker compose up -d web`）
+  - SMK-101 再検証（5 画面 mobile 375px で横スクロール発火 + ellipsis 解消）
+  - DevTools 視覚確認 #164（4 ロール ダッシュボード PC 幅でカード幅統一）
+- 全 PASS なら 6 件 issue (#157 / #158 / #160 / #162 / #164 / #166) を `pending-review` or `open` から `resolved/` 移動 → **Step 11-A クローズ**
+- issue #165（マイレポートフィルタエリア mobile）対応
+- BE: full test 実行（ユーザー方針: マージ後にユーザー実施。PR #123 の seed.go / fixture.go / handler テスト変更の整合性検証）
 
 ### ブロッカー
 
-なし（PR #115 〜 #120 全マージ完了、SMK 残検証フェーズ）
+なし（5 PR 全マージ完了、SMK 残検証フェーズ）
 
 ### 次にやること
 
-#### 優先度 1: ユーザー残 SMK + 視覚確認
+#### 優先度 1: docker compose リビルド + SMK-101 / #164 視覚確認
 
-- SMK-011 #4 / SMK-096 #2（#162 却下ダイアログ regression）
-- SMK-103 / 104 / 105（#158 SCR-WFL-003 Approver 処理済み一覧）
-- DevTools 視覚確認（#157 / #164）
+ユーザー側で docker compose リビルド → 5 画面 mobile 横スクロール発火 + 4 ロール カード幅統一を確認。FAIL なら再対応、PASS なら優先度 2 へ。
 
-#### 優先度 2: Step 11-A クローズ
+#### 優先度 2: BE: full test 実行
 
-全 PASS なら残 4 件 issue を `pending-review/` → `resolved/` 移動。progress.md の 11-A を「完了」に更新。
+ユーザーが VS Code タスク「BE: full test」を実行 → PR #123 の影響で TestListProcessedReports 系 / dashboard handler 系 / tenant handler 系の整合性確認。FAIL があれば即対応。
 
-#### 優先度 3: issue #160 真因再分析
+#### 優先度 3: 6 件 issue resolved 移動 + Step 11-A クローズ
 
-`dev-journal/issues/open/160-...md` の「調査ポイント」セクションから着手:
-1. DataGrid 内部 scrollbar の可視性確認
-2. AppDataGrid Box ラッパーの `width: '100%'` の見直し（`auto` / `fit-content` 検証）
-3. MUI X v8 DataGrid の関連 props 調査
-4. 代替アーキテクチャ（responsive で列を間引く / カードビュー切替）
+`#157 / #158 / #160 / #162 / #164 / #166` を `resolved/` 移動。progress.md の Step 11-A 状態を「完了」に更新。
 
-#### 優先度 4: Step 11-B / 11-C 並列着手（#160 と並列）
+#### 優先度 4: issue #165 対応
 
-- 11-B: 横断テスト Go（cross_cutting_test.go / rate_limit_test.go）
-- 11-C: E2E Playwright（playwright.config.ts + flow1/flow2 テスト）
+マイレポートフィルタエリアの mobile レスポンシブ化（Stack direction xs:column → sm:row）。
+
+#### 優先度 5: Step 11-B / 11-C 着手
+
+11-B 横断テスト Go (cross_cutting_test.go / rate_limit_test.go) と 11-C E2E Playwright を並列着手判断。
 
 ### 学び・気づき
 
-#### DevTools 実測前に hardcoded 値を提案した過ち
+#### DevTools 計測対象の取り違え（最大の手戻り原因）
 
-minHeight の値（300 → 400 → 361）を肌感で提案 → ユーザー指摘で「filler 15px の見落とし」「centering slack の存在」を後追いで修正。**0 件 EmptyState 等のレイアウト寸法は最初に DevTools で実測してから値を決める**。
+実機計測で「Box (css-d9bexz) 726px = AppDataGrid Box ラッパー」と決めつけて PR #122 を実装 → マージ後 SMK-101 再 FAIL → 再計測で `<main>` 要素だったと判明 → PR #124 で外側の真因を修正。**DOM 階層を最初に確認してからクラス名を識別すべき。`MuiBox-root` は MUI で多用されるため、computed style だけでなく HTML タグ (`<main>` / `<div>`) と DOM 親子関係を必ず確認する**。
 
-#### MUI X v8 CSS 変数挙動を未検証で merge
+#### architect レポートが「テーブル構造を変える別解」に偏った
 
-PR #118 で `--DataGrid-overlayHeight: 'auto'` を提案 → 公式ドキュメントや実機で挙動を検証せず PR を merge → ユーザーが実機で「ぺちゃんこ」を観察してから fallback 挙動を確認。**MUI X v8 内部実装に依存する変更は事前に実機検証する**。
+architect 委譲時に「過去 PR が空振りした事実」を強調しすぎたため、案 B (columnVisibilityModel) / 案 C (カードビュー) など「テーブル内横スクロールは諦めて別解」に偏った提案が返ってきた。ユーザー指摘「画面全体としての幅は収まる、テーブル部分だけ横スクロール、これが本来要件」で軌道修正。**架空の代替案を増やす前に、本来の要件を再確認 + 実機計測で真因を実証する流れを優先する**。
 
-#### ユーザーの合理的判断を私が拾いきれず往復が増えた
+#### reviewer の見落としを codex がカバーした
 
-ユーザーから「リバートでよくない？」「git でリバートすれば検証なんて不要、戻るはず」「minHeight: 400 もおかしい」等の合理的判断が複数回あったが、私が「forward 修正で対応します」と試行錯誤を重ねて往復を増やした。**ユーザーの直感的判断は多くの場合正しい。投資判断時に Yes/No だけ確認して即実行すべき**。
+PR #123 の reviewer 内部レビューで DSH-014 を見落とし → 再レビューで指摘。さらに codex で UPSERT / regression テストの 2 段階指摘。**reviewer 単独では網羅性に限界がある。重要な変更（特に SQL や fixture 系）は codex にも投げて二段構えにする**（C 方針の正しさを再確認）。
 
-#### コードコメントへの過剰な issue 履歴注記
+#### 私の指示漏れ（PR #123 codex フィードバック）
 
-「issue #154 再々対応」のような履歴ラベルをコードコメントに追加した → ユーザー「（issue #154 再々対応）とか書かなくてよくないですか？」で指摘。**コードコメントは動作・意図・制約を書く。issue 番号はコミットメッセージや PR 本文で追える**。
+backend-developer への差し戻し指示で codex 前回コメントの「regression テスト追加」要求を拾い損ねた。**指摘対応を再委譲する際は、過去レビューコメント全文を読み直して要求を漏らさず転記する**。
 
-#### 正しい判断: 起票 vs 既存 issue 延長
+#### TenantStatusCards / MyReportCountCards の責務分割の限界
 
-BE: full test FAIL 検出時、新規 issue 起票を提案 → ユーザー「前回対応のissueが原因だから新規起票はしない」で軌道修正。**前回 PR の延長として fix が必要なら、新規起票より既存 issue の延長で扱う方が trail が綺麗**。
+ユーザー指摘「本来はカード表示はコンポーネント化して、ドメインによって表示するカードを変える作りならこんなこと起こらなかった」。MyReportCountCards / TenantStatusCards という別コンポーネント分割が今回の不整合の温床。MVP では現アーキテクチャ維持、Phase 2 以降のリファクタリングで「共通カードコンテナ + props で表示内容を差別化」する設計を検討（post-MVP）。
 
-#### 軽量フローの運用（レビュー飛ばし squash merge）
+#### dev-journal の同期更新を frontend-developer に明示する必要
 
-ユーザーが「レビュー飛ばしてマージしてもいいです」と判断した PR は、reviewer / codex を回さず squash merge で運用。**修正規模が小さく真因が明確な PR は軽量フローで OK。重要なのは判断者（ユーザー）の合意**。
+PR #125 で `55_ui_component/screens/dashboard.md` は更新したが `50_detail_design/screens/dashboard.md` の同種記述を漏らした。**設計書改訂を指示するときは、関連ファイルを grep で全件特定してから漏れなく指示する**。
 
 ### 意思決定ログ
 
-#### #154 minHeight: 361 採用（PR #120）
+#### #160 真因の最終確定（案 F'）
 
-- ユーザー観察「ボタン-フッター間に余白がない」(@minHeight: 400 で centering slack 38.5px)
-- 私の提案「auto-fit (PR #118)」→ MUI X v8 で機能せず
-- 採用: **計算済み最小値 361**（overlayWrapperInner と EmptyState の高さ一致、py-bottom 48px の自然余白）
-- hardcoded 値である事実は受け入れ（auto-fit の代替が現状ない）
+- 真因: AppLayout の `<Box component="main">` が flex item として `min-width: auto` で content 追従して膨張
+- 修正: AppLayout.tsx の sx に `minWidth: 0` 追加（PR #124）
+- PR #122（AppDataGrid Box の minWidth:0 + overflowX:auto）は内部スクロール発火の「最後の砦」として維持
+- 両 PR 揃って初めて mobile 横スクロールが発火する想定（実機検証は次セッション）
 
-#### PR #114 (#160) リバート
+#### #162 autoFocus 削除（案 A）採用
 
-- 期待効果（mobile 横スクロール発火）が実機で観測されない
-- デメリット（PC 4 画面で 442〜612px の右余白）が顕在化
-- 採用: **revert + 再 open**（issue #160 を未解決として `open/` に戻し調査メモ追加）
-- スマホ ellipsis 症状は再発する想定だが、現状の壊れた挙動より許容できる
+- 真因: autoFocus → FocusTrap → blur 連鎖で touched=true
+- 案 D（TransitionProps.onEntered + useRef）より案 A（autoFocus 削除）を採用
+- 理由: 最小変更、UX デメリット軽微（Approver の意識的操作で TextField を 1 クリックする手間は許容）、v8 transition タイミングのエッジケースリスクなし
 
-#### BE integration test 13 件 → 2 件 → 0 件の段階的修正
+#### #166 fixture 補完で別案（DO NOTHING + 補完 UPDATE）採用
 
-- PR #115 (testutil ルート漏れ) → 13 件 → 2 件
-- PR #116 (テストフィクスチャ整合性) → 2 件 → 0 件
-- 各 PR を独立した 1 ファイル変更にして責務を明確化
+- backend-developer 判断: seed.go 全 INSERT が `ON CONFLICT DO NOTHING` を一貫採用しているため、一貫性を保ちつつ INSERT 直後に WHERE 句付き UPDATE で冪等性確保
+- 推奨案（ON CONFLICT DO UPDATE）よりシンプルさより一貫性重視
 
-#### コミット履歴の forward 性 vs revert
+#### #164 TenantStatusCards Grid 3+2 採用
 
-- ユーザー「git でリバートすれば検証なんて不要」の指摘で `git revert b80c6c8` を採用
-- forward 修正（PR #118 を新コミットで上書き）よりも `git revert` の方が「何を戻したか」が明確
-- ただし dev-journal 設計書は 5652d17 の §AppDataGrid 部分だけ Edit で局所修正（git revert はコンフリクトリスク）
+- 真因: 他ロール 1/3 幅基準と整合せず、Admin だけ 1/5 幅で視覚的に細い
+- 修正: `md:2.4` → `md:4` で 3+2 の 2 行レイアウトに変更
+- カード数の差（5 vs 3）から来る幅不整合を、レイアウト変更で吸収（カード数を減らす案 / カード幅を変える案より自然）
 
 ### PR / コミット要約
 
-**expense-saas**（6 PR、全マージ済み）:
-- PR #115 (#158 testutil ルート登録漏れ、commit `0488e8e`) → master `08b6655`
-- PR #116 (#158 テストフィクスチャ整合性、commit `1fc833c`) → master `748e33f`
-- PR #117 (#154 minHeight 300 → 400、commit `a3a003d`) → master `95fe7f3`
-- PR #118 (#154 minHeight 削除 + overlay auto、commit `5850199`) → master `b80c6c8`【後で revert】
-- PR #119 (#160 4 画面 columnDef revert、commit `e8dc538`) → master `5a12d33`
-- PR #120 (#118 revert + minHeight 400 → 361、commit `00542df` + `7c84832`) → master `586523a`
+**expense-saas**（5 PR、全マージ済み）:
+- PR #121 (#162 autoFocus 削除、commits c402d65 / 51cac99) → master `3e81f077`
+- PR #122 (#160 AppDataGrid minWidth:0、commit 4722b35) → master `1d586e28`
+- PR #123 (#166 fixture + 期待値修正、commits a56362f / 22e3598 / cf48722 / 1aeb73d / d449603) → master `b4c577c7`
+- PR #124 (#160 AppLayout minWidth:0、commit a8175305) → master `1b3c587c`
+- PR #125 (#164 TenantStatusCards Grid 3+2、commit adcad2f) → master `80962cd8`
 
 **dev-journal**（master、複数コミット）:
-- `44cf410` docs: minHeight 300 → 400 規定
-- `5652d17` docs: minHeight → overlay auto-fit 規定（後で更新）
-- `f1e0803` chore: PR #114 revert + #160 open 化 + 設計書更新
-- `deeea7e` docs: #160 調査メモ追加
-- `57c957c` docs: §AppDataGrid を minHeight: 361 規定に更新
-- `ff5f43b` chore: #154 を resolved に移動 + progress.md 更新
+- 大量の設計書改訂・issue 更新・progress.md 更新を実施
+- 直近: `9884c5d` docs(dashboard): #164 再対応の設計書同期更新
 
 **root-project**: 変更なし
 
 **ai-dev-framework**: 変更なし
-
-## 前回セッション
-
-前回セッション（2026-04-30 10:46 〜 2026-05-01 00:10、第2/第3バッチで #157/#158 マージ + 第3バッチ #154/#160/#162/#164 マージ）の詳細は `dev-journal/archives/session-logs/2026-04-30.md` を参照。

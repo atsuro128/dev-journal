@@ -136,3 +136,69 @@ MVP（ロール別整合性、ポートフォリオデモ印象に直結）
 ## 解決日
 
 2026-04-30
+
+---
+
+## 再対応（2026-05-03、DevTools 視覚確認 FAIL）
+
+### 状態
+
+**FAIL**（PR #112 マージ後の DevTools 視覚確認で、Admin だけ 1 行目に 5 カードが詰まっており他ロールと幅が揃っていないことを確認、再 open）
+
+### 観察した挙動
+
+| ロール | 1 行目構成 | 2 行目以降 |
+|---|---|---|
+| **Member** | MyReportCountCards 3 枚（1/3 幅、`sm: 4`） | （なし、MonthlySummary は表示しない） |
+| **Approver** | MyReportCountCards 3 枚（1/3 幅、`sm: 4`） | 承認待ち 1 枚 + MonthlySummary + RecentReportList |
+| **Accounting** | MyReportCountCards 3 枚（1/3 幅、`sm: 4`） | 支払待ち 1 枚 + MonthlySummary + RecentReportList |
+| **Admin** | **TenantStatusCards 5 枚（1/5 幅、`md: 2.4`）** ← 他ロールと幅が違う | メンバー数 1 枚 + MonthlySummary |
+
+`TenantStatusCards.tsx` L33-34 の規定:
+> PC 幅（md ≥ 900px）で 5 等分（12 / 5 = 2.4）、タブレット幅（sm）で 2 列折返し、モバイルで縦積み。
+
+つまり「Admin の 5 カードを 1 行に並べる」という設計が PR #112 で意図的に採用されたが、**他ロールが 1/3 幅基準で構築されているため、Admin だけ視覚的に細く見える不整合**が残っていた。
+
+### 真因
+
+PR #112 の修正方針（Admin の 5 カードを 1 行 5 等分にする）は、**他ロールの 1/3 幅基準と整合しない**設計判断だった。カード数の差（5 vs 3）から来る幅の差を、他ロールに合わせて折返しで解消するのが正しい方向。
+
+### 採用方針
+
+`TenantStatusCards.tsx` の Grid size を `md: 2.4` → `md: 4` に変更し、**5 カードを 3 + 2 の 2 行レイアウト** に変更する。
+
+```tsx
+// 修正前
+<Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
+
+// 修正後
+<Grid size={{ xs: 12, sm: 6, md: 4 }}>
+```
+
+これで Admin 表示時：
+
+| ロール | 1 行目 | 2 行目 | 3 行目 |
+|---|---|---|---|
+| **Admin** | TenantStatus 3 枚（1/3 幅） | TenantStatus 残 2 枚 + 空き 1 枚分 | メンバー数 1 枚（1/3 幅） |
+
+他ロールと **カード幅が完全に揃う**（全画面で 1/3 幅基準）。
+
+### 修正対象ファイル
+
+| ファイル | 変更内容 |
+|---|---|
+| `expense-saas/frontend/src/components/dashboard/TenantStatusCards.tsx` | Grid size を `md: 2.4` → `md: 4` に変更（5 箇所） + コメント L33-34 の規定更新 |
+| `expense-saas/frontend/src/components/dashboard/__tests__/TenantStatusCards.test.tsx`（または相当） | レイアウト関連テストがあれば 5 等分 → 3 等分に期待値更新 |
+| `dev-journal/deliverables/docs/55_ui_component/screens/dashboard.md` §TenantStatusCards | レイアウト規定を「PC 幅で 5 等分」から「PC 幅で 3 等分（3 + 2 の 2 行）」に変更 |
+
+### 設計コメント（参考）
+
+ユーザーから「本来はカード表示はコンポーネント化して、ドメインによって表示するカードを変える作りならこんなこと起こらなかった」との指摘あり。MyReportCountCards / TenantStatusCards という別コンポーネント分割が今回の不整合の温床になった。MVP 内では現アーキテクチャを維持するが、Phase 2 以降のリファクタリングで「共通カードコンテナ + props で表示内容を差別化」する設計を検討する余地がある（post-MVP）。
+
+### SMK 再検証要項目
+
+DevTools 視覚確認（既存 SMK では未カバー）: PC 幅で Admin / Member / Approver / Accounting のダッシュボードを順に開き、カード幅が揃っていること
+
+### 起票日（再 open）
+
+2026-05-03
