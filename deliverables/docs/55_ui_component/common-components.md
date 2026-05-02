@@ -19,6 +19,7 @@
 - 配置: `components/layout/AppLayout.tsx`
 - 責務: 認証済み画面の共通レイアウト（AppHeader + AppSidebar + メインコンテンツ領域）を提供する。`screens.md` &sect;4.1 に定義されたレイアウト構成を実装する。メインコンテンツ領域は `Container maxWidth="lg"` で制約する（`ui-guidelines.md` &sect;3 準拠）
 - 使用箇所: SCR-DASH-001, SCR-RPT-001, SCR-RPT-002, SCR-RPT-003, SCR-RPT-004, SCR-WFL-001, SCR-WFL-002, SCR-ADM-001, SCR-ADM-002
+- **`<main>` の `minWidth: 0` 必須規定**（issue #160 案 F' 対応）: `<Box component="main">` の sx には `minWidth: 0` を**必ず**指定すること。理由: `<main>` は親の `display: flex` コンテナ（`<Box sx={{ display: 'flex' }}`）の flex item として `flexGrow: 1` で配置されるが、CSS Flexbox の仕様上 flex item の `min-width` 既定値は `auto`（コンテンツ幅に追従）である。この既定値により `<main>` がコンテンツ幅（実測 726px）に追従して膨張し、内側の `AppDataGrid` が持つ `minWidth: 0` + `overflowX: 'auto'` が発火しない状態になっていた（実測値: DataGrid 内側 Box=726px / viewport=375px）。`minWidth: 0` を追加することで `<main>` を viewport 幅に収め、内側 `AppDataGrid` の横スクロールが正常に機能するようになる。実装例: `sx={{ flexGrow: 1, minWidth: 0, width: { md: \`calc(100% - ${DRAWER_WIDTH}px)\` } }}`。関連: §AppDataGrid の `minWidth: 0` 規定と組み合わせて初めて mobile 横スクロールが発火する（AppLayout 側の修正なしでは AppDataGrid の minWidth: 0 は単独では効果ゼロ）。PC（md 以上）では既存の `width: calc(100% - 240px)` が維持されるため既存挙動は変わらない。
 
 ```typescript
 interface AppLayoutProps {
