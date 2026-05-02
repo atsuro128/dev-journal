@@ -400,7 +400,7 @@ GET /api/auth/me
 | `55_ui_component/screens/dashboard.md §DashboardPage` | コンポーネント単体テスト | ロール別セクション表示分岐の検証（Member / Approver / Accounting / Admin の4パターン）。Admin 表示時の Grid 配置検証（tenant-status-cards 配下の 5 リンク枚数・admin-member-count-cards 配下のメンバー数カード存在）を含む |
 | `55_ui_component/screens/dashboard.md §CountCard` | コンポーネント単体テスト | label / count / href / accentColor / unit の各 Props 組み合わせ描画検証 |
 | `55_ui_component/screens/dashboard.md §MyReportCountCards` | コンポーネント単体テスト | 3枚のカウントカード描画、件数 0 のケース、カードクリック遷移先の検証 |
-| `55_ui_component/screens/dashboard.md §TenantStatusCards` | コンポーネント単体テスト | 5枚のステータスカード描画、アクセントカラーの適用、カードクリック遷移先の検証。Admin 表示時の Grid 配置検証（5 等分 md:2.4、Grid container の data-testid="tenant-status-cards" 存在）を含む |
+| `55_ui_component/screens/dashboard.md §TenantStatusCards` | コンポーネント単体テスト | 5枚のステータスカード描画、アクセントカラーの適用、カードクリック遷移先の検証。Admin 表示時の Grid 配置検証（3 等分 md:4 で 3+2 の 2 行レイアウト、Grid container の data-testid="tenant-status-cards" 存在）を含む |
 | `55_ui_component/screens/dashboard.md §MonthlySummaryTable` | コンポーネント単体テスト | 3ヶ月分データ表示、金額フォーマット（¥ + カンマ区切り）、年月表示形式（YYYY年M月）、降順ソートの検証、セクション見出し「月別支出サマリー」の描画（0 件時も見出し表示） |
 | `55_ui_component/screens/dashboard.md §RecentReportList` | コンポーネント単体テスト | 5件表示、0件時の EmptyState 表示、「すべてのレポートを見る」リンクの検証、セクション見出し「最近のレポート」の描画（0 件時も見出し表示）、列見出し（タイトル / 期間 / 金額 / ステータス）の描画 |
 | `55_ui_component/screens/dashboard.md §RecentReportRow` | コンポーネント単体テスト | タイトルリンク遷移先、対象期間フォーマット、金額フォーマット、StatusChip 描画の検証 |
