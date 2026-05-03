@@ -492,3 +492,28 @@ SMK-101（テナント全レポート一覧 + 他 4 画面の横スクロール 
 ### 関連 PR
 
 PR (TBD) — frontend-developer が `step11/issue-160-mincolumn-width` ブランチで作成中
+
+---
+
+## 再々検証結果（2026-05-03 SMK-101 ローカル動作確認）
+
+### 状態
+
+**部分 PASS / 1 列のみ FAIL**
+
+PR #126 マージ + docker rebuild 後の SMK-101 再検証で以下を確認:
+
+- マイレポート / テナント全レポート / 承認待ち / 支払待ち の合計金額・ステータス系: **PASS**
+- 処理済みレポート一覧の現在ステータス列: **FAIL（ヘッダ「現在ステータス」が `…` で省略表示）**
+
+### 真因
+
+PR #126 で current_status の minWidth を 130 → 140 に引き上げたが、ヘッダ「現在ステータス」(6 文字) + ソートアイコン + cell padding で実測 140 では不足。
+
+### 採用方針
+
+current_status minWidth を 170 に再引き上げ（合計金額・ステータス系の引き上げ値と同じ思想で安全マージン込み）。設計書 common-components.md §AppDataGrid 標準値も同期更新。
+
+### 関連 PR
+
+PR (TBD) — frontend-developer が `step11/issue-160-processed-current-status` ブランチで作成中
