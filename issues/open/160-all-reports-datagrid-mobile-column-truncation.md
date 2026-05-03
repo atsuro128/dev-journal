@@ -441,3 +441,54 @@ SMK-101（テナント全レポート一覧 + 他 4 画面の横スクロール 
 ### 起票日（案 F' 追加修正）
 
 2026-05-03
+
+---
+
+## 再検証結果（2026-05-03 ローカル動作確認）
+
+### 状態
+
+**FAIL（真因切り分け：横スクロール発火 OK / column minWidth 不足）**
+
+### 実機で判明した状況
+
+ユーザー実機検証（5 画面 mobile 375px）で以下を確認:
+- ✅ DataGrid container 内の横スクロール発火は **PASS**（PR #122 + #124 が機能）
+- ❌ 各列の `minWidth` が小さすぎるため、横スクロールしても合計金額・ステータス系が ellipsis で見切れたまま読めない
+
+5 画面の FAIL 列:
+
+| 画面 | FAIL 列 |
+|---|---|
+| マイレポート (ReportListTable, Member) | 合計金額 / ステータス |
+| テナント全レポート (AllReportsTable, Admin) | 合計金額 / ステータス |
+| 支払待ち (PaymentListPage, Accounting) | 合計金額 |
+| 承認待ち (ApprovalListPage, Approver) | 合計金額 |
+| 処理済みレポート (ProcessedReportsPage, Approver) | 合計金額 / 処理結果 / 現在ステータス |
+
+### 真因確定
+
+各画面 columnDef の `minWidth` が以下の通り小さすぎたため、横スクロール発火後も内容が読めなかった:
+- 合計金額: 100px（`¥9,999,999` 9文字 + cell padding には不足）
+- ステータス (StatusChip): 100px（4文字「承認済み/支払済み」+ Chip padding + cell padding には不足）
+- 処理結果 (Processed): 100px（同上）
+- 現在ステータス (Processed): 130px（ヘッダ「現在ステータス」6文字 + ソートアイコン込みで不足）
+
+### 採用方針
+
+5 画面 columnDef の `minWidth` を実用値に引き上げ:
+
+| 列 | 現状 | 新値 | 根拠 |
+|---|---|---|---|
+| 合計金額 | 100 | 130 | `¥9,999,999`（9文字）+ ヘッダ + ソートアイコン |
+| ステータス | 100 | 120 | StatusChip 4文字 + Chip padding + cell padding |
+| 処理結果 (Processed) | 100 | 120 | Chip + ヘッダ「処理結果」(4文字) |
+| 現在ステータス (Processed) | 130 | 140 | StatusChip + ヘッダ「現在ステータス」(6文字) + ソートアイコン |
+
+横スクロール発火は維持（PR #122 / #124 の修正は剥がさない）。
+
+### SMK 再検証要項目: SMK-101（5 画面 mobile 375px ellipsis 解消確認）
+
+### 関連 PR
+
+PR (TBD) — frontend-developer が `step11/issue-160-mincolumn-width` ブランチで作成中
