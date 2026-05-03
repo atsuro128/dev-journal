@@ -125,7 +125,7 @@ interface CountCardProps {
 ### MyReportCountCards
 
 - 配置: `components/dashboard/MyReportCountCards.tsx`
-- 責務: 自分のレポートのステータス別件数カード群（下書き・提出中・却下）をグリッドで配置する。Member / Approver / Accounting ロールで表示する
+- 責務: 自分のレポートのステータス別件数カード群（下書き・提出中・却下）を返却する。Member / Approver / Accounting ロールで表示する。コンポーネントは Grid item 群（Fragment）を返却し、外側の Grid container は呼び出し元（DashboardPage）が単一 Grid + spacing={2} で包む。これにより Approver/Accounting では承認待ち・支払待ちの ActionCards 1 枚と同じ Grid 内に配置でき、4 枚カード（MyReportCountCards 3 枚 + ActionCards 1 枚）が単一 Grid container 内で 3+1 折り返し構造を実現する
 - 対応セクション: `50_detail_design/screens/dashboard.md` &sect;4.1
 
 ```typescript
