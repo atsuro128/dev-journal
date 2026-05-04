@@ -202,3 +202,20 @@ DevTools 視覚確認（既存 SMK では未カバー）: PC 幅で Admin / Memb
 ### 起票日（再 open）
 
 2026-05-03
+
+---
+
+## 解決確認（2026-05-04）
+
+### 状態
+**解決（resolved 移動）**
+
+### 解決根拠
+PR #125（TenantStatusCards Grid size を `md: 2.4` → `md: 4` に変更し 5 カードを 3 + 2 の 2 行レイアウトにして他ロール 1/3 幅と統一）マージ後、2026-05-03 に DevTools 視覚再確認を実施して PASS。Admin / Member / Approver / Accounting のカード幅が揃っていることを確認。
+
+### 関連 PR / コミット
+- PR #112（commit `bc208b0`）: TenantStatusCards を 5 等分（md: 2.4）に変更（初回対応）→ 視覚 FAIL で再対応
+- PR #125: TenantStatusCards Grid を md: 4（3 + 2 レイアウト）に変更（再対応・解決）
+
+### 備考
+Admin のカード 5 枚を 5 等分 1 行にする方針（PR #112）は他ロールの 1/3 幅基準と整合しなかったため、折返し 2 行レイアウトに変更して解決。

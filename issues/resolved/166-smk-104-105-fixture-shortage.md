@@ -130,3 +130,19 @@ ReportApprovedByApprover2ID = "cccccccc-9999-9999-9999-000000000099"
 ## MVP 区分
 
 MVP（Step 11-A クローズ条件）
+
+---
+
+## 解決確認（2026-05-04）
+
+### 状態
+**解決（resolved 移動）**
+
+### 解決根拠
+PR #123（seed.go へのフィクスチャ追加 + 補完 UPDATE + regression テスト追加）マージ後、2026-05-02 セッションで SMK-104（テナント分離）/ SMK-105（同テナント内別 Approver 処理分非表示）の両項目が PASS。
+
+### 関連 PR / コミット
+- PR #123: seed.go にテナント B Approver / テナント A 第二 Approver / Approver2 処理済みレポートを追加（master マージ済み）
+
+### 備考
+SMK-103〜105 設計時にフィクスチャとの整合確認が漏れていたことが原因。本 issue の対応で Step 11-A SMK-104/105 実施可能になった。

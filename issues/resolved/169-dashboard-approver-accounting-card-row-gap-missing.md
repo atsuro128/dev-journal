@@ -105,7 +105,32 @@ MVP（ロール別整合性、ポートフォリオデモ印象に直結）
 ---
 
 ## 解決内容
-<!-- pending-review へ移動する前に記入 -->
+
+**採用方針**: 案 A（Box mt: 2 ラップ）は構造的不整合のため revert、Fragment 化 + 単一 Grid 統合で再対応
+
+**実装**:
+- PR #128 (Box mt: 2): Approver / Accounting の ActionCards を `<Box sx={{ mt: 2 }}>` でラップして余白を追加（初回対応）
+- PR #129: PR #128 を revert（MyReportCountCards + ActionCards を別 Grid container に置いた構造が根本的に不整合のため）
+- PR #130: MyReportCountCards を Fragment 化し、DashboardPage の単一 Grid container に 4 枚（マイ 3 枚 + Action 1 枚）を統合して 3 + 1 折り返しレイアウトに変更 → Approver / Accounting DevTools 視覚 PASS（2026-05-04）
 
 ## 解決日
-<!-- YYYY-MM-DD -->
+
+2026-05-04
+
+---
+
+## 解決確認（2026-05-04）
+
+### 状態
+**解決（resolved 移動）**
+
+### 解決根拠
+PR #128（Box mt: 2）は構造的不整合のため PR #129 でリバート。PR #130 で MyReportCountCards Fragment 化 + DashboardPage 単一 Grid 統合（4 枚 3 + 1 折り返し）で再対応し、Approver / Accounting の DevTools 視覚確認を 2026-05-04 に実施して PASS。
+
+### 関連 PR / コミット
+- PR #128: Box mt: 2 追加（初回対応）
+- PR #129: PR #128 リバート
+- PR #130: MyReportCountCards Fragment 化 + 単一 Grid 統合（master マージ済み）
+
+### 備考
+Grid container 間の縦方向 spacing は container 間では効かず、単一 container への統合で正しく解決された。

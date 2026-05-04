@@ -516,4 +516,25 @@ current_status minWidth を 170 に再引き上げ（合計金額・ステータ
 
 ### 関連 PR
 
-PR (TBD) — frontend-developer が `step11/issue-160-processed-current-status` ブランチで作成中
+PR #131 — current_status minWidth 140 → 170 に再引き上げ（master マージ済み）
+
+---
+
+## 解決確認（2026-05-04）
+
+### 状態
+**解決（resolved 移動）**
+
+### 解決根拠
+PR #126（5 画面 columnDef の合計金額・ステータス系 minWidth 引き上げ）マージ後に 4 画面は PASS。処理済みレポートの current_status 列が 140 では不足のため PR #131（140 → 170）を追加マージ。2026-05-04 に SMK-101 全 5 画面の横スクロール / 列内容判別性が PASS。
+
+### 関連 PR / コミット
+- PR #107: 初回 AppDataGrid overflowX 対応（commits `be95274` / `fb09eb4`）
+- PR #114: flex 削除試行（commit `664efbc`）→ PR #119 でリバート
+- PR #122: AppDataGrid Box に `minWidth: 0` 追加
+- PR #124: AppLayout `<main>` に `minWidth: 0` 追加（案 F'）
+- PR #126: 5 画面 columnDef minWidth 引き上げ（合計金額 100→130 / ステータス 100→120 等）
+- PR #131: ProcessedReportsPage current_status minWidth 140→170（master マージ済み）
+
+### 備考
+真因解明に複数セッションを要した経緯あり（CSS Flexbox `min-width: auto` の罠 → AppDataGrid Box → `<main>` 要素の連鎖）。

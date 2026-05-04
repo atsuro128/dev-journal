@@ -198,3 +198,20 @@ SMK-011 #4 / SMK-096 #2
 ### 起票日（再 open）
 
 2026-05-02
+
+---
+
+## 解決確認（2026-05-04）
+
+### 状態
+**解決（resolved 移動）**
+
+### 解決根拠
+PR #121（ConfirmDialog.tsx の TextField `autoFocus` 削除）マージ後、2026-05-02 セッションで SMK-011 #4 / SMK-096 #2 の両項目が PASS。autoFocus → FocusTrap blur 連鎖によるエラー初期表示が根本解消された。
+
+### 関連 PR / コミット
+- PR #113（commit `dceec05`）: disabled 条件を `loading` のみに絞る（初回対応）
+- PR #121: TextField `autoFocus` 削除（再対応・根本解決）
+
+### 備考
+jsdom 環境では autoFocus → FocusTrap の blur 連鎖が再現しないため、自動テストで初回対応時に検出漏れが発生した。

@@ -101,7 +101,30 @@ MVP（視覚的整合性、ポートフォリオデモ印象に直結）
 ---
 
 ## 解決内容
-<!-- pending-review へ移動する前に記入 -->
+
+**採用方針**: 案 A（borderTop 常時付与 + default 時 borderColor transparent）
+
+**実装** (PR #127):
+- `CountCard.tsx` L36-41: `accentColor !== 'default'` による borderTop 条件付き付与を廃止し、`borderTop: '3px solid'` を常時指定、`borderColor` を `accentColor !== 'default' ? \`\${accentColor}.main\` : 'transparent'` に変更
+- Member / Admin ダッシュボードのカード高さ統一を確認
+
+**設計書改訂**: `55_ui_component/screens/dashboard.md` §CountCard に borderTop 常時付与と default 時 transparent の規定を追記
 
 ## 解決日
-<!-- YYYY-MM-DD -->
+
+2026-05-04
+
+---
+
+## 解決確認（2026-05-04）
+
+### 状態
+**解決（resolved 移動）**
+
+### 解決根拠
+PR #127（CountCard 常時 borderTop transparent 化）マージ後、Member / Admin ダッシュボードの DevTools 視覚確認を 2026-05-04 に実施し PASS。default カード（下書き・提出中・全レポート）と accent カード（却下等）の高さが揃っていることを確認。
+
+### 関連 PR / コミット
+- PR #127: CountCard borderTop 常時付与 + default 時 transparent 化（master マージ済み）
+
+### 備考
