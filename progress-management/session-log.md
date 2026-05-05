@@ -1,57 +1,65 @@
 # 引き継ぎメモ
 
-## セッション: 2026-05-03 09:30 〜 2026-05-04 12:30
+## セッション: 2026-05-04 〜 2026-05-05 13:00
 
 ### ゴール
 
-- Step 11-A クローズ向けに前セッションマージ済 PR 群の SMK 視覚再検証
-- SMK FAIL 残項目への追加対応（PR 起票 → マージ）
-- 全 PASS 確認後に 6 + 2 件 issue を resolved 移動 + Step 11-A 完了化
+- 11-A ticket の残 FAIL 項目を実機再検証 + PASS 反映（前セッションの優先度 1 を遂行）
+- resolved 済 issue 紐付け FAIL を全件再検証して 11-A の SMK 結果テーブルを完成させる
 
 ### 作業ログ
 
-#### 1. SMK-101 全 5 画面 mobile 検証 → 5 画面とも FAIL 報告
+#### 1. 残 FAIL 12 件の実機再検証 → 全件 PASS（前半フェーズ）
 
-ユーザー実機検証で「マイレポート / 全レポート / 承認待ち / 支払待ち / 処理済み 5 画面で合計金額・ステータス系列が ellipsis 見切れ」を確認。PR #122/#124 で横スクロール発火は OK だが column の minWidth が小さすぎる真因が確定。
+resolved 済 issue 紐付け FAIL を ticket §4 順序で連続再検証。Member ロール中心。各 SMK ごとに smoke_check.md から手順抜粋 → ユーザー実機操作 → 結果報告 → 即 ticket 更新。
 
-#### 2. PR #126: 5 画面 columnDef minWidth 引き上げ
+- SMK-007（#088 / PR #47）: `/settings/tenant` 直接アクセス → トースト + ダッシュボードリダイレクト
+- SMK-013（#116 / PR #74）: テーブル領域のみスケルトン化、ヘッダー・フィルタ表示保持
+- SMK-021（#118 / PR #76）: 金額 0 入力 → ブラー時に赤字エラー表示
+- SMK-022（#119,#120 / PR #75）: 開始日/終了日 blur 双方で両フィールドエラー同時表示
+- SMK-023（#121 / PR #82）: Console 経由 fetch で `amount: 100.5` 送信 → 422 + details 配列確認（手順は smoke_check.md の DevTools 改変方式から「Network タブで POST を Copy as fetch → Console でボディ書き換え」に置換。Chrome の `allow pasting` 警告も含めユーザー操作を案内）
+- SMK-028（#124 / PR #70）: `docker compose stop api` で SPA 操作 → 日本語トースト「サーバーとの通信に失敗しました。」表示確認。最初 `docker compose down`（全停止）でやって fetch pending 保留現象を踏んだため、`docker compose stop api`（API のみ停止）で再検証して PASS 化
+- SMK-033 / SMK-035（#131 / PR #85）: 拡張子・サイズエラーが MUI Alert で文言整合表示
+- SMK-036（#134 / PR #84）: MIME 偽装 → BE 422 → トースト「JPEG, PNG, PDF のみアップロード可能です」表示。「クライアント検出=MUI Alert / サーバー検出=トースト」の表示形式不一致は #131 設計上の分担（意図通り）として PASS 扱い
+- SMK-050（#139 / PR #92）: Member 主要画面巡回でラベル・ボタン全日本語、status 英語露出なし
+- SMK-061（#137 / PR #92, #126/#131）: iPhone SE 375px でハンバーガー収納・テーブル単体横スクロール
+- SMK-062（#138 / PR #89）: 期間フィールド縦並びで 375px 内収まり
 
-合計金額 100→130 / ステータス 100→120 / 処理結果 100→120 / 現在ステータス 130→140 を 5 画面に反映。frontend-developer (worktree) で実装、reviewer + codex 共に APPROVE 相当、マージ完了 (`3a3719e`)。
+→ サマリ更新 PASS 45→57 / FAIL 16→4 + コミット (`e5c2652`)。
 
-#### 3. PR #127: CountCard 高さズレ解消（#168）
+#### 2. 「Docker: 起動 + ブラウザ」タスクの故障判明
 
-Member / Admin ダッシュボードで「default カードと色付き border カードの高さに 3px ズレ」を発見 → issue #168 起票 + PR #127。`borderTop: '3px solid'` 常時 + `borderColor: 'transparent' or accentColor.main` の修正。reviewer + codex APPROVE、マージ完了 (`df3e8bf`)。
+ユーザーから .vscode/launch.json の「Docker: 起動 + ブラウザ」が壊れていてフルリセットしか使えないと報告。本セッションのゴール外なので修正は別タスクへ送り、実検証中は `cd expense-saas && docker compose up -d --build` 等のコマンド直打ちで凌ぐ運用に切替。
 
-#### 4. issue 対応のチケット押し上げ運用誤りを発見 → 5 件削除
+#### 3. 残 FAIL 4 件は対応 issue が実は resolved 済と判明 → 再検証可能と判断
 
-ユーザー指摘で `progress-management/tickets/step11/11-A-issue-XXX.md` 5 件が workflow.md 上根拠のない「issue → ticket 押し上げ」だったと確認。workflow.md PR フロー §0 の「チケットは work-breakdown 由来」+ §2「`/implement {チケット or issue}`」より、issue 対応は issue ファイル自体を渡すのが正規。5 件削除コミット (`a958551`)。
+ticket・progress.md 上「起票のみ」と記載されていた #141/#143/#159/#161 がすべて `issues/resolved/` にあることを発見。「未着手 issue の実装着手」ではなく「実機再検証で PASS 化可能」に方針変更。
 
-#### 5. PR #128 (#169) → 構造誤り発覚 → revert (#129) → 真の修正 PR #130
+- SMK-051（#141 / PR #95）: 日付論理 V5 で両フィールド発火 + フィールド別文言、未操作側の必須エラー先出し回避を確認
+- SMK-052（#143 / PR #96）: 新規追加モードの添付トースト発火 + リスト UI 編集モード同型を確認
+- SMK-096（#159 / PR #109、PR #110 で #162 regression 解消済）: ダイアログ初期表示エラーなし・空押下/blur で赤字エラー表示・却下実行
+- SMK-102（#161 / PR #106）: スマホ幅 MUI Card 適用、画面幅収まり
 
-ユーザー指摘「Approver/Accounting でカード行間がない」→ 私は「2 つの Grid container 間に Box mt:2」アプローチで PR #128 マージ → 視覚再確認で「Admin と異なる結果」と FAIL 報告。原因: MUI Grid v2 の負マージン (-8px) が Box mt:2 (16px) を相殺し実効ギャップ 8px、Admin の 16px と乖離。revert PR #129 → PR #130 で MyReportCountCards Fragment 化 + DashboardPage 単一 Grid 統合（4 枚 3+1 折り返し、Admin TenantStatusCards と同構造）に再実装。reviewer 1 回目で test_cases.md / screens.md の同期更新指摘 → ops-writer で対応 → 再レビュー PASS、codex APPROVE、マージ完了 (`010edb7`)。
+→ サマリ PASS 57→61 / **FAIL 0** / SKIP 1 / 未実施 0、**Step 11-A 完全クローズ可能**。
 
-#### 6. PR #131 (#160 追加対応): 処理済み 現在ステータス 140→170
+#### 4. SMK-052 副次発見: 明細二重登録バグ → #170 起票（blocker）
 
-SMK-101 再検証で「処理済みレポート一覧の現在ステータス列のみ FAIL」と判明（ヘッダ「現在ステータス」6 文字 + ソートアイコンで 140 不足）。PR #131 で 140→170 に再引き上げ + 設計書同期。reviewer + codex APPROVE、マージ完了 (`cde1118`)。
+ユーザー追加報告: 新規レポート作成中の明細追加モーダルで「保存して続けて追加」ボタン押下すると同じ明細が 2 件登録される。100% 再現、トーストは 1 回だがリロード後も DB に 2 件残存（FE onSuccess は 1 回だが API リクエストが 2 回飛んでいる推定）。データ整合性 blocker として #170 起票。
 
-#### 7. ローカルテストポリシーの memory 修正
+#### 5. 発行 issue テーブルの表記更新（軽作業）
 
-「テストは PR → CI で確認」の memory ルール前提が、GitHub Actions 無料枠制限と CI 未稼働状態で破綻していると指摘されメモリ全面書き直し。**「指揮役の /test ローカル実行が正規ゲート、GitHub Actions は補助扱い」**に変更。
+ticket 発行 issue テーブルで「起票のみ」表記の 8 件（#140/#144/#152/#153/#154/#155/#156/#158）が実は resolved 済みと判明。再検証は副次観点で SMK 主観点に影響しないため不要だが、表記の正確性のため「解決済み」に更新（PR 番号は本セッションでは付与せず、別タスクで完全更新する選択肢を残す）。#157/#160/#161 の表記漏れも合わせて修正。
 
-#### 8. SMK 全 PASS → 8 件 issue resolved 移動 + Step 11-A 完了
-
-ユーザー実機で SMK-101（5 画面）/ #168（Member/Admin カード高さ）/ #169（Approver/Accounting 行間）の 3 件全 PASS 確認。8 件 issue (#157/#158/#160/#162/#164/#166/#168/#169) を `resolved/` 移動 + 各ファイルに「解決確認」セクション追記 + progress.md の Step 11-A を「進行中」→「完了 (2026-05-04)」に更新 (`88d8ce8`)。
-
-#### 9. 11-A ticket SMK 結果テーブル更新の運用誤り → 是正
-
-ユーザー指摘「resolved にあるからといって動作確認した証明にならない。FAIL のままのものはちゃんと動作確認する必要がある」。SMK-101 のみ本セッションで実機 PASS 確認したため ticket に PASS 反映 (`85c96f7`)。残 FAIL は次セッション以降の運用とする旨を活動ログに明記。
+→ コミット (`cdc48b2`)。
 
 ### 未完了
 
-- 11-A ticket の他 FAIL 項目（SMK-013/021/022/023/028/033/035/036/050/051/052/061/062/096/102 等）の実機再検証 + PASS 反映
-- issue #165（マイレポートフィルタエリア mobile）対応
+- **#170 対応**（明細二重登録、blocker）— 次セッション最優先
+- issue #165（マイレポートフィルタ mobile）対応
+- 「Docker: 起動 + ブラウザ」タスク故障の issue 起票
 - Step 11-B 横断テスト Go / Step 11-C E2E Playwright 着手判断
-- dev-journal master の push（4 commit ahead）
+- dev-journal master の push（前セッション 4 + 本セッション 2 で 6 commit ahead 想定）
+- 発行 issue テーブルの PR 番号付与（本セッションで「解決済み」だけ書いた 9 件分）
 
 ### ブロッカー
 
@@ -59,98 +67,78 @@ SMK-101 再検証で「処理済みレポート一覧の現在ステータス列
 
 ### 次にやること
 
-#### 優先度 1: 11-A ticket の残 FAIL 項目の再検証 + 反映
+#### 優先度 1: #170 対応（明細二重登録 blocker）
 
-resolved 済 issue に対応する FAIL 項目から順に実機再検証。優先候補:
-- SMK-061 / SMK-062（#137 / #138 関連）
-- SMK-096（#159 関連、#162 と統合された可能性あり）
-- SMK-013 / SMK-021〜SMK-036（多数の resolved/ 済 issue）
-- SMK-050〜SMK-052（日本語 UI）
+データ整合性に関わる blocker。issue ファイル（`issues/open/170-save-and-add-another-creates-duplicate-item.md`）に推定原因と修正方針案を記載済み。`/issue 対応` で着手し、`step11/170-...` ブランチで PR フロー。
 
-各項目について実機再検証 → PASS なら ticket 更新、FAIL なら追加対応 issue 起票。
+#### 優先度 2: Step 11-B / 11-C 着手判断
 
-#### 優先度 2: issue #165 対応
+11-A 完全クローズしたので 11-B（横断テスト Go）と 11-C（E2E Playwright）が次の主軸。並列可。本格着手前に work-breakdown を再確認して見積もり。
 
-マイレポートフィルタエリアの mobile レスポンシブ化（Stack direction xs:column → sm:row）。
+#### 優先度 3: issue #165 対応
 
-#### 優先度 3: Step 11-B / 11-C 着手判断
+マイレポートフィルタの mobile レスポンシブ化（Stack direction xs:column → sm:row）。小規模 PR。
 
-11-B 横断テスト Go (cross_cutting_test.go / rate_limit_test.go) と 11-C E2E Playwright を並列着手 or 順次。本格着手前に work-breakdown を再確認して見積もり。
+#### 優先度 4: dev-journal の push
 
-#### 優先度 4: dev-journal master の push
+複数コミット ahead。`git -C /root-project/dev-journal push` でリモート反映。
 
-4 commit ahead 状態。`git -C /root-project/dev-journal push` でリモート反映。
+#### 優先度 5（軽作業・任意）: 「Docker: 起動 + ブラウザ」タスク修正の issue 起票
+
+本セッション内では起票せず先送りした保留事項。
 
 ### 学び・気づき
 
-#### 「資料整理 = 動作確認」と誤認した
+#### smoke_check.md の手順は実装ベースで陳腐化することがある
 
-8 件 issue を resolved 移動した直後、11-A ticket の SMK 結果テーブルも自動的に PASS 更新する案を出したが、ユーザー指摘「resolved だからといって動作確認した証明にならない」で撤回。**resolved 移動と SMK PASS は独立した判断軸**。SMK PASS は実機再検証 + 個別記録が必要。
+SMK-023 で smoke_check.md は「DevTools でフォーム改変」を指示していたが、実際には「Network タブで Copy as fetch → Console で書き換え」の方が確実かつ過去の検証実績と一致した（issue #121 にも fetch 直接送信の記述あり）。**SMK 手順は smoke_check.md を正本としつつ、実装の挙動と過去の判定根拠を確認して必要なら手順を読み替える**判断が必要。
 
-#### memory の前提が時代遅れだった
+#### 「全停止」と「API のみ停止」は別物
 
-「PR → CI で確認」の memory ルールは GitHub Actions が動いている前提だったが、CI が未稼働の現状ではこのルールに従うと品質ゲートが消失する。**memory も陳腐化する**。前提条件が変わったら都度見直し。CI が動いていないことを確認したのはユーザー指摘で、私は最初気づいていなかった。
+SMK-028 を `docker compose down`（全停止）で実施したら FE も停止して fetch が pending 保留になり、過去 ticket 備考と同じ「DevTools Offline 検証不能」状態に陥った。`docker compose stop api`（API のみ停止）で Vite プロキシが生きた状態にして再検証で PASS。**「ネットワーク断絶」のテストは FE 経路を残したまま BE のみ落とす**のが正しい再現条件。
 
-#### Box mt:2 の負マージン相殺を見落とした
+#### progress 記載と実態の乖離はリスクシグナル
 
-PR #128 で「Box mt:2 で行間 16px 確保」と判断したが、内側 Grid container の `spacing={2}` が負マージン (-8px) を持つため実効ギャップは 8px だった。**MUI Grid v2 の spacing 仕組みを理解せずに視覚的近似で判断した**。視覚 16px ≠ box-model 上の mt 値。MUI コンポーネントの内部実装を踏まえた構造設計が必要。
+ticket・progress 上「起票のみ」だった issue が実は全件 resolved 済みだった。状態反映の運用が形骸化していた疑い。本セッションでは表記更新（再検証不要分は「解決済み」とだけ）まで実施したが、**完了後の状態反映は機械的にやらないと乖離が膨らむ**。
 
-#### ユーザー指摘の「他のドメイン」の意図を読み違えた
+#### サマリ件数の一括書き換えで桁ズレを防ぐ
 
-「Approver/Accounting でカード同士の余白がない」というユーザー指摘を、私は「2 つの Grid container 間の余白」と解釈したが、ユーザーは「4 枚カードを単一 Grid 内で 3+1 折り返し（Admin と同構造）」を意図していた。**ユーザーの「同じ」という言葉を浅く受け取らない**。Admin の構造を正しく観察して同じものを作る視点が必要。
-
-#### issue → ticket 押し上げ運用は workflow に存在しない
-
-過去セッションで `progress-management/tickets/step11/11-A-issue-XXX.md` を起票していたが、workflow.md には「issue → ticket 化」のルールはない（チケットは work-breakdown 由来のみ）。重複情報の生成だった。**workflow.md にないことを勝手に運用しない**。
-
-#### vitest 並列実行は CPU 競合で逆に遅い
-
-PR #126/#127 のテストを並列起動したが CPU が両者に分散し各々 26 分かかった（合計約 52 分）。順次なら各 15-20 分（合計 30-40 分）で済んだ可能性。**並列が常に速いとは限らない**。CPU 集中タスクは順次の方が良い場合もある。
+12 件 + 4 件で計 16 件の PASS 反映だったが、サマリ件数（PASS / FAIL）の更新を 1 コミットでまとめてやるか段階的にやるかで管理コストが変わる。本セッションは 2 段階に分けてサマリ更新したので結果整合は取れたが、機械的な集計を ticket に組み込んだ方が良い余地あり（post-MVP）。
 
 ### 意思決定ログ
 
-#### #169 真の修正の構造判断
+#### SMK-023 の判定スコープを縮小
 
-- 案 A: DashboardPage で単一 Grid 化（コンポーネント維持しつつ MyReportCountCards を Fragment 化）→ 採用
-- 案 B: MyReportCountCards に extraCard props 追加 → 不採用
-- 案 C: 共通カード行コンテナ post-MVP 前倒し → 不採用
-- 採用理由: コンポーネント維持の制約下でも構造的整合性（Admin TenantStatusCards と同パターン）を優先
+- 案 A1（採用）: 確認スコープを「BE が details 配列を返すこと」に限定し、Network タブで目視確認 → details 含まれていれば PASS
+- 案 A2（不採用）: smoke_check.md の期待結果（FE field-level UI 表示）まで満たすことを要求
+- 採用理由: PR #82 は BE の details 配列対応のみで、FE field-level UI 表示は post-MVP 扱い。過去 FAIL の根拠（details 配列なし・メッセージ汎用）が解消されていれば SMK の主観点は満たすと判断。ticket 備考に観点縮小を明記。
 
-#### case A1 vs A2
+#### SMK-036 の表示形式不一致を「意図通り」と判定
 
-- A1: ApproverActionCards / AccountingActionCards をコンポーネント抽出せずインライン → 採用
-- A2: 抽出 → 不採用
-- 理由: 4 枚目は単一 CountCard でロジックなし、抽出する意義が薄い。MVP の過剰設計回避
+- クライアント検出（拡張子・サイズ）= MUI Alert / サーバー検出（MIME 偽装）= トースト という形式不一致を発見
+- issue #131 本文に「Alert インライン vs Snackbar トースト」の論点があり、クライアント検出は MUI Alert・サーバー検出は API エラー一般経路（トースト）という設計上の分担になっている
+- ユーザー判断「起票不要、PASS 扱い」で確定。UX 一貫性 issue は post-MVP の余地として記録のみ。
 
-#### memory feedback_no_local_test_run.md の改訂方針
+#### 「起票のみ」表記の 9 件を「解決済み」だけ書く（PR 番号付与せず）
 
-- 旧: 「テストフルスイートは CI で回す。サブエージェントにローカル実行させない」
-- 新: 「サブエージェントにフルテスト走らせない。指揮役の /test ローカル実行が正規ゲート（GitHub Actions は無料枠制限で補助扱い）」
-- 理由: GitHub Actions 無料枠の制約とユーザーの方針（ポートフォリオ用に課金しない）
+- 案 A（採用）: 表記更新だけ実施（「解決済み」とだけ書く、PR 番号確認なし）
+- 案 B（不採用）: PR 番号も含めて完全更新
+- 採用理由: 本セッションのスコープは 11-A クローズで、表記の完全更新は脱線。次タスクで一括整理する選択肢を残す。
 
-#### 11-A ticket の FAIL 反映方針
+#### #170 は本セッション内で対応せず次セッション送り
 
-- 案 A: resolved 済 issue 対応 SMK を全件 PASS 反映 → 不採用（ユーザー指摘で撤回）
-- 案 B+C: 本セッション実機再検証分のみ PASS（SMK-101）+ 残は次セッション以降の TODO → 採用
-- 理由: SMK PASS 判定は実機動作確認が前提、resolved 状態とは独立
+- データ整合性 blocker だが、本セッションは 11-A クローズが主目的。スコープ拡大を避け issue 起票のみ。
 
 ### PR / コミット要約
 
-**expense-saas**（マージ済み 6 PR + revert 1）:
-- PR #126 (#160 5 画面 minWidth 引き上げ) → master `3a3719e`
-- PR #127 (#168 CountCard transparent border) → master `df3e8bf`
-- PR #128 (#169 Box mt:2、後に revert) → master `6a23937`
-- PR #129 (PR #128 revert) → master `07558ee`
-- PR #130 (#169 単一 Grid 統合) → master `010edb7`
-- PR #131 (#160 追加対応 現在ステータス 140→170) → master `cde1118`
+**expense-saas**: マージ済み PR なし（本セッションは ticket・issue 操作のみ）
 
-**dev-journal**（4 commit ahead、push 未実施）:
-- `d32c7eb` docs(issues): #169 起票
-- `7ec1445` docs(dashboard): #169 真の修正に伴う設計書・テスト仕様書の同期更新
-- `f3b9190` docs(reports): #160 再々検証 FAIL の真因記録 + 現在ステータス 140→170
-- `88d8ce8` docs(progress): Step 11-A クローズ — 8 件 issue resolved 移動 + progress.md 更新
-- `85c96f7` docs(11-A): SMK-101 PASS 反映
+**dev-journal**（前セッション 4 commit ahead + 本セッション 2 commit、計 6 commit ahead）:
+- 前セッション分 4 件: `d32c7eb` / `7ec1445` / `f3b9190` / `88d8ce8` / `85c96f7`（5 件）
+- 本セッション分 2 件:
+  - `e5c2652` docs(11-A): resolved 済 issue 紐付け FAIL 12 件を実機再検証 → PASS 反映
+  - `cdc48b2` docs(11-A): 残 FAIL 4 件再検証 PASS で 11-A 完全クローズ + #170 起票
 
-**root-project**: memory 1 件更新（feedback_no_local_test_run.md 全面書き直し + MEMORY.md インデックス）
+**root-project**: 変更なし
 
 **ai-dev-framework**: 変更なし
