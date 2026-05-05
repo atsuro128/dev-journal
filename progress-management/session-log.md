@@ -1,65 +1,83 @@
 # 引き継ぎメモ
 
-## セッション: 2026-05-04 〜 2026-05-05 13:00
+## セッション: 2026-05-05 13:00 〜 2026-05-06 08:55
 
 ### ゴール
 
-- 11-A ticket の残 FAIL 項目を実機再検証 + PASS 反映（前セッションの優先度 1 を遂行）
-- resolved 済 issue 紐付け FAIL を全件再検証して 11-A の SMK 結果テーブルを完成させる
+- issue #170（明細二重登録 blocker）の対応 — 前セッションの優先度 1
+- 続けて issue #171（認証フォーム autocomplete）+ issue #165（フィルタレイアウト）対応 — 中規模 issue 連続消化
 
 ### 作業ログ
 
-#### 1. 残 FAIL 12 件の実機再検証 → 全件 PASS（前半フェーズ）
+本セッションは 6 PR をマージし、3 issue を resolved 化。本体・dev-journal・進捗管理を整合させて完了。
 
-resolved 済 issue 紐付け FAIL を ticket §4 順序で連続再検証。Member ロール中心。各 SMK ごとに smoke_check.md から手順抜粋 → ユーザー実機操作 → 結果報告 → 即 ticket 更新。
+#### 1. issue #170: 「保存して続けて追加」明細二重登録 blocker（PR #132）
 
-- SMK-007（#088 / PR #47）: `/settings/tenant` 直接アクセス → トースト + ダッシュボードリダイレクト
-- SMK-013（#116 / PR #74）: テーブル領域のみスケルトン化、ヘッダー・フィルタ表示保持
-- SMK-021（#118 / PR #76）: 金額 0 入力 → ブラー時に赤字エラー表示
-- SMK-022（#119,#120 / PR #75）: 開始日/終了日 blur 双方で両フィールドエラー同時表示
-- SMK-023（#121 / PR #82）: Console 経由 fetch で `amount: 100.5` 送信 → 422 + details 配列確認（手順は smoke_check.md の DevTools 改変方式から「Network タブで POST を Copy as fetch → Console でボディ書き換え」に置換。Chrome の `allow pasting` 警告も含めユーザー操作を案内）
-- SMK-028（#124 / PR #70）: `docker compose stop api` で SPA 操作 → 日本語トースト「サーバーとの通信に失敗しました。」表示確認。最初 `docker compose down`（全停止）でやって fetch pending 保留現象を踏んだため、`docker compose stop api`（API のみ停止）で再検証して PASS 化
-- SMK-033 / SMK-035（#131 / PR #85）: 拡張子・サイズエラーが MUI Alert で文言整合表示
-- SMK-036（#134 / PR #84）: MIME 偽装 → BE 422 → トースト「JPEG, PNG, PDF のみアップロード可能です」表示。「クライアント検出=MUI Alert / サーバー検出=トースト」の表示形式不一致は #131 設計上の分担（意図通り）として PASS 扱い
-- SMK-050（#139 / PR #92）: Member 主要画面巡回でラベル・ボタン全日本語、status 英語露出なし
-- SMK-061（#137 / PR #92, #126/#131）: iPhone SE 375px でハンバーガー収納・テーブル単体横スクロール
-- SMK-062（#138 / PR #89）: 期間フィールド縦並びで 375px 内収まり
+- **原因特定**: issue #115 blocker 2 対応コミット（`a83a87d`）で「明細作成 POST」を `ReportDetailPage`（親）から `ItemSlidePanel`（子）に移管した際、親側の `handleItemSaveAndContinue` 内の `createItem.mutate` 呼び出しを削除し忘れ + 子の `handleSaveAndContinue` の `onItemSaveAndContinue` 優先呼び出し分岐が残ったため、mode='add' の「保存して続けて追加」で **POST が 2 回**発火していた
+- **修正方針 A 採用**: 親 `handleItemSaveAndContinue` 削除 / `onItemSaveAndContinue` prop 削除 / 子 `handleSaveAndContinue` を `onSaveAndContinueProp()` 一本化 / `formKey` インクリメントを親 `onSaveAndContinue` コールバックに移植
+- **codex 指摘で回帰テスト強化**: 初回テスト（ItemSlidePanel 単体マウント）は旧バグの親子配線を再現できず実質的な回帰防止になっていなかった → ReportDetailPage 全体マウントの結合テストに置換（ITM-FE-109 / ITM-FE-110）。旧実装に戻して FAIL → 新実装で PASS の再現確認も実施
+- 手動動作確認 PASS（添付なし / 添付あり / リロード後の DB 整合性まで確認）
 
-→ サマリ更新 PASS 45→57 / FAIL 16→4 + コミット (`e5c2652`)。
+#### 2. issue #171: 認証フォーム autocomplete 属性欠落（PR #133）
 
-#### 2. 「Docker: 起動 + ブラウザ」タスクの故障判明
+- ユーザー報告（Edge でメール欄に保存済み候補が出ない）から起票
+- 4 認証フォーム（Login / Signup / PasswordResetRequest / PasswordResetForm）に `autoComplete` 属性を追加
+- 単体テスト + test_cases/auth.md AUTH-FE-077〜083 を採番
 
-ユーザーから .vscode/launch.json の「Docker: 起動 + ブラウザ」が壊れていてフルリセットしか使えないと報告。本セッションのゴール外なので修正は別タスクへ送り、実検証中は `cd expense-saas && docker compose up -d --build` 等のコマンド直打ちで凌ぐ運用に切替。
+#### 3. issue #171 追加対応: LoginForm input type 修正（PR #134）
 
-#### 3. 残 FAIL 4 件は対応 issue が実は resolved 済と判明 → 再検証可能と判断
+- PR #133 マージ後の手動確認で **Edge でメール欄をクリックしても候補ドロップダウンが出ない**ことが判明
+- 原因調査:
+  - 当初「Chromium の By Design」と推測したが誤り。WebSearch + Edge 公式ドキュメントを確認し標準仕様としてはメール欄でも候補が出るのが正と訂正
+  - GitHub.com のログインフォームを参照すると `type="text" autocomplete="username"` の組み合わせを採用
+  - `type="email"` と `autoComplete="username"` のオートフィル経路衝突が原因と特定（type=email が連絡先帳メアド候補経路に流れ、パスワードマネージャー候補表示が抑制される）
+- LoginForm のメール欄を `type="text"` + `inputMode="email"` + `autoComplete="username"` に変更
+- AppTextField の `inputProps` が `slotProps.htmlInput` にマージされる仕組みを利用して `inputMode` を input に伝搬
+- Edge で手動確認 PASS（メアド候補表示・自動入力・ログイン成功）
 
-ticket・progress.md 上「起票のみ」と記載されていた #141/#143/#159/#161 がすべて `issues/resolved/` にあることを発見。「未着手 issue の実装着手」ではなく「実機再検証で PASS 化可能」に方針変更。
+#### 4. issue #165: レポート一覧フィルタレイアウト（PR #135 / #136 / #137）
 
-- SMK-051（#141 / PR #95）: 日付論理 V5 で両フィールド発火 + フィールド別文言、未操作側の必須エラー先出し回避を確認
-- SMK-052（#143 / PR #96）: 新規追加モードの添付トースト発火 + リスト UI 編集モード同型を確認
-- SMK-096（#159 / PR #109、PR #110 で #162 regression 解消済）: ダイアログ初期表示エラーなし・空押下/blur で赤字エラー表示・却下実行
-- SMK-102（#161 / PR #106）: スマホ幅 MUI Card 適用、画面幅収まり
+##### 経緯（再フォーカス）
 
-→ サマリ PASS 57→61 / **FAIL 0** / SKIP 1 / 未実施 0、**Step 11-A 完全クローズ可能**。
+- 起票時の「フィルタが画面外に溢れる」現象は #160 修正の副次効果で解消済みだった（ユーザー指摘で発覚）
+- ただしコード上は flex row 固定で、マイレポートは 375px で省略 / 全レポートは PC で過剰幅 / 画面間レイアウト不整合という別問題があった
+- スコープを「マイレポート + 全レポート（必須）、承認待ち系は touch しない（A 案）」に確定して進行
 
-#### 4. SMK-052 副次発見: 明細二重登録バグ → #170 起票（blocker）
+##### PR #135（主対応）
 
-ユーザー追加報告: 新規レポート作成中の明細追加モーダルで「保存して続けて追加」ボタン押下すると同じ明細が 2 件登録される。100% 再現、トーストは 1 回だがリロード後も DB に 2 件残存（FE onSuccess は 1 回だが API リクエストが 2 回飛んでいる推定）。データ整合性 blocker として #170 起票。
+- マイレポート: フィルタ Box を `flexWrap: 'wrap'` + 各要素 width 指定（status: 140 / date: 170）
+- 全レポート (`AllReportsFilterBar`): `<div>` → `<Box flex flexWrap>` に変更 + width 指定（status: 140 / date: 170 / submitter: 200）
+- AppDatePicker: `fullWidth` を Props 化（デフォルト true で後方互換）+ `sx` Props 追加
+- AppSelect: `sx` Props 追加
+- テスト追加: ADT-008/009, RPT-FE-117, TNT-FE-054
+- codex 初回 REQUEST CHANGES（テストセレクタ / 二重 alert 表示 / テスト品質 3 件）→ 追加対応で APPROVE 相当に
 
-#### 5. 発行 issue テーブルの表記更新（軽作業）
+##### PR #136（改行位置調整）
 
-ticket 発行 issue テーブルで「起票のみ」表記の 8 件（#140/#144/#152/#153/#154/#155/#156/#158）が実は resolved 済みと判明。再検証は副次観点で SMK 主観点に影響しないため不要だが、表記の正確性のため「解決済み」に更新（PR 番号は本セッションでは付与せず、別タスクで完全更新する選択肢を残す）。#157/#160/#161 の表記漏れも合わせて修正。
+- 手動確認で 375px の改行が「ステータス + 開始日 / 終了日」と意味的に割れていた問題を発見
+- 開始日・終了日を内側 Box でラップしてセット化、日付 width 170 → 160 に縮小
+- 結果: 375px で「ステータス / 開始日 + 終了日」「ステータス / 開始日 + 終了日 / 申請者」の意味単位改行に
 
-→ コミット (`cdc48b2`)。
+##### PR #137（デグレ修正）
+
+- 手動確認でフィルタバー下とテーブル上の余白が消えていることを発見
+- PR #135 で `<div>` → `<Box flex>` 化した際に最外側 Box の `mb: 2` 指定を漏らしたデグレ
+- AllReportsFilterBar に `mb: 2` 追加（マイレポートと統一）
+
+#### 5. dev-journal 整合作業
+
+- issue ファイル 3 件を resolved 移動 + 解決ログ追記
+- progress.md の #165 / #170 / #171 を resolved 化
+- test_cases/items.md (ITM-FE-109/110) / auth.md (AUTH-FE-077〜083) / reports.md (RPT-FE-117) / tenant.md (TNT-FE-054) 追記
+- screens/admin-all-reports.md / report-list.md にフィルタレイアウト規定追記
+- 設計書から `issue #165` 参照削除（reviewer 指摘 + 既存方針 commit `2d3bc8a` に従う）
+- dev-journal master を 3 コミット push 済み
 
 ### 未完了
 
-- **#170 対応**（明細二重登録、blocker）— 次セッション最優先
-- issue #165（マイレポートフィルタ mobile）対応
-- 「Docker: 起動 + ブラウザ」タスク故障の issue 起票
-- Step 11-B 横断テスト Go / Step 11-C E2E Playwright 着手判断
-- dev-journal master の push（前セッション 4 + 本セッション 2 で 6 commit ahead 想定）
-- 発行 issue テーブルの PR 番号付与（本セッションで「解決済み」だけ書いた 9 件分）
+- Step 11-B 横断テスト Go / Step 11-C E2E Playwright 着手判断（前セッションから持ち越し）
+- 「Docker: 起動 + ブラウザ」タスク故障の issue 起票（前セッションから持ち越し）
+- 発行 issue テーブルの PR 番号付与（前セッションで「解決済み」だけ書いた 9 件分）
 
 ### ブロッカー
 
@@ -67,77 +85,87 @@ ticket 発行 issue テーブルで「起票のみ」表記の 8 件（#140/#144
 
 ### 次にやること
 
-#### 優先度 1: #170 対応（明細二重登録 blocker）
+#### 優先度 1: Step 11-B / 11-C 着手判断
 
-データ整合性に関わる blocker。issue ファイル（`issues/open/170-save-and-add-another-creates-duplicate-item.md`）に推定原因と修正方針案を記載済み。`/issue 対応` で着手し、`step11/170-...` ブランチで PR フロー。
+11-A 完全クローズ + open blocker 全消化済み。次の主軸は 11-B（横断テスト Go: cross-cutting / RBAC / 非機能）と 11-C（E2E Playwright）。並列可。本格着手前に work-breakdown を再確認 + 見積もり。
 
-#### 優先度 2: Step 11-B / 11-C 着手判断
+#### 優先度 2: 「Docker: 起動 + ブラウザ」タスク故障の issue 起票
 
-11-A 完全クローズしたので 11-B（横断テスト Go）と 11-C（E2E Playwright）が次の主軸。並列可。本格着手前に work-breakdown を再確認して見積もり。
+前セッションから持ち越しの保留事項。軽作業（issue 起票のみ、対応は別途）。
 
-#### 優先度 3: issue #165 対応
+#### 優先度 3: post-MVP 余地として記録した課題の整理
 
-マイレポートフィルタの mobile レスポンシブ化（Stack direction xs:column → sm:row）。小規模 PR。
+本セッションで認識した「将来対応」事項:
+- 一覧 5 画面のレイアウトパターン完全統一（B 案、承認待ち系も flex-wrap 化）
+- AllReportsFilterBar.test.tsx の AppDatePicker モックが production にない `role="alert"` / `data-testid="date-error"` を出している点（codex 非ブロッキング指摘）
+- 明細フォーム送信経路の add/edit 非対称（POST 責務を ItemSlidePanel に集約する設計リファクタ）
+- ItemSlidePanel `handleSaveAndContinue` のラムダ直書き（他 handler の useCallback 化と非対称、reviewer info）
 
-#### 優先度 4: dev-journal の push
-
-複数コミット ahead。`git -C /root-project/dev-journal push` でリモート反映。
-
-#### 優先度 5（軽作業・任意）: 「Docker: 起動 + ブラウザ」タスク修正の issue 起票
-
-本セッション内では起票せず先送りした保留事項。
+これらは MVP スコープ外。post-MVP issue として一括起票するか、出てきた都度起票するかは指揮判断。
 
 ### 学び・気づき
 
-#### smoke_check.md の手順は実装ベースで陳腐化することがある
+#### 推測で「By Design」と断言してはいけない（#171 追加対応）
 
-SMK-023 で smoke_check.md は「DevTools でフォーム改変」を指示していたが、実際には「Network タブで Copy as fetch → Console で書き換え」の方が確実かつ過去の検証実績と一致した（issue #121 にも fetch 直接送信の記述あり）。**SMK 手順は smoke_check.md を正本としつつ、実装の挙動と過去の判定根拠を確認して必要なら手順を読み替える**判断が必要。
+PR #133 後の Edge 候補非表示問題で、当初「Chromium の `autocomplete="username"` はパスワード欄起点の UX に寄せている By Design」と推測で説明したが、ユーザーから「ちゃんと調査して」と指摘され WebSearch で公式仕様を確認した結果、実際は標準仕様としてはメール欄でも候補が出るのが正で、`type="email"` と `autoComplete="username"` の経路衝突が真因だった。**memory `feedback_accountability` (安易に PASS しない / 根本原因を特定してから動く) を再徹底**。推測を断言する前に公式情報源を当たる癖を付ける。
 
-#### 「全停止」と「API のみ停止」は別物
+#### 手動確認の観点を最初から定めて漏れを減らす
 
-SMK-028 を `docker compose down`（全停止）で実施したら FE も停止して fetch が pending 保留になり、過去 ticket 備考と同じ「DevTools Offline 検証不能」状態に陥った。`docker compose stop api`（API のみ停止）で Vite プロキシが生きた状態にして再検証で PASS。**「ネットワーク断絶」のテストは FE 経路を残したまま BE のみ落とす**のが正しい再現条件。
+issue #165 で PR #135 → 改行位置 (PR #136) → 余白 (PR #137) と 3 段階に分かれた。マージ前に「PC 幅 / 375px / エラー時 / 余白」をチェックリスト化して手動確認していれば、改行位置と余白問題を 1 PR で潰せた可能性。**レイアウト系 PR の手動確認チェックリスト**として定型化する余地あり（post-MVP）。
 
-#### progress 記載と実態の乖離はリスクシグナル
+#### スカッシュマージ後に本体 master へ未コミット変更が降りる現象
 
-ticket・progress 上「起票のみ」だった issue が実は全件 resolved 済みだった。状態反映の運用が形骸化していた疑い。本セッションでは表記更新（再検証不要分は「解決済み」とだけ）まで実施したが、**完了後の状態反映は機械的にやらないと乖離が膨らむ**。
+PR #133 / #135 / #136 マージ後に本体（worktree 外）の master に PR と同一内容の未コミット変更が出る現象が複数回発生。codex レビューが `/root-project/expense-saas/frontend/` で `npm test` を実行したことが副作用と推察。`git checkout -- .` で破棄して `git pull` で復旧する手順が確立。**codex には worktree パスを cwd に指定するよう環境設定を見直す余地あり**（次セッション以降）。
 
-#### サマリ件数の一括書き換えで桁ズレを防ぐ
+#### 内部レビュー warning は深掘りすべき
 
-12 件 + 4 件で計 16 件の PASS 反映だったが、サマリ件数（PASS / FAIL）の更新を 1 コミットでまとめてやるか段階的にやるかで管理コストが変わる。本セッションは 2 段階に分けてサマリ更新したので結果整合は取れたが、機械的な集計を ticket に組み込んだ方が良い余地あり（post-MVP）。
+PR #135 の reviewer warning 3 件のうち、W-1（テスト品質）は表面的に「PASS だから良い」と流しそうになったが、codex で blocker 化した（テストが旧バグ再現条件を満たしていない）。**reviewer の warning は形式論ではなく実質を確認する**。memory `feedback_critical_review_of_codex` の対象は codex だが、reviewer 指摘も同じ目で評価する必要あり。
 
 ### 意思決定ログ
 
-#### SMK-023 の判定スコープを縮小
+#### #170 修正方針: 案 A（親 handleItemSaveAndContinue 削除）採用
 
-- 案 A1（採用）: 確認スコープを「BE が details 配列を返すこと」に限定し、Network タブで目視確認 → details 含まれていれば PASS
-- 案 A2（不採用）: smoke_check.md の期待結果（FE field-level UI 表示）まで満たすことを要求
-- 採用理由: PR #82 は BE の details 配列対応のみで、FE field-level UI 表示は post-MVP 扱い。過去 FAIL の根拠（details 配列なし・メッセージ汎用）が解消されていれば SMK の主観点は満たすと判断。ticket 備考に観点縮小を明記。
+- 案 A（採用）: 親側の重複 mutate を削除して子で完結
+- 案 B（不採用）: ItemSlidePanel 側を撤回して親に POST を戻す → issue #115 順次アップロード機構が壊れる
+- 採用理由: blocker 2 対応で子に移管した設計を尊重し、「移管漏れ」だけを修正するのが最小変更
 
-#### SMK-036 の表示形式不一致を「意図通り」と判定
+#### #170 修正に伴って add/edit 経路統一はしない
 
-- クライアント検出（拡張子・サイズ）= MUI Alert / サーバー検出（MIME 偽装）= トースト という形式不一致を発見
-- issue #131 本文に「Alert インライン vs Snackbar トースト」の論点があり、クライアント検出は MUI Alert・サーバー検出は API エラー一般経路（トースト）という設計上の分担になっている
-- ユーザー判断「起票不要、PASS 扱い」で確定。UX 一貫性 issue は post-MVP の余地として記録のみ。
+- ユーザーから「保存する経路と保存して続けて追加経路の不整合 (add は子完結 / edit は親委譲)」を指摘された
+- スコープ判断: A（最小修正）採用、edit 経路統一は別 issue で post-MVP 扱い
+- 採用理由: blocker 修正と設計リファクタを 1 PR にすると review コストが跳ね上がる。issue #170 はデータ整合性 blocker の解消を最優先
 
-#### 「起票のみ」表記の 9 件を「解決済み」だけ書く（PR 番号付与せず）
+#### #171 修正方針: LoginForm のみ type=text に変更（Signup / PasswordReset は対象外）
 
-- 案 A（採用）: 表記更新だけ実施（「解決済み」とだけ書く、PR 番号確認なし）
-- 案 B（不採用）: PR 番号も含めて完全更新
-- 採用理由: 本セッションのスコープは 11-A クローズで、表記の完全更新は脱線。次タスクで一括整理する選択肢を残す。
+- Login: `autoComplete="username"` (パスワードマネージャー候補経路) → `type="email"` と衝突
+- Signup / PasswordReset: `autoComplete="email"` (連絡先候補経路) → `type="email"` と衝突しない
+- 採用理由: 経路衝突が起きるのは Login のみ。標準準拠（GitHub 等の慣例）と整合
 
-#### #170 は本セッション内で対応せず次セッション送り
+#### #165 修正方針: A 案（マイレポート + 全レポートのみ、承認待ち系 touch しない）
 
-- データ整合性 blocker だが、本セッションは 11-A クローズが主目的。スコープ拡大を避け issue 起票のみ。
+- 案 A（採用）: 必須対象（問題が発生している 2 画面 + 共通 AppDatePicker）のみ
+- 案 B（不採用）: 一覧 5 画面のレイアウトパターン完全統一
+- 採用理由: 承認待ち系は現状で適切幅。「揃えるべき」だが本 PR スコープを膨らませない判断
+
+#### #165 width 案: ステータス 140 / 日付 160 / 申請者 200
+
+- 当初 170 で進めたが、PR #136 で日付を 160 に縮小
+- 「コンパクト化 + ステータスとの視覚的バランス」をユーザー判断で確定
 
 ### PR / コミット要約
 
-**expense-saas**: マージ済み PR なし（本セッションは ticket・issue 操作のみ）
+**expense-saas**（マージ済み 6 PR）:
+- PR #132 (`6bcbc2b`): 明細二重登録解消 (#170)
+- PR #133 (`bdb9170`): 認証フォーム autoComplete 属性追加 (#171)
+- PR #134 (`b4f32da`): LoginForm メール欄 type=text + inputMode=email (#171 追加対応)
+- PR #135 (`6948f23`): フィルタレイアウト改善 (#165)
+- PR #136 (`b8ddc1b`): フィルタ改行位置調整 + 日付 width 縮小 (#165 追加対応)
+- PR #137 (`be2b4fe`): フィルタバー下マージン追加 (#165 PR #135 デグレ修正)
 
-**dev-journal**（前セッション 4 commit ahead + 本セッション 2 commit、計 6 commit ahead）:
-- 前セッション分 4 件: `d32c7eb` / `7ec1445` / `f3b9190` / `88d8ce8` / `85c96f7`（5 件）
-- 本セッション分 2 件:
-  - `e5c2652` docs(11-A): resolved 済 issue 紐付け FAIL 12 件を実機再検証 → PASS 反映
-  - `cdc48b2` docs(11-A): 残 FAIL 4 件再検証 PASS で 11-A 完全クローズ + #170 起票
+**dev-journal**（3 commit push 済み）:
+- `2e6c217` docs(issues): #170 #171 を resolved 移動 + 解決ログ + テスト設計書更新
+- `5dabf87` docs(171): LoginForm input type 修正の追加対応を resolved 反映 (PR #134)
+- `c7d7b1b` docs(165): フィルタレイアウト統一を resolved 反映 (PR #135/#136/#137)
 
 **root-project**: 変更なし
 
