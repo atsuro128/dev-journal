@@ -602,6 +602,19 @@ npx vitest run --reporter=verbose src/pages/reports/__tests__/Item* src/hooks/__
 - カテゴリ（AppSelect）の onBlur トリガ相当テストは本 PR のスコープ外（V5 方針によりカテゴリは保存時のみバリデーション。AppSelect 単体の onBlur 挙動は `reports.md` の `ASL-001` / `ASL-002` で引き続き保証する）。
 - 他フィールド（日付・摘要）の onBlur トリガ相当テストは本スコープ外（日付は AppDatePicker の ADT-004 / ADT-005 でコンポーネント側を、摘要はネイティブ MUI TextField の onBlur を使用するため、本テストの追加設計は不要）。必要になった時点で別途採番する。
 
+#### ReportDetailPage -- 「保存して続けて追加」二重 POST 回帰防止（issue #170）
+
+issue #170 のデータ整合性 blocker（「保存して続けて追加」押下時に同一明細が 2 件登録される）に対する回帰防止テスト。旧バグの構造は子（ItemSlidePanel.handleAddModeSubmit）と親（ReportDetailPage.handleItemSaveAndContinue）の両方が `createItem.mutate` を発火していたことに起因するため、**ReportDetailPage を経路に含めて検証する**ことで親子配線レベルでの再発を捕捉する（ItemSlidePanel 単体テストでは旧バグを再現できない点に注意）。
+
+| テストID | テストレベル | 対象コンポーネント | 対象 Props / Hook | 保証種別 | 対応要件ID | 対応設計ID | テスト関数名候補 | 入力（前提条件含む） | 期待結果 |
+|---|---|---|---|---|---|---|---|---|---|
+| ITM-FE-109 | 結合 | ReportDetailPage + ItemSlidePanel + ItemForm | useCreateItem, fetch | 正常系（データ整合性回帰） | ITM-F01 | 50_detail_design/screens/report-detail.md §6, 55_ui_component/screens/report-detail.md §ReportDetailPage | `does_not_double_post_when_save_and_add_clicked_without_attachments` | レポート（status='draft', isOwner=true）を `useReport` mock で返す。明細追加パネルを開き全フィールドに有効値入力後「保存して続けて追加」ボタンを押下する。添付ファイルなし | `POST /api/reports/:id/items` が **1 回のみ** 呼ばれる。成功後、明細追加モードでパネルが再オープンされ formKey インクリメントによりフォームがリセットされる |
+| ITM-FE-110 | 結合 | ReportDetailPage + ItemSlidePanel + ItemForm + AttachmentArea | useCreateItem, fetch | 正常系（データ整合性回帰、順次アップロード経路） | ITM-F01, ATT-F01 | 50_detail_design/screens/report-detail.md §6, 55_ui_component/screens/report-detail.md §ReportDetailPage | `does_not_double_post_when_save_and_add_clicked_with_attachments` | ITM-FE-109 と同様の前提に、保留中の添付ファイルを 1 件以上セットして「保存して続けて追加」ボタンを押下する | `POST /api/reports/:id/items` が **1 回のみ** 呼ばれる。続いて `POST /api/reports/:id/items/:itemId/attachments` が保留ファイル数だけ順次呼ばれる。成功後、明細追加モードでパネルが再オープンされ pendingFiles と formKey がリセットされる |
+
+**備考**:
+- 旧実装（issue #170 修正前）では子の `handleAddModeSubmit` 経路と親の `handleItemSaveAndContinue` 経路の双方から `createItem.mutate` が発火していた。本テストは **ReportDetailPage 全体をマウントすることで親子配線を含めて検証** する点が重要であり、ItemSlidePanel 単体マウントでは旧バグの再現性が担保されない。
+- 添付あり経路（ITM-FE-110）は `ATT-FE-081`（順次アップロード中の UI 状態）と観点が重複しないこと。本テストは「items が 1 回のみ」のデータ整合性検証であり、UI 状態は対象外。
+
 ---
 
 ### 12.4 テスト記述ガイド（旧 12.3）

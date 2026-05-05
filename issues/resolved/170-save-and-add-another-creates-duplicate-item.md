@@ -98,3 +98,34 @@ Step 10（機能実装）/ Step 11-A（ローカル動作確認）
 
 - SMK-052 副次発見（2026-05-05 再検証時）
 - 既存の SMK 観点には含まれていないため、Step 11-C の E2E 設計時に新規ケース追加を検討
+
+## 解決ログ
+
+### 解決日
+2026-05-05
+
+### PR
+- PR #132（マージコミット: `6bcbc2b`）
+- ブランチ: `step11/170-save-and-add-another-duplicate-item`
+
+### 原因
+issue #115 blocker 2 対応コミット（`a83a87d`）で「明細作成 POST」を `ReportDetailPage`（親）から `ItemSlidePanel`（子）に移管した際に、親側の `handleItemSaveAndContinue` 内の `createItem.mutate` 呼び出しを削除し忘れた + 子の `handleSaveAndContinue` 内に `onItemSaveAndContinue` 優先呼び出し分岐を残したため、mode='add' の「保存して続けて追加」で **POST が 2 回**発火していた。トーストは 1 回しか見えていなかった（`apiToast` と `toast` の重複）ため発覚が遅れ、SMK-052 の実機再検証で副次発見された。
+
+### 修正内容
+- `ReportDetailPage.handleItemSaveAndContinue` 関数を削除（2 回目 POST の発生源）
+- `<ItemSlidePanel onItemSaveAndContinue=...>` prop を削除
+- `ItemSlidePanel.handleSaveAndContinue` の `onItemSaveAndContinue` 分岐を削除し `onSaveAndContinueProp()` 一本化
+- `formKey` インクリメントを `ReportDetailPage` の `onSaveAndContinue` コールバックに移植（フォーム再マウント維持）
+- 回帰テスト追加（ITM-FE-109 / ITM-FE-110）: `ReportDetailPage` 全体をマウントし、添付なし / 添付ありの両経路で `POST /api/reports/:id/items` が 1 回のみ呼ばれることを検証
+- 旧バグ再現確認実施（旧実装に戻して FAIL → 新実装で PASS）
+- テスト設計書 `dev-journal/deliverables/docs/60_test/test_cases/items.md` §12.3 に新規 ID（ITM-FE-109/110）を追記
+
+### レビュー
+- 内部レビュー（reviewer エージェント）: PASS
+- codex レビュー: 初回 REQUEST CHANGES（回帰テストが旧バグ再現条件を満たしていない）→ 対応後 APPROVE 相当
+- ローカル CI: FE lint / tsc / test（786 tests）/ build すべて PASS
+
+### 完了条件の達成
+- ✅ 「保存して続けて追加」ボタン押下で 1 件のみ DB 登録される
+- ✅ 編集モードはボタン非表示（`ItemForm.tsx:336` `isAdd && onSaveAndContinue`）のため影響外
+- ✅ 回帰テスト追加（ReportDetailPage 経由の結合テスト 2 ケース）
