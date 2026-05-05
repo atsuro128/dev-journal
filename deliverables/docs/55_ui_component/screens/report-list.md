@@ -96,9 +96,10 @@ interface CreateReportButtonProps {
 
 ### ReportListFilter
 
-- 配置: `pages/reports/ReportListFilter.tsx`
+- 配置: `pages/reports/ReportListFilter.tsx`（実装上は ReportListPage に統合。別ファイル化は未実施）
 - 責務: ステータスフィルタ（ドロップダウン）と対象期間フィルタ（日付ピッカー x 2）を横並びに配置する。フィルタ変更時に onFilterChange コールバックを呼び出す。日付入力にはデバウンス処理を適用する
 - 対応セクション: `50_detail_design/screens/report-list.md` &sect;4
+- **フィルタエリア レイアウト規定**: フィルタコンテナは `<Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 2 }}>` で実装する。ステータス AppSelect には `sx={{ width: 140 }}`、開始日・終了日の TextField には `sx={{ width: 160 }}` を指定する。**開始日・終了日は内側 `<Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>` でラップしてセットとして扱う**（意味的グループ化 + 改行位置の制御）。これにより 375px 幅では「ステータス / 改行 / 開始日 + 終了日」のレイアウトとなり、PC では横並びとなる
 
 ```typescript
 interface ReportListFilterValues {

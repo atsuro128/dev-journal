@@ -74,6 +74,7 @@ Props 型定義は `common-components.md §PageTitle` を参照。
 - 配置: `pages/admin/AllReportsFilterBar.tsx`
 - 責務: テナント全レポート一覧のフィルタ条件（ステータス・期間・申請者）を管理する。フィルタ変更時に onFilterChange コールバックを呼び出し、親コンポーネントのフィルタ状態を更新する。開始日が終了日より後の場合はバリデーションエラーを表示する
 - 対応セクション: `50_detail_design/screens/admin-all-reports.md` &sect;5（フィルタエリア）
+- **フィルタエリア レイアウト規定**: フィルタコンテナは `<Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 2 }}>` で実装する。ステータス AppSelect には `sx={{ width: 140 }}`、開始日・終了日の AppDatePicker には `sx={{ width: 160 }}`、申請者 AppSelect には `sx={{ width: 200 }}` を指定する。全要素に `fullWidth={false}` を指定して AppSelect / AppDatePicker デフォルトの fullWidth=true を無効化する。**開始日・終了日は内側 `<Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>` でラップしてセットとして扱う**（意味的グループ化 + 改行位置の制御）。`flexWrap: 'wrap'` により PC では横並び（過剰幅解消）、mobile では「ステータス / 開始日+終了日 / 申請者」のように意味的単位で折り返される。`mb: 2` で下のテーブルとの余白を確保する
 
 ```typescript
 interface AllReportsFilterValues {

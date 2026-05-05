@@ -282,20 +282,22 @@ T2（approve）・T3（reject）・T4（pay）の統合テストは `workflow.md
 | 追記テスト（ReportInfoCard ラベル + 作成日フォーマット） | RPT-FE-108〜RPT-FE-109, RPT-FE-108-A〜RPT-FE-109-A | 4 |
 | 追記テスト（per_page UI セレクタ Page 結合） | RPT-FE-111〜RPT-FE-114 | 4 |
 | 追記テスト（中間ラッパー paginationFooter prop + 空状態フッター常時表示） | RPT-FE-115〜RPT-FE-116 | 2 |
-| AppDatePicker 共通 UI 単体テスト | ADT-001〜ADT-007 | 7 |
+| 追記テスト（マイレポートフィルタ flex-wrap レイアウト検証） | RPT-FE-117 | 1 |
+| 追記テスト（全レポートフィルタ flex-wrap レイアウト検証） | TNT-FE-054 | 1 |
+| AppDatePicker 共通 UI 単体テスト | ADT-001〜ADT-009 | 9 |
 | AppSelect 共通 UI 単体テスト | ASL-001〜ASL-002 | 2 |
 | PageSizeSelector 共通 UI 単体テスト | PSS-001〜PSS-005 | 5 |
 | AppPaginationFooter 共通 UI 単体テスト | APF-001〜APF-011 | 11 |
 | AppDataGrid 共通 UI 単体テスト（slots 合成挙動検証） | ADG-001〜ADG-004 | 4 |
-| **FE 合計** | **RPT-FE-001〜RPT-FE-116, RPT-FE-090-A, RPT-FE-108-A, RPT-FE-109-A, ADT-001〜ADT-007, ASL-001〜ASL-002, PSS-001〜PSS-005, APF-001〜APF-011, ADG-001〜ADG-004** | **148** |
+| **FE 合計** | **RPT-FE-001〜RPT-FE-117, RPT-FE-090-A, RPT-FE-108-A, RPT-FE-109-A, TNT-FE-054, ADT-001〜ADT-009, ASL-001〜ASL-002, PSS-001〜PSS-005, APF-001〜APF-011, ADG-001〜ADG-004** | **152** |
 
 ### 全体合計
 
 | 区分 | 件数 |
 |------|------|
 | BE テストケース | 91 |
-| FE テストケース | 148 |
-| **総合計** | **239** |
+| FE テストケース | 152 |
+| **総合計** | **243** |
 
 ---
 
