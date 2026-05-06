@@ -19,7 +19,8 @@
 ## 責務
 
 - テナント分離テスト（CRS-001〜CRS-016、CRS-010b 含む）: 全リソース x テナント越境 = 404 の検証。添付エンドポイントは download / preview の 2 本（CRS-010 / CRS-010b）に分かれる点に注意
-- RBAC マトリクステスト（CRS-021〜CRS-054）: 全エンドポイント x 全ロールの認可検証。機能別テストと重複するケースはクロス参照のみ（cross-cutting.md 実装ガイド参照）。添付 preview エンドポイント（`getAttachmentPreview`）は cross-cutting.md §2 RBAC マトリクスに記載済みで、`getAttachmentDownload` と同一の認可ルール（authz.md §10 準拠）
+- RBAC マトリクステスト（CRS-021〜CRS-054）: 全エンドポイント x 全ロールの認可検証。機能別テストと重複するケースはクロス参照のみ（cross-cutting.md 実装ガイド参照）
+  - 添付 preview エンドポイント（`getAttachmentPreview`）は cross-cutting.md §2 RBAC マトリクスに記載済みで、`getAttachmentDownload` と同一の認可ルール（authz.md §10 準拠）
 - 非機能テスト（CRS-076〜CRS-088）: レート制限・レスポンスタイムの検証（ローカル実行、E2E と同タイミング）
 - テナントBフィクスチャの投入（test_strategy.md §4.5 参照）
 - 含めない: E2E テスト（11-C で対応）、機能別テストの修正
@@ -57,7 +58,7 @@
 ## 更新履歴
 
 - 2026-04-12: 初版起票（commit `a2d642d`）
-- 2026-05-06: 上流成果物（cross-cutting.md / authz.md）の更新に追従
+- 2026-05-06: 上流成果物（cross-cutting.md / authz.md）の更新に追従（commit `a2a3b47`）
   - 添付エンドポイント分割（download / preview）に伴う CRS-010b 追加を反映
   - 添付 preview エンドポイントの RBAC マトリクス記載が cross-cutting.md §2 に存在することを確認しクロス参照のみとした（チケット側に追加実装ガイドの記述は不要）
   - 非機能テストの実行環境を「CI」→「ローカル実行（E2E と同タイミング）」に統一
