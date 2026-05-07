@@ -75,6 +75,14 @@
 | AUTH-021 | 単体 | domain | 正常系 | SEC-003 | security.md#2.1 | `TestVerifyRefreshToken_Valid` | 有効なリフレッシュトークン | エラーなし。`sub`（user_id）と `jti` が正しく返ること |
 | AUTH-022 | 単体 | domain | 異常系 | SEC-003 | security.md#2.1 | `TestVerifyRefreshToken_Expired` | 有効期限切れのリフレッシュトークン | `TOKEN_EXPIRED` エラー |
 | AUTH-023 | 単体 | domain | 異常系 | SEC-003 | security.md#2.1 | `TestVerifyRefreshToken_WrongTokenType` | `token_type=access` のアクセストークンをリフレッシュトークン検証に使用 | `INVALID_TOKEN` エラー |
+| AUTH-081 | 単体 | domain | セキュリティ | SEC-003 | security.md#2.1（クロックスキュー許容） | `TestVerifyAccessToken_IatFuture30s_Allowed` | iat = now + 30 秒のアクセストークン（leeway 60 秒以内） | エラーなし。claims が正しく返ること |
+| AUTH-082 | 単体 | domain | セキュリティ | SEC-003 | security.md#2.1（クロックスキュー許容） | `TestVerifyAccessToken_IatFuture61s_Rejected` | iat = now + 61 秒のアクセストークン（leeway 超過） | `INVALID_TOKEN` エラー |
+| AUTH-083 | 単体 | domain | セキュリティ | SEC-003 | security.md#2.1（クロックスキュー許容） | `TestVerifyAccessToken_ExpPast30s_Allowed` | exp = now - 30 秒のアクセストークン（leeway 60 秒以内） | エラーなし。claims が正しく返ること |
+| AUTH-084 | 単体 | domain | セキュリティ | SEC-003 | security.md#2.1（クロックスキュー許容） | `TestVerifyAccessToken_ExpPast61s_Rejected` | exp = now - 61 秒のアクセストークン（leeway 超過） | `TOKEN_EXPIRED` エラー |
+| AUTH-085 | 単体 | domain | セキュリティ | SEC-003 | security.md#2.1（クロックスキュー許容） | `TestVerifyRefreshToken_IatFuture30s_Allowed` | iat = now + 30 秒のリフレッシュトークン（leeway 60 秒以内） | エラーなし。claims が正しく返ること |
+| AUTH-086 | 単体 | domain | セキュリティ | SEC-003 | security.md#2.1（クロックスキュー許容） | `TestVerifyRefreshToken_ExpPast30s_Allowed` | exp = now - 30 秒のリフレッシュトークン（leeway 60 秒以内） | エラーなし。claims が正しく返ること |
+| AUTH-087 | 単体 | domain | セキュリティ | SEC-003 | security.md#2.1（クロックスキュー許容） | `TestVerifyRefreshToken_IatFuture61s_Rejected` | iat = now + 61 秒のリフレッシュトークン（leeway 超過） | `INVALID_TOKEN` エラー |
+| AUTH-088 | 単体 | domain | セキュリティ | SEC-003 | security.md#2.1（クロックスキュー許容） | `TestVerifyRefreshToken_ExpPast61s_Rejected` | exp = now - 61 秒のリフレッシュトークン（leeway 超過） | `TOKEN_EXPIRED` エラー |
 
 ---
 
