@@ -1,7 +1,7 @@
 # DevContainer セキュア構成テンプレート
 
 日付: 2026-03-25
-対象: `C:\Users\atsur\Desktop\root-project\.devcontainer`
+対象: `<Windows ホスト>\root-project\.devcontainer`
 目的: 現在採用している DevContainer の構成、制約、運用上の注意点を記録し、ローカル開発で採用すべきセキュリティ基準をテンプレート化する。
 
 ## 1. 設計要約

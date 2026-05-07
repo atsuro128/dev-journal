@@ -45,7 +45,7 @@
 - 初版 `f58f4a3`: 基盤（package.json/playwright.config.ts/setup.ts/tsconfig.json）+ flow1/2/3 テスト
 - 当初 devcontainer 内実行を想定して allowlist 追加を提案 → **判断ミス**: 設計書「ホスト側でローカル実行」を見落とし
 - 訂正: Windows ホスト側で `npm install` → `npx playwright install chromium` → `npx playwright test` の方針に変更
-- Windows ホスト構成判明: `C:\Users\atsur\Desktop\root-project\expense-saas` は WSL2 の `/root-project/expense-saas` と **9p で同一ディレクトリ共有**（git checkout が双方反映、ただし `node_modules` は git 管理外で別管理されるケースあり）
+- Windows ホスト構成判明: `<Windows ホスト>\root-project\expense-saas` は WSL2 の `/root-project/expense-saas` と **9p で同一ディレクトリ共有**（git checkout が双方反映、ただし `node_modules` は git 管理外で別管理されるケースあり）
 
 **1 回目 /test → 4 件 FAIL → `5d83e31`**:
 - CRS-055/066: ボタンテキスト「明細を追加」→「明細追加」（設計書照合 OK）
