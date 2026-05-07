@@ -137,3 +137,42 @@ ID 採番: `test_cases/auth.md` の既存最大 AUTH-080 → 新規 AUTH-081〜0
 - 関連 PR: #138（11-C E2E テスト、本 issue のブロック対象）
 - 設計参照: `security.md` §2.1（JWT 検証フロー）、`internal/domain/auth.go:166-186`（parseToken）
 - 真因解析: 本 session の trace.zip（test-results/flow2_test.ts-CRS-066-.../trace.zip）
+
+---
+
+## 追記: 2026-05-07 — 対応漏れ判明（再 open）
+
+### 経緯
+
+Step 11-D 横断レビュー（codex）で、PR #141 の対応が不完全であることが判明。当初の本 issue は `internal/domain/auth.go` の `JWTVerifier`（service 層 = AuthService の TokenVerifier）のみを対象としていたが、JWT は **2 系統の Verifier** を経由しており、middleware 経路は未修正だった。
+
+### 対応漏れの実態
+
+```text
+cmd/server/main.go:
+  L95  appjwt.NewVerifier(...)  → middleware.Auth 用    ❌ leeway 未適用
+  L105 domain.NewJWTVerifier(...) → service.AuthService 用  ✅ leeway 適用済（PR #141）
+  L183 priv.Use(middleware.Auth(verifier))  ← leeway なしの方
+```
+
+つまり保護 API（リクエスト毎の JWT 検証）は **leeway 未適用のまま**。E2E 10/10 PASS したのは再実行時に Docker クロックドリフトが偶発しなかっただけで、本番デプロイ環境で同種 401 が再発するリスクが残る。
+
+### 追加対応（11-D ブロッカー解消）
+
+1. `internal/pkg/jwt/jwt.go` の `ParseWithClaims` に以下を追加:
+   ```go
+   jwt.WithLeeway(60 * time.Second),
+   ```
+   （既存オプション: `WithIssuer`, `WithExpirationRequired`, `WithIssuedAt` 等があれば同様に維持）
+2. middleware 経由のテストを追加し、`iat +30s` 許可 / `iat +61s` 拒否 / `exp -30s` 許可 / `exp -61s` 拒否を検証
+   - 配置先候補: `internal/middleware/auth_test.go` または `internal/pkg/jwt/jwt_test.go`
+   - テスト ID: AUTH-089〜092（`test_cases/auth.md` の既存最大値 +1 採番、AUTH-088 の続き）
+3. `dev-journal/deliverables/docs/60_test/test_cases/auth.md` に新規 ID 追記
+4. `security.md` §2.1 に「2 系統の Verifier どちらにも leeway 適用」を明記（必要に応じて）
+5. PR #141 と同等の PR フロー（reviewer → codex → マージ）
+
+### レビュー漏れの反省
+
+- PR #141 の reviewer / codex どちらも `cmd/server/main.go` の Verifier 二系統存在を見落とした
+- session-log の意思決定ログでは「access/refresh 共通」と書いていたが実装は片系統のみ
+- 11-D 横断レビュー（codex 第三回目）でようやく検出

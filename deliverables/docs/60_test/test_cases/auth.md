@@ -83,6 +83,12 @@
 | AUTH-086 | 単体 | domain | セキュリティ | SEC-003 | security.md#2.1（クロックスキュー許容） | `TestVerifyRefreshToken_ExpPast30s_Allowed` | exp = now - 30 秒のリフレッシュトークン（leeway 60 秒以内） | エラーなし。claims が正しく返ること |
 | AUTH-087 | 単体 | domain | セキュリティ | SEC-003 | security.md#2.1（クロックスキュー許容） | `TestVerifyRefreshToken_IatFuture61s_Rejected` | iat = now + 61 秒のリフレッシュトークン（leeway 超過） | `INVALID_TOKEN` エラー |
 | AUTH-088 | 単体 | domain | セキュリティ | SEC-003 | security.md#2.1（クロックスキュー許容） | `TestVerifyRefreshToken_ExpPast61s_Rejected` | exp = now - 61 秒のリフレッシュトークン（leeway 超過） | `TOKEN_EXPIRED` エラー |
+| AUTH-089 | 単体 | pkg/jwt | セキュリティ | SEC-003 | security.md#2.1（クロックスキュー許容） | `TestVerify_IatFuture30s_Allowed` | iat = now + 30 秒のアクセストークン（leeway 60 秒以内） | エラーなし。claims が正しく返ること |
+| AUTH-090 | 単体 | pkg/jwt | セキュリティ | SEC-003 | security.md#2.1（クロックスキュー許容） | `TestVerify_IatFuture61s_Rejected` | iat = now + 61 秒のアクセストークン（leeway 超過） | 検証エラー |
+| AUTH-091 | 単体 | pkg/jwt | セキュリティ | SEC-003 | security.md#2.1（クロックスキュー許容） | `TestVerify_ExpPast30s_Allowed` | exp = now - 30 秒のアクセストークン（leeway 60 秒以内） | エラーなし。claims が正しく返ること |
+| AUTH-092 | 単体 | pkg/jwt | セキュリティ | SEC-003 | security.md#2.1（クロックスキュー許容） | `TestVerify_ExpPast61s_Rejected` | exp = now - 61 秒のアクセストークン（leeway 超過、ErrTokenExpired 相当） | `ErrTokenExpired` エラー |
+
+> 注: AUTH-081〜088 は `internal/domain/auth.go` の `JWTVerifier`（service 層 = AuthService の TokenVerifier）を対象とする単体テスト。AUTH-089〜092 は `internal/pkg/jwt/jwt.go` の `Verifier`（middleware 経由のリクエスト毎 JWT 検証）を対象とする単体テストで、両系統に leeway 60s が適用されていることを確認する（issue #173 対応漏れ補完）。
 
 ---
 
