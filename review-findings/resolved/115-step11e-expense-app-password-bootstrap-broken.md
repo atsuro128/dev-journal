@@ -60,3 +60,13 @@
   - そのうえで「000003 以降を `expense_owner` で進める」ことが実際に成立する確認観点を追加すること（少なくとも version 更新の成功確認）。
 - 付記: c 案から派生した **`expense_app` への DML/default privileges 欠落** は別問題として新規 finding 化した。  
   `dev-journal/review-findings/open/118-step11e-expense-app-privileges-missing-after-owner-switch.md`
+
+## 再々々レビューコメント（2026-05-08, commits f67309d + 52498a1）
+- 判定: `PASS`。§5.7.3 Step 2 に **`ALTER TABLE schema_migrations OWNER TO expense_owner`** が追加され、Step 4 の `expense_owner` 接続での `migrate up` 継続条件が明示された。  
+  `dev-journal/progress-management/step11-e-deployment-plan.md:625-627, 696-714, 812-815`
+- 根拠1: Step 1 をマスター、Step 2 で owner 移管、Step 4 を `expense_owner` で継続する 7 ステップ構成に整理され、`schema_migrations.version=2` 確認と owner 確認 SQL も追加されている。  
+  `dev-journal/progress-management/step11-e-deployment-plan.md:621-629, 675-677, 710-714, 754-764`
+- 根拠2: 上流 `release.md` の `DATABASE_URL=expense_owner` 前提、および実装側の owner/app 二重接続前提とも整合している。  
+  `dev-journal/deliverables/docs/70_operations/release.md:101-119`  
+  `expense-saas/cmd/server/main.go:52-82`
+- 備考: Round 4 では本指摘の残課題は解消された。別途、Step 6 の `expense_app` 実地検証 SQL には RLS セッション変数不足の新規問題があるため、別 finding として管理する。
