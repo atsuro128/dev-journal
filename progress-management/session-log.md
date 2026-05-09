@@ -1,86 +1,67 @@
 # 引き継ぎメモ
 
-## セッション: 2026-05-07 19:00 〜 23:50
+## セッション: 2026-05-08 11:00 〜 2026-05-09 09:30
 
 ### ゴール
 
-- Step 11-D 横断レビュー完了（前回 11-C クローズの続き、依存先 11-B/11-C 解消済み）
-- ブロッカー解消があれば修正サイクルを回し、CONDITIONAL PASS 以上で 11-D を完了マークする
+- Step 11-E（デプロイ・スモークテスト）の着手
+- 事前修正（PR #142 codex 補足の deploy.yml e2e ジョブ整合）→ 11-E 計画策定 → Phase 1（Terraform 雛形）着手の流れを想定
+
+実際は計画策定 + reviewer 3 ラウンド + codex 5 ラウンドの精緻化に時間を要し、**Phase 1 着手は次セッション持ち越し**。Q1〜Q6 ユーザー判断 + 全 finding 解消までで本セッションをクローズ。
 
 ### 作業ログ
 
-本セッションは Step 11-D 横断レビューを完全クローズ（CONDITIONAL PASS で完了）。codex 初回判定は FAIL（ブロッカー B-01: PR #141 (issue #173) の対応漏れ）+ 不整合 M-03 / M-04 を検出。並列で 3 タスク同時起動して全て解消し、再レビュー PASS で 11-D を完了に進めた。
+#### 1. PR #144（issue #175: deploy.yml e2e ジョブ整合）
 
-#### 1. セッション開始 + 11-D チケットレビュー
+- issue #175 起票: 5 件不整合（cache-dependency-path / `working-directory: frontend` × 3 / npx playwright test / report path）
+- platform-builder（worktree）で `step11/175-fix-deploy-yml-e2e-job` ブランチ作成 + PR #144
+- /test（yaml-only スコープ、`gh workflow view --yaml` で GitHub パース確認のみ）
+- reviewer 内部レビュー: PASS（blocker/warning 0、info 1）
+- codex 初回レビュー: blocker 1 件（`/healthz` vs `/health` の既存バグ、`cmd/server/main.go:169` で `/health` のみ公開）
+- 指揮役直接修正で `/healthz` → `/health` を 2 箇所（e2e ジョブ L184 + smoke ジョブ L220）一括修正、追加コミット `f88e4b4`
+- codex 再レビュー: 1 回目は古い `step11/issue-144-report-info-card-labels` ブランチを誤特定する事故 → ブランチ名・HEAD SHA 明示の 3 回目で PASS
+- スカッシュマージ完了 (`6c99001`)、issue #175 を resolved/ へ移動
 
-- progress.md / session-log.md / open issues 確認 → ゴール「11-D 着手」で合意
-- 11-D チケット（`tickets/step11/11-D-cross-review.md`）に対し、reviewer エージェントで `ai-dev-framework/agents/ticket-review-procedure.md` 準拠のチケットレビュー実施
-- 判定: **PASS with NOTE**（NOTE-1 パス省略表記 / NOTE-2 実施ログ参照先未記載 / NOTE-3 判定値の差）。修正なしで本体に進む方針
+#### 2. 11-E 計画書 reviewer 3 ラウンド
 
-#### 2. codex 11-D 横断レビュー（初回）→ FAIL
+- architect: 初版作成 (`step11-e-deployment-plan.md` 769 行、§0〜§14)
+- reviewer 初回: FIX（blocker 2 = B-01 DB ロール bootstrap / B-02 HTTPS 整合 + warning 5 + info 4 = 計 11 件）
+- architect 一括修正: +95 行 → 864 行
+- reviewer 再レビュー: 11 件 PASS、NEW-01（スモーク用メールが seed と不一致）+ NEW-02（RLS テーブル列挙の精度）
+- 指揮役直接修正: NEW-01 メール seed 整合 / NEW-02 RLS 6 テーブル完全列挙 / §14 リンク整合
+- reviewer 再々レビュー: PASS
+- commit `5d9e96d` (issue #175 close + 計画書初版) → `88db823` (reviewer 14 件解消)
 
-- codex に全機能横断レビューを依頼（フルスコープ: deliverables/docs/, test_cases/, expense-saas/internal/, frontend/, e2e/, cross_cutting_test.go, rate_limit_test.go）
-- レビューレポート `progress-management/step11-d-review-report.md` を新規作成
-- 判定: **FAIL**
-  - **ブロッカー B-01 (M-01)**: JWT leeway 60s が `internal/pkg/jwt.Verifier`（middleware 経路）に未適用。`internal/domain/auth.go.JWTVerifier`（service 経路）には PR #141 で適用済みだが、`cmd/server/main.go` で `appjwt.NewVerifier(...)` を `middleware.Auth(verifier)` に渡す保護 API 経路は未対応
-  - 非ブロッカー: N-01 (CRS-016 弱アサーション) / N-02 (CRS-071 添付なし) / N-03 (CRS-077 経路説明不足) / N-04 (lint warning) / N-05 (build dist 権限)
-  - 不整合: M-02 (=N-02) / M-03 (CRS-077 定義↔実装乖離) / M-04 (npm run e2e config 未指定)
-- コードで事実確認: `internal/pkg/jwt/jwt.go` の `ParseWithClaims` に `WithLeeway` なし、`internal/domain/auth.go` のみあり。codex 指摘は完全に正当
+#### 3. 11-E 計画書 codex 5 ラウンド
 
-#### 3. 並列 3 タスク起動 → 解消
+- **round 1** (`88db823`): FAIL（F-115 expense_app パスワード bootstrap 破綻 / F-116 Q1 GHCR/ECR 案 runbook 不整合 / F-117 S3 versioning 上流不整合）
+- architect: F-115/116/117 対応 → +156 行 → 1029、commit `d714373`
+- **round 2**: F-116/F-117 PASS（resolved 移動）、F-115 FIX のまま（マスターで migrate する副作用でテーブル owner = master 化、`expense_owner` 前提崩壊）
+- architect: F-115 c 案（000001/000002 はマスター → ALTER ROLE → 000003 以降は expense_owner）→ +41 行 → 1070、commit `21521f2`
+- **round 3**: F-115 FIX のまま（schema_migrations の owner 移管漏れ → Step 3 で migrate 継続不能）+ F-118 派生（ALTER DEFAULT PRIVILEGES の owner 限定挙動で expense_app の DML 権限欠落）
+- architect: F-115 + F-118 統合 7 ステップ runbook（schema_migrations OWNER TO + DEFAULT PRIVILEGES + 一括 GRANT + 実テーブル疎通）+ シーケンス未使用確認 → +92 行 → 1162、commit `f67309d` + `52498a1`（F-118 pending-review 移動）
+- **round 4**: F-115 + F-118 PASS、F-119 派生（RLS 対象テーブルへの直接 SELECT が `app.current_tenant` 未設定で false negative）
+- 指揮役直接修正: F-119 を `has_table_privilege()` メタデータ検証 + RLS 非対象 `users` への live SELECT の 2 段階に再構成 → +28 行 → 1190、commit `2184413`
+- **round 5**: F-119 PASS、**全 finding 解消**、Q1〜Q6 提示可能、commit `3580cdb`（F-119 resolved 移動）
 
-- **Task A（指揮役）**: issue #173 を resolved → open に戻し、対応漏れ実態 + 修正範囲 + レビュー漏れ反省を追記。progress.md の #173 行を「再 open」に更新
-- **Task B（backend-developer worktree）**: PR #143 作成 (`step11/issue-173-fix-middleware-leeway`)
-  - `internal/pkg/jwt/jwt.go`: `WithLeeway(60*time.Second)` 追加 + `time` import
-  - `internal/pkg/jwt/jwt_test.go` 新規: AUTH-089〜092 (iat ±30s/61s, exp ±30s/61s 境界、middleware 経路用)
-  - 指揮役で dev-journal 側を反映: `test_cases/auth.md` AUTH-089〜092 追記 + AUTH-081〜088 との対象差注記、`security.md §2.1` 実装参照セルを 2 系統明記に更新
-- **Task C（designer）**: `test_cases/cross-cutting.md` の CRS-076〜082 を `rate_limit_test.go` の実装と整合化
-  - 認証済み制限 / 未認証 IP 制限 / ログイン専用 / アップロード専用の経路分離を明記
-  - CRS-077 が `/health` で global IP 制限を検証する理由（ログイン専用制限の二重適用回避）を追記
-  - CRS-080 のセクション参照を §5.2 → §8.2 に訂正
-  - エスカレ 3 件: (1) `rate_limit_test.go` のコメント §5.2→§8.2 (2) `security.md §4.4` に二重適用明記 (3) `test_strategy.md §2.3` に経路分離運用パターン追記
-- **Task D（backend-developer worktree）**: PR #142 作成 (`step11/fix-e2e-npm-script`)
-  - `expense-saas/package.json`: `e2e` / `e2e:debug` に `--config e2e/playwright.config.ts` 指定、`e2e:report` を `playwright show-report playwright-report` に
-  - `npm run e2e -- --list` で 10 件のみ列挙確認
+#### 4. Q1〜Q6 ユーザー判断
 
-#### 4. エスカレ(1) を PR #143 にピギーバック
+- 当初は計画書直後に Q1〜Q7 を提示しようとしたが、ユーザーから「reviewer や codex にレビューさせるのが筋」と指摘 → memory `feedback_review_before_user_judgment.md` 起票
+- reviewer 3 ラウンド + codex 5 ラウンドを経て全 finding 解消後、Q1〜Q6 提示
+- **全件 architect 推奨案で確定**、計画書 §11 を「確定済み」状態に更新、commit `21e3c1e`
 
-- 指揮役で worktree #143 の `rate_limit_test.go` の `§5.2 準拠` → `§8.2 準拠` を 2 箇所訂正
-- 追加コミット 748a9ae で push（コメントのみ、実装影響なし）
+#### 5. ファイル整理
 
-#### 5. ローカルテスト → reviewer → codex
-
-- **PR #143 /test**: ホスト側で `git checkout step11/issue-173-fix-middleware-leeway` を依頼 → master 側で実行されたため `pkg/jwt [no test files]` 表示の問題発生 → 「コンテナ側で git checkout すれば反映される」とユーザー発言 → 指揮役で `git fetch origin step11/issue-173-fix-middleware-leeway && git checkout origin/...`（detached HEAD）→ 再実行で全 PASS
-  - lint 0 issues / unit 全 PASS（jwt 0.201s）/ integration 全 PASS（jwt 0.138s）
-- **PR #143 reviewer**: PASS（blocker/warning/info ゼロ、`--comment` で投稿）
-- **PR #143 codex**: 指摘なし（go test -count=100 で flake チェック含む）
-- **frontend lint/tsc/test**（PR #142 検証用、PR #143 detached HEAD で実行 = frontend は変更なしで結果同等）: lint 1 warning(既知) / tsc PASS / test 797 件 PASS / 103 ファイル
-- **PR #142 reviewer**: PASS（blocker/warning/info ゼロ）
-- **PR #142 codex**: 指摘なし。補足として `.github/workflows/deploy.yml` の `if: false` 中の `npx playwright test` も config 未指定（11-E 有効化前に修正必要）
-
-#### 6. マージ + dev-journal 反映 + 11-D 再レビュー
-
-- `git checkout master` → `git fetch origin` → PR #143 squash マージ (`83891fa`) → PR #142 squash マージ (`59b268c`) → master 最新化（c5c4792 → 59b268c）
-- dev-journal commit `b7adc3a`: `chore(11-D): cross review report + issue #173 followup + M-03 alignment`（6 ファイル）
-  - step11-d-review-report.md / progress.md / issues/open/173 / test_cases/auth.md / test_cases/cross-cutting.md / security.md
-- codex 11-D 再レビュー実行
-- 判定: **CONDITIONAL PASS**（B-01 / M-03 / M-04 全解消、N-01〜N-05 前回通り、新規ブロッカーなし）
-- step11-d-review-report.md を codex が再レビュー結果で更新（35 insertions / 36 deletions）
-- CONDITIONAL の 4 条件は §6 で 11-E 進入条件として明記:
-  1. test DB 起動 + 統合テスト再実行
-  2. 起動済み API/frontend で `npm run e2e` 10 件 PASS
-  3. デプロイ環境の時刻同期 smoke
-  4. frontend build をクリーン環境で実行
-
-#### 7. 11-D 完了処理
-
-- progress.md: 11-D 行を「完了」に、issue #173 行を「resolved」に更新
-- issues/open/173 → issues/resolved/ 移動（PR #143 マージで両系統 leeway 完全適用）
-- dev-journal commit `a7e5706`: `chore(11-D): mark cross review as completed (CONDITIONAL PASS)` → push 完了
+- ユーザー指摘: `step11-d-review-report.md` と `step11-e-deployment-plan.md` が `progress-management/` 直下に独立ファイルとして置かれており、11-A スタイル（チケット自己完結）から外れている
+- 11-D チケット（64 → 137 行）に review-report（71 行）を `## 実施結果` として統合
+- 11-E チケット（60 → 1266 行）に deployment-plan（1203 行）を `## 実施計画（詳細 runbook）` として統合
+- 独立ファイル 2 件削除、commit `9a5247d`
+- 並行セッション間引継ぎメモ `handoff-issues-116-121.md`（2026-04-20 作成、言及 12 issue 全て resolved 済み）を削除、commit `3c501a3`
 
 ### 未完了
 
-- なし（11-D は CONDITIONAL PASS で完了処理済み）
+- **Step 11-E Phase 0 以降は完全未着手**（progress.md ステータス: 未着手のまま）
+- 11-E チケットの「実施計画」セクションは完成、「実施結果」セクションは未記入（Phase 0〜7 完了後に追記予定）
 
 ### ブロッカー
 
@@ -88,87 +69,121 @@
 
 ### 次にやること
 
-#### 優先度 1: Step 11-E デプロイ・スモークテスト
+#### 優先度 1: Step 11-E Phase 0（CONDITIONAL 4 条件のローカル先消化）
 
-- AWS リソース構築（ADR-0004 ポートフォリオ対応方針: EC2 t3.micro / RDS / S3）
-- 手動デプロイ（Docker ビルド → ECR → ECS）。`deploy.yml` は参考用デモとしてリポジトリに残す
-- ヘルスチェック疎通確認
-- スモーク: 主要フロー1本（申請 → 承認 → 支払）
-- 11-D CONDITIONAL の 4 条件を 11-E 環境で実施し step11-d-review-report.md §6 に結果記録
-- **11-E 着手前に `.github/workflows/deploy.yml` の `npx playwright test` config 未指定を修正**（PR #142 codex 補足、有効化前必須）
+1. **#1 統合テスト再実行**: test DB 起動 (`docker compose --profile test up -d`) + `go test ./internal/handler/...` + `go test ./...`
+2. **#2 npm run e2e 10 件 PASS**: 起動済み API/frontend に対して `npm run e2e` を実行
+3. **#4 frontend クリーンビルド**: `frontend/dist` を削除した状態から `npm run build` 成功を確認
+4. (**#3 時刻ドリフト smoke** は Phase 7 = 実 AWS 環境必須、ここでは扱わない)
 
-#### 優先度 2: Step 11-F UAT
+結果は 11-E チケット §実施計画 §6.2 と §実施ログ に記録。
 
-ユーザー視点で `uat_check.md` 全項目実施。MVP リリース最終ゲート。
+#### 優先度 2: Step 11-E Phase 1（Terraform 雛形作成、platform-builder）
 
-#### 優先度 3: post-MVP 候補（次セッション以降で検討）
+- 11-E チケット §実施計画 §3 構成通りに Terraform ファイル群作成
+  - `expense-saas/infra/terraform/` 配下に main.tf / variables.tf / outputs.tf / vpc.tf / ec2.tf / rds.tf / s3.tf / alb.tf / iam.tf
+  - state バックエンドは S3 + DynamoDB（§5.3）
+- ブランチ命名: `step11/11-E-deploy`
+- platform-builder には `terraform fmt` / `validate` のみ実行させ、`init`/`plan`/`apply` はユーザー手動
 
-- Task C エスカレ(2): `security.md §4.4` に「global IP + login 専用 IP の二重適用」明記
-- Task C エスカレ(3): `test_strategy.md §2.3` に「他制限値 100 で経路分離」運用パターン追記
+#### 優先度 3: Step 11-E Phase 2〜7（実 AWS 操作 + デプロイ + スモーク）
+
+- Phase 2: tfvars 編集 + AWS 認証準備（ユーザー手動）
+- Phase 3: `terraform init/plan/apply`（ユーザー手動、RDS 作成 10〜15 分待ち）
+- Phase 4: §5.7.3 Step 1〜7 で DB 初期化（マスター → ALTER ROLE → schema_migrations OWNER 移管 → DEFAULT PRIVILEGES → expense_owner で残り migrate → 一括 GRANT → 疎通確認）
+- Phase 5: Docker build（案 B = EC2 上）+ systemd 起動
+- Phase 6: ヘルスチェック疎通（curl `/health`）
+- Phase 7: スモーク（申請→承認→支払、CONDITIONAL #3 時刻ドリフト含む）
+
+工数見積（§12）合計 約 8〜16 時間。
 
 ### 学び・気づき
 
-#### 横断レビューは「マージ済み PR の対応漏れ」を発見できる重要工程
+#### 設計成果物への codex レビューは reviewer の盲点を補う重大価値がある
 
-PR #141 の reviewer / codex 両方が `cmd/server/main.go` の Verifier 二系統存在（middleware 経路 = `appjwt.NewVerifier`、service 経路 = `domain.NewJWTVerifier`）を見落とした。3 回目のレビュー（11-D codex 全機能横断）でようやく発覚。**機能単独レビューでは見えない統合レイヤーの整合性を、横断レビューで必ずチェックする** 価値を再認識した。
+reviewer 3 ラウンドで 14 件解消した後でも、codex が 5 ラウンドで PostgreSQL 権限モデルの細部 5 つを段階的に発見:
 
-#### issue 起票時にコード経路を実装まで追わないと対応漏れになる
+1. localdev パスワード固定（migration ハードコード）
+2. テーブル owner = master 化
+3. schema_migrations の owner 限定（migrate 継続不能）
+4. ALTER DEFAULT PRIVILEGES の owner 限定挙動
+5. RLS 対象テーブル直接 SELECT の false negative
 
-issue #173 起票時、真因解析（trace.zip）から `internal/domain/auth.go:166-186` のみを「実装参照」として記録してしまい、middleware 経路の `internal/pkg/jwt/jwt.go` を見落とした。issue 起票時は **同じ責務を担うコードの全経路を grep で洗い出す**（「JWT verify」「ParseWithClaims」「leeway」等）べき。今回の対応漏れは「issue → PR → review → merge」の全工程を素通りしている。
+reviewer は機能・整合性面では強いが、**実コード仕様（PostgreSQL の権限モデル細部）の盲点**が出る。設計成果物は reviewer + codex の二層ゲートを必須にする方針が裏付けられた（memory `feedback_review_before_user_judgment.md` に記録）。
 
-#### worktree から master 側のテスト実行は detached HEAD でリモート参照を直接 checkout
+#### ユーザーへの Q&A は reviewer / codex を通してから
 
-worktree #143 が PR #143 ブランチを占有しているため、master 側で同名ブランチを checkout できない（git の制約）。今回 `git fetch origin step11/issue-173-fix-middleware-leeway && git checkout origin/...` で detached HEAD にして、ホスト側のテスト走行に対応した。**「同一ブランチ 2 箇所 checkout 不可」のとき、リモート参照（`origin/<branch>`）への detached HEAD は有効な代替**。
+セッション中盤、Q1〜Q7 をユーザーに直接投げかけたところ「reviewer や codex にレビューさせるのが筋」と指摘された。設計の専門性チェックが入っていない状態でユーザーに架構級の判断を強いるのは指揮役の役目放棄。**設計成果物（架構・IaC・runbook 等）はサブエージェントレビュー → ユーザー判断の順序を厳守**する。
 
-#### codex 補足指摘も「次セッションのトリガー」として残す
+#### Step チケットは自己完結（実施結果まで含む）が前提
 
-PR #142 codex は PASS だったが、補足として「`deploy.yml` の `if: false` 中の `npx playwright test` も config 未指定」と指摘。今 PR には影響しないが 11-E 有効化前に必須対応。**補足は「無関係」ではなく「将来の必須タスク」として session-log に明記**しておかないと、後で見落とす。
+`step11-d-review-report.md` と `step11-e-deployment-plan.md` を `progress-management/` 直下の独立ファイルとして配置したが、ユーザーから「11-A みたいに各チケット内部に書くべき」と指摘された。Step チケットは「入力 / 責務 / 進め方 / 実施結果（または実施計画）」を一括で持つのが本プロジェクトのスタイル。**独立ドキュメント化は分割時の事故（参照リンク切れ・整合崩壊）を招く**ため避ける。
 
-#### CONDITIONAL PASS の条件は次工程の進入条件として明文化
+#### codex は古いブランチを誤特定する
 
-codex の CONDITIONAL PASS は「環境制約で完走確認できないが、修正は妥当」を示す。条件をレビューレポートの「§6 11-E へ進む条件」として書き残すことで、11-E 着手時に必ず実施される。**判定の曖昧さは引き継ぎフォーマットで吸収する**。
+PR #144 codex 再レビュー時、`step11/issue-144-report-info-card-labels`（過去マージ済み別 PR の残骸）を誤特定する事故。codex のヒューリスティック「PR #N → `issue-N` を含むブランチ名」が古いブランチに引っかかる。**codex 再レビュー依頼時はブランチ名と HEAD SHA を明示**する（プロンプトに含める）ことで防げる。
+
+#### codex CLI のデフォルトモデルが動かない
+
+本環境の codex CLI 0.118.0 のデフォルト `gpt-5.5` は「requires a newer version of Codex」エラー。`-m gpt-5.4` を都度明示する必要があった。`~/.codex/config.toml` の `model` を `gpt-5.4` に書き換えれば `/codex-review` 呼び出しで `-m` 不要になる（次セッション以降の恒久対応候補）。
 
 ### 意思決定ログ
 
-#### B-01 を新規 issue でなく #173 を再 open で対応
+#### codex 指摘を一貫して受け入れた根拠
 
-選択肢:
-- A: issue #173 を resolved → open に戻し、対応漏れ追記 → 履歴の連続性
-- B: 新規 issue (#175) 起票 → 「PR #141 完了 / 別件として middleware 修正」と切り分け
+memory `feedback_critical_review_of_codex.md` で「形式的な指摘には押し返す」とあるが、本セッションで codex が出した F-115/F-116/F-117/F-118/F-119 は全て実コード照合で 100% 事実。**事実ベースの指摘は受け入れ、形式的な指摘（「コメントが少ない」等）は押し返す**判断軸を継続する。
 
-A を選択。同じ「JWT leeway 60s 全系統適用」の課題で、対応が分断されただけ。履歴を辿るときに「#173 を見れば全経緯が分かる」方がデバッグ視点で価値が高い。reviewer 漏れの反省も #173 に集約することで再発防止に直結する。
+#### 11-E 計画書を 1266 行の単一チケットに統合する判断
 
-#### M-03 / M-04 を 11-E 前に処理する判断
+ユーザー指摘で「11-A スタイル揃え」を実施。1266 行の巨大チケットになるが、Step 11 の他チケット（11-A は 397 行、11-B/C は ~150 行台、11-F は未着手）と整合し、`progress-management/` 直下のファイル増殖を防ぐ。runbook として実作業時にチケット単独で参照できる方が動線が短い。
 
-3 択提示:
-- A: B-01 + M-03 + M-04 を全て今セッションで解消（並列起動）
-- B: B-01 のみ、M-03/M-04 は post-MVP
-- C: B-01 + M-03 + M-04 + N-01〜N-05 全て解消
+#### Q2 を案 1（HTTP のみ）採用した理由
 
-A を選択。M-03 は test_cases 整合化で実装変更不要・低コスト。M-04 は 11-E 手順で確実に踏むため事前修正が必要。N-01〜N-05 は post-MVP 妥当。**「揃ってリセット」できるタイミングで揃えておく** ことで、11-E 着手時のノイズを最小化。
+案 1 採用は ADR-0004 prod TLS 要件との乖離を生むが、ポートフォリオ用途で UAT を社内デモ限定とすれば実害なし。Q7（カスタムドメイン）と統合した 3 案のうち、案 2（Route53+ACM、年 $12 + 月 $0.5）はセキュリティ整合的だが UAT を社外に見せる予定がないため不要。判断は 11-F 引き継ぎ表に明記し、将来採用面接でデモする際は案 2 へ切り替え可能にした。
 
-#### CONDITIONAL PASS で 11-D を完了として扱う
+#### codex 指摘 vs reviewer 指摘の責務分担
 
-11-D 完了条件「機能間整合性確認」「ブロッカーゼロ」は満たす。CONDITIONAL の 4 条件は本質的に「デプロイ環境での再確認」であり 11-E のスモーク責務。指揮役の品質ゲート判定として、**「環境制約由来の CONDITIONAL は次工程進入条件で吸収可能」なら完了マーク**できると判断。
+reviewer 3 ラウンド + codex 5 ラウンドの体験から:
+- **reviewer（内部）**= 構造整合性 / 上流資料一致 / チケット要件カバー / ファクト概要
+- **codex（外部）**= 実コード仕様の細部 / 権限モデル / 実行時挙動の盲点 / 依存関係
 
-#### Task C エスカレ (1) を PR #143 にピギーバック、(2)(3) は別途起票
-
-(1) はコメント訂正のみで PR #143 のスコープ（rate_limit_test.go）と重なる。(2)(3) は `security.md` / `test_strategy.md` の設計成果物修正で別 PR / 別タイミングが妥当。
+両方通すと網羅性が上がる。次セッション以降も設計成果物には両者を必ず通す方針を維持。
 
 ### PR / コミット要約
 
-**expense-saas**（マージ済み 2 PR）:
-- PR #143 (`83891fa`): fix(auth): apply JWT leeway 60s to middleware verifier (issue #173 followup) + rate_limit_test §5.2→§8.2 訂正
-- PR #142 (`59b268c`): fix(e2e): specify playwright config in npm scripts
+**expense-saas**（マージ済み 1 PR）:
+- PR #144 (`6c99001`): fix(ci): align deploy.yml e2e job with playwright workspace at repo root + use /health（issue #175 + codex review）
 
-**dev-journal**（2 commit push 済み）:
-- `b7adc3a` chore(11-D): cross review report + issue #173 followup + M-03 alignment（6 ファイル）
-- `a7e5706` chore(11-D): mark cross review as completed (CONDITIONAL PASS)（3 ファイル、issue #173 resolved 移動含む）
+**dev-journal**（master へ 11 commit push 済み）:
+- `5d9e96d` chore(11-E): close issue #175 (PR #144 merged) + add 11-E deployment plan
+- `88db823` chore(11-E): refine deployment plan after reviewer feedback (B/W/I + NEW)
+- `d714373` chore(11-E): apply codex review fixes (F-115/F-116/F-117)
+- `21521f2` chore(11-E): fix F-115 owner-role via 2-stage migrate (c-plan) + close F-116/F-117
+- `f67309d` chore(11-E): close F-115 schema_migrations + handle F-118 expense_app DML (round 4)
+- `52498a1` chore(11-E): move F-118 finding to pending-review
+- `2184413` chore(11-E): handle F-119 + close F-115/F-118
+- `3580cdb` chore(11-E): close F-119 (round 5 PASS) — all findings resolved
+- `21e3c1e` chore(11-E): finalize Q1-Q6 user decisions (all architect-recommended)
+- `9a5247d` chore(step11): inline 11-D review report and 11-E plan into tickets (11-A style)
+- `3c501a3` chore(progress): remove obsolete handoff-issues-116-121.md
 
-**root-project**: 変更なし
+**root-project**: 本セッション分の変更なし（`.devcontainer/` の M はセッション開始前から存在）
 
 **ai-dev-framework**: 変更なし
 
+**メモリ追加**: `.claude/memory/feedback_review_before_user_judgment.md`（設計成果物はユーザー判断前に reviewer/codex を通す）
+
+### Q1〜Q6 確定値（次セッション Phase 1 着手時の前提）
+
+| Q | 確定 |
+|---|------|
+| Q1 | 案 B: EC2 上で docker build（image_tag は default = "" optional）|
+| Q2 | 案 1: HTTP のみ、ALB DNS 直接（UAT 社内デモ限定）|
+| Q3 | Single-AZ |
+| Q4 | AdministratorAccess（IAM ユーザー使い切り後削除）|
+| Q5 | 13 ヶ月で `terraform destroy`（ALB が最大支出ドライバ）|
+| Q6 | deploy.yml `if: false` 解除は 11-E スコープ外、別チケット |
+
 ## 前回セッションのアーカイブ
 
-`dev-journal/archives/session-logs/2026-05-07.md`（同日午前セッション 09:30〜16:35: Step 11-C クローズ + JWT leeway PR #141）
+`dev-journal/archives/session-logs/2026-05-07.md`（午前 09:30〜16:35: Step 11-C クローズ + JWT leeway PR #141 / 午後・夜 19:00〜23:50: Step 11-D CONDITIONAL PASS 完了 + PR #142 + #143 マージ）
