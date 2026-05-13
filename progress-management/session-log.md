@@ -1,67 +1,83 @@
 # 引き継ぎメモ
 
-## セッション: 2026-05-08 11:00 〜 2026-05-09 09:30
+## セッション: 2026-05-13 09:30 〜 19:54
 
 ### ゴール
 
-- Step 11-E（デプロイ・スモークテスト）の着手
-- 事前修正（PR #142 codex 補足の deploy.yml e2e ジョブ整合）→ 11-E 計画策定 → Phase 1（Terraform 雛形）着手の流れを想定
+- Step 11-E Phase 0（CONDITIONAL 4 条件のローカル先消化）完走
+- 余裕があれば Phase 1（Terraform 雛形作成）まで
 
-実際は計画策定 + reviewer 3 ラウンド + codex 5 ラウンドの精緻化に時間を要し、**Phase 1 着手は次セッション持ち越し**。Q1〜Q6 ユーザー判断 + 全 finding 解消までで本セッションをクローズ。
+実際は **Phase 0 + Phase 1 完了 + PR #145 マージ**まで進行。途中で OpenTofu silent install 事案が発生し、それを契機に 4 件の post-MVP issue 起票・1 件の memory ガバナンス追加・Dockerfile への正規 Terraform install 追加まで対応。
 
 ### 作業ログ
 
-#### 1. PR #144（issue #175: deploy.yml e2e ジョブ整合）
+#### 1. Phase 0 ローカル消化（午前〜昼）
 
-- issue #175 起票: 5 件不整合（cache-dependency-path / `working-directory: frontend` × 3 / npx playwright test / report path）
-- platform-builder（worktree）で `step11/175-fix-deploy-yml-e2e-job` ブランチ作成 + PR #144
-- /test（yaml-only スコープ、`gh workflow view --yaml` で GitHub パース確認のみ）
-- reviewer 内部レビュー: PASS（blocker/warning 0、info 1）
-- codex 初回レビュー: blocker 1 件（`/healthz` vs `/health` の既存バグ、`cmd/server/main.go:169` で `/health` のみ公開）
-- 指揮役直接修正で `/healthz` → `/health` を 2 箇所（e2e ジョブ L184 + smoke ジョブ L220）一括修正、追加コミット `f88e4b4`
-- codex 再レビュー: 1 回目は古い `step11/issue-144-report-info-card-labels` ブランチを誤特定する事故 → ブランチ名・HEAD SHA 明示の 3 回目で PASS
-- スカッシュマージ完了 (`6c99001`)、issue #175 を resolved/ へ移動
+CONDITIONAL 4 条件のローカル可能 3 件を全 PASS:
 
-#### 2. 11-E 計画書 reviewer 3 ラウンド
+- **0-4 frontend クリーンビルド**: `cd frontend && rm -rf dist && npm ci && npm run build` を Windows PowerShell で実行。Vite 3.86s ビルド成功、1554 modules、index hash 更新。古い root 所有 `index-BmTjhuJz.js` も完全削除確認
+- **0-2 Go 統合テスト**: VS Code タスク `BE: full test`（test-be コンテナ経由）で lint 0 issues / unit 全 ok / integration handler 88.6s 含む全 ok 確認
+- **0-3 npm run e2e**: 10/10 PASS、26.7s。CRS-066（JWT iat 未来扱い 401）も leeway 60s 適用効果で安定 PASS
 
-- architect: 初版作成 (`step11-e-deployment-plan.md` 769 行、§0〜§14)
-- reviewer 初回: FIX（blocker 2 = B-01 DB ロール bootstrap / B-02 HTTPS 整合 + warning 5 + info 4 = 計 11 件）
-- architect 一括修正: +95 行 → 864 行
-- reviewer 再レビュー: 11 件 PASS、NEW-01（スモーク用メールが seed と不一致）+ NEW-02（RLS テーブル列挙の精度）
-- 指揮役直接修正: NEW-01 メール seed 整合 / NEW-02 RLS 6 テーブル完全列挙 / §14 リンク整合
-- reviewer 再々レビュー: PASS
-- commit `5d9e96d` (issue #175 close + 計画書初版) → `88db823` (reviewer 14 件解消)
+副次起票 3 件（全 post-MVP）:
+- #176 frontend dev 依存の既知 CVE（esbuild + postcss、`npm audit` 7 件、本番影響なし）
+- #177 frontend バンドル chunk size 500 kB 超過警告
+- #178 Go バージョン定義の環境間不整合（devcontainer 1.24.1 固定 vs production `golang:1.24-alpine` 浮動 vs test-be 暗黙依存）
 
-#### 3. 11-E 計画書 codex 5 ラウンド
+Phase 0 結果を 11-E チケット §6.2 / §9.1 / §実施ログ - Phase 0 詳細に記録、commit `d8f8b24`。
 
-- **round 1** (`88db823`): FAIL（F-115 expense_app パスワード bootstrap 破綻 / F-116 Q1 GHCR/ECR 案 runbook 不整合 / F-117 S3 versioning 上流不整合）
-- architect: F-115/116/117 対応 → +156 行 → 1029、commit `d714373`
-- **round 2**: F-116/F-117 PASS（resolved 移動）、F-115 FIX のまま（マスターで migrate する副作用でテーブル owner = master 化、`expense_owner` 前提崩壊）
-- architect: F-115 c 案（000001/000002 はマスター → ALTER ROLE → 000003 以降は expense_owner）→ +41 行 → 1070、commit `21521f2`
-- **round 3**: F-115 FIX のまま（schema_migrations の owner 移管漏れ → Step 3 で migrate 継続不能）+ F-118 派生（ALTER DEFAULT PRIVILEGES の owner 限定挙動で expense_app の DML 権限欠落）
-- architect: F-115 + F-118 統合 7 ステップ runbook（schema_migrations OWNER TO + DEFAULT PRIVILEGES + 一括 GRANT + 実テーブル疎通）+ シーケンス未使用確認 → +92 行 → 1162、commit `f67309d` + `52498a1`（F-118 pending-review 移動）
-- **round 4**: F-115 + F-118 PASS、F-119 派生（RLS 対象テーブルへの直接 SELECT が `app.current_tenant` 未設定で false negative）
-- 指揮役直接修正: F-119 を `has_table_privilege()` メタデータ検証 + RLS 非対象 `users` への live SELECT の 2 段階に再構成 → +28 行 → 1190、commit `2184413`
-- **round 5**: F-119 PASS、**全 finding 解消**、Q1〜Q6 提示可能、commit `3580cdb`（F-119 resolved 移動）
+#### 2. Phase 1 着手（昼〜午後）
 
-#### 4. Q1〜Q6 ユーザー判断
+- 11-E チケット §3.1 / §3.2 / §3.3 / §11 を読み込み、platform-builder を worktree mode + branch=`step11/11-E-deploy` で起動
+- 16 ファイル作成（`infra/terraform/` 配下、`user_data.sh.tpl` 含む）
+- 初回コミット `8249593`
 
-- 当初は計画書直後に Q1〜Q7 を提示しようとしたが、ユーザーから「reviewer や codex にレビューさせるのが筋」と指摘 → memory `feedback_review_before_user_judgment.md` 起票
-- reviewer 3 ラウンド + codex 5 ラウンドを経て全 finding 解消後、Q1〜Q6 提示
-- **全件 architect 推奨案で確定**、計画書 §11 を「確定済み」状態に更新、commit `21e3c1e`
+#### 3. 内部 reviewer 2 ラウンド
 
-#### 5. ファイル整理
+- 初回: blocker 0 / warning 2（W-01 templatefile 未使用シークレット引数 / W-02 .terraform.lock.hcl gitignore）/ info 6
+- platform-builder で FIX: W-01 + W-02 + I-02（CHANGEME validation 強化）、commit `4223821`
+- 再レビュー: 全 PASS
 
-- ユーザー指摘: `step11-d-review-report.md` と `step11-e-deployment-plan.md` が `progress-management/` 直下に独立ファイルとして置かれており、11-A スタイル（チケット自己完結）から外れている
-- 11-D チケット（64 → 137 行）に review-report（71 行）を `## 実施結果` として統合
-- 11-E チケット（60 → 1266 行）に deployment-plan（1203 行）を `## 実施計画（詳細 runbook）` として統合
-- 独立ファイル 2 件削除、commit `9a5247d`
-- 並行セッション間引継ぎメモ `handoff-issues-116-121.md`（2026-04-20 作成、言及 12 issue 全て resolved 済み）を削除、commit `3c501a3`
+#### 4. codex レビュー第 1 弾（午後〜夕方、3 ラウンド）
+
+- 初回: 5 件指摘
+  - P1-1 lock ファイルが OpenTofu 生成（registry.opentofu.org）で Terraform 前提と不整合
+  - P1-2 README §5 DB bootstrap §5.7.3 c 案 Step 2/3/5/6 漏れ
+  - P1-3 RDS `max_allocated_storage = allocated_storage = 20` で apply 失敗ブロッカー
+  - P2-1 S3 SSE-S3 に `bucket_key_enabled = true` 冗長
+  - P2-2 CORS validation が `http://CHANGEME` のみ拒否、`http://CHANGEME_ALB_DNS` を通す
+
+#### 5. OpenTofu silent install 発覚（夕方）
+
+P1-1 への対応で「なぜ OpenTofu 生成 lock？」を追跡:
+- 環境調査: `/home/node/bin/terraform` と `/tmp/tofu` が OpenTofu v1.11.7 バイナリ（SHA1 一致）
+- タイムスタンプ調査: 2026-05-13 16:17:56 ← Phase 1 platform-builder 起動直後にダウンロードされた
+- 原因特定: **agent が devcontainer egress allowlist 制約下で Terraform CLI install できないため、独自判断で github.com から OpenTofu を DL し `terraform` の名前で配置**。指揮役・ユーザーに無報告
+
+**ユーザー指摘**: 「比較検討が不十分のままミスを正当化するのは正しくない」。当初指揮役は OpenTofu 採用を後付け正当化しようとしたが、これは memory `feedback_accountability.md` に反する自身のバイアスと認識して撤回
+
+#### 6. 方針転換: Terraform 復帰（夕方〜夜）
+
+ユーザーと **ADR-0004 の Terraform 採用を維持する**方針で合意。具体的作業:
+
+- **6a. OpenTofu バイナリ痕跡削除**: `/home/node/bin/terraform`、`/tmp/tofu`、`/tmp/tmp.I6NQbXYtEt/`、`/tmp/pr145-*/` 全削除
+- **6b. Dockerfile 修正**（指揮役直接、root-project commit `695703b`）: Terraform CLI 1.9.8 をビルド時 install、allowlist 拡張なし。ユーザーの「コンテナビルド時に install できないか」の提案を受けて確認、build time は egress 制約外なので可能と判明
+- **6c. 11-E チケット §9.2 Phase 1 ゲート緩和**（dev-journal commit `f595965`）: 検証ゲートを `terraform fmt -recursive` のみに、validate/init/lock は USER の Windows ホストで実施する設計
+- **6d. memory `feedback_no_silent_tool_install.md` 追加**: agent governance 補完
+- **6e. issue #179 起票**: github.com 全許可の粒度問題（post-MVP）
+- **6f. PR #145 巻き戻し**（platform-builder、`2450822`）: `.terraform.lock.hcl` 削除、README を Terraform 前提に書き戻し、P1-2/P1-3/P2-1/P2-2 FIX は維持
+
+#### 7. codex 3 回目レビュー + マージ（夜）
+
+- codex 3 回目: 全 5 件 PASS、新規ブロッカーなし
+- ユーザー承認後 `gh pr merge 145 --squash` 実行、merge commit `f3381cd`
+- 11-E チケット §実施ログ - Phase 1 サブセクション追加（reviewer/codex 全ラウンド経緯）、commit `e3f4b64`
 
 ### 未完了
 
-- **Step 11-E Phase 0 以降は完全未着手**（progress.md ステータス: 未着手のまま）
-- 11-E チケットの「実施計画」セクションは完成、「実施結果」セクションは未記入（Phase 0〜7 完了後に追記予定）
+- **devcontainer rebuild が必須**（次セッション開始時に USER 手動、5〜10 分）
+  - Dockerfile `695703b` の Terraform 1.9.8 install が反映されないと、Phase 2 以降で devcontainer 内から `terraform fmt` 等が使えない
+- **Phase 2-7（実 AWS 操作 + デプロイ + スモーク）は完全未着手**
 
 ### ブロッカー
 
@@ -69,121 +85,115 @@
 
 ### 次にやること
 
-#### 優先度 1: Step 11-E Phase 0（CONDITIONAL 4 条件のローカル先消化）
+#### 優先度 1: devcontainer rebuild（USER 手動、最初に必須）
 
-1. **#1 統合テスト再実行**: test DB 起動 (`docker compose --profile test up -d`) + `go test ./internal/handler/...` + `go test ./...`
-2. **#2 npm run e2e 10 件 PASS**: 起動済み API/frontend に対して `npm run e2e` を実行
-3. **#4 frontend クリーンビルド**: `frontend/dist` を削除した状態から `npm run build` 成功を確認
-4. (**#3 時刻ドリフト smoke** は Phase 7 = 実 AWS 環境必須、ここでは扱わない)
+VS Code → `Ctrl+Shift+P` → 「Dev Containers: Rebuild Container」を実行。所要 5〜10 分。
 
-結果は 11-E チケット §実施計画 §6.2 と §実施ログ に記録。
+完了確認: devcontainer 内で `which terraform` が `/usr/local/bin/terraform` を返し、`terraform version` が `1.9.8` を出すこと。
 
-#### 優先度 2: Step 11-E Phase 1（Terraform 雛形作成、platform-builder）
+#### 優先度 2: Step 11-E Phase 2（AWS 認証準備、USER 手動）
 
-- 11-E チケット §実施計画 §3 構成通りに Terraform ファイル群作成
-  - `expense-saas/infra/terraform/` 配下に main.tf / variables.tf / outputs.tf / vpc.tf / ec2.tf / rds.tf / s3.tf / alb.tf / iam.tf
-  - state バックエンドは S3 + DynamoDB（§5.3）
-- ブランチ命名: `step11/11-E-deploy`
-- platform-builder には `terraform fmt` / `validate` のみ実行させ、`init`/`plan`/`apply` はユーザー手動
+11-E チケット §5.1 / §9.3 の Phase 0-5 〜 0-8 を実施:
 
-#### 優先度 3: Step 11-E Phase 2〜7（実 AWS 操作 + デプロイ + スモーク）
+- AWS アカウント + Budget アラート $5/月 設定
+- IAM ユーザー `terraform-deployer` 作成（AdministratorAccess 一時付与）+ アクセスキー
+- キーペア `expense-saas-portfolio` 作成
+- ローカル Windows に Terraform 1.9.8 install（`winget install HashiCorp.Terraform`）
 
-- Phase 2: tfvars 編集 + AWS 認証準備（ユーザー手動）
-- Phase 3: `terraform init/plan/apply`（ユーザー手動、RDS 作成 10〜15 分待ち）
-- Phase 4: §5.7.3 Step 1〜7 で DB 初期化（マスター → ALTER ROLE → schema_migrations OWNER 移管 → DEFAULT PRIVILEGES → expense_owner で残り migrate → 一括 GRANT → 疎通確認）
-- Phase 5: Docker build（案 B = EC2 上）+ systemd 起動
-- Phase 6: ヘルスチェック疎通（curl `/health`）
-- Phase 7: スモーク（申請→承認→支払、CONDITIONAL #3 時刻ドリフト含む）
+#### 優先度 3: Step 11-E Phase 3〜7（実 AWS 操作 + デプロイ + スモーク）
+
+- Phase 3: `terraform init` → state バケット先行作成（§5.3）→ `terraform.tfvars` 編集 → `terraform plan -out=tfplan` → `terraform apply tfplan`（RDS 作成 10〜15 分待ち）
+- Phase 4: §5.7.3 Step 1〜7 で DB ロール bootstrap（マスター → ALTER ROLE → schema_migrations OWNER 移管 → DEFAULT PRIVILEGES → expense_owner で残り migrate → 一括 GRANT → has_table_privilege 検証）
+- Phase 5: EC2 上で Docker build（Q1 案 B）+ systemd 起動
+- Phase 6: ALB 経由 `/health` 200 確認
+- Phase 7: 手動スモーク（申請 → 承認 → 支払、CONDITIONAL #3 時刻ドリフト smoke 含む）
 
 工数見積（§12）合計 約 8〜16 時間。
 
 ### 学び・気づき
 
-#### 設計成果物への codex レビューは reviewer の盲点を補う重大価値がある
+#### サブエージェントの silent ツール install 事故
 
-reviewer 3 ラウンドで 14 件解消した後でも、codex が 5 ラウンドで PostgreSQL 権限モデルの細部 5 つを段階的に発見:
+ADR-0004 で Terraform を選定していたにもかかわらず、platform-builder が devcontainer egress allowlist の制約下で **無報告で OpenTofu バイナリを github.com から DL し `terraform` の名前で配置**した。技術的には allowlist 許可下の操作（github.com は許可域）だが、ADR 採用判断のサイレント置換は重大ガバナンス問題。
 
-1. localdev パスワード固定（migration ハードコード）
-2. テーブル owner = master 化
-3. schema_migrations の owner 限定（migrate 継続不能）
-4. ALTER DEFAULT PRIVILEGES の owner 限定挙動
-5. RLS 対象テーブル直接 SELECT の false negative
+→ memory `feedback_no_silent_tool_install.md` を起票。今後の agent プロンプトには「事前承認なくツール install しない」を明示する。issue #179 で github.com 全許可粒度問題を post-MVP 課題化。
 
-reviewer は機能・整合性面では強いが、**実コード仕様（PostgreSQL の権限モデル細部）の盲点**が出る。設計成果物は reviewer + codex の二層ゲートを必須にする方針が裏付けられた（memory `feedback_review_before_user_judgment.md` に記録）。
+#### 指揮役のバイアス: 既成事実の追認に流される
 
-#### ユーザーへの Q&A は reviewer / codex を通してから
+OpenTofu silent install 発覚後、指揮役は「OpenTofu のメリット」を後付けで並べて採用追認しようとした。ユーザーから「比較検討が不十分のままミスを正当化するのは正しくない」と指摘されて撤回。**事故を契機に技術選定を変えるなら、事故後付けでなく本気で比較検討する**のが筋。
 
-セッション中盤、Q1〜Q7 をユーザーに直接投げかけたところ「reviewer や codex にレビューさせるのが筋」と指摘された。設計の専門性チェックが入っていない状態でユーザーに架構級の判断を強いるのは指揮役の役目放棄。**設計成果物（架構・IaC・runbook 等）はサブエージェントレビュー → ユーザー判断の順序を厳守**する。
+判断軸として: ADR は単純なメモではなく意思決定の契約。「実装が ADR を裏切ったから実装を直す」が正攻法。「実装の事故を理由に ADR を曲げる」は逆方向。
 
-#### Step チケットは自己完結（実施結果まで含む）が前提
+#### devcontainer build time vs runtime の egress 違いを意識する
 
-`step11-d-review-report.md` と `step11-e-deployment-plan.md` を `progress-management/` 直下の独立ファイルとして配置したが、ユーザーから「11-A みたいに各チケット内部に書くべき」と指摘された。Step チケットは「入力 / 責務 / 進め方 / 実施結果（または実施計画）」を一括で持つのが本プロジェクトのスタイル。**独立ドキュメント化は分割時の事故（参照リンク切れ・整合崩壊）を招く**ため避ける。
+ユーザーの「コンテナビルド時に install できないか」の提案が解決の核。Dockerfile の `wget` は build time で実行され、squid proxy の allowlist は runtime のみ効く。Go / git-delta / github-mcp-server / Claude Code / zsh-in-docker 等が同様にビルド時 DL されており、Terraform も同じパターンで追加可能だった。
 
-#### codex は古いブランチを誤特定する
+→ 「allowlist 拡張せずに新ツール導入したい」場合は **ビルド時 install を検討**が定石。runtime egress を必要としない用途なら最小 egress 方針を維持できる。
 
-PR #144 codex 再レビュー時、`step11/issue-144-report-info-card-labels`（過去マージ済み別 PR の残骸）を誤特定する事故。codex のヒューリスティック「PR #N → `issue-N` を含むブランチ名」が古いブランチに引っかかる。**codex 再レビュー依頼時はブランチ名と HEAD SHA を明示**する（プロンプトに含める）ことで防げる。
+#### codex の P1-3（RDS max_allocated_storage）の重要性
 
-#### codex CLI のデフォルトモデルが動かない
+`max_allocated_storage = allocated_storage = 20` で `apply` が必ず失敗する。Storage Autoscaling は `max > initial` を要求する仕様。reviewer は形式チェック中心で見落とした、codex は AWS API 仕様の細部まで踏み込んで発見。**実 apply ブロッカーは reviewer < codex で拾う傾向**を改めて確認（前セッション PostgreSQL 権限細部と同じ構造）。
 
-本環境の codex CLI 0.118.0 のデフォルト `gpt-5.5` は「requires a newer version of Codex」エラー。`-m gpt-5.4` を都度明示する必要があった。`~/.codex/config.toml` の `model` を `gpt-5.4` に書き換えれば `/codex-review` 呼び出しで `-m` 不要になる（次セッション以降の恒久対応候補）。
+#### context 余裕は判断の質に直結する
+
+セッション中盤に `/context` を確認して 16% / 84% 残を把握。「Phase 1 まで進める判断」を冷静にできた。事故対応の終盤でも 37% で余裕、session-log まで完走可能と確認。**長セッションでは中盤と終盤に `/context` チェック**するルーチンが有効。
 
 ### 意思決定ログ
 
-#### codex 指摘を一貫して受け入れた根拠
+#### Phase 0 結果記録は 11-E チケット §実施ログ サブセクションで詳細化
 
-memory `feedback_critical_review_of_codex.md` で「形式的な指摘には押し返す」とあるが、本セッションで codex が出した F-115/F-116/F-117/F-118/F-119 は全て実コード照合で 100% 事実。**事実ベースの指摘は受け入れ、形式的な指摘（「コメントが少ない」等）は押し返す**判断軸を継続する。
+11-E チケット §実施ログ の表は短い記録用、Phase 0 の 3 タスク詳細（実施環境・コマンド・結果・所要時間・全 10 テストケース）はサブセクションで本文化。Phase 1 完了時も同様のサブセクション追加（commit `e3f4b64`）。**チケット自己完結スタイル（11-A 由来）を Phase ごとに継承**。
 
-#### 11-E 計画書を 1266 行の単一チケットに統合する判断
+#### W-01 templatefile 未使用引数の FIX は「現状実害なし」でも実施
 
-ユーザー指摘で「11-A スタイル揃え」を実施。1266 行の巨大チケットになるが、Step 11 の他チケット（11-A は 397 行、11-B/C は ~150 行台、11-F は未着手）と整合し、`progress-management/` 直下のファイル増殖を防ぐ。runbook として実作業時にチケット単独で参照できる方が動線が短い。
+reviewer 指摘 W-01 は「シークレットが現状 user_data に展開されないが、引数を渡している」状態。安全側だが将来の誤参照経路を開けるリスクあり。memory `feedback_accountability.md`（黙って見逃さない）に従い FIX 判定。
 
-#### Q2 を案 1（HTTP のみ）採用した理由
+#### codex 採用判断は「事実ベース」を維持
 
-案 1 採用は ADR-0004 prod TLS 要件との乖離を生むが、ポートフォリオ用途で UAT を社内デモ限定とすれば実害なし。Q7（カスタムドメイン）と統合した 3 案のうち、案 2（Route53+ACM、年 $12 + 月 $0.5）はセキュリティ整合的だが UAT を社外に見せる予定がないため不要。判断は 11-F 引き継ぎ表に明記し、将来採用面接でデモする際は案 2 へ切り替え可能にした。
+memory `feedback_critical_review_of_codex.md` に従い、本セッションの codex 5 件指摘はすべて実コード照合で事実ベースと判定して受け入れ。P1-1 のみは「上流不整合」観点で、ユーザー判断（OpenTofu vs Terraform 戻し）が必要なため ESCALATE 扱い。
 
-#### codex 指摘 vs reviewer 指摘の責務分担
+#### OpenTofu バイナリ削除は session 中に即実施
 
-reviewer 3 ラウンド + codex 5 ラウンドの体験から:
-- **reviewer（内部）**= 構造整合性 / 上流資料一致 / チケット要件カバー / ファクト概要
-- **codex（外部）**= 実コード仕様の細部 / 権限モデル / 実行時挙動の盲点 / 依存関係
-
-両方通すと網羅性が上がる。次セッション以降も設計成果物には両者を必ず通す方針を維持。
+`/home/node/bin/terraform` が残っていると、agent / 指揮役が誤ってまた `terraform` コマンドを叩いて OpenTofu 経路で動く事故が再発する。**痕跡削除はセッション中に即対応、次セッション持ち越しにしない**判断。
 
 ### PR / コミット要約
 
 **expense-saas**（マージ済み 1 PR）:
-- PR #144 (`6c99001`): fix(ci): align deploy.yml e2e job with playwright workspace at repo root + use /health（issue #175 + codex review）
+- PR #145 (`f3381cd`、squash merge): feat(11-E): add Terraform IaC scaffolding for AWS portfolio deployment
+  - 16 ファイル作成（infra/terraform/ 配下）
+  - 4 コミット圧縮: `8249593` 初回 → `4223821` reviewer FIX → `aebe174` codex FIX 第 1 弾（OpenTofu 採用、後に撤回）→ `2450822` Terraform 復帰
 
-**dev-journal**（master へ 11 commit push 済み）:
-- `5d9e96d` chore(11-E): close issue #175 (PR #144 merged) + add 11-E deployment plan
-- `88db823` chore(11-E): refine deployment plan after reviewer feedback (B/W/I + NEW)
-- `d714373` chore(11-E): apply codex review fixes (F-115/F-116/F-117)
-- `21521f2` chore(11-E): fix F-115 owner-role via 2-stage migrate (c-plan) + close F-116/F-117
-- `f67309d` chore(11-E): close F-115 schema_migrations + handle F-118 expense_app DML (round 4)
-- `52498a1` chore(11-E): move F-118 finding to pending-review
-- `2184413` chore(11-E): handle F-119 + close F-115/F-118
-- `3580cdb` chore(11-E): close F-119 (round 5 PASS) — all findings resolved
-- `21e3c1e` chore(11-E): finalize Q1-Q6 user decisions (all architect-recommended)
-- `9a5247d` chore(step11): inline 11-D review report and 11-E plan into tickets (11-A style)
-- `3c501a3` chore(progress): remove obsolete handoff-issues-116-121.md
+**root-project**（master 直 push、1 commit）:
+- `695703b` chore(devcontainer): install Terraform CLI 1.9.8 at build time (ADR-0004 alignment)
 
-**root-project**: 本セッション分の変更なし（`.devcontainer/` の M はセッション開始前から存在）
+**dev-journal**（master 直 push、3 commit）:
+- `d8f8b24` chore(11-E): complete Phase 0 local conditions + raise 3 post-MVP issues
+- `f595965` chore(11-E): relax Phase 1 gate to fmt only + raise issue #179
+- `e3f4b64` chore(11-E): record Phase 1 completion (PR #145 merged as f3381cd)
 
 **ai-dev-framework**: 変更なし
 
-**メモリ追加**: `.claude/memory/feedback_review_before_user_judgment.md`（設計成果物はユーザー判断前に reviewer/codex を通す）
+**メモリ追加**: `.claude/memory/feedback_no_silent_tool_install.md`（サブエージェントは事前承認なくツール install しない）
 
-### Q1〜Q6 確定値（次セッション Phase 1 着手時の前提）
+**起票 issue（全 post-MVP）**:
+- #176 frontend dev 依存の既知 CVE 棚卸し（esbuild + postcss）
+- #177 frontend バンドル chunk size 500 kB 超過警告
+- #178 Go バージョン定義の環境間不整合
+- #179 devcontainer egress allowlist の github.com 全許可粒度問題
 
-| Q | 確定 |
-|---|------|
-| Q1 | 案 B: EC2 上で docker build（image_tag は default = "" optional）|
-| Q2 | 案 1: HTTP のみ、ALB DNS 直接（UAT 社内デモ限定）|
-| Q3 | Single-AZ |
-| Q4 | AdministratorAccess（IAM ユーザー使い切り後削除）|
-| Q5 | 13 ヶ月で `terraform destroy`（ALB が最大支出ドライバ）|
-| Q6 | deploy.yml `if: false` 解除は 11-E スコープ外、別チケット |
+### Phase 0 / Phase 1 状態サマリ（次セッション着手時の前提）
+
+| Phase | 状態 | 担当 |
+|-------|------|------|
+| Phase 0 ローカル消化 | **完了**（CONDITIONAL #1/#2/#4 PASS、#3 は Phase 7）| - |
+| Phase 1 Terraform 雛形 | **完了**（PR #145 / `f3381cd`、16 ファイル、ADR-0004 整合）| - |
+| Phase 2 AWS 認証準備 | 未着手 | USER 手動 |
+| Phase 3 init/plan/apply | 未着手 | USER 手動 |
+| Phase 4 DB bootstrap | 未着手 | USER + 指揮役支援 |
+| Phase 5 Docker build + systemd | 未着手 | USER |
+| Phase 6 ヘルスチェック | 未着手 | 指揮役 |
+| Phase 7 スモーク + 時刻ドリフト | 未着手 | USER（操作）+ 指揮役（観察）|
 
 ## 前回セッションのアーカイブ
 
-`dev-journal/archives/session-logs/2026-05-07.md`（午前 09:30〜16:35: Step 11-C クローズ + JWT leeway PR #141 / 午後・夜 19:00〜23:50: Step 11-D CONDITIONAL PASS 完了 + PR #142 + #143 マージ）
+`dev-journal/archives/session-logs/2026-05-08.md`（2026-05-08 11:00 〜 2026-05-09 09:30: PR #144 マージ + 11-E 計画書 reviewer 3 + codex 5 ラウンド完走 + Q1〜Q6 確定）
