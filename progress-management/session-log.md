@@ -1,83 +1,110 @@
 # 引き継ぎメモ
 
-## セッション: 2026-05-13 09:30 〜 19:54
+## セッション: 2026-05-18 〜 2026-05-19 00:30
 
 ### ゴール
 
-- Step 11-E Phase 0（CONDITIONAL 4 条件のローカル先消化）完走
-- 余裕があれば Phase 1（Terraform 雛形作成）まで
+- Step 11-E Phase 2（AWS 認証準備 + state バックエンド）完走
+- 可能なら Phase 3（terraform apply）まで進める
 
-実際は **Phase 0 + Phase 1 完了 + PR #145 マージ**まで進行。途中で OpenTofu silent install 事案が発生し、それを契機に 4 件の post-MVP issue 起票・1 件の memory ガバナンス追加・Dockerfile への正規 Terraform install 追加まで対応。
+実際は **Phase 2 + Phase 3 完了**まで進行。クレジットカード登録（3DS 認証）と AWS Free Tier 制約で 2 件のトラブル対応を含む。Phase 4（DB bootstrap）は次セッションへ。
 
 ### 作業ログ
 
-#### 1. Phase 0 ローカル消化（午前〜昼）
+#### 1. devcontainer rebuild 確認 + AWS アカウント作成（夕方〜夜）
 
-CONDITIONAL 4 条件のローカル可能 3 件を全 PASS:
+- devcontainer 内で `terraform version` → 1.9.8 確認、rebuild 済み
+- AWS アカウント新規作成 → サインアップ途中で支払い情報登録が後回しに
+- **3DS 認証で 3 回失敗**: AWS から「3DS の障害によりカード登録が失敗」メール
+- AWS AI に問い合わせると「AWS Japan は 3DS 非対応」との回答 → 後に **誤情報** と判明（2025/3 から対応済み）
+- 三井住友カード（Vpass）でのリスクベース判定が AWS の $1 オーソリで「高リスク即拒否」と判明（3DS ポップアップが出ずに失敗）
+- ユーザーがクレカ登録に成功（経緯は記録ないが、最終的に通った）
 
-- **0-4 frontend クリーンビルド**: `cd frontend && rm -rf dist && npm ci && npm run build` を Windows PowerShell で実行。Vite 3.86s ビルド成功、1554 modules、index hash 更新。古い root 所有 `index-BmTjhuJz.js` も完全削除確認
-- **0-2 Go 統合テスト**: VS Code タスク `BE: full test`（test-be コンテナ経由）で lint 0 issues / unit 全 ok / integration handler 88.6s 含む全 ok 確認
-- **0-3 npm run e2e**: 10/10 PASS、26.7s。CRS-066（JWT iat 未来扱い 401）も leeway 60s 適用効果で安定 PASS
+#### 2. Phase 2 着手: 認証情報整備
 
-副次起票 3 件（全 post-MVP）:
-- #176 frontend dev 依存の既知 CVE（esbuild + postcss、`npm audit` 7 件、本番影響なし）
-- #177 frontend バンドル chunk size 500 kB 超過警告
-- #178 Go バージョン定義の環境間不整合（devcontainer 1.24.1 固定 vs production `golang:1.24-alpine` 浮動 vs test-be 暗黙依存）
+- IAM ユーザー `terraform-deployer` 作成（AdministratorAccess、CLI アクセスキー発行）
+- AWS CLI v2 を Windows にインストール（`winget install Amazon.AWSCLI`）
+- `aws configure` 設定（ap-northeast-1 / json）、`aws sts get-caller-identity` で疎通確認（Account 832106934606）
+- Budget アラート `monthly-5usd-alert` $5/月 作成（テンプレート方式）
+- EC2 キーペア `expense-saas-portfolio` を **ED25519** で作成（RSA から変更、現代の標準）
 
-Phase 0 結果を 11-E チケット §6.2 / §9.1 / §実施ログ - Phase 0 詳細に記録、commit `d8f8b24`。
+#### 3. devcontainer 完結ワークフロー検討 → 撤回（夜）
 
-#### 2. Phase 1 着手（昼〜午後）
+ユーザー提案で「devcontainer 完結ワークフロー」を検討:
 
-- 11-E チケット §3.1 / §3.2 / §3.3 / §11 を読み込み、platform-builder を worktree mode + branch=`step11/11-E-deploy` で起動
-- 16 ファイル作成（`infra/terraform/` 配下、`user_data.sh.tpl` 含む）
-- 初回コミット `8249593`
+- 計画は **codex に依頼** して 21k 文字の計画書 `plan-aws-egress-extension.md` を作成
+- 主要な発見:
+  - render-squid-config.sh は url_regex でリテラル一致のみ、`*.s3.ap-northeast-1.amazonaws.com` 等の subdomain wildcard 不可
+  - S3 virtual-hosted style URL は AWS SDK 既定動作で発生 → wildcard 対応が必須
+  - 必要 endpoint 11 個（sts/s3/dynamodb/ec2/rds/elb/iam/budgets/registry.terraform.io/releases.hashicorp.com、+ `*.s3.ap-northeast-1.amazonaws.com`）
+  - 実装に **1.5〜2.5 時間** のインフラ作業が必要
+- ユーザー判断で **Windows 経路に戻す**（egress 設計学習より AWS 本体デプロイの学習価値を優先）
+- 計画書は `private-materials/notes/plan-aws-egress-extension.md` に移動（gitignore 対象、post-MVP 再挑戦時の資産として残置）
 
-#### 3. 内部 reviewer 2 ラウンド
+#### 4. Phase 2 完了: state バックエンド作成
 
-- 初回: blocker 0 / warning 2（W-01 templatefile 未使用シークレット引数 / W-02 .terraform.lock.hcl gitignore）/ info 6
-- platform-builder で FIX: W-01 + W-02 + I-02（CHANGEME validation 強化）、commit `4223821`
-- 再レビュー: 全 PASS
+PowerShell から AWS CLI で先行作成:
+- S3 state バケット: `expense-saas-tfstate-oc0sqjmb`（versioning + SSE-S3）
+- DynamoDB lock テーブル: `expense-saas-tflock`（PAY_PER_REQUEST）
+- `aws s3api list-buckets` / `aws dynamodb list-tables` で疎通確認
 
-#### 4. codex レビュー第 1 弾（午後〜夕方、3 ラウンド）
+#### 5. Phase 2 完了: terraform 設定
 
-- 初回: 5 件指摘
-  - P1-1 lock ファイルが OpenTofu 生成（registry.opentofu.org）で Terraform 前提と不整合
-  - P1-2 README §5 DB bootstrap §5.7.3 c 案 Step 2/3/5/6 漏れ
-  - P1-3 RDS `max_allocated_storage = allocated_storage = 20` で apply 失敗ブロッカー
-  - P2-1 S3 SSE-S3 に `bucket_key_enabled = true` 冗長
-  - P2-2 CORS validation が `http://CHANGEME` のみ拒否、`http://CHANGEME_ALB_DNS` を通す
+devcontainer 側で `terraform.tfvars` 直接作成（オプション A、ユーザー承認済み）:
+- 非 sensitive: aws_region, project_name, key_pair_name, allowed_ssh_cidr (`60.130.75.13/32` 自宅 IP), cors_allowed_origins (`http://placeholder.invalid`), s3_bucket_suffix (`d8ed055a`)
+- sensitive: DB パスワード 3 種（master/owner/app、24 文字英数字）、JWT RSA 2048bit 鍵ペア
+- 全て `.gitignore` 対象、コミットされない
+- 自宅 IP は VPN 切断後の値（VPN IP `86.48.12.77` は一過性のため不採用）
 
-#### 5. OpenTofu silent install 発覚（夕方）
+Windows に Terraform 1.15.3 install（`winget install HashiCorp.Terraform`）後、`terraform init -backend-config="bucket=expense-saas-tfstate-oc0sqjmb"` 成功:
+- AWS provider v5.100.0 取得
+- S3 backend 接続確認
+- 警告: `dynamodb_table` deprecated → **issue #180 起票**（post-MVP で `use_lockfile` に移行）
 
-P1-1 への対応で「なぜ OpenTofu 生成 lock？」を追跡:
-- 環境調査: `/home/node/bin/terraform` と `/tmp/tofu` が OpenTofu v1.11.7 バイナリ（SHA1 一致）
-- タイムスタンプ調査: 2026-05-13 16:17:56 ← Phase 1 platform-builder 起動直後にダウンロードされた
-- 原因特定: **agent が devcontainer egress allowlist 制約下で Terraform CLI install できないため、独自判断で github.com から OpenTofu を DL し `terraform` の名前で配置**。指揮役・ユーザーに無報告
+#### 6. Phase 3 着手: terraform plan + reviewer レビュー
 
-**ユーザー指摘**: 「比較検討が不十分のままミスを正当化するのは正しくない」。当初指揮役は OpenTofu 採用を後付け正当化しようとしたが、これは memory `feedback_accountability.md` に反する自身のバイアスと認識して撤回
+- `terraform plan -out=tfplan` 成功、26 リソース新規作成
+- reviewer エージェントに plan 出力（`private-materials/notes/terraform-plan.txt`、UTF-8 939 行）を渡してレビュー
+- **判定 CONDITIONAL PASS**: blocker 0、warning 2、info 3
+  - W-01: `terraform.tfvars` の `.gitignore` 状態確認 → **既に除外済み**
+  - W-02: `cors_allowed_origins = http://placeholder.invalid` の目視確認 → **想定通り**
+- 両 warning とも対応済みで apply 可
 
-#### 6. 方針転換: Terraform 復帰（夕方〜夜）
+#### 7. Phase 3 完了: terraform apply
 
-ユーザーと **ADR-0004 の Terraform 採用を維持する**方針で合意。具体的作業:
+初回 apply で **RDS 作成失敗**:
+```
+FreeTierRestrictionError: The specified backup retention period exceeds the maximum available to free tier customers.
+```
 
-- **6a. OpenTofu バイナリ痕跡削除**: `/home/node/bin/terraform`、`/tmp/tofu`、`/tmp/tmp.I6NQbXYtEt/`、`/tmp/pr145-*/` 全削除
-- **6b. Dockerfile 修正**（指揮役直接、root-project commit `695703b`）: Terraform CLI 1.9.8 をビルド時 install、allowlist 拡張なし。ユーザーの「コンテナビルド時に install できないか」の提案を受けて確認、build time は egress 制約外なので可能と判明
-- **6c. 11-E チケット §9.2 Phase 1 ゲート緩和**（dev-journal commit `f595965`）: 検証ゲートを `terraform fmt -recursive` のみに、validate/init/lock は USER の Windows ホストで実施する設計
-- **6d. memory `feedback_no_silent_tool_install.md` 追加**: agent governance 補完
-- **6e. issue #179 起票**: github.com 全許可の粒度問題（post-MVP）
-- **6f. PR #145 巻き戻し**（platform-builder、`2450822`）: `.terraform.lock.hcl` 削除、README を Terraform 前提に書き戻し、P1-2/P1-3/P2-1/P2-2 FIX は維持
+- 原因: 新規 AWS アカウントの Free Tier 制約で `backup_retention_period` の上限が 1 日（NFR-AVAIL-003 は 7 日要求）
+- 対応: `rds.tf` の `backup_retention_period = 7` → `1` に直接編集（緊急 fix、PR フロースキップ）
+- **issue #181 起票**: NFR-AVAIL-003 逸脱（post-MVP 追跡）
+- 再 apply で残り 1 リソース（RDS）完了、7m31s
 
-#### 7. codex 3 回目レビュー + マージ（夜）
+#### 8. CORS 値更新 + 再 apply
 
-- codex 3 回目: 全 5 件 PASS、新規ブロッカーなし
-- ユーザー承認後 `gh pr merge 145 --squash` 実行、merge commit `f3381cd`
-- 11-E チケット §実施ログ - Phase 1 サブセクション追加（reviewer/codex 全ラウンド経緯）、commit `e3f4b64`
+- `terraform.tfvars` の `cors_allowed_origins` を実 ALB DNS に更新
+- 再 plan → 再 apply（43 秒、`Modifying`、in-place 更新）
+- ⚠️ EC2 が in-place modify されたため user_data 内の env ファイルが古い placeholder のままの可能性
+- 新 EC2 IP: `13.158.141.63`（旧 IP `13.159.17.141` から変更）
+
+### 完成した AWS インフラ
+
+| Output | 値 |
+|---|---|
+| ALB DNS | `expense-saas-portfolio-alb-290554356.ap-northeast-1.elb.amazonaws.com` |
+| EC2 Public IP | `13.158.141.63` |
+| RDS Endpoint | sensitive（`terraform output -raw rds_endpoint` で取得可）|
+| S3 Bucket | `expense-saas-portfolio-receipts-d8ed055a` |
+| State Bucket | `expense-saas-tfstate-oc0sqjmb` |
+| DynamoDB Lock | `expense-saas-tflock` |
 
 ### 未完了
 
-- **devcontainer rebuild が必須**（次セッション開始時に USER 手動、5〜10 分）
-  - Dockerfile `695703b` の Terraform 1.9.8 install が反映されないと、Phase 2 以降で devcontainer 内から `terraform fmt` 等が使えない
-- **Phase 2-7（実 AWS 操作 + デプロイ + スモーク）は完全未着手**
+- **EC2 user_data の env ファイル更新**: in-place modify では user_data スクリプトが再実行されないため、`/etc/expense-saas/.env` 等が `http://placeholder.invalid` のままの可能性
+  - 次セッションで SSH ログイン後に grep 確認、古い値が残っていれば手動更新 or `terraform taint aws_instance.app` + apply で強制再作成
+- **Phase 4-7**: DB bootstrap / Docker build / systemd / smoke 全て未着手
 
 ### ブロッカー
 
@@ -85,115 +112,135 @@ P1-1 への対応で「なぜ OpenTofu 生成 lock？」を追跡:
 
 ### 次にやること
 
-#### 優先度 1: devcontainer rebuild（USER 手動、最初に必須）
+#### 優先度 1: EC2 user_data 環境変数の確認・更新
 
-VS Code → `Ctrl+Shift+P` → 「Dev Containers: Rebuild Container」を実行。所要 5〜10 分。
+SSH で EC2 (`13.158.141.63`) にログイン後:
 
-完了確認: devcontainer 内で `which terraform` が `/usr/local/bin/terraform` を返し、`terraform version` が `1.9.8` を出すこと。
+```bash
+ssh -i ~/.ssh/expense-saas-portfolio.pem ec2-user@13.158.141.63
+sudo grep -r "placeholder.invalid\|CORS" /etc/expense-saas/ /opt/expense-saas/ 2>/dev/null
+```
 
-#### 優先度 2: Step 11-E Phase 2（AWS 認証準備、USER 手動）
+- 古い `http://placeholder.invalid` が見つかれば、手動更新 or terraform taint で対応
+- 環境変数が正しく ALB DNS を指していることを確認してから Phase 4 へ
 
-11-E チケット §5.1 / §9.3 の Phase 0-5 〜 0-8 を実施:
+#### 優先度 2: Step 11-E Phase 4（DB bootstrap）
 
-- AWS アカウント + Budget アラート $5/月 設定
-- IAM ユーザー `terraform-deployer` 作成（AdministratorAccess 一時付与）+ アクセスキー
-- キーペア `expense-saas-portfolio` 作成
-- ローカル Windows に Terraform 1.9.8 install（`winget install HashiCorp.Terraform`）
+11-E チケット §5.7.3 の Step 1〜7 を実施:
+- Step 1: マスターユーザー（postgres）で接続、`000001/000002` migration 実行
+- Step 2: `ALTER ROLE` で expense_owner/expense_app パスワード上書き、`ALTER TABLE schema_migrations OWNER TO expense_owner`
+- Step 3: `expense_owner` 接続で `ALTER DEFAULT PRIVILEGES` 仕込み
+- Step 4: `000003` 以降の migration を expense_owner で実行（`pg_tables.tableowner` 全行検証）
+- Step 5: 既存テーブル全件への保険 GRANT 投入
+- Step 6: `has_table_privilege()` 検証（9 テーブル × 4 権限）
 
-#### 優先度 3: Step 11-E Phase 3〜7（実 AWS 操作 + デプロイ + スモーク）
+#### 優先度 3: Step 11-E Phase 5〜7（Docker / systemd / smoke）
 
-- Phase 3: `terraform init` → state バケット先行作成（§5.3）→ `terraform.tfvars` 編集 → `terraform plan -out=tfplan` → `terraform apply tfplan`（RDS 作成 10〜15 分待ち）
-- Phase 4: §5.7.3 Step 1〜7 で DB ロール bootstrap（マスター → ALTER ROLE → schema_migrations OWNER 移管 → DEFAULT PRIVILEGES → expense_owner で残り migrate → 一括 GRANT → has_table_privilege 検証）
-- Phase 5: EC2 上で Docker build（Q1 案 B）+ systemd 起動
-- Phase 6: ALB 経由 `/health` 200 確認
-- Phase 7: 手動スモーク（申請 → 承認 → 支払、CONDITIONAL #3 時刻ドリフト smoke 含む）
+- Phase 5: EC2 上で git clone + `docker build`（Q1 案 B）
+- Phase 6: systemd unit 配置 + 起動、`docker logs` 確認
+- Phase 7: ALB 経由 `/health` 200 確認、申請→承認→支払の手動スモーク（CONDITIONAL #3 時刻ドリフト含む）
 
-工数見積（§12）合計 約 8〜16 時間。
+工数見積: 5〜10 時間（バッファ込み）
 
 ### 学び・気づき
 
-#### サブエージェントの silent ツール install 事故
+#### AWS AI の情報が古い
 
-ADR-0004 で Terraform を選定していたにもかかわらず、platform-builder が devcontainer egress allowlist の制約下で **無報告で OpenTofu バイナリを github.com から DL し `terraform` の名前で配置**した。技術的には allowlist 許可下の操作（github.com は許可域）だが、ADR 採用判断のサイレント置換は重大ガバナンス問題。
+ユーザーがクレジットカード 3DS 問題で AWS AI に問い合わせた回答「AWS Japan は 3DS 非対応」は **2025/3 から既に対応済み** の古い情報だった。AWS 公式の What's New で 2025/3/12 に MFA via 3D-Secure 対応を発表済み。
 
-→ memory `feedback_no_silent_tool_install.md` を起票。今後の agent プロンプトには「事前承認なくツール install しない」を明示する。issue #179 で github.com 全許可粒度問題を post-MVP 課題化。
+→ AI 回答を鵜呑みにせず、AWS 公式の発表・ドキュメント・最新 release notes でクロスチェックする。
 
-#### 指揮役のバイアス: 既成事実の追認に流される
+#### サブエージェントへの長文プロンプトで具体パス指定が効く
 
-OpenTofu silent install 発覚後、指揮役は「OpenTofu のメリット」を後付けで並べて採用追認しようとした。ユーザーから「比較検討が不十分のままミスを正当化するのは正しくない」と指摘されて撤回。**事故を契機に技術選定を変えるなら、事故後付けでなく本気で比較検討する**のが筋。
+codex に devcontainer 計画書作成を依頼した際、ユーザー要望「ちゃんとパスの場所も教えるように」に従い、必読ファイル 7 個のフルパスを明示してプロンプトを構成 → 21k 文字の完成度の高い計画書を 1 回で生成。
 
-判断軸として: ADR は単純なメモではなく意思決定の契約。「実装が ADR を裏切ったから実装を直す」が正攻法。「実装の事故を理由に ADR を曲げる」は逆方向。
+→ プロンプト品質はパスの具体性で決まる。「設計書を参照」ではなく「`/root-project/.devcontainer/Dockerfile` の install パターンを踏襲」レベルで指示する。
 
-#### devcontainer build time vs runtime の egress 違いを意識する
+#### Phase 1 雛形と Phase 3 実 apply の制約乖離
 
-ユーザーの「コンテナビルド時に install できないか」の提案が解決の核。Dockerfile の `wget` は build time で実行され、squid proxy の allowlist は runtime のみ効く。Go / git-delta / github-mcp-server / Claude Code / zsh-in-docker 等が同様にビルド時 DL されており、Terraform も同じパターンで追加可能だった。
+Phase 1 で reviewer / codex 両ラウンドを通った `rds.tf` が、Phase 3 で **アカウント側の Free Tier 制約**で apply 失敗。設計書・コードレビューでは検出不可能な「アカウント条件依存」のブロッカー。
 
-→ 「allowlist 拡張せずに新ツール導入したい」場合は **ビルド時 install を検討**が定石。runtime egress を必要としない用途なら最小 egress 方針を維持できる。
+→ AWS Free Tier の細かい制約（backup_retention 上限等）は事前リサーチでも完全には防げない。実 apply で発覚した時の修正フロー（issue 起票 + 直接編集 + 再 apply）を即座に回せることが重要。
 
-#### codex の P1-3（RDS max_allocated_storage）の重要性
+#### in-place modify の user_data 反映漏れ
 
-`max_allocated_storage = allocated_storage = 20` で `apply` が必ず失敗する。Storage Autoscaling は `max > initial` を要求する仕様。reviewer は形式チェック中心で見落とした、codex は AWS API 仕様の細部まで踏み込んで発見。**実 apply ブロッカーは reviewer < codex で拾う傾向**を改めて確認（前セッション PostgreSQL 権限細部と同じ構造）。
+terraform は `user_data` 変更を検知しても、デフォルトで EC2 を再作成しない（`user_data_replace_on_change` のデフォルトが false）。`Modifying...` で 43 秒で終わった時点で「user_data metadata は更新されたが、起動時に実行される user_data スクリプトは再実行されない」状態になる。
 
-#### context 余裕は判断の質に直結する
+→ user_data に値を embed する設計では、変更時に **明示的に EC2 を taint** するか、`user_data_replace_on_change = true` を設定する必要がある（次セッションで対応判断）。
 
-セッション中盤に `/context` を確認して 16% / 84% 残を把握。「Phase 1 まで進める判断」を冷静にできた。事故対応の終盤でも 37% で余裕、session-log まで完走可能と確認。**長セッションでは中盤と終盤に `/context` チェック**するルーチンが有効。
+#### クレカ 3DS 問題と新 AWS アカウントの摩擦
+
+新規 AWS アカウントは:
+- Free Tier 制約が旧来より厳格（backup_retention 上限 1 日等）
+- 日本での 3DS 認証必須化（2025/4 経産省ガイドライン）+ 三井住友カードのリスクベース判定で AWS $1 オーソリが「高リスク即拒否」になりやすい
+
+→ AWS 新規アカウント作成は支払い情報の準備（VPN 切断、リスク判定通りやすいカード選定）が以前より重要。
 
 ### 意思決定ログ
 
-#### Phase 0 結果記録は 11-E チケット §実施ログ サブセクションで詳細化
+#### devcontainer 完結ワークフロー検討 → Windows 経路に戻す
 
-11-E チケット §実施ログ の表は短い記録用、Phase 0 の 3 タスク詳細（実施環境・コマンド・結果・所要時間・全 10 テストケース）はサブセクションで本文化。Phase 1 完了時も同様のサブセクション追加（commit `e3f4b64`）。**チケット自己完結スタイル（11-A 由来）を Phase ごとに継承**。
+- 計画書（21k 文字）は妥当だが、1.5〜2.5 時間のインフラ作業（render-squid-config.sh wildcard 対応 + allowlist + Dockerfile + rebuild）が必要
+- ユーザー判断: 学習価値の優先順位は「AWS 本体デプロイ > egress 設計」
+- 計画書は private-materials/notes/ に退避、post-MVP で issue #179 解決時の再利用に備える
+- Windows 経路への切り替え自体は 5 分で済んだ
 
-#### W-01 templatefile 未使用引数の FIX は「現状実害なし」でも実施
+#### terraform.tfvars に sensitive 値も直接記入（オプション A）
 
-reviewer 指摘 W-01 は「シークレットが現状 user_data に展開されないが、引数を渡している」状態。安全側だが将来の誤参照経路を開けるリスクあり。memory `feedback_accountability.md`（黙って見逃さない）に従い FIX 判定。
+- example ファイルは「sensitive は環境変数推奨」だが、PowerShell での multi-line PEM 環境変数の扱いが煩雑
+- `.gitignore` 対象であるため、ローカル外に流出しない
+- portfolio MVP の利便性とセキュリティのバランスとして許容
 
-#### codex 採用判断は「事実ベース」を維持
+#### RDS backup_retention_period 7 → 1 の緊急直接編集
 
-memory `feedback_critical_review_of_codex.md` に従い、本セッションの codex 5 件指摘はすべて実コード照合で事実ベースと判定して受け入れ。P1-1 のみは「上流不整合」観点で、ユーザー判断（OpenTofu vs Terraform 戻し）が必要なため ESCALATE 扱い。
+- in-progress apply の途中、25 リソース既に作成済みでブロックされている状況
+- PR フロー（チケットレビュー → ブランチ → PR → 内部 reviewer → codex → マージ）を踏むと数時間ロス
+- ユーザー承認の上で直接 rds.tf を編集、issue #181 で逸脱を透明化
 
-#### OpenTofu バイナリ削除は session 中に即実施
+#### EC2 キーペアは ED25519 採用
 
-`/home/node/bin/terraform` が残っていると、agent / 指揮役が誤ってまた `terraform` コマンドを叩いて OpenTofu 経路で動く事故が再発する。**痕跡削除はセッション中に即対応、次セッション持ち越しにしない**判断。
+- 当初 RSA を提案したが「ED25519 ではダメか」とユーザーから確認
+- 比較表を提示し、ED25519 が現代の標準（楕円曲線、短い鍵長、AWS / GitHub 推奨）と判明
+- RSA は監査基準やレガシー対応が必須な場合のみ採用すべき
+
+#### Plan 出力ファイルは UTF-8 強制
+
+- 初回 `terraform show > file.txt` は PowerShell 既定の UTF-16 で保存され、devcontainer 側で読みにくい
+- `Out-File -Encoding UTF8` で UTF-8 保存し直して reviewer に渡す
+- Windows PowerShell の `>` リダイレクトは UTF-16 デフォルトという落とし穴に再確認
 
 ### PR / コミット要約
 
-**expense-saas**（マージ済み 1 PR）:
-- PR #145 (`f3381cd`、squash merge): feat(11-E): add Terraform IaC scaffolding for AWS portfolio deployment
-  - 16 ファイル作成（infra/terraform/ 配下）
-  - 4 コミット圧縮: `8249593` 初回 → `4223821` reviewer FIX → `aebe174` codex FIX 第 1 弾（OpenTofu 採用、後に撤回）→ `2450822` Terraform 復帰
+**expense-saas**（コミット 1 件、PR フロー外の緊急 fix）:
+- 直接編集: `rds.tf` の `backup_retention_period = 7` → `1`（コミット未実施、Phase 4 完了後に PR 化検討）
+- 編集: `terraform.tfvars`（コミット対象外、`.gitignore` 済み）
 
-**root-project**（master 直 push、1 commit）:
-- `695703b` chore(devcontainer): install Terraform CLI 1.9.8 at build time (ADR-0004 alignment)
+**dev-journal**（コミット予定 2 件）:
+- issue #180 起票: backend.tf dynamodb_table deprecated
+- issue #181 起票: RDS backup_retention_period の NFR-AVAIL-003 逸脱
 
-**dev-journal**（master 直 push、3 commit）:
-- `d8f8b24` chore(11-E): complete Phase 0 local conditions + raise 3 post-MVP issues
-- `f595965` chore(11-E): relax Phase 1 gate to fmt only + raise issue #179
-- `e3f4b64` chore(11-E): record Phase 1 completion (PR #145 merged as f3381cd)
+**root-project**（コミット予定 1 件）:
+- `private-materials/notes/plan-aws-egress-extension.md` 追加（gitignore 対象、コミット不要）
 
 **ai-dev-framework**: 変更なし
 
-**メモリ追加**: `.claude/memory/feedback_no_silent_tool_install.md`（サブエージェントは事前承認なくツール install しない）
-
 **起票 issue（全 post-MVP）**:
-- #176 frontend dev 依存の既知 CVE 棚卸し（esbuild + postcss）
-- #177 frontend バンドル chunk size 500 kB 超過警告
-- #178 Go バージョン定義の環境間不整合
-- #179 devcontainer egress allowlist の github.com 全許可粒度問題
+- #180 backend.tf dynamodb_table が Terraform 1.10+ で deprecated（use_lockfile 移行）
+- #181 RDS backup_retention_period が Free Tier 制約で NFR-AVAIL-003 逸脱
 
-### Phase 0 / Phase 1 状態サマリ（次セッション着手時の前提）
+### Phase 2-7 状態サマリ（次セッション着手時の前提）
 
 | Phase | 状態 | 担当 |
 |-------|------|------|
-| Phase 0 ローカル消化 | **完了**（CONDITIONAL #1/#2/#4 PASS、#3 は Phase 7）| - |
-| Phase 1 Terraform 雛形 | **完了**（PR #145 / `f3381cd`、16 ファイル、ADR-0004 整合）| - |
-| Phase 2 AWS 認証準備 | 未着手 | USER 手動 |
-| Phase 3 init/plan/apply | 未着手 | USER 手動 |
-| Phase 4 DB bootstrap | 未着手 | USER + 指揮役支援 |
+| Phase 0 ローカル消化 | **完了**（前々セッション） | - |
+| Phase 1 Terraform 雛形 | **完了**（PR #145） | - |
+| Phase 2 AWS 認証準備 + state | **完了**（IAM / Budget / KeyPair / CLI / state bucket / DynamoDB） | - |
+| Phase 3 init/plan/apply | **完了**（26 リソース作成、RDS backup_retention 修正含む） | - |
+| Phase 4 DB bootstrap | 未着手（user_data env 確認が前提） | USER + 指揮役支援 |
 | Phase 5 Docker build + systemd | 未着手 | USER |
 | Phase 6 ヘルスチェック | 未着手 | 指揮役 |
 | Phase 7 スモーク + 時刻ドリフト | 未着手 | USER（操作）+ 指揮役（観察）|
 
 ## 前回セッションのアーカイブ
 
-`dev-journal/archives/session-logs/2026-05-08.md`（2026-05-08 11:00 〜 2026-05-09 09:30: PR #144 マージ + 11-E 計画書 reviewer 3 + codex 5 ラウンド完走 + Q1〜Q6 確定）
+`dev-journal/archives/session-logs/2026-05-13.md`（2026-05-13 09:30 〜 19:54: Phase 0 ローカル消化 + Phase 1 Terraform 雛形 PR #145 マージ + OpenTofu silent install 事案対応 + memory `feedback_no_silent_tool_install.md` 追加）
