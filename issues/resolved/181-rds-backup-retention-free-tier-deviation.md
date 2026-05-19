@@ -69,6 +69,7 @@ post-MVP で以下のいずれかを検討:
 
 ### 実装側修正
 - `expense-saas/infra/terraform/rds.tf`: `backup_retention_period = 7 → 1`（PR #146 マージ済み 2026-05-19）
+- `expense-saas/infra/terraform/rds.tf:55-56`: コメントを「逸脱 / post-MVP 追跡」→「portfolio 仕様として 1 日保持に緩和済み」に更新（PR #147 マージ済み 2026-05-19、codex review-finding 120 への対応）
 
 ### 設計成果物修正（14 箇所、本セッションで対応）
 
