@@ -62,6 +62,8 @@
 | CloudWatch Alarms | なし | 設定あり | 設定あり |
 | ALB ヘルスチェック | なし（手動確認） | 有効（30 秒間隔） | 有効（30 秒間隔） |
 
+※ stg/prod 列は将来構築時の推奨値。portfolio MVP は dev 相当の単一環境で運用しており、NFR-AVAIL-003 は AWS Free Tier 制約により 1 日間保持に緩和済み（issue #181 参照）。
+
 ### 3.3 DB 設定差分
 
 | 項目 | dev | stg | prod |

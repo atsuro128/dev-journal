@@ -231,7 +231,7 @@
 |--------|---------|-----------|---------------|---------------|------|
 | NFR-AVAIL-001 | 稼働率 99.5% | `architecture.md#8.3`, ADR-0004 | - | - | 運用監視で確認。自動テスト対象外（インフラ SLA の計測は本番環境でのみ可能） |
 | NFR-AVAIL-002 | ヘルスチェックエンドポイント `/health` | `openapi.yaml#getHealth`, `architecture.md#8.3`, ADR-0005 | - | - | MVP スコープ外。`issue 081 §3` で追跡、管理方式は `ops-080` で検討中 |
-| NFR-AVAIL-003 | DB バックアップ RDS 自動バックアップ 7日間保持 | `architecture.md#8.3`, ADR-0004 | - | - | 運用確認項目 |
+| NFR-AVAIL-003 | DB バックアップ RDS 自動バックアップ 1日間保持 | `architecture.md#8.3`, ADR-0004 | - | - | 運用確認項目（AWS Free Tier 制約により portfolio 仕様、issue #181） |
 
 ### 3.4 データ（NFR-DATA-*）
 

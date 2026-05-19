@@ -39,7 +39,7 @@
 
 #### 案A: Amazon RDS for PostgreSQL
 - **概要**: マネージド PostgreSQL。自動バックアップ・パッチ適用・フェイルオーバー対応
-- **利点**: RLS サポート、自動バックアップ（7日間保持で §4.3 充足）、Multi-AZ で可用性確保、Performance Insights で監視
+- **利点**: RLS サポート、自動バックアップ（1日間保持で §4.3 充足。AWS Free Tier 制約による portfolio 仕様、issue #181）、Multi-AZ で可用性確保、Performance Insights で監視
 - **欠点**: Aurora 比でスケーリング上限が低い（MVP 規模では問題なし）
 
 #### 案B: Amazon Aurora PostgreSQL
@@ -68,7 +68,7 @@
 | 領域 | 選定 | 構成 |
 |------|------|------|
 | コンピュート | ECS Fargate | ALB → Fargate タスク（Go バイナリ + SPA 静的ファイル embed） |
-| データベース | RDS for PostgreSQL | db.t3.micro（MVP）、Multi-AZ は初期は無効（コスト優先）、自動バックアップ7日間 |
+| データベース | RDS for PostgreSQL | db.t3.micro（MVP）、Multi-AZ は初期は無効（コスト優先）、自動バックアップ1日間（AWS Free Tier 制約による portfolio 仕様、issue #181） |
 | オブジェクトストレージ | S3 | 領収書保存、署名付きURLでアクセス制御 |
 | IaC | Terraform | AWS プロバイダーで全リソース管理 |
 | CI/CD | GitHub Actions | lint → test → build → deploy のパイプライン |
@@ -91,7 +91,7 @@
 
 ## 理由
 1. **ECS Fargate**: サーバー管理不要で MVP フェーズの運用工数を最小化。Go のバイナリは軽量コンテナ（Alpine ベース）で起動が速く、Fargate の弱点（コールドスタート）を緩和。Vite build の静的ファイルを `go:embed` でバイナリに同梱し、API と SPA を単一コンテナで配信する（MVP のシンプルさを優先。将来のスケール時に S3+CloudFront へ移行可能）
-2. **RDS for PostgreSQL**: RLS 対応のマネージド PostgreSQL として最適。Aurora は MVP 規模でコスト過剰。自動バックアップ7日間保持で §4.3 のバックアップ要件を充足
+2. **RDS for PostgreSQL**: RLS 対応のマネージド PostgreSQL として最適。Aurora は MVP 規模でコスト過剰。自動バックアップ1日間保持で §4.3 のバックアップ要件を充足（AWS Free Tier 制約により portfolio 仕様として NFR-AVAIL-003 を 1 日に緩和、issue #181 参照。RDS vs Aurora の選定根拠自体には影響なし）
 3. **S3**: 署名付きURL（15分有効、ATT-012）によるアクセス制御がネイティブ対応。パスに tenant_id を含めることで（ATT-014）、バケットポリシーでの追加の分離も将来的に可能
 4. **Terraform**: インフラをコードで管理し、環境の再現性を保証。GitHub Actions との連携でインフラの変更もCIで管理可能
 5. **GitHub Actions**: リポジトリと同じプラットフォームでCI/CDを完結。Go のビルド・テスト・Docker イメージの構築・ECS デプロイまでのパイプラインを構築
