@@ -1,101 +1,103 @@
 # 引き継ぎメモ
 
-## セッション: 2026-05-19 (主に夜、~20:59)
+## セッション: 2026-05-20 01:25
 
 ### ゴール
 
-- Step 11-E Phase 3 で発生した RDS backup_retention 緊急 fix の正式化（PR 化）
-- NFR-AVAIL-003 の設計修正（実装値「1 日保持」と整合）
-- issue #181 を resolved まで進める
-- Phase 4 着手は次セッションへ持ち越し
+- EC2 user_data の env ファイル確認（前回セッション持ち越し）
+- Step 11-E Phase 4（DB bootstrap）完走
+- Phase 5-7 は次セッション以降
 
-実際は **Step 1 + Step 3（設計修正） + 派生 issue #182 起票**まで完走。Phase 4-7 は未着手。
+→ **両方達成。Phase 4 完了**。
 
 ### 作業ログ
 
-#### 1. Step 1: 緊急 fix の正式化（expense-saas PR #146）
+#### 1. EC2 user_data env 確認（Task #1）
 
-- 前回セッションで未コミットだった `rds.tf` (`backup_retention_period = 7 → 1`) と `.terraform.lock.hcl` (前回 init 後コミット漏れ) を機能ブランチ `step11/181-rds-backup-retention-fix` で正式化
-- 軽量化案で進行: チケット起票 / implement エージェント / `/commit` スキルを省略、指揮役が直接 feature ブランチで生 git commit
-- ローカル CI: `terraform fmt -check -recursive` PASS。`validate` は devcontainer egress allowlist で `registry.terraform.io` がブロックされ実行不可（後に issue #182 として起票）
-- 内部 reviewer: **PASS**（blocker 0、warning 0、info 1）。info（PR Summary に設計修正別 PR 予定を明記）を取り込み
-- codex レビュー: **COMMENT（blocker なし）**、`gh pr review --comment` で投稿
-- squash マージ完了: merge commit `fee0a2c`
+- SSH 接続: 秘密鍵 `~/.ssh/expense-saas-portfolio.pem` がホスト Windows 側に未配置だった
+  - `Desktop\AWS\expense-saas-portfolio.pem` に保存されていることを発見
+  - PowerShell の `Move-Item` + `icacls` で `~/.ssh/` に配置 + 権限を本人のみアクセス可に絞る
+- EC2 (`13.158.141.63`) に ED25519 fingerprint 認証 → ログイン成功
+- 確認結果: `app.env` の `CHANGEME_AFTER_MIGRATE` / `CHANGEME_RDS_HOST` / `CHANGEME_S3_BUCKET` / `http://placeholder.invalid` は user_data.sh.tpl の **意図通りプレースホルダ**（Phase 4 Step 7 で更新する設計）
+- JWT 鍵 (`/etc/expense-saas/keys/*.pem` root:600) / systemd unit / Docker 25.0.14 / swap 2Gi / git すべて配置済み確認
 
-#### 2. Step 3: NFR-AVAIL-003 設計修正（dev-journal）
+#### 2. Phase 4 マイグレーション資材の持ち込み（PAT 方式）
 
-ユーザー判断:
-- **「本番運用予定がない」**→「7 日に戻す前提は不要」
-- 設計修正方針 **「NFR 自体を 1 日保持に書き換え」**（issue #181 提案案 3）
+- expense-saas が GitHub private リポジトリのため、EC2 から git clone するには認証が必要
+- **GitHub fine-grained PAT** を発行（name: `expense-saas-ec2-deploy` / Contents Read-only / 7 days / expense-saas のみ）
+- EC2 で `read -s` でトークン入力 → `git clone https://${GH_PAT}@github.com/atsuro128/expense-saas.git` → `unset GH_PAT`
+- `~/expense-saas/db/migrations/` に 11 本のマイグレーション SQL 配置確認
 
-修正対象を grep → 5 ファイル / 8 行を初回特定 → designer エージェントに 8 箇所修正を依頼:
-- `requirements.md:444`（NFR 定義の正本）
-- `architecture.md:488`（トレーサビリティ）
-- `adr/0004-infra.md:42, 94`（RDS 選定根拠）
-- `traceability.md:234`（テスト紐付け）
-- `backup_restore.md:37, 106, 143, 157`（運用設計）
+#### 3. Phase 4 Step 1: 000001/000002 をマスターで migrate up 2（Task #2）
 
-designer から **指示外 7 箇所の「7 日間」残存** を指摘される（私の初回 grep が「7日間」単独表記を取りこぼし）。残存箇所を再 grep:
-- `adr/0004-infra.md:71`（決定表）
-- `backup_restore.md:17, 59, 142, 144, 167`
-- `env_config.md:60`
+- EC2 に `postgresql16` + `golang-migrate v4.17.0` をインストール
+- terraform.tfvars から 3 種類のパスワード（`db_password` / `expense_owner_db_password` / `expense_app_db_password`）をクリップボード経由で SSH に転送
+- `terraform output -raw rds_endpoint` で RDS エンドポイント取得（初回 `terraform init -backend-config="bucket=expense-saas-tfstate-oc0sqjmb"` 再実行が必要だった）
+- `RDS_HOST` 入力時に `:5432` ポート付きで入ったため `${RDS_HOST%:5432}` で除去
+- `migrate up 2` 実行 → `schema_migrations.version=2 / dirty=f` 確認
 
-**ユーザー判断: 案 Z（同一文書内整合を優先）** を採用:
-- ADR 決定表 + backup_restore.md の自動バックアップ系（17/59/142/167）→ 1 日に修正（誤読防止）
-- `backup_restore.md:144`（手動スナップショット）+ `env_config.md:60`（stg/prod）→ 業務 SaaS 想定として **7 日のまま維持**
+#### 4. Phase 4 Step 2: マスター接続でロール / 権限基盤整備（Task #3）
 
-合計 14 箇所修正 + issue #181「解決内容」セクション記入完了。
+3 つを一括投入:
+- `ALTER ROLE expense_owner / expense_app WITH PASSWORD '...'`（migration の localdev → prod 値上書き）
+- `GRANT CREATE, USAGE ON SCHEMA public TO expense_owner`（PG15+ の public schema 制限対応）
+- `ALTER TABLE schema_migrations OWNER TO expense_owner`（**F-115 残課題対応**）
 
-#### 3. 内部 reviewer + codex レビュー
+`\dt schema_migrations` で Owner = `expense_owner` 確認。
 
-- 内部 reviewer: **PASS**（blocker 0、warning 2、info 2）
-  - W-01 `env_config.md:60` 文脈注記不足
-  - W-02 `backup_restore.md:144` 別概念明示不足
-  - I-01 `adr/0004-infra.md:94` 表現微調整
-  - I-02 issue #181 解決内容 → 指摘なし
-- W-01 / W-02 / I-01 全部対応（各 1 行追記 / 微調整）
-- 軽量化案で再 reviewer をスキップ、codex に直接渡す
-- dev-journal コミット `f10f88a`
-- codex レビュー: **FIX 判定** → review-finding 120 起票
-  - 指摘内容: `rds.tf:55-57` のコメントがまだ「7 日間保持からの逸脱」「post-MVP に追跡」のままで、NFR が 1 日に緩和された解決後の正本と矛盾
+#### 5. Phase 4 Step 3: expense_owner で default privileges 仕込み（Task #4）
 
-#### 4. PR #147: rds.tf コメント追従更新
+接続を `expense_owner` に切替 → `ALTER DEFAULT PRIVILEGES FOR ROLE expense_owner` で expense_app に TABLES / SEQUENCES の権限を投入（**F-118 一次対策**）。
 
-- 機能ブランチ `step11/120-rds-comment-update` で `rds.tf:55-56` コメントを「portfolio 仕様として 1 日保持に緩和済み（issue #181 解決済み）」に更新
-- 軽量化: 内部 reviewer スキップ、codex のみで再レビュー
-- codex 再レビュー: **APPROVE 相当**（self-approve 不可で `--comment` 投稿）
-- squash マージ完了: merge commit `b53905e`
+初回 SEQUENCES を打ち忘れて再投入。`\ddp` で 3 行（owner 所有 2 行 + master 所有 1 行）確認。
 
-#### 5. dev-journal 後処理
+#### 6. Phase 4 Step 4: 000003 以降を expense_owner で migrate（Task #5）
 
-- `issues/open/181-*.md` → `resolved/` 移動 + 解決内容に PR #147 追記
-- `review-findings/open/120-*.md` → `resolved/` 移動
-- dev-journal コミット `d175c83`
+- `migrate up`（無指定 = 残り全部）で 000003〜000011 を実行
+- 全 10 テーブルの owner = `expense_owner` を `pg_tables` で確認
+- `schema_migrations.version=11 / dirty=f` 確認
 
-#### 6. 派生 issue #182 起票 + progress.md 更新
+#### 7. Phase 4 Step 5: expense_app への保険 GRANT（Task #6）
 
-- `terraform validate` 実行不可問題を **issue #182** として起票
-  - devcontainer egress allowlist に `registry.terraform.io` が含まれず Forbidden
-  - 影響度 低、post-MVP、issue #179 系統
-- `progress.md` 更新: issue #181 → resolved、issue #182 追加
-- dev-journal コミット `a789b87`
+- `GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO expense_app`（**F-118 二重ガード**）
+- `GRANT USAGE ON ALL SEQUENCES`（実行時対象 0 件、将来用保険）
+- `\dp tenants` で `expense_app=arwd/expense_owner` + RLS ポリシー 2 種（`tenant_isolation_select` / `update`）確認
 
-### 完成した PR / 設計修正
+#### 8. Phase 4 Step 6: 疎通確認（完了ゲート、Task #7）
 
-| PR / Commit | 内容 |
+- `expense_owner` で `SELECT 1` → 1 ✅
+- `expense_app` で `SELECT 1` → 1 ✅
+- `has_table_privilege()` 9 テーブル × 4 権限（SELECT/INSERT/UPDATE/DELETE）= 全て `t` ✅（**F-118 検証**）
+- `expense_app` で `SELECT count(*) FROM users` → 0（RLS 非対象テーブル、エラーなし＝権限あり、**F-119 対応**）
+
+#### 9. Phase 4 Step 7: app.env 更新（Task #8）
+
+- `terraform output -raw s3_bucket_name` で `expense-saas-portfolio-receipts-d8ed055a` 取得
+- CORS は ALB DNS `http://expense-saas-portfolio-alb-290554356.ap-northeast-1.elb.amazonaws.com` を採用
+- `sudo tee` のヒアドキュメントで `/etc/expense-saas/app.env` を全面上書き
+- **トラブル**: 初回 `cat -A` で先頭スペース混入 + パスワード平文露出を検出
+  - 先頭スペース: `sudo sed -i 's/^[[:space:]]\+//'` で除去（端末の PS2 継続プロンプト混入が原因の可能性）
+  - パスワード露出: ユーザー判断「portfolio 本番データなし、対応不要」でリスク許容
+- 確定値の全 9 行が `^VAR=VALUE$` 形式で書き込まれていることをマスク版で確認
+- systemd 再起動は **docker image 未ビルド** のため Phase 5 に持ち越し
+
+### 完成した成果
+
+| 項目 | 結果 |
 |---|---|
-| PR #146 (`fee0a2c`) | rds.tf 7→1 + .terraform.lock.hcl |
-| PR #147 (`b53905e`) | rds.tf コメント追従更新 |
-| dev-journal `f10f88a` | 設計修正 14 箇所 + 注記 3 箇所 |
-| dev-journal `d175c83` | issue #181 / finding 120 resolved 移動 |
-| dev-journal `a789b87` | progress.md 更新 + issue #182 起票 |
+| EC2 user_data 確認 | ✅ 想定動作通り（プレースホルダは意図通り） |
+| GitHub PAT 認証経路の確立 | ✅ EC2 で git clone 成功 |
+| RDS スキーマ初期化 | ✅ 10 テーブル + schema_migrations、version=11 |
+| ロール / 権限設定 | ✅ expense_owner = テーブル所有、expense_app = DML 権限 |
+| F-115 / F-118 / F-119 完了ゲート | ✅ 全項目 PASS |
+| app.env 確定値書き込み | ✅ 全 placeholder 解消 |
 
 ### 未完了
 
-- **EC2 user_data の env ファイル更新**（前回セッション持ち越し、未着手）
-  - `13.158.141.63` に SSH ログイン → `sudo grep -r "placeholder.invalid\|CORS" /etc/expense-saas/ /opt/expense-saas/` で確認
-  - 古い値が残っていれば手動更新 or `terraform taint aws_instance.app` + apply で強制再作成
-- **Phase 4-7**（DB bootstrap / Docker / systemd / smoke）全て未着手
+- **Phase 4 完了済み、未完了タスクなし**
+- ただし以下は **次セッション開始時に確認** が必要:
+  - SSH セッション内の機密環境変数（OWNER_DB_PW / APP_DB_PW / MASTER_PW）クリア状況
+  - EC2 シェル履歴（`history`）に残ったパスワード入力痕跡（`read -s` で入れたので痕跡なしのはず）
 
 ### ブロッカー
 
@@ -103,114 +105,136 @@ designer から **指示外 7 箇所の「7 日間」残存** を指摘される
 
 ### 次にやること
 
-#### 優先度 1: EC2 user_data 環境変数の確認・更新（前回セッションから持ち越し）
+#### 優先度 1: Step 11-E Phase 5（Docker build + systemd 起動）
 
-```bash
-ssh -i ~/.ssh/expense-saas-portfolio.pem ec2-user@13.158.141.63
-sudo grep -r "placeholder.invalid\|CORS" /etc/expense-saas/ /opt/expense-saas/ 2>/dev/null
-```
+11-E チケット §5.6 / §11 Q1 案 B（EC2 上で docker build）に従う。
 
-#### 優先度 2: Step 11-E Phase 4（DB bootstrap）
+主要ステップ（USER 主導、工数見積 2-4h、t3.micro メモリ 1GB + swap 2GB で OOM 注意）:
+1. `cd ~/expense-saas && docker build -t expense-saas:portfolio .`
+2. `sudo systemctl enable --now expense-saas`
+3. `sudo systemctl status expense-saas` で active 確認
+4. `docker logs expense-saas` で起動成功 + DB 接続成功確認
 
-11-E チケット §5.7.3 の Step 1〜7 を実施（前回セッション引き継ぎから変わらず）
+#### 優先度 2: Step 11-E Phase 6（ヘルスチェック）
 
-#### 優先度 3: Phase 5〜7（Docker / systemd / smoke）
+- EC2 上 `curl localhost:8080/healthz` → 200 OK
+- ALB 経由 `curl http://expense-saas-portfolio-alb-290554356.ap-northeast-1.elb.amazonaws.com/healthz` → 200 OK
+- ALB Target Group が healthy 状態になることを確認
 
-工数見積: 5〜10 時間（前回見積から変わらず）
+#### 優先度 3: Step 11-E Phase 7（スモーク + 時刻ドリフト確認）
+
+- ブラウザで ALB DNS にアクセス → ログイン画面表示確認
+- テストアカウント作成 → 経費登録の golden path をブラウザで動作確認
+- JWT leeway（issue #173）が時刻ドリフト下で機能するかも確認
+- 工数見積: 1-2h
+
+#### 優先度 4: Step 11-F（UAT、ユーザー主導）
+
+- `dev-journal/deliverables/docs/manual_checklists/uat_check.md` に従い、画面別チェック
+- 工数見積: 2-4h
 
 ### 学び・気づき
 
-#### 設計修正の grep は表記揺れを網羅する
+#### user_data の「意図的プレースホルダ」設計
 
-NFR-AVAIL-003 関連の grep を `"NFR-AVAIL-003\|backup_retention\|バックアップ.*保持\|7.*日.*保持"` で実行 → 「7日間」単独表記 7 箇所を取りこぼした。designer エージェントが指示外の漏れを指摘してくれて発覚。
+`/etc/expense-saas/app.env` が `CHANGEME_AFTER_MIGRATE` / `placeholder.invalid` で生成されているのは **user_data.sh.tpl の意図通り**。DB マスターパスワードを user_data に流す経路を作らないため、migration 完了後に手動更新する 2 段階運用。
 
-→ 設計書の用語修正では「対象用語の全パターン（半角/全角スペース、語幹単独、複合）」を grep する。grep パターンは最初に複数試して、件数差を見て網羅性を担保する。
+→ 初見では「user_data がバグっている」と誤読しがち。設計意図を確認してから「直す / 直さない」判断する。
 
-#### 設計書には「業務 SaaS 想定」と「portfolio MVP 現実値」の二重構造がある
+#### SSH 秘密鍵の所在管理
 
-env_config.md の dev/stg/prod 列、backup_restore.md の手動スナップショット行など、「業務 SaaS の理想形」を残している箇所がある。今回 NFR を緩和する際、これらをすべて 1 日に統一する案（案 Y）と、同一文書内整合のみ取って業務想定箇所は残す案（案 Z）が分岐した。
+AWS コンソールで作成した EC2 キーペアの `.pem` ファイルは **作成時 1 回のみダウンロード可能**。今回 `Desktop\AWS\` に保存されていたが `~/.ssh/` には未配置だった。`ssh-keygen` で作り直すには **新しいキーペア作成 + terraform apply 再実行** が必要なため、`.pem` 紛失は重大事故。
 
-→ 設計書は「業務 SaaS の要件」と「portfolio 実装の現実」の二重構造として保持し、矛盾する箇所には注記を追加する。完全統一は portfolio として将来性を捨てる選択になる。
+→ AWS で作成した `.pem` は **発行直後に `~/.ssh/` に配置 + `icacls`（Windows）/ `chmod 400`（Linux）で権限絞り**。Desktop / Downloads には残さない（バックアップは別途暗号化保管）。
 
-#### codex は「実装側コメントとの整合性」までトレースする
+#### PostgreSQL 15+ の public スキーマ CREATE 制限
 
-dev-journal の設計修正に対する codex レビューが、`expense-saas/infra/terraform/rds.tf:55-57` のコメント（「逸脱」「post-MVP に追跡」）まで追跡し、設計の正本と矛盾していることを指摘。**14 箇所の設計修正自体は PASS**、コメントだけが不整合という細かい検出。
+PG15 から `public` スキーマへの `CREATE` 権限が default で剥奪された。`expense_owner` で 000003 以降の `CREATE TABLE` を実行する前に `GRANT CREATE, USAGE ON SCHEMA public TO expense_owner` が必須。
 
-→ 設計修正と実装コメントは一緒に追従させる。「正式化 PR を切る」段階で旧コメントが残っていないか必ず確認する。
+→ migration ファイル設計時、`public` スキーマ前提のテーブル作成は PG15+ で動かないことがある。bootstrap 手順に GRANT を含める。
 
-#### コミットスキルの「master のみ」ルールと feature ブランチ作業の摩擦
+#### heredoc 経由 sudo tee の先頭スペース混入
 
-`commit` スキルには「master 以外のブランチではコミット中止」という安全装置がある。これは「指揮役は通常 master でコミット、feature ブランチは implement エージェント（worktree）の責務」という運用前提に基づく。今回のように指揮役が極小修正で feature ブランチを直接扱う場合、`/commit` スキルは使えない。
+`sudo tee <<APPENV ... APPENV` で書き出した `/etc/expense-saas/app.env` の 2 行目以降に先頭 2 スペースが混入。原因は端末の PS2（継続プロンプト）が `>  ` だったため、コピペ時に取り込まれた可能性。Docker `--env-file` は厳密で `^VAR=` 期待のため、これは Phase 5 起動時の env 認識ミスを誘発する。
 
-→ 指揮役が feature ブランチで直接 commit する場合は、生 git で実行する（過去ログで定着）。`commit` スキルの安全装置を頼らない場面では、Co-Authored-By フッターを忘れずに付ける。
+→ heredoc 書き出し後は必ず `cat -A` で `$` 直前と行頭を確認する。混入していたら `sed -i 's/^[[:space:]]\+//' ...` で除去。
 
-#### Free Tier 制約問題は「実装 → 設計」の逆フローで解消
+#### GitHub PAT vs gh CLI device flow の選択
 
-前回セッションでは「設計書 NFR 7 日 → 実装側を 1 日に緊急 fix」という逆向きの逸脱だった。本セッションでは「実装値（1 日）に合わせて設計を緩和」して整合性を回復。portfolio プロジェクトでは「実装で現実が判明 → 設計を追従」の方が現実的なケースがある。
+private repo を EC2 から clone する手段として PAT / gh CLI / SSH deploy key の 3 通りを提示。Fine-grained PAT は **CLI からは発行できない**（GitHub のセキュリティ仕様）。今回は手動 PAT で進めたが、`gh auth login` の device flow なら手動 PAT 作成を省略できる。
 
-→ 制約由来の逸脱は、当該プロジェクトの位置付け（業務向け / portfolio 向け）に応じて「実装側を直す」か「設計側を直す」かを判断する。portfolio なら設計緩和が自然。
+→ EC2 から private repo を扱う場面では、`gh CLI device flow` が PAT より自動化に向く（ただし対話 1 回必要）。
+
+#### チャット履歴へのパスワード平文露出
+
+`cat -A` で出力した app.env に DB パスワード（OWNER_DB_PW / APP_DB_PW）が平文表示され、チャット履歴に残った。ユーザー判断「portfolio 本番データなし、対応不要」でリスク許容したが、業務プロジェクトでは即時ローテーション必須。
+
+→ 機密値の確認には `sed -E 's|:[^@]+@|:***REDACTED***@|g'` 等のマスクを **常に通す**。生 `cat` / `cat -A` を機密ファイルに使わない。
 
 ### 意思決定ログ
 
-#### NFR 修正方針: 案 3（NFR 自体を 1 日に書き換え）
-
-- issue #181 の提案 3 案のうち、ユーザー判断 **「本番運用予定がない」** から案 3 を採用
-- 案 1（AWS Support 申請）/ 案 2（有料アカウント化）は不採用
-- 結果として「残置事項なし」で issue #181 を closed まで進められた
-
-#### 設計書修正範囲: 案 Z（同一文書内整合を優先）
+#### EC2 へのマイグレーション資材持ち込み手段: GitHub Fine-grained PAT
 
 選択肢:
-- 案 X: 直接引用箇所 9 のみ修正 → 同一ファイル内に矛盾発生（NG）
-- 案 Y: 残存 7 箇所すべて 1 日に修正 → 業務 SaaS の理想形が消える
-- **案 Z**: 同一ファイル内整合を取りつつ業務 SaaS 想定箇所（env_config.md stg/prod、backup_restore.md 手動スナップショット）を 7 日のまま維持
-- 採用理由: 業務 SaaS としての設計書価値を保ちつつ、誤読リスクを注記で解消できる
+- A: Fine-grained PAT（Web UI 発行、Contents Read-only、7 days）
+- B: scp でローカルから migrations のみ転送
+- C: SSH deploy key
 
-#### 軽量化案の繰り返し採用
+採用 A、理由: Phase 5 で docker build に repo 全体が必要、PAT なら一括カバー。CLI で PAT 発行不可な代わりに `gh CLI device flow` も候補に挙がったが、ユーザー判断で「最初の案（Web UI PAT）で良い」と即決。
 
-今セッションは以下を軽量化:
-- Step 1（PR #146）: チケット起票 / implement / `/commit` スキルを省略、指揮役直接コミット
-- Step 3 設計修正: architect の計画策定をスキップ、designer 直接依頼（14 箇所のメカニカル修正）
-- 設計修正の reviewer 再レビュー: warning 対応後の再 reviewer を省略、codex に直接渡す
-- PR #147: 内部 reviewer をスキップ、codex のみ
-- 採用理由: 修正規模が極小（1 行 / 8 行 / コメント 1 行）、ユーザー方針として「正規フローの過剰適用を避ける」
+#### CORS_ALLOWED_ORIGINS の値: ALB DNS の http のみ
 
-#### review-finding 120 への対応: PR 化（軽量化はせず）
+選択肢:
+- A: ALB DNS (`http://expense-saas-portfolio-alb-...amazonaws.com`)
+- B: ALB DNS + localhost:5173 両方
+- C: placeholder.invalid のまま Phase 5 で確定
 
-`rds.tf` コメント 1 行修正だが、PR フローで対応:
-- 採用理由: master 直接コミットは workflow.md ルール違反、コメント修正もコードレビュー対象
-- 結果: PR #147 で 1 行修正 + codex 再レビュー APPROVE → squash マージ
+採用 A、理由: portfolio MVP かつ独自ドメイン未取得、Phase 5 で frontend を docker image に同梱 + ALB 経由配信する前提。
+
+#### app.env 更新範囲: 全 placeholder を一気に確定
+
+選択肢:
+- A: DB 関連のみ（DATABASE_URL / APP_DATABASE_URL）→ Phase 5 で S3 / CORS 確定
+- B: 全 4 項目を一気に確定
+
+採用 B、理由: ユーザー所感「S3_BUCKET を忘れてしまいそう」。Step 7 のスコープを少し広げて作業の二重手間を回避。
+
+#### パスワード露出への対応: 対応不要
+
+`cat -A` 出力に DB パスワードが平文露出した件、ユーザー判断「AWS アカウントは個人所有、RDS は portfolio 加入のみ、chat 履歴は anthropic とユーザーに限るためリスク許容」で **ローテーション見送り**。
+
+#### Phase 4 完了後の進め方: セッション終了 + session-log
+
+選択肢:
+- A: session-log で一区切り、Phase 5-7 は次セッション
+- B: 同セッションで Phase 5 着手（docker build に 30-60 分かかる見込み）
+- C: progress.md 反映のみして停止
+
+採用 A、理由: ユーザー判断「セッション終了（session-log）」。docker build の長時間ブロックを避け、Phase 5 着手は別セッションのリフレッシュ状態で始める方が安全。
 
 ### PR / コミット要約
 
-**expense-saas**（PR 2 件、master 更新済み）:
-- PR #146 (`fee0a2c`): rds.tf 7→1 + .terraform.lock.hcl
-- PR #147 (`b53905e`): rds.tf コメント追従更新
+**expense-saas**: 変更なし（master 直 push なし、PR なし）
 
-**dev-journal**（コミット 3 件）:
-- `f10f88a`: 設計修正 14 箇所 + 注記 3 箇所
-- `d175c83`: issue #181 / review-finding 120 resolved 移動
-- `a789b87`: progress.md 更新 + issue #182 起票
+**dev-journal**: progress.md 更新 + session-log 移行（本セッション末で実施予定）
 
 **root-project / ai-dev-framework**: 変更なし
 
-**起票 issue（全 post-MVP）**:
-- #182 devcontainer egress allowlist に registry.terraform.io が含まれず terraform validate 実行不可
+**起票 issue**: なし
 
-**解決 issue**:
-- #181 RDS backup_retention_period が Free Tier 制約により NFR-AVAIL-003 から逸脱 → resolved
+**解決 issue**: なし
 
 ### Phase 状態サマリ（次セッション着手時の前提）
 
 | Phase | 状態 | 担当 |
 |-------|------|------|
-| Phase 0-3 | **完了**（前セッションまで） | - |
-| NFR-AVAIL-003 緩和（後追い設計修正） | **完了**（今セッション） | - |
-| Phase 4 DB bootstrap | 未着手（user_data env 確認が前提） | USER + 指揮役支援 |
-| Phase 5 Docker build + systemd | 未着手 | USER |
-| Phase 6 ヘルスチェック | 未着手 | 指揮役 |
+| Phase 0-3 | **完了**（既存セッション） | - |
+| NFR-AVAIL-003 緩和 | **完了**（2026-05-19） | - |
+| Phase 4 DB bootstrap | **完了**（今セッション） | - |
+| Phase 5 Docker build + systemd | 未着手（次優先） | USER |
+| Phase 6 ヘルスチェック | 未着手 | 指揮役 + USER |
 | Phase 7 スモーク + 時刻ドリフト | 未着手 | USER（操作）+ 指揮役（観察）|
 
 ## 前回セッションのアーカイブ
 
-`dev-journal/archives/session-logs/2026-05-18.md`（2026-05-18 〜 2026-05-19 00:30: Phase 2 + Phase 3 完了、26 リソース AWS apply、AWS アカウント作成 + 3DS トラブル、RDS Free Tier 制約による緊急 fix）
+`dev-journal/archives/session-logs/2026-05-19.md`（2026-05-19 夜: NFR-AVAIL-003 緩和の正式化 PR #146 / #147、設計修正 14 箇所、issue #181 resolved、issue #182 起票）
