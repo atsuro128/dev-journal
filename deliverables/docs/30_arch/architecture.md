@@ -30,13 +30,13 @@
 
 ## 2. システム全体構成
 
-> 関連 ADR: [ADR-0001](adr/0001-tech-stack.md), [ADR-0004](adr/0004-infra.md)
+> 関連 ADR: [ADR-0001](adr/0001-tech-stack.md), [ADR-0004](adr/0004-infra.md), [ADR-0007](adr/0007-cloudfront-https.md)
 
 ### レイヤー構成
 
 > 図については [diagrams.md](diagrams.md) 1 システム構成図 および 2 リクエスト処理フロー を参照
 
-クライアント（React + TypeScript + Vite）から ALB を経由し、ECS Fargate 上の Go API サーバーがリクエストを処理する。サーバー内部は以下のレイヤーで構成される。
+クライアント（React + TypeScript + Vite）からのリクエストは CloudFront（HTTPS 終端）→ ALB を経由し、ECS Fargate 上の Go API サーバーが処理する（経路: `Browser → CloudFront → ALB → Task`）。CloudFront は ALB の前段で TLS を終端し、エンドユーザー〜サーバー間を HTTPS 化する（issue #185 / ADR-0007）。`/api/*` は非キャッシュ、それ以外（SPA 静的ファイル）はエッジキャッシュする 2 ビヘイビア構成とし、ALB へのオリジン直アクセスはカスタムヘッダ検証 + CloudFront マネージドプレフィックスリストで遮断する（B-1-b）。サーバー内部は以下のレイヤーで構成される。
 
 | レイヤー | 責務 |
 |---------|------|
@@ -361,13 +361,14 @@ GET /api/reports?page=1&per_page=20
 
 ## 6. セキュリティアーキテクチャ
 
-> 関連 ADR: [ADR-0001](adr/0001-tech-stack.md), [ADR-0002](adr/0002-multi-tenant.md), [ADR-0003](adr/0003-rls-tenant-isolation.md)
+> 関連 ADR: [ADR-0001](adr/0001-tech-stack.md), [ADR-0002](adr/0002-multi-tenant.md), [ADR-0003](adr/0003-rls-tenant-isolation.md), [ADR-0007](adr/0007-cloudfront-https.md)
 
 ### 6.1 多層防御
 
 ```
 [1] ネットワーク層
-    - ALB で TLS 終端
+    - CloudFront で TLS 終端（HTTPS 化、ADR-0007）
+    - ALB はカスタムヘッダ検証 + CloudFront マネージドプレフィックスリストで CloudFront 経由を強制（B-1-b）
     - セキュリティグループで ECS / RDS のアクセス制御
 
 [2] トランスポート層

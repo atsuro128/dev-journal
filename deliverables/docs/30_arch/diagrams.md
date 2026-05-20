@@ -21,7 +21,8 @@ graph TB
     end
 
     subgraph AWS["AWS"]
-        ALB["ALB<br/>TLS 終端 / ヘルスチェック"]
+        CF["CloudFront<br/>TLS 終端 / HTTPS 化<br/>(ADR-0007)"]
+        ALB["ALB<br/>ヘルスチェック<br/>CloudFront 経由を強制 (B-1-b)"]
 
         subgraph ECS["ECS Fargate"]
             Task1["Go API サーバー<br/>タスク 1"]
@@ -38,7 +39,9 @@ graph TB
         SNS["SNS<br/>アラート通知"]
     end
 
-    Browser -->|HTTPS| ALB
+    Browser -->|HTTPS| CF
+    CF -->|HTTP /api/* 非キャッシュ| ALB
+    CF -->|HTTP /* SPA エッジキャッシュ| ALB
     ALB -->|/api/*, /health| Task1
     ALB -->|/api/*, /health| Task2
     ALB -->|/*| Task1
@@ -65,6 +68,7 @@ graph TB
 ```mermaid
 sequenceDiagram
     participant C as クライアント
+    participant CF as CloudFront
     participant ALB
     participant MW as ミドルウェア
     participant H as ハンドラ
@@ -73,8 +77,9 @@ sequenceDiagram
     participant R as リポジトリ
     participant DB as PostgreSQL
 
-    C->>ALB: HTTPS リクエスト
-    ALB->>MW: HTTP リクエスト
+    C->>CF: HTTPS リクエスト
+    CF->>ALB: HTTP リクエスト（X-Origin-Verify ヘッダ付与）
+    ALB->>MW: HTTP リクエスト（ヘッダ検証通過分のみ転送）
 
     Note over MW: [1] CORS チェック
     Note over MW: [2] セキュリティヘッダー付与
@@ -101,7 +106,8 @@ sequenceDiagram
     Note over MW: Release conn + ログ記録完了（duration_ms）
 
     MW-->>ALB: HTTP レスポンス
-    ALB-->>C: HTTPS レスポンス
+    ALB-->>CF: HTTP レスポンス
+    CF-->>C: HTTPS レスポンス
 ```
 
 ---

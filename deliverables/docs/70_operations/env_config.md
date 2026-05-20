@@ -46,15 +46,18 @@
 | DB | PostgreSQL（Docker） | RDS db.t3.micro Single-AZ | RDS db.t3.micro Single-AZ（MVP） |
 | オブジェクトストレージ | MinIO（Docker） | S3 | S3 |
 | ロードバランサ | なし | ALB | ALB |
-| TLS | なし（HTTP） | ACM 証明書 | ACM 証明書 |
-| ドメイン | localhost | staging.expense-saas.example.com | expense-saas.example.com |
+| CDN | なし | CloudFront（ALB 前段、TLS 終端） | CloudFront（ALB 前段、TLS 終端、ADR-0007） |
+| TLS | なし（HTTP） | ACM 証明書 | CloudFront デフォルト証明書（`*.cloudfront.net`）。viewer TLS 終端は CloudFront。最小 TLS バージョン TLSv1（security.md §11「TLS 1.2 以上」と乖離、B-5 受容逸脱、ADR-0007、issue #185 C 案） |
+| ドメイン | localhost | staging.expense-saas.example.com | `<dist>.cloudfront.net`（CloudFront ドメイン。独自ドメイン不採用、ADR-0007） |
+
+※ portfolio MVP の prod は ADR-0007（issue #185）により CloudFront を ALB 前段に置き、`*.cloudfront.net` デフォルト証明書で HTTPS 化している。CloudFront〜ALB 間 HTTP（B-3）と viewer TLS 最小 TLSv1（B-5）は ADR-0007 に「受容する逸脱」として記録済み。stg 列の ACM 証明書は将来構築時の推奨値（独自ドメイン採用時）。
 
 ### 3.2 アプリケーション設定差分
 
 | 項目 | dev | stg | prod |
 |------|-----|-----|------|
 | ログレベル | `debug` | `info` | `info` |
-| CORS 許可オリジン | `http://localhost:5173` | `https://staging.expense-saas.example.com` | `https://expense-saas.example.com` |
+| CORS 許可オリジン | `http://localhost:5173` | `https://staging.expense-saas.example.com` | CloudFront ドメイン `https://<dist>.cloudfront.net`（ADR-0007） |
 | レート制限（認証済み） | 100 req/min/user | 100 req/min/user | 100 req/min/user |
 | レート制限（未認証） | 20 req/min/IP | 20 req/min/IP | 20 req/min/IP |
 | DB 自動バックアップ | 無効 | 有効（7 日間） | 有効（7 日間） |
@@ -87,6 +90,9 @@
 |--------|------|-----|-----|-----|------|
 | `PORT` | HTTP サーバーのリッスンポート | int | `8080` | `8080` | `8080` |
 | `LOG_LEVEL` | ログ出力レベル | string | `debug` | `info` | `info` |
+| `TRUSTED_PROXY_COUNT` | 信頼するリバースプロキシ段数。実クライアント IP = `X-Forwarded-For[len - TRUSTED_PROXY_COUNT]`。レート制限のキーとなるクライアント IP の取得に使う（issue #185 B-2-c / ADR-0007） | int | `0` | `2` | `2` |
+
+`TRUSTED_PROXY_COUNT` は prod で `2`（CloudFront 追記 1 段 + ALB 追記 1 段）を設定する。dev はプロキシ段がないため `0`（`X-Forwarded-For` を無視し `RemoteAddr` を採用）。CloudFront を ALB 前段に追加したことでプロキシ段が増えており、未設定だとレート制限のクライアント IP 判定が誤動作する（ADR-0007 影響・結果を参照）。
 
 ### 4.2 データベース接続
 
@@ -125,7 +131,9 @@
 
 | 変数名 | 説明 | 型 | dev | stg | prod |
 |--------|------|-----|-----|-----|------|
-| `CORS_ALLOWED_ORIGINS` | CORS 許可オリジン（カンマ区切り） | string | `http://localhost:5173` | `https://staging.expense-saas.example.com` | `https://expense-saas.example.com` |
+| `CORS_ALLOWED_ORIGINS` | CORS 許可オリジン（カンマ区切り） | string | `http://localhost:5173` | `https://staging.expense-saas.example.com` | CloudFront ドメイン `https://<dist>.cloudfront.net` |
+
+prod の `CORS_ALLOWED_ORIGINS` は ADR-0007（issue #185 C 案）により CloudFront ドメインを設定する。CloudFront のドメイン名は Terraform apply 後に `cloudfront_domain_name` output で判明するため、apply 後に実値を設定する 2 段階デプロイとなる。
 
 ### 4.6 レート制限
 

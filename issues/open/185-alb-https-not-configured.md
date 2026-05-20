@@ -81,6 +81,47 @@ Step 11-E でデプロイした ALB は **HTTP:80 のみ**で、HTTPS:443 リス
 
 影響度は中（認証情報平文 + 設計乖離）だが、ポートフォリオ MVP の段階では即時ブロッカーではないため次セッションで対応。対応方針決定時は security.md §11・11-E チケット §11 Q2 と整合させること。
 
+### 実装計画（2026-05-20 確定）
+
+architect が実装計画 v2 を策定、reviewer 再レビューで PASS（旧 blocker 3 / warning 6 全解消、新規 blocker なし）。設計判断 B-1〜B-4 をユーザー確定。
+
+#### 確定した設計判断
+
+- **B-1 = B-1-b（完全閉域）**: ALB SG inbound 80 を CloudFront マネージドプレフィックスリスト（`com.amazonaws.global.cloudfront.origin-facing`）限定 ＋ CloudFront→ALB のカスタムヘッダ秘密値を ALB リスナールールで検証（不一致は 403）。他者の自前 CloudFront 経由の到達も遮断する。
+- **B-2 = B-2-c**: `remoteIP` を `TRUSTED_PROXY_COUNT` 方式に修正。実クライアント IP = `XFF[len - TRUSTED_PROXY_COUNT]`、prod=2（CloudFront 追記1 + ALB 追記1）、dev=0。
+- **B-3 = 受容**: CloudFront〜ALB 間 HTTP を ADR-0007 に「受容する逸脱」として記録。`security.md` §441 本文は不変。
+- **B-4 = 追補ノート**: 11-E チケット §11 Q2 の「案1 採用」記述は履歴として残し、追補ノートで ADR-0007 へ誘導。
+- **B-5 = 受容（2026-05-20 追加）**: CloudFront デフォルト証明書（`*.cloudfront.net`）は viewer 側 TLS 最小バージョンが `TLSv1`（1.0）固定で引き上げ不可（AWS 仕様）。`security.md` §11「TLS 1.2 以上」と乖離するが、TLS 1.2+ 強制には独自ドメイン + ACM が必要でコスト発生のため、$0 維持で受容。ADR-0007 に B-3 と並べて「受容する逸脱」として記録。`security.md` §11 本文は不変。codex PR #151 再レビューで検出。
+
+#### remoteIP フォールバック確定仕様（T1）
+
+`n = TRUSTED_PROXY_COUNT`（既定 0）、`parts` = XFF をカンマ分割・trim・空要素除外した配列とする:
+
+1. `n==0`（dev）: XFF を完全無視し `RemoteAddr` を採用。
+2. `len(parts) < n`: `RemoteAddr` にフォールバック。
+3. `len(parts) >= n`（n>=1）: `parts[len(parts) - n]` を実クライアント IP として採用。
+4. XFF ヘッダ不在、または trim・空要素除外後に有効要素 0: `RemoteAddr` を採用（W-C 反映）。
+
+#### タスク分解
+
+| ID | 内容 | 担当 | 依存 | ブランチ |
+|----|------|------|------|---------|
+| T1 | `remoteIP` を TRUSTED_PROXY_COUNT 方式へ修正（logger.go / config.go / main.go / テスト） | backend-developer | なし | `fix/185-trusted-proxy-remoteip` |
+| T3 | CloudFront 構成（cloudfront.tf 新設 / SG プレフィックスリスト限定 / カスタムヘッダ検証 / 2 ビヘイビア / outputs・variables） | platform-builder | T1 マージ後 | `fix/185-cloudfront-distribution` |
+| T4 | `CORS_ALLOWED_ORIGINS` を CloudFront ドメインに、`TRUSTED_PROXY_COUNT=2` を prod 投入 | platform-builder | T3 | T3 PR に内包可 |
+| T5 | 設計書整合: 11-E line 1317 ADR 参照訂正・line 280/330 §3.5 参照訂正・§11 Q2 追補ノート・ADR-0007 新規・architecture.md 構成図 | architect/designer | T1 着手後随時 | 設計成果物フロー |
+| T6 | CloudFront 経由の疎通・CORS・HSTS・レート制限検証 | test-implementer + 指揮役 | T4 | — |
+
+#### warning 反映（チケット必須事項）
+
+- **W-C**: T1 の `remoteIP` 仕様に「XFF 空値ヘッダ・空要素のフォールバック」を含める（上記フォールバック仕様 規則 4 / 空要素除外に反映済み）。テストケース「XFF 空値ヘッダ → RemoteAddr」を追加。
+- **W-A**: T3 完了条件に「`/health` の CloudFront キャッシュ挙動（キャッシュ対象外 or 実害なし）」を一文明記。
+- **W-B**: T5 の ADR-0007 にバイパス対策方式（B-1-b 採用）と残存リスクの扱いを記録。
+
+#### issue #184 との関係
+
+issue #184（SPA ハンドラ HEAD 405）は独立 issue として別 PR で対応。T1 とは `cmd/server/main.go` を共有するため直列実行。#185 の T3 apply 前にマージする。
+
 ---
 
 ## 解決内容
