@@ -49,3 +49,14 @@
 - §6.1 / §6.3.3 / §9.3 に「ALB DNS 直アクセス = 403 期待」の確認手順を明記。
 - §11 Q2 を【現行構成】（ADR-0007 正本）と【判断履歴】（案1 採用当時の記録）の 2 ブロックに見出しレベルで分離。
 - 残: §2/§3/§4 の planning セクションに案1（`http://<alb-dns>` CORS 等）当時の記述が残存。§11 Q2 履歴ブロック末尾に「現行整合の正本は ADR-0007 / env_config.md、CORS 値の最終反映は T4」と注記済み（正本は T5 で更新済みの env_config.md §4.5 のため別 issue は起票せず注記対応）。
+
+## 再レビュー結果（2026-05-21）
+
+PASS。`11-E-deploy.md` の §6/§10/§11 Q2/11-F 引き継ぎは CloudFront ドメイン基準に更新され、ALB DNS 直アクセスは 403 期待の閉域確認として扱われている。
+
+- §6.1: `https://<cloudfront_domain_name>/health` を正規疎通確認、`http://<alb_dns_name>/health` を 403 期待として明記。
+- §6.3.2 / §6.3.3: 公開 URL は `https://<cloudfront_domain_name>/`、ALB DNS 直アクセスは使わない/403 期待として明記。
+- §10: 完了判定が CloudFront 経由のログイン画面到達・`/health` 200 を成功条件とし、ALB DNS 直アクセス 403 を独立完了項目に分離。
+- §11 Q2 / 11-F 引き継ぎ: ADR-0007 の現行構成を正本とし、旧案1（HTTP / ALB DNS 直利用）は判断履歴として分離。既知差分も ADR-0007 B-3 / B-5 と Secrets Manager 不採用に更新済み。
+
+下流 11-F / T6 が ALB DNS を公開 URL と誤認するリスクは解消したため、本指摘を resolved へ移動する。
