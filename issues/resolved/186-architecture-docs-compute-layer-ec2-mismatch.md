@@ -740,7 +740,41 @@ v1（initial architect 起動）に対する reviewer 指摘（CONDITIONAL PASS 
 ---
 
 ## 解決内容
-<!-- pending-review へ移動する前に記入 -->
+
+案D「EC2 を正本、Fargate は ADR-0004 だけに残す」方針で対応完了。reviewer 内部レビュー PASS + codex レビュー 2 ラウンド経て PASS。
+
+### Phase 0: ユーザー判断確定（2026-05-24）
+- architect 実装計画 v2 策定 → reviewer FIX 反映 → reviewer PASS
+- ユーザー判断 7 項目（UD-1〜UD-7）確定:
+  - UD-1=A SSM Session Manager / UD-2=B Docker awslogs ドライバ / UD-3=A CWAgent + AWS/EC2 併用
+  - UD-4=A EC2-StatusCheckFailed 追加 / UD-5=B SSM Parameter Store / UD-6=A ECR pull / UD-7=A 並列実行
+- 連動して issue #187（SSM Session Manager + SSM Parameter Store Terraform 実装）を起票
+
+### Phase 1-4: 設計成果物書き直し（2026-05-24）
+- 11 ファイル全面 EC2 化、designer 5 並列起動 + Phase 4 シリアル
+  - Phase 1 シリアル束（T1/T2/T4/T5/T6/T11）: 02_scope.md / architecture.md / security.md / files.md / db_schema.md / backup_restore.md
+  - Phase 2-3 並列（T7/T8/T9/T10）: monitoring.md / env_config.md / release.md / runbook.md
+  - Phase 4（T3）: diagrams.md §1 構成図 + §6 デプロイフロー
+- reviewer 内部レビュー PASS（受け入れ基準 11/11 達成、横断整合 OK、副作用なし）
+- I-01 由来で issue #188（monitoring.md ロググループ命名 `/ecs/expense-saas/api` 残置）を起票
+
+### Phase 5: codex レビュー対応（2026-05-25）
+- codex 初回レビューで finding #122/#123/#124（重大度 高 2 件 + 中 1 件）起票
+  - #122: 存在しない `expense-app` unit/container 名参照
+  - #123: ECR pull 後の `docker tag` 抜けで systemd から起動不能
+  - #124: `Secrets Manager` / `bastion` / 未定義 `/expense-saas/db_password` 残置
+- designer 1 エージェントで一括対応 → user_data.sh.tpl と完全整合
+- codex 再レビュー PASS（Findings なし）→ 3 件とも resolved/ 移動
+
+### コミット
+- `db53b03` Phase 0 設計確定（ユーザー判断 + issue #187 起票）
+- `80dc4f4` Phase 1-4 designer 完了（11 ファイル + issue #188 起票）
+- `92650b5` codex finding #122/#123/#124 対応（user_data.sh.tpl と整合）
+- 本コミット: クローズ + findings resolved 反映
+
+### 残置（別 issue で継続）
+- issue #187: SSM Session Manager + SSM Parameter Store の Terraform 実装（着手は Step 11-E 実デプロイ時）
+- issue #188: monitoring.md ロググループ名 `/ecs/expense-saas/api` リネーム（設計 + Terraform / awslogs-group 設定の同期更新、post-MVP）
 
 ## 解決日
-<!-- YYYY-MM-DD -->
+2026-05-25
