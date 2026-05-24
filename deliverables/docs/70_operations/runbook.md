@@ -34,7 +34,7 @@
 | # | 確認項目 | 確認方法 | 正常基準 |
 |---|---------|---------|---------|
 | 1 | 未対応アラートの有無 | CloudWatch Alarms コンソールで `ALARM` 状態のアラームを確認 | `ALARM` 状態のアラームが 0 件 |
-| 2 | EC2 アプリ稼働状態 | SSM Session Manager で EC2 に接続し `sudo docker ps` で expense-app コンテナの状態確認（`aws ssm start-session --target i-xxxxxxxxx`） | `expense-app` コンテナが Up 状態であること（単一 EC2 インスタンス、ADR-0004 §ポートフォリオ対応） |
+| 2 | EC2 アプリ稼働状態 | SSM Session Manager で EC2 に接続し `sudo docker ps` で expense-saas コンテナの状態確認（`aws ssm start-session --target i-xxxxxxxxx`） | `expense-saas` コンテナが Up 状態であること（単一 EC2 インスタンス、ADR-0004 §ポートフォリオ対応） |
 | 3 | 5xx エラーの発生傾向 | CloudWatch Logs Insights で直近 24 時間の 5xx 件数を集計 | 5xx エラーレート < 1% |
 | 4 | RDS 空きストレージ | RDS コンソールの FreeStorageSpace メトリクスを確認 | 残容量 > 20% |
 | 5 | ヘルスチェック状態 | ALB ターゲットグループの Healthy/Unhealthy Host Count を確認 | Unhealthy = 0 |
@@ -89,15 +89,15 @@ monitoring.md SS6.2 で定義されたアラームに対する一次対応手順
     $ aws ssm start-session --target i-xxxxxxxxx
 
 [2] アプリコンテナの状態を確認
-    $ sudo docker ps -a --filter name=expense-app
+    $ sudo docker ps -a --filter name=expense-saas
 
     確認観点:
     - Up 状態でなければ → 起動失敗を疑う、[3] へ
     - Up 状態であれば → DB 接続を疑う、[3] へ進みつつ [4] も並行確認
 
 [3] アプリコンテナのログを確認
-    $ sudo docker logs --tail 100 expense-app
-    $ sudo journalctl -u expense-app --since "5 minutes ago"
+    $ sudo docker logs --tail 100 expense-saas
+    $ sudo journalctl -u expense-saas --since "5 minutes ago"
 
     確認観点:
     - "database connection failed" のエラーがあるか
@@ -105,7 +105,7 @@ monitoring.md SS6.2 で定義されたアラームに対する一次対応手順
     - エラー内容から原因切り分け（DB 接続失敗 / panic / OOM 等）
 
 [4] DB 疎通確認（アプリコンテナ内から /health を叩く）
-    $ sudo docker exec expense-app sh -c 'wget -qO- http://localhost:8080/health'
+    $ sudo docker exec expense-saas sh -c 'wget -qO- http://localhost:8080/health'
 
     補足: RDS インスタンスの可用性も並行で確認
     $ aws rds describe-db-instances \
@@ -115,7 +115,7 @@ monitoring.md SS6.2 で定義されたアラームに対する一次対応手順
 [5] 切り分け結果に応じた対処
     - コンテナ起動失敗 → [インフラ障害] ECR イメージタグ・user_data・systemd unit を確認、ロールバック検討
     - DB 接続失敗 → [DB 障害] runbook §3.x DB 関連アラート対応へ（ALERT-W4 / W5 / W6 参照）
-    - OOM Killer → [インフラ障害] メモリ使用量確認、`sudo systemctl restart expense-app` で再起動 + メモリ閾値見直し
+    - OOM Killer → [インフラ障害] メモリ使用量確認、`sudo systemctl restart expense-saas` で再起動 + メモリ閾値見直し
     - コンテナも DB も正常だがヘルスチェック失敗 → [アプリ障害] アプリケーションログを詳細確認
 ```
 
@@ -310,17 +310,17 @@ monitoring.md SS6.2 で定義されたアラームに対する一次対応手順
     $ sudo docker stats --no-stream
 
     確認観点:
-    - expense-app コンテナがリソースを食っているか
+    - expense-saas コンテナがリソースを食っているか
     - 他プロセス（systemd / ssm-agent 等）の異常はないか
 
 [4] 切り分け判断
     - リクエスト数増加に比例 → 正常な負荷増加。単一 EC2 構成のためスケールアウト不可、インスタンスタイプ変更（t3.micro → t3.small 等）を検討
     - リクエスト数は通常だがリソース消費が高い → メモリリーク等のアプリ障害を疑う
-      → アプリコンテナの再起動（`sudo systemctl restart expense-app`、ダウンタイム数秒〜十数秒）で一時対処
+      → アプリコンテナの再起動（`sudo systemctl restart expense-saas`、ダウンタイム数秒〜十数秒）で一時対処
 
 [5] 一時対処: 単一 EC2 構成のためスケールアウト不可
     - リソースを食っているプロセスの特定 + 再起動
-      $ sudo systemctl restart expense-app
+      $ sudo systemctl restart expense-saas
     - 抜本対処はインスタンスタイプ変更（Terraform `ec2.tf` の `instance_type` 変更 + `terraform apply`）
 ```
 
@@ -547,28 +547,39 @@ fields @timestamp, db_open_connections, db_in_use, db_idle, db_wait_count, db_wa
 $ aws ssm start-session --target i-xxxxxxxxx
 
 # アプリコンテナの状態確認
-$ sudo docker ps -a --filter name=expense-app
+$ sudo docker ps -a --filter name=expense-saas
 
 # アプリコンテナのログ確認（直近 N 行）
-$ sudo docker logs --tail 100 expense-app
+$ sudo docker logs --tail 100 expense-saas
 
 # アプリコンテナのログ追従
-$ sudo docker logs -f expense-app
+$ sudo docker logs -f expense-saas
 
 # systemd unit の状態確認
-$ sudo systemctl status expense-app
+$ sudo systemctl status expense-saas
 
 # systemd unit ログ確認
-$ sudo journalctl -u expense-app --since "10 minutes ago"
+$ sudo journalctl -u expense-saas --since "10 minutes ago"
 
 # アプリ再起動（ダウンタイム数秒〜十数秒）
-$ sudo systemctl restart expense-app
+$ sudo systemctl restart expense-saas
 
-# ECR から最新イメージを pull
+# ECR から最新イメージを pull → ローカルタグ付け替え → 再起動（release.md §4.2 と同じ手順）
 $ sudo docker pull <ACCOUNT>.dkr.ecr.<REGION>.amazonaws.com/expense-saas:<TAG>
+$ sudo docker tag <ACCOUNT>.dkr.ecr.<REGION>.amazonaws.com/expense-saas:<TAG> expense-saas:portfolio
+$ sudo systemctl restart expense-saas
 
-# SSM Parameter Store から DB パスワード設定の存在確認（値はマスクされた表示）
-$ aws ssm describe-parameters --filters "Key=Name,Values=/expense-saas/db_password"
+# SSM Parameter Store のシークレット確認（env_config.md §5.2 の正本パラメータ名）
+$ aws ssm describe-parameters --filters "Key=Name,Values=/expense-saas/prod/database/url"
+# あるいは複数パラメータをまとめて取得（値も併せて確認、要 kms:Decrypt 権限）
+$ aws ssm get-parameters \
+    --names /expense-saas/prod/database/url \
+            /expense-saas/prod/database/app_url \
+            /expense-saas/prod/jwt/private_key \
+            /expense-saas/prod/jwt/public_key \
+    --with-decryption \
+    --query 'Parameters[*].[Name,Value]' \
+    --output table
 
 # EC2 インスタンス自体の状態確認
 $ aws ec2 describe-instances \

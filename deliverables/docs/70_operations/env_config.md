@@ -187,7 +187,7 @@ EC2 単一インスタンス構成（[ADR-0004](../30_arch/adr/0004-infra.md) §
 |------|---------------------------------------|
 | 機密保管 | KMS による暗号化保存（AWS マネージドキー `alias/aws/ssm` を使用、無料枠内） |
 | アクセス制御 | EC2 インスタンスプロファイルに `ssm:GetParameters` + `kms:Decrypt` を付与（パラメータ ARN / KMS キー単位で限定） |
-| ローテーション | SSM パラメータ値の更新 + `sudo systemctl restart expense-app` のみ（Terraform apply 不要、§6.2 参照） |
+| ローテーション | SSM パラメータ値の更新 + `sudo systemctl restart expense-saas` のみ（Terraform apply 不要、§6.2 参照） |
 | コスト | Standard tier は無料（10,000 パラメータまで、API コール 40 TPS 無料） |
 | 監査 | CloudTrail に `GetParameters` / `Decrypt` のログが残る |
 
@@ -274,24 +274,23 @@ unset PARAMS DATABASE_URL APP_DATABASE_URL JWT_PRIVATE_KEY JWT_PUBLIC_KEY
 
 #### 5.3.4 systemd unit スニペット
 
-`/etc/systemd/system/expense-app.service` で `EnvironmentFile` を読み込み、`docker run --env-file` でコンテナに注入する。
+`/etc/systemd/system/expense-saas.service` を配置し、`docker run --env-file /etc/expense-saas/app.env` でコンテナに環境変数を注入する。本スニペットは `expense-saas/infra/terraform/user_data.sh.tpl` L67-80 と一致させる（実装側の正本）。ローカル image tag は `expense-saas:portfolio` 固定（ECR pull 後は `docker tag <remote-uri> expense-saas:portfolio` で付け替える運用、release.md §4.2 参照）。
 
 ```ini
 [Unit]
-Description=Expense SaaS API (Docker container)
+Description=Expense SaaS API
 After=docker.service
 Requires=docker.service
 
 [Service]
 Restart=always
-EnvironmentFile=/etc/expense-saas/app.env
-ExecStartPre=-/usr/bin/docker rm -f expense-app
-ExecStart=/usr/bin/docker run --name expense-app \
+ExecStartPre=-/usr/bin/docker rm -f expense-saas
+ExecStart=/usr/bin/docker run --name expense-saas \
   --env-file /etc/expense-saas/app.env \
   -v /etc/expense-saas/keys:/app/keys:ro \
   -p 8080:8080 \
   expense-saas:portfolio
-ExecStop=/usr/bin/docker stop expense-app
+ExecStop=/usr/bin/docker stop expense-saas
 
 [Install]
 WantedBy=multi-user.target
@@ -390,7 +389,7 @@ EC2 + SSM Parameter Store 方式では Terraform apply 不要。SSM パラメー
    $ sudo /usr/local/bin/refresh-env.sh
 
    # アプリを再起動して新しい DATABASE_URL を読み込ませる
-   $ sudo systemctl restart expense-app
+   $ sudo systemctl restart expense-saas
 
 4. ヘルスチェックで DB 接続が正常であることを確認する
    $ curl -s https://<domain>/health
