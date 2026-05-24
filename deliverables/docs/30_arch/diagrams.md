@@ -13,9 +13,11 @@
 ## 1. システム構成図
 
 > 対応: [architecture.md](architecture.md) 2 システム全体構成
+> 前提: EC2 t3.micro × 1 構成（[ADR-0004](adr/0004-infra.md) §ポートフォリオ対応 / issue #186, #187）
+> 参照: CloudFront → ALB → EC2 経路は [ADR-0007](adr/0007-cloudfront-https.md)
 
 ```mermaid
-graph TB
+graph LR
     subgraph Client["クライアント"]
         Browser["ブラウザ<br/>React + TypeScript + Vite"]
     end
@@ -24,9 +26,8 @@ graph TB
         CF["CloudFront<br/>TLS 終端 / HTTPS 化<br/>(ADR-0007)"]
         ALB["ALB<br/>ヘルスチェック<br/>CloudFront 経由を強制 (B-1-b)"]
 
-        subgraph ECS["ECS Fargate"]
-            Task1["Go API サーバー<br/>タスク 1"]
-            Task2["Go API サーバー<br/>タスク 2"]
+        subgraph Compute["コンピュート<br/>(ADR-0004 §ポートフォリオ対応)"]
+            EC2["EC2 t3.micro<br/>単一インスタンス<br/>(Docker コンテナ + SPA embed)"]
         end
 
         subgraph Storage["ストレージ"]
@@ -34,29 +35,24 @@ graph TB
             S3["S3<br/>領収書ファイル"]
         end
 
-        CWLogs["CloudWatch Logs"]
-        CWMetrics["CloudWatch Metrics"]
+        CWLogs["CloudWatch Logs<br/>(Docker awslogs ドライバ)"]
+        CWMetrics["CloudWatch Metrics<br/>(AWS/EC2 + CWAgent)"]
         SNS["SNS<br/>アラート通知"]
+        SSM["SSM<br/>Session Manager<br/>+ Parameter Store"]
     end
 
     Browser -->|HTTPS| CF
     CF -->|HTTP /api/* 非キャッシュ| ALB
     CF -->|HTTP /* SPA エッジキャッシュ| ALB
-    ALB -->|/api/*, /health| Task1
-    ALB -->|/api/*, /health| Task2
-    ALB -->|/*| Task1
-    ALB -->|/*| Task2
-    Note over Task1,Task2: Go embed で SPA 静的ファイルも配信
-    Task1 --> RDS
-    Task2 --> RDS
-    Task1 -->|署名付きURL発行| S3
-    Task2 -->|署名付きURL発行| S3
+    ALB -->|/api/*, /health, /*| EC2
+    EC2 --> RDS
+    EC2 -->|署名付きURL発行| S3
     Browser -->|署名付きURL| S3
-    Task1 -->|stdout JSON| CWLogs
-    Task2 -->|stdout JSON| CWLogs
+    EC2 -->|stdout JSON| CWLogs
     RDS --> CWMetrics
-    ECS --> CWMetrics
+    EC2 -->|CWAgent メモリ・ディスク| CWMetrics
     CWMetrics -->|アラーム| SNS
+    EC2 -.->|シークレット fetch| SSM
 ```
 
 ---
@@ -198,8 +194,8 @@ graph TD
 
 ## 6. デプロイパイプライン（計画）
 
-> 対応: [architecture.md](architecture.md) 4.0 SPA 配信方式（ビルド・配信の概要）
->
+> 対応: [architecture.md](architecture.md) 4.0 SPA 配信方式（ビルド・配信の概要） / [release.md](../70_operations/release.md)
+> 前提: EC2 t3.micro × 1 構成のため ECR pull + systemctl restart 方式（[ADR-0004](adr/0004-infra.md) §ポートフォリオ対応 / UD-6=A / issue #186, #187）
 
 ```mermaid
 graph LR
@@ -214,9 +210,9 @@ graph LR
         E --> F["手動確認 →<br/>マージ"]
     end
 
-    subgraph Deploy["手動デプロイ"]
+    subgraph Deploy["手動デプロイ（SSM Session Manager 経由）"]
         F --> G["Docker Build<br/>& Push to ECR"]
-        G --> H["ECS<br/>ローリングアップデート"]
+        G --> H["EC2<br/>ECR pull + systemctl restart<br/>(ダウンタイム数秒〜十数秒)"]
         H --> I["ヘルスチェック<br/>確認"]
     end
 ```

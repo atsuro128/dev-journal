@@ -16,7 +16,9 @@
 |------------|---------|
 | `50_detail_design/monitoring.md` | アラート種別・閾値・メトリクス定義（正本） |
 | `30_arch/architecture.md` | システム構成・ミドルウェアチェーン |
-| `30_arch/adr/0004-infra.md` | インフラ構成（ECS Fargate / RDS / S3） |
+| `30_arch/adr/0004-infra.md` | インフラ選定（コンピュート / DB / ストレージ）。ポートフォリオ対応として EC2 t3.micro を採用（ADR-0004 §ポートフォリオ対応） |
+| `../../../issues/open/186-architecture-docs-compute-layer-ec2-mismatch.md` | 設計ドキュメントの ECS 記述を EC2 実装と整合させる issue（本ファイルもその一部） |
+| `../../../issues/open/187-terraform-ssm-session-manager-and-parameter-store.md` | SSM Session Manager / Parameter Store の Terraform 実装側 issue |
 | `30_arch/adr/0005-monitoring-logging.md` | 監視・ログ戦略 |
 | `70_operations/release.md` | ロールバック手順 |
 | `70_operations/backup_restore.md` | データ復旧手順 |
@@ -32,7 +34,7 @@
 | # | 確認項目 | 確認方法 | 正常基準 |
 |---|---------|---------|---------|
 | 1 | 未対応アラートの有無 | CloudWatch Alarms コンソールで `ALARM` 状態のアラームを確認 | `ALARM` 状態のアラームが 0 件 |
-| 2 | ECS タスク稼働状態 | ECS コンソールでサービスの Running Task Count を確認 | Running = Desired（2 タスク） |
+| 2 | EC2 アプリ稼働状態 | SSM Session Manager で EC2 に接続し `sudo docker ps` で expense-app コンテナの状態確認（`aws ssm start-session --target i-xxxxxxxxx`） | `expense-app` コンテナが Up 状態であること（単一 EC2 インスタンス、ADR-0004 §ポートフォリオ対応） |
 | 3 | 5xx エラーの発生傾向 | CloudWatch Logs Insights で直近 24 時間の 5xx 件数を集計 | 5xx エラーレート < 1% |
 | 4 | RDS 空きストレージ | RDS コンソールの FreeStorageSpace メトリクスを確認 | 残容量 > 20% |
 | 5 | ヘルスチェック状態 | ALB ターゲットグループの Healthy/Unhealthy Host Count を確認 | Unhealthy = 0 |
@@ -55,7 +57,7 @@ fields @timestamp, status, path, error
 | 1 | API レスポンスタイム p95 推移 | CloudWatch メトリクス `ExpenseSaaS/API/Duration` の週次推移を確認 | p95 < 500ms で安定 |
 | 2 | RDS CPU 使用率推移 | RDS メトリクス `CPUUtilization` の週次推移を確認 | ピーク時 < 80% |
 | 3 | RDS 接続数推移 | RDS メトリクス `DatabaseConnections` の週次推移を確認 | ピーク時 < max_connections の 80% |
-| 4 | ECS CPU/メモリ推移 | Container Insights の週次推移を確認 | ピーク時 < 80% |
+| 4 | EC2 CPU/メモリ推移 | CloudWatch コンソールで `AWS/EC2` 名前空間の `CPUUtilization`、`CWAgent` 名前空間の `mem_used_percent` の週次推移を確認 | ピーク時 < 80% |
 | 5 | ログイン失敗の傾向 | Logs Insights で `msg = "login failed"` の件数推移を確認 | 急激な増加傾向がないこと |
 | 6 | ログ保持状況 | CloudWatch Logs のロググループ設定を確認 | 保持期間が 30 日に設定されていること |
 
@@ -78,46 +80,43 @@ monitoring.md SS6.2 で定義されたアラームに対する一次対応手順
 
 #### ALERT-C1: HealthCheck-Failure（ヘルスチェック連続失敗）
 
-**概要**: ALB のヘルスチェック（`GET /health`）が連続 2 回失敗した。ECS タスクまたは DB に問題がある可能性がある。
+**概要**: ALB のヘルスチェック（`GET /health`）が連続 2 回失敗した。EC2 上のアプリコンテナまたは DB に問題がある可能性がある。
 
 **一次対応手順**:
 
 ```
-[1] ECS タスクの状態を確認する
-    $ aws ecs describe-services \
-        --cluster expense-saas-prod \
-        --services expense-saas-api \
-        --query 'services[0].{running:runningCount,desired:desiredCount,events:events[:3]}'
+[1] SSM Session Manager で EC2 に接続
+    $ aws ssm start-session --target i-xxxxxxxxx
+
+[2] アプリコンテナの状態を確認
+    $ sudo docker ps -a --filter name=expense-app
 
     確認観点:
-    - runningCount < desiredCount であれば、タスクが起動に失敗している
-    - events にエラーが含まれていないか
+    - Up 状態でなければ → 起動失敗を疑う、[3] へ
+    - Up 状態であれば → DB 接続を疑う、[3] へ進みつつ [4] も並行確認
 
-[2] ECS タスクのログを確認する
-    CloudWatch Logs Insights（ロググループ: /ecs/expense-saas/api）:
-
-    fields @timestamp, level, msg, error, component
-    | filter level = "ERROR"
-    | sort @timestamp desc
-    | limit 20
+[3] アプリコンテナのログを確認
+    $ sudo docker logs --tail 100 expense-app
+    $ sudo journalctl -u expense-app --since "5 minutes ago"
 
     確認観点:
-    - "health check failed" のログがあるか
     - "database connection failed" のエラーがあるか
+    - panic / OOM Killer の痕跡があるか
+    - エラー内容から原因切り分け（DB 接続失敗 / panic / OOM 等）
 
-[3] RDS の接続性を確認する
+[4] DB 疎通確認（アプリコンテナ内から /health を叩く）
+    $ sudo docker exec expense-app sh -c 'wget -qO- http://localhost:8080/health'
+
+    補足: RDS インスタンスの可用性も並行で確認
     $ aws rds describe-db-instances \
         --db-instance-identifier expense-saas-prod \
         --query 'DBInstances[0].{status:DBInstanceStatus,endpoint:Endpoint}'
 
-    確認観点:
-    - DBInstanceStatus が "available" であること
-    - エンドポイントが正しいこと
-
-[4] 切り分け判断
-    - タスクが起動失敗 → [インフラ障害] ECS タスク定義・コンテナイメージを確認
-    - タスクは起動しているが DB 接続エラー → [DB 障害] RDS の状態を確認
-    - タスクもDBも正常だがヘルスチェック失敗 → [アプリ障害] アプリケーションログを詳細確認
+[5] 切り分け結果に応じた対処
+    - コンテナ起動失敗 → [インフラ障害] ECR イメージタグ・user_data・systemd unit を確認、ロールバック検討
+    - DB 接続失敗 → [DB 障害] runbook §3.x DB 関連アラート対応へ（ALERT-W4 / W5 / W6 参照）
+    - OOM Killer → [インフラ障害] メモリ使用量確認、`sudo systemctl restart expense-app` で再起動 + メモリ閾値見直し
+    - コンテナも DB も正常だがヘルスチェック失敗 → [アプリ障害] アプリケーションログを詳細確認
 ```
 
 **エスカレーション**: 一次対応開始から 15 分以内に復旧しない場合、エスカレーション（SS5 参照）。
@@ -172,10 +171,44 @@ monitoring.md SS6.2 で定義されたアラームに対する一次対応手順
     - 特定エンドポイントに集中 → [アプリ障害] 該当ハンドラ・サービス層のコードを確認
     - DB 関連エラーが大量 → [DB 障害] RDS の状態・接続数を確認
     - デプロイ直後 → [リリース障害] ロールバックを実施
-    - 全体的に発生 → [インフラ障害] ECS タスク・ネットワーク設定を確認
+    - 全体的に発生 → [インフラ障害] EC2 インスタンス・SG・ネットワーク設定を確認
 ```
 
 **エスカレーション**: 一次対応開始から 10 分以内に原因特定できない場合、または 15 分以内に復旧しない場合、エスカレーション（SS5 参照）。
+
+---
+
+#### ALERT-C3: EC2-StatusCheckFailed（インスタンスヘルスチェック失敗）
+
+**概要**: AWS の EC2 インスタンスヘルスチェック（`AWS/EC2 StatusCheckFailed`）が連続 2 回失敗した。インスタンス自体に障害がある可能性がある。SG / NACL 障害でも発火する。単一 EC2 構成のため、本アラートはサービス全停止に直結する可能性が高い（連動 issue: #186 / #187）。
+
+**一次対応手順**:
+
+```
+[1] AWS コンソールで EC2 のステータスチェック詳細を確認
+    - "System Status Check" 失敗 → AWS インフラ障害（自動復旧待ち、または AWS Support へ）
+    - "Instance Status Check" 失敗 → OS レベル障害（再起動を検討）
+
+[2] SSM Session Manager で接続を試みる
+    $ aws ssm start-session --target i-xxxxxxxxx
+
+    - 繋がる場合: OS 自体は生存。SG / NACL 障害が ALB → EC2 経路で発生中の可能性。SG ルールを確認
+        $ aws ec2 describe-security-groups --group-ids <sg_id>
+    - 繋がらない場合: OS ハングまたは SSM Agent 障害。次へ
+
+[3] SSM で繋がらない場合は EC2 を再起動
+    $ aws ec2 reboot-instances --instance-ids i-xxxxxxxxx
+
+    補足:
+    - 再起動には通常 1〜5 分かかる。再起動完了後にステータスチェックの再評価を待つ
+    - EC2 はステートレス、データ永続化は RDS / S3 にあり、再起動でデータ損失は発生しない
+
+[4] 再起動後もアラートが解消しない場合
+    - インスタンス置換（停止 → 起動 or terminate → terraform apply で再作成）
+    - terraform 側の再作成手順は #187 のスコープに準拠
+```
+
+**エスカレーション**: 一次対応開始から 15 分以内に復旧しない場合、エスカレーション（SS5 参照）。データ永続化は RDS / S3 にあるため、最終手段としてインスタンス置換が選択肢となる。
 
 ---
 
@@ -243,23 +276,26 @@ monitoring.md SS6.2 で定義されたアラームに対する一次対応手順
     - 特定エンドポイントが遅延 → [アプリ障害] 該当クエリの最適化を検討
     - DB 全体が遅延 → [DB 障害] RDS のリソース状況を確認
     - コネクションプール枯渇 → [アプリ障害] プール設定の見直し
-    - ECS の CPU/メモリが高負荷 → [インフラ障害] スケーリングを検討
+    - EC2 の CPU/メモリが高負荷 → [インフラ障害] 単一 EC2 構成のため水平スケーリング不可、コンテナ再起動 or インスタンスタイプ変更を検討（ALERT-W3 参照）
 ```
 
 ---
 
-#### ALERT-W3: High-ECS-CPU / High-ECS-Memory（ECS タスク CPU/メモリ使用率 > 80%）
+#### ALERT-W3: High-EC2-CPU / High-EC2-Memory（EC2 CPU/メモリ使用率 > 80%）
 
-**概要**: ECS タスクのリソース使用率が閾値を超過した。
+**概要**: EC2 インスタンスのリソース使用率が閾値を超過した。単一 EC2 構成のため水平スケーリングは不可。
 
 **一次対応手順**:
 
 ```
-[1] Container Insights で使用率の推移を確認する
+[1] CloudWatch メトリクスで使用率の推移を確認する
+    - AWS/EC2 名前空間: CPUUtilization
+    - CWAgent 名前空間: mem_used_percent
     - 急激な上昇か、緩やかな上昇かを判断する
-    - 特定タスクに偏りがないかを確認する
 
 [2] リクエスト数の増加を確認する
+    CloudWatch Logs Insights:
+
     fields @timestamp
     | filter ispresent(status)
     | stats count() as requests by bin(5m)
@@ -268,16 +304,24 @@ monitoring.md SS6.2 で定義されたアラームに対する一次対応手順
     確認観点:
     - 通常時と比較してリクエスト数が異常に多くないか
 
-[3] 切り分け判断
-    - リクエスト数増加に比例 → 正常な負荷増加。タスク数の増加を検討
-    - リクエスト数は通常だがリソース消費が高い → メモリリーク等のアプリ障害を疑う
-      → ECS タスクの再起動（ローリング更新）で一時対処
+[3] EC2 上でプロセスの内訳を確認する
+    $ aws ssm start-session --target i-xxxxxxxxx
+    $ sudo top -b -n 1 | head -20
+    $ sudo docker stats --no-stream
 
-[4] 一時対処: ECS タスクのスケールアウト
-    $ aws ecs update-service \
-        --cluster expense-saas-prod \
-        --service expense-saas-api \
-        --desired-count 3
+    確認観点:
+    - expense-app コンテナがリソースを食っているか
+    - 他プロセス（systemd / ssm-agent 等）の異常はないか
+
+[4] 切り分け判断
+    - リクエスト数増加に比例 → 正常な負荷増加。単一 EC2 構成のためスケールアウト不可、インスタンスタイプ変更（t3.micro → t3.small 等）を検討
+    - リクエスト数は通常だがリソース消費が高い → メモリリーク等のアプリ障害を疑う
+      → アプリコンテナの再起動（`sudo systemctl restart expense-app`、ダウンタイム数秒〜十数秒）で一時対処
+
+[5] 一時対処: 単一 EC2 構成のためスケールアウト不可
+    - リソースを食っているプロセスの特定 + 再起動
+      $ sudo systemctl restart expense-app
+    - 抜本対処はインスタンスタイプ変更（Terraform `ec2.tf` の `instance_type` 変更 + `terraform apply`）
 ```
 
 ---
@@ -434,10 +478,10 @@ monitoring.md SS6.2 で定義されたアラームに対する一次対応手順
 [アラート受信]
     |
     v
-[ヘルスチェック失敗?] -- Yes --> [ECS タスク起動状態確認]
+[ヘルスチェック失敗?] -- Yes --> [EC2 上 docker ps でコンテナ確認]
     |                                   |
-    | No                          [タスク起動失敗?] -- Yes --> [インフラ障害]
-    v                                   |                      コンテナイメージ・設定を確認
+    | No                          [コンテナ起動失敗?] -- Yes --> [インフラ障害]
+    v                                   |                      ECR イメージタグ・user_data・systemd unit を確認
 [5xx エラー発生?]                  | No
     |                          [DB 接続エラー?] -- Yes --> [DB 障害]
     | Yes                              |
@@ -499,23 +543,37 @@ fields @timestamp, db_open_connections, db_in_use, db_idle, db_wait_count, db_wa
 #### インフラ障害
 
 ```bash
-# ECS サービスの状態確認
-$ aws ecs describe-services \
-    --cluster expense-saas-prod \
-    --services expense-saas-api \
-    --query 'services[0].{running:runningCount,desired:desiredCount,status:status}'
+# SSM Session Manager で EC2 に接続（SSH 廃止、ADR-0004 / 連動 issue #187 参照）
+$ aws ssm start-session --target i-xxxxxxxxx
 
-# ECS タスクの停止理由確認（直近の停止タスク）
-$ aws ecs list-tasks \
-    --cluster expense-saas-prod \
-    --service-name expense-saas-api \
-    --desired-status STOPPED \
-    --query 'taskArns[:5]'
+# アプリコンテナの状態確認
+$ sudo docker ps -a --filter name=expense-app
 
-$ aws ecs describe-tasks \
-    --cluster expense-saas-prod \
-    --tasks <task_arn> \
-    --query 'tasks[0].{stoppedReason:stoppedReason,stopCode:stopCode}'
+# アプリコンテナのログ確認（直近 N 行）
+$ sudo docker logs --tail 100 expense-app
+
+# アプリコンテナのログ追従
+$ sudo docker logs -f expense-app
+
+# systemd unit の状態確認
+$ sudo systemctl status expense-app
+
+# systemd unit ログ確認
+$ sudo journalctl -u expense-app --since "10 minutes ago"
+
+# アプリ再起動（ダウンタイム数秒〜十数秒）
+$ sudo systemctl restart expense-app
+
+# ECR から最新イメージを pull
+$ sudo docker pull <ACCOUNT>.dkr.ecr.<REGION>.amazonaws.com/expense-saas:<TAG>
+
+# SSM Parameter Store から DB パスワード設定の存在確認（値はマスクされた表示）
+$ aws ssm describe-parameters --filters "Key=Name,Values=/expense-saas/db_password"
+
+# EC2 インスタンス自体の状態確認
+$ aws ec2 describe-instances \
+    --instance-ids i-xxxxxxxxx \
+    --query 'Reservations[0].Instances[0].{state:State.Name,az:Placement.AvailabilityZone}'
 
 # ALB ターゲットグループのヘルス状態
 $ aws elbv2 describe-target-health \
@@ -572,8 +630,8 @@ $ aws elbv2 describe-target-health \
 ## 6. 品質チェック
 
 - [x] monitoring.md SS6.2 の全 Critical/Warning アラームに対応する一次対応手順がある
-  - Critical: HealthCheck-Failure, High-5xx-Rate-Critical
-  - Warning: High-5xx-Rate-Warning, High-p95-Latency, High-ECS-CPU, High-ECS-Memory, High-RDS-CPU, Low-RDS-Storage, High-RDS-Connections, High-Login-Failures
+  - Critical: HealthCheck-Failure, High-5xx-Rate-Critical, EC2-StatusCheckFailed
+  - Warning: High-5xx-Rate-Warning, High-p95-Latency, High-EC2-CPU, High-EC2-Memory, High-RDS-CPU, Low-RDS-Storage, High-RDS-Connections, High-Login-Failures
 - [x] 各対応手順に確認コマンド・Logs Insights クエリが含まれている
 - [x] 切り分け観点（アプリ障害/DB障害/インフラ障害）が明確である
 - [x] エスカレーション基準が具体的な条件（時間・状況）で定義されている

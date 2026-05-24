@@ -67,7 +67,7 @@
 
 ### インフラ
 - Docker Compose（ローカル開発）
-- AWS デプロイ（ECS Fargate / RDS / S3）
+- AWS デプロイ（EC2 t3.micro / RDS / S3、ADR-0004 §ポートフォリオ対応）
 - ローカルテスト（lint / test / build）+ 手動デプロイ（GHA の ci.yml / deploy.yml は参考用デモとして残す）
 - ヘルスチェックエンドポイント（`/health`）
 

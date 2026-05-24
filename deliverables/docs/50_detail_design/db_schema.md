@@ -938,7 +938,7 @@ CREATE INDEX idx_password_reset_tokens_expires
 |------|---------|
 | ローカル開発 | `make migrate-up` / `make migrate-down` |
 | CI | テスト前に `migrate -path ... -database ... up` を自動実行 |
-| 本番 | ECS タスク（ワンショット）としてデプロイ前に実行 |
+| 本番 | EC2 上の `docker run --rm`（ワンショット）でデプロイ前に実行（SSM Session Manager 経由） |
 
 ---
 

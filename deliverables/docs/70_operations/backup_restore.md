@@ -28,7 +28,7 @@
 | 指標 | 定義 | 目標値 | MVP での実現方式 |
 |------|------|--------|-----------------|
 | RPO（Recovery Point Objective） | データ損失を許容できる最大時間 | 24 時間以内 | RDS 自動バックアップ（日次）+ トランザクションログ（5 分間隔） |
-| RTO（Recovery Time Objective） | 障害発生からサービス復旧までの最大時間 | 1 時間以内 | RDS スナップショットからの復元 + ECS サービスの再接続 |
+| RTO（Recovery Time Objective） | 障害発生からサービス復旧までの最大時間 | 1 時間以内 | RDS スナップショットからの復元 + EC2 上のアプリ再起動（`systemctl restart app`） |
 
 ### 2.2 MVP での実現範囲
 
@@ -94,7 +94,7 @@
 
 | 対象 | 理由 |
 |------|------|
-| ECS タスク定義 | Terraform / GitHub Actions で再構築可能 |
+| EC2 インスタンス + ECR イメージ | Terraform / `expense-saas/infra/terraform/user_data.sh.tpl` で再構築可能 |
 | ECR コンテナイメージ | Docker build で再作成可能。ECR のライフサイクルポリシーで世代管理 |
 | CloudWatch Logs | ログ保持期間 30 日（monitoring.md SS9.1）。長期保存は将来検討 |
 | Terraform state | S3 + DynamoDB で管理（ADR-0004）。別途バックアップ対象 |
