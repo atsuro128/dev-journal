@@ -1,30 +1,57 @@
 # 引き継ぎメモ
 
-## セッション: 2026-05-21 18:43
+## セッション: 2026-05-25 01:56
 
-（作業は 2026-05-20 開始、05-21 にかけて実施）
+（作業は 2026-05-22 開始、05-23 〜 05-25 にかけて連続実施）
 
 ### ゴール
 
-- issue #185（ALB が HTTP 平文・HTTPS 未対応）の対応。あわせて #184（SPA fallback の HEAD 405）も同セッションで対応。
-- → **達成。#185 の T1 / T3 / T5 と #184 を完了。T4 / T6 は実 AWS デプロイ時のアクティビティとして残置。**
+- 「次の作業は？」から /session-start で前回引き継ぎを確認。issue #186（設計書のコンピュート層 Fargate 表記が EC2 実装と乖離）の対応を進める。
+- → **達成。issue #186 を完全クローズ（resolved）。連動して issue #187 / #188 を新規起票。**
 
 ### 作業ログ
 
-1. **計画フェーズ**: architect が #185 実装計画 v1 → reviewer FIX（blocker 3）→ v2 → reviewer 再レビュー条件付き PASS。設計判断 B-1〜B-5 をユーザー確定（下記「意思決定ログ」）。
-2. **T1（`remoteIP` の TRUSTED_PROXY_COUNT 化）** → PR #149。内部レビュー warning W-1（config テスト未追加）対応、codex blocker（`rate_limit_test.go` のシグネチャ追従漏れ＝integration テストのコンパイルエラー）対応 → スカッシュマージ（master `c16f9d7`）。
-3. **#184（SPA fallback の HEAD 対応）** → PR #150。codex blocker（`r.Head("/*")` catch-all で `HEAD /health` が SPA fallback に流れ DB 異常時も index.html 200 を返す false positive）対応 = `HEAD /health` をヘルスハンドラ経由に。PR #148 由来の既存 lint（embed.go の staticcheck SA9009 誤検知）を drive-by 修正 → マージ（master `dd480b5`）。
-4. **T3（CloudFront 構成 + B-1-b 完全閉域）** → PR #151。内部レビュー blocker 2（heredoc 退行 / 適用順序）→ codex blocker（2 段階 apply の `-target` 依存解決破綻 → `restrict_alb_to_cloudfront` 変数で SG 制限を段階制御）→ codex blocker（B-5: デフォルト証明書の viewer TLS 最小 TLSv1）→ 受容判断 → マージ（master `4812a01`）。
-5. **T5（設計書整合）** → ADR-0007 起票、11-E チケット訂正（§3.5 参照切れ・ADR-0004 参照ミス・§11 Q2 追補ノート）、architecture.md / diagrams.md / env_config.md の CloudFront 反映。dev-journal commit `1925081`。内部レビュー PASS（warning W-1 → issue #186 起票）。codex 設計レビュー FIX（review-finding 121）→ 11-E 完了判定・11-F 引き継ぎを CloudFront ドメイン基準に修正 → commit `2155854` → codex 再レビュー PASS、finding 121 resolved。
-6. ユーザーが Backend ローカル CI（BE: full test）を master `c16f9d7` で実行 → unit / integration 全 PASS、lint は embed.go 1 件（PR #150 の drive-by で修正済み）。
+1. **スコープ確定フェーズ（2026-05-22 〜 05-23）**:
+   - issue #186 当初想定は「軽微 3 ファイル是正」だったが、ユーザーとの議論で 3 案（A: 注記統一 / B: 全面 EC2 化 / C: architect 委任）→ 最終案D「EC2 を正本、Fargate は ADR-0004 だけに残す」を採用。
+   - 全出現箇所マップ調査で、3 ファイル想定を超えて 10 ファイル + 詳細メトリクス（monitoring）+ 詳細運用手順（runbook / release）への波及を確認。カテゴリ X/Y/Z に分類。
+   - 「Fargate は実装しない（する予定もない）から、寧ろ EC2 の方が詳しく書くべき」というユーザー指摘で案A を案D に転換。
+2. **Phase 0 設計確定（2026-05-24）**:
+   - architect 実装計画 v1 策定 → reviewer CONDITIONAL PASS（blocker 1 + warning 6 + info 5）→ v2 で全反映 → reviewer 完全 PASS。
+   - ユーザー判断 7 項目（UD-1〜UD-7）確定:
+     - UD-1=A SSM Session Manager（自宅 Wi-Fi IP 変動への耐性で SSH→SSM に変更、別 issue #187 起票連動）
+     - UD-2=B Docker awslogs ドライバ / UD-3=A CWAgent + AWS/EC2 併用 / UD-4=A EC2-StatusCheckFailed 追加
+     - UD-5=B SSM Parameter Store / UD-6=A ECR pull / UD-7=A 並列実行
+   - 連動 issue #187（SSM Session Manager + SSM Parameter Store Terraform 実装）を起票。
+   - コミット: `db53b03 docs(issue-186): 案D 設計確定（Phase 0 ユーザー判断 7 項目）と issue #187 起票`
+3. **Phase 1-4 設計成果物書き直し（2026-05-24）**:
+   - designer 5 並列起動: Phase 1 シリアル束（T1/T2/T4/T5/T6/T11 = 6 ファイル）/ T7 monitoring / T8 env_config / T9 release / T10 runbook
+   - Phase 4 シリアル: T3 diagrams 構成図差し替え（他成果物確定後に Mermaid 図更新）
+   - reviewer 内部レビュー PASS（受け入れ基準 11/11 達成、横断整合 OK、副作用なし）
+   - reviewer info I-01「monitoring.md ロググループ命名 `/ecs/expense-saas/api` 残置」→ 別 issue #188 起票
+   - コミット: `80dc4f4 docs(issue-186): Phase 1-4 designer 完了 — 11 ファイルの ECS 記述を EC2 実装と整合（UD-1〜7 反映 + issue #188 起票）`
+4. **Phase 5 codex レビュー対応（2026-05-25）**:
+   - codex 初回レビューで finding #122/#123/#124（重大度 高 2 件 + 中 1 件）起票:
+     - #122: 存在しない `expense-app` unit/container 名参照（実装は `expense-saas`）
+     - #123: ECR pull 後の `docker tag` 抜けで systemd 起動不能（systemd unit は固定 local tag `expense-saas:portfolio` 参照）
+     - #124: release.md §3.3 で `Secrets Manager`、§4.1 で `bastion`、runbook で未定義 `/expense-saas/db_password` 残置
+   - designer 1 エージェントで一括対応 → user_data.sh.tpl と完全整合
+   - コミット: `92650b5 fix(issue-186): codex finding #122/#123/#124 対応（user_data.sh.tpl と整合）`
+   - codex 再レビュー PASS（Findings なし）→ 3 件とも resolved/ 移動
+5. **クローズ（2026-05-25）**:
+   - issue #186 §解決内容 / §解決日 記入 → `open/` → `resolved/` 移動
+   - progress.md 状態更新（「対応中」→「resolved」）
+   - コミット: `32c9f69 chore(issue-186): クローズ — codex 再レビュー PASS、resolved 移動 + progress 更新`
 
 ### 未完了
 
-- **#185 T4**（`CORS_ALLOWED_ORIGINS` を CloudFront ドメインに、`TRUSTED_PROXY_COUNT=2` を prod に投入）— 実 AWS デプロイ時に実施
-- **#185 T6**（CloudFront 経由の疎通・CORS・HSTS・レート制限検証）— 実 AWS デプロイ時に実施
-- **Step 11-E Phase 7**（スモークテスト: seed 投入 + 申請→承認→支払 golden path）— 前回からの持ち越し、未着手
-- issue #184 ファイルが `issues/open/` のまま（progress.md は resolved 反映済み）。次セッションで解決内容記入 → `resolved/` 移動の軽微な housekeeping
-- expense-saas の worktree が複数残存（後述）
+- **issue #187**（SSM Session Manager + SSM Parameter Store の Terraform 実装）— 起票のみ、着手は Step 11-E 実デプロイ時想定
+- **issue #188**（monitoring.md ロググループ命名 `/ecs/expense-saas/api` リネーム）— 起票のみ、post-MVP（実装側 awslogs-group 設定の同期更新必要）
+- **前回からの持ち越し（未着手）**:
+  - issue #185 T4（`CORS_ALLOWED_ORIGINS` を CloudFront ドメインに、`TRUSTED_PROXY_COUNT=2` を prod に投入）
+  - issue #185 T6（CloudFront 経由の疎通・CORS・HSTS・レート制限検証）
+  - Step 11-E Phase 7（スモークテスト: seed 投入 + 申請→承認→支払 golden path）
+  - issue #184 ファイルの housekeeping（前回 progress.md は resolved 反映済みだが、ファイル自体は前セッションで resolved/ 移動済み）
+  - expense-saas の worktree クリーンアップ
 
 ### ブロッカー
 
@@ -32,43 +59,49 @@
 
 ### 次にやること
 
-1. **#185 の実デプロイ（T3 apply + T4 + T6）= Step 11-E のデプロイ継続作業**:
-   - CloudFront を **2 段階 apply**: `restrict_alb_to_cloudfront=false` で apply（CloudFront + ALB 作成、SG 開放だがカスタムヘッダで保護）→ CloudFront が `Deployed` になるのを確認 → `restrict_alb_to_cloudfront=true` で apply（SG を CloudFront プレフィックスリスト限定）
-   - `cloudfront_origin_verify_secret`（sensitive）を tfvars に設定
-   - apply 後、確定した CloudFront ドメインを `CORS_ALLOWED_ORIGINS` に反映（apply 後に実値設定する 2 段階デプロイ）、`TRUSTED_PROXY_COUNT=2` を prod に投入（T4）
-   - T6 疎通検証は 11-E チケット §6（CloudFront 基準に更新済み）の手順に従う。ALB DNS 直アクセスは 403 が期待値
-2. **Step 11-E Phase 7**（スモークテスト）
-3. **issue #186**（architecture.md/diagrams.md/env_config.md のコンピュート層 Fargate 表記 → EC2 是正、post-MVP）
-4. worktree クリーンアップ
+優先順位:
+
+1. **Step 11-E デプロイ継続作業**（実 AWS 操作、ユーザー主導）:
+   - issue #185 T3 apply（CloudFront 2 段階 apply）→ T4 env 反映 → T6 疎通検証
+   - issue #187 の Terraform 実装（SSM Session Manager + SSM Parameter Store）を同セッションで同期実施するのが効率的（#186 設計成果物が #187 の仕様書として機能する）
+2. **Step 11-E Phase 7 スモークテスト**（seed 投入 + 申請→承認→支払 golden path）
+3. **Step 11-F UAT 着手**（MVP 完成判定）
+4. **post-MVP issues 整理**:
+   - issue #188（monitoring ロググループ命名）
+   - その他 post-MVP open issues（060, 061, 064, 081, 084, 104, 122, 145, 146, 151, 167, 174, 176-180, 182 + ops-055/062/080）
 
 ### 学び・気づき
 
-- **ローカル /test スキップのリスクが顕在化**: T1 でユーザー判断により /test をスキップしたが、codex が integration テスト（`rate_limit_test.go`、integration タグ付き）のシグネチャ追従漏れ＝コンパイルエラーを捕捉。`go build` / 個別パッケージテストでは検出できず、`go test -tags integration ./...`（BE: full test）のみが拾える類だった。/test が正規ゲートである理由の実例。
-- **GitHub Actions は PR で走らない**（無料枠方針、`ci.yml` は存在するが `gh pr checks` は "no checks reported"）。「GitHub Actions を CI 証跡にする」という前提は誤り。テスト証跡はローカル /test が正本。
-- **多層レビューが機能**: reviewer が見落とした構造的問題（B-5 の TLSv1 固定、T3 の `-target` 依存解決破綻）を codex が複数捕捉。reviewer → codex の二段が有効に働いた。
-- worktree が多数残存。指揮役が修正対応で非 isolation エージェントを既存 worktree に向けて起動した際、ハーネスが空 worktree を別途生成するパターンを複数回踏んだ。
+- **codex レビューが reviewer の盲点を補完した実例**: reviewer 内部レビュー PASS 後に codex が「実装側 `user_data.sh.tpl` との具体整合（unit 名・コンテナ名・タグ付け方式・パラメータ名）」を 3 件指摘。reviewer は受け入れ基準 grep と用語置換は通したが、「実行可能性」までは踏み込まなかった。**memory `feedback_critical_review_of_codex` の運用例として、codex 指摘は形式ではなく実害を見て判定すべきという原則を再確認**（今回は 3 件とも妥当な指摘）。
+- **designer プロンプトに「実装側ファイルを必ず読ませる」指示の重要性**: 私が初回 designer 起動時に `user_data.sh.tpl` の値（`expense-saas.service` / `--name expense-saas` / `expense-saas:portfolio`）を確認せず推測で `expense-app` と書いたため、3 件の codex 指摘が発生。**実装と整合する設計書を書かせるなら、designer に該当実装ファイルを Read させるプロンプトを徹底する**。
+- **「読み替え注記」案A vs「正本書き換え」案D のトレードオフ**: 案A（注記統一）は ADR の書き分け美しさを保つが、「動かない手順書」が残る。ポートフォリオ用途では「動く手順書」の方が価値が高い（codex / 第三者レビューでの突っ込みも減る）。ユーザー指摘で案D に転換した判断は良かった。
+- **AskUserQuestion の使い方**: 7 件のユーザー判断を 4 件 + 3 件に分けて提示したが、初回はユーザーが用語を理解できず「全部解説して」と返ってきた。**技術用語の判断項目を出す前に、文脈・選択肢の意味・実害を先に説明する手順を踏むべき**。
+- **タスクトラッキング**: 17 タスク（#1〜#17、Phase 0-5 + クローズ）を依存関係付きで管理。並列起動・順序制御に有効だったが、サブタスク化のタイミング（特に findings 対応の #15/#16/#17 を後追いで追加）が遅れたのは反省。最初から「設計確定 → Phase 1-4 → codex → クローズ」の全フローを想定してタスク作成すべきだった。
 
 ### 意思決定ログ
 
-確定した設計判断（すべて ADR-0007 に記録）:
+確定した設計判断（issue #186 §ユーザー判断項目に詳細記録）:
 
-- **B-1 = B-1-b（完全閉域）**: ALB SG を CloudFront マネージドプレフィックスリスト限定 ＋ `X-Origin-Verify` カスタムヘッダを ALB リスナールールで検証（不一致 403）。他者の自前 CloudFront 経由も遮断。SG 制限は `restrict_alb_to_cloudfront` 変数で段階制御（CloudFront 作成完了前に SG を絞ると ALB 全遮断になるため。`-target` では依存リソースを巻き込み順序保証できないため変数方式を採用）。
-- **B-2 = B-2-c**: `remoteIP` を `TRUSTED_PROXY_COUNT` 方式に。実クライアント IP = `XFF[len - TRUSTED_PROXY_COUNT]`、prod=2、dev=0。
-- **B-3 = 受容**: CloudFront〜ALB 間が HTTP（security.md §441 乖離）。$0 維持のため受容、ADR-0007 に記録。
-- **B-4 = 追補ノート**: 11-E §11 Q2 の「案1 採用」記述は履歴として残し、追補ノート + 【現行構成】/【判断履歴】の見出し分離で ADR-0007 を正本と明示。
-- **B-5 = 受容**: CloudFront デフォルト証明書（`*.cloudfront.net`）は viewer TLS 最小バージョンが TLSv1 固定（AWS 仕様、引き上げ不可）。security.md §11「TLS 1.2 以上」と乖離するが $0 維持のため受容、ADR-0007 に記録。完全準拠には独自ドメイン + ACM（有料）が必要。
-
-その他:
-- security.md §11 / §441 本文は不変。受容逸脱（B-3 / B-5）は ADR-0007 に集約。
-- issue #186 は T5 内部レビュー W-1 由来。architecture.md/diagrams.md/env_config.md のコンピュート層が ECS Fargate / 2 タスク表記だが実装実態は EC2 t3.micro 単一（ADR-0004 の EC2 ピボットが構成図に未反映）。T5 スコープ外として別 issue 化。
+- **案D 採用**: ADR-0004 を「Fargate 採用 + §ポートフォリオ対応で EC2 ピボット」の歴史記録として不変、下流 10 ファイルは EC2 を一次正本として書き直す。Fargate 言及は ADR-0004 への参照に集約。
+- **UD-1 = A（SSM Session Manager）**: 自宅 Wi-Fi の IP 変動に対し SSH では SG 更新が常時発生するため、SSM 採用が合理的。連動して #187 起票。
+- **UD-2 = B（Docker awslogs ドライバ）**: 追加エージェント不要、systemd unit の `docker run` オプションのみで完結。
+- **UD-3 = A（CWAgent + AWS/EC2 併用）**: CWAgent はメトリクスのみモード（ログは awslogs 担当）。メモリ・ディスク使用率を取得し ALERT-W3（メモリ 80% 超）維持。
+- **UD-4 = A（EC2-StatusCheckFailed 追加）**: 単一 EC2 構成のため早期検知価値高い。
+- **UD-5 = B（SSM Parameter Store）**: KMS 暗号化・無料・ローテーション容易。#187 で UD-1 と統合実装。
+- **UD-6 = A（ECR pull）**: Step 11-E Phase 5 で既にこの方式でデプロイ済み、実装実態と整合。t3.micro 上のビルドは過食リスク回避。
+- **UD-7 = A（並列実行）**: Phase 1 のみシリアル、Phase 2-3 の重 4 タスク並列、Phase 4 最後にシリアル。
 
 ### PR / コミット要約
 
-- **expense-saas**: PR #149（T1）/ #150（#184）/ #151（T3）スカッシュマージ済み。master `4812a01`。各 feature ブランチは保持。
-- **dev-journal**: commit `1925081`（T5 設計成果物）/ `2155854`（finding 121 対応）。本セッション末で progress.md 等を追加コミット予定。
-- **起票 issue**: #186（open, post-MVP）。
-- **review-finding**: 121（resolved）。
+- **dev-journal**: 4 コミット
+  - `db53b03` Phase 0 設計確定（ユーザー判断 + issue #187 起票）
+  - `80dc4f4` Phase 1-4 designer 完了（11 ファイル + issue #188 起票）
+  - `92650b5` codex finding #122/#123/#124 対応（user_data.sh.tpl と整合）
+  - `32c9f69` クローズ（解決サマリ + resolved 移動 + progress 更新）
+- **expense-saas**: 変更なし（参照のみ）
+- **起票 issue**: #187（SSM Terraform 実装、open）/ #188（monitoring ロググループ命名、open）
+- **review-finding**: 122 / 123 / 124（resolved）
 
 ## 前回セッションのアーカイブ
 
-`dev-journal/archives/session-logs/2026-05-20.md`（2026-05-20 の 2 セッション: 01:25 Step 11-E Phase 4 DB bootstrap 完走 / 16:27 Phase 5-6 完走・SPA 配信未実装の issue #183 を PR #148 で解決）
+`dev-journal/archives/session-logs/2026-05-21.md`（2026-05-20 開始〜05-21 にかけて: issue #185 ALB HTTPS 化対応で T1 / T3 / T5 + #184 を完了、T4 / T6 は実 AWS デプロイ時のアクティビティとして残置）
