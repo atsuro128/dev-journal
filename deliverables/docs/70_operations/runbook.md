@@ -23,6 +23,8 @@
 | `70_operations/release.md` | ロールバック手順 |
 | `70_operations/backup_restore.md` | データ復旧手順 |
 
+**CloudWatch Logs ロググループ**: `/expense-saas/portfolio/api`（monitoring.md §9.1 参照）
+
 ---
 
 ## 2. 定常確認項目

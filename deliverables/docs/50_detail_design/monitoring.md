@@ -44,7 +44,7 @@
 
 ### 2.1 ログフォーマット
 
-slog の `JSONHandler` を使用し、全ログを JSON 形式で stdout に出力する。Docker の awslogs ログドライバにより CloudWatch Logs に自動転送される（systemd unit の `docker run --log-driver=awslogs` 指定。UD-2=B）。
+slog の `JSONHandler` を使用し、全ログを JSON 形式で stdout に出力する。Docker の awslogs ログドライバにより CloudWatch Logs に自動転送される（systemd unit の `docker run --log-driver=awslogs --log-opt awslogs-group=/${project_name}/${env}/api --log-opt awslogs-stream=${INSTANCE_ID}/api` 指定。UD-2=B）。ロググループ命名は §9.1 参照。
 
 ```json
 {
@@ -621,7 +621,19 @@ fields tenant_id
 
 | ロググループ | 保持期間 | 理由 |
 |------------|---------|------|
-| `/ecs/expense-saas/api` | 30 日 | ADR-0005 で決定。MVP フェーズの運用コスト最適化 |
+| `/expense-saas/${environment}/api` | 30 日 | ADR-0005 で決定。MVP フェーズの運用コスト最適化 |
+
+**ロググループ命名規約**: `/{project_name}/{env}/api`（P-1=b、issue #188 で確定）
+
+- SSM Parameter Store 命名 `/expense-saas/{env}/...` と階層を揃えることで運用上の一貫性を確保
+- `{env}` は Terraform の `var.environment` 変数から展開（portfolio / stg / prod 等）
+- 現状（portfolio 環境）: `/expense-saas/portfolio/api`
+- stg / prod 環境を将来構築する際は同命名規約で `/expense-saas/stg/api` / `/expense-saas/prod/api` を作成
+
+**ストリーム命名規約**: `{INSTANCE_ID}/api`（P-2=a）
+
+- インスタンス再作成時にストリームが分離され、世代追跡が容易
+- IMDSv2 で EC2 起動時に取得した instance-id を使用
 
 ### 9.2 将来的な拡張
 

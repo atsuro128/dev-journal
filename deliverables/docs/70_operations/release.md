@@ -213,6 +213,7 @@ $ curl -fsS http://localhost:8080/health
 | 2 | EC2 上のアプリコンテナが正常に起動している | SSM 経由で EC2 に接続し `sudo docker ps` で expense-saas コンテナが Up 状態であることを確認、`sudo systemctl status expense-saas` で active (running) を確認 | [ ] |
 | 3 | 旧コンテナが停止している | `sudo docker ps -a` で expense-saas の旧コンテナが Exited (0) で停止していることを確認 | [ ] |
 | 4 | CloudWatch Alarms に新たな ALARM がない | CloudWatch Alarms コンソールを確認 | [ ] |
+| 5 | CloudWatch Logs に新インスタンスからのログが到達している | `aws logs tail /expense-saas/portfolio/api --follow --region ap-northeast-1` でログストリームが流れることを確認 | [ ] |
 
 ### 5.2 機能確認（デプロイ完了後 15 分以内）
 

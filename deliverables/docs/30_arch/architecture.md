@@ -412,6 +412,7 @@ GET /api/reports?page=1&per_page=20
 | メトリクス | CloudWatch（EC2/RDS 自動収集 + CWAgent メモリ・ディスクメトリクス + メトリクスフィルタ + Logs Insights） |
 | ヘルスチェック | GET /health（DB 接続確認含む） |
 | アラート | CloudWatch Alarms → SNS → メール |
+| ロググループ命名 | `/{project_name}/{env}/api`（例: `/expense-saas/portfolio/api`。monitoring.md §9.1 参照） |
 
 全リクエストに request_id, tenant_id, duration_ms を含む構造化ログを出力する。
 
