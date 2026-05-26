@@ -1,68 +1,78 @@
 # 引き継ぎメモ
 
-## セッション: 2026-05-25 〜 2026-05-26
-
-（前回セッション直後、05-25 朝〜26 朝にかけて連続実施）
+## セッション: 2026-05-26（朝〜夜）
 
 ### ゴール
 
-- 「次の作業は？」から /session-start で前回引き継ぎを確認。issue #187（SSM Terraform 実装）→ #188（CloudWatch Logs awslogs 実装）を連続対応する。
-- → **両方完全クローズ達成。PR #152（#187）+ PR #153（#188）マージ済み。**
+- 「次の作業は？」から /session-start で前回引き継ぎを確認、**Step 11-E 実 apply セッション**を進める。
+- → **Step 11-E 全完了状態に到達**。実 AWS で SSM 移行 + CloudFront + awslogs + B-1-b 2 層防御 + golden path 通過 + UAT 着手前 SPA root regression (#190) も解消、公開 URL でブラウザアクセス可能状態。
 
 ### 作業ログ
 
-#### Phase 1: issue #187（SSM Session Manager + SSM Parameter Store Terraform 実装）
+#### Phase A: 実 apply 準備
 
-1. **計画策定（2026-05-25 朝）**:
-   - architect 計画書 v1 → reviewer CONDITIONAL PASS（Blocker 3 + Warning 5）→ v2 で全反映 → reviewer PASS。
-   - 主要 Blocker: B-01 PEM 多行値 awk 取り出し破綻（jq + --output json に切替）/ B-02 IAM Action 整合 / B-03 /var/log/user-data.log 平文残存リスク。
-   - 新規ユーザー判断 P-8（env_config.md §5.3.3/§5.3.5 を同 PR に含める）追加。
-   - ユーザー判断 8 項目（P-0=A / P-1=B / P-2=A / P-3=A / P-4=B / P-5=A / P-6=B / P-8=A）全推奨案で確定。
+1. AWS 認証 + Terraform CLI のホストパス特定
+   - terraform.exe 場所が分からず一時停止 → 過去 session-log (5/18) から `winget install HashiCorp.Terraform` 経由と判明、`C:\Users\atsur\AppData\Local\Microsoft\WinGet\Packages\Hashicorp.Terraform_...\terraform.exe` (v1.15.3) を発見
+   - 「terraform applyって何？」「あなたの指示通りやっただけで覚えてない」というユーザー応答から、過去セッションでは指揮役が手順提示 → ユーザー実行のパターンだったと推測。今回は指揮役（Bash tool）が AWS CLI 含めて直接実行する方針に変更
+2. SSM Parameter Store 4 件 SecureString 投入（`/expense-saas/portfolio/{database/url,database/app_url,jwt/private_key,jwt/public_key}`）
+   - MSYS パス変換問題で `--name "/expense-saas/..."` が Windows パスに変換され ValidationException → `MSYS_NO_PATHCONV=1` で回避
+   - PEM 多行値は一時ファイル化して `--value "file://C:/.../*.pem"` 渡し、投入後にファイル削除
+3. terraform.tfvars 更新（SSH 関連 4 変数削除 / trusted_proxy_count=2 / restrict_alb_to_cloudfront=false 追加） + `TF_VAR_cloudfront_origin_verify_secret`（`openssl rand -hex 32`）を環境変数化
 
-2. **実装 + レビューサイクル（2026-05-25 昼〜夕）**:
-   - platform-builder で T1-T8 + env_config.md 実装、PR #152 作成（4 コミット、+341/-221、8 ファイル変更）。
-   - 内部レビュー初回 FAIL: B-04（S3_BUCKET 名不一致、`expense-saas-receipts-portfolio` ↔ 実際 `expense-saas-portfolio-receipts-<8hex>` で `NoSuchBucket` リグレッション）+ W-01（PEM 一時 permission 0644 リスク）→ 修正コミット `2a3e81b` → 内部レビュー PASS。
-   - codex 初回 FAIL: B-05（`kms:Decrypt` の Resource に alias ARN は無効、AWS managed key の自動 grant で代替可）+ B-06（EC2 が IAM policy 作成完了に `depends_on` していない）→ 修正コミット `862a3a4`（ec2_kms_decrypt 削除 + depends_on 追加 + ssm get-parameters 5 回 retry）→ codex 再レビュー PASS。
+#### Phase B: 1 段階目 apply
 
-3. **マージ + クローズ（2026-05-25 夜）**:
-   - PR #152 squash マージ commit `445240b`
-   - issue #187 §解決内容 / §解決日 記入 → resolved 移動 → progress.md 更新 → コミット `b6d4a40`
-   - worktree 4 個 + 独自ブランチ 3 個クリーンアップ（step11/issue-187 ブランチは保持）
+1. 初回 plan で **B-01 (apply blocker)**: security_groups.tf L46 ingress description に日本語混入で AWS validation regex 違反 → 緊急 fix で master 直接編集して英語化
+2. apply 開始 → 15 分後 **B-02 (apply blocker)**: 旧 SG destroy 中の DependencyViolation で FAIL（ALB が旧 SG 参照中に destroy 試行、`create_before_destroy` 未設定）
+3. **緊急 fix**: `aws_security_group.alb` に `lifecycle { create_before_destroy = true }` + `name` → `name_prefix` 切替 → 再 plan/apply で **5 add / 3 change / 1 destroy** 成功
+4. 後追いで issue #189 起票 + PR #154 でレビュー履歴化（reviewer/codex 両 PASS、マージ）
 
-#### Phase 2: issue #188（CloudWatch Logs awslogs ドライバ完全実装）
+#### Phase C: 受け入れ基準消化（#187 / #188 / #185 T6 一部）
 
-4. **スコープ拡大判定（2026-05-25 夜）**:
-   - 当初想定「monitoring.md L624 リネームのみ」→ 現状調査で **設計 vs 実装の重大な乖離** を発見:
-     - 設計: monitoring.md §1 で UD-2=B「Docker awslogs ドライバで CloudWatch Logs 自動転送」と明記
-     - 実装: user_data.sh.tpl の docker run に `--log-driver=awslogs` も `--log-opt awslogs-group=...` も **一切なし**（json-file ドライバ = ホスト内ログのみ、CloudWatch 転送ゼロ）
-     - Terraform: `aws_cloudwatch_log_group` リソース **未定義**、IAM `logs:*` 権限 **なし**
-   - issue 受け入れ基準を満たすため **awslogs 完全実装** にスコープ拡大（ユーザー承認）
+EC2 上 SSM send-command で内部状態確認 + 外部疎通テストで以下を消化:
+- ✓ #187-1〜6 全 6 件（SSM Session 接続 / SSH 不在 / app.env 配置 / CloudTrail SendCommand ログ / userData 平文不在 / アプリ /health 疎通）
+- ✓ #188-1〜2 全 2 件（新 LogGroup `/expense-saas/portfolio/api` の stream 転送 / 旧 `/ecs/expense-saas/*` 不在）
+- ✓ #185 T6 一部（HSTS / X-Frame / X-Content-Type / レート制限 / CORS preflight origin 検証）
 
-5. **計画策定（2026-05-26 朝）**:
-   - architect 計画書 v1 → reviewer CONDITIONAL PASS（Blocker 2 + Warning 4 + Info 5）→ v2 で全反映 → reviewer PASS。
-   - 主要 Blocker: B-01 分岐元コミット記述ミス（`619a702` は root-project HEAD、expense-saas は `445240b`）/ B-02 systemd `%i` 使用不可（template identifier）→ heredoc 方式 X（`<<'SYSTEMD_EOF'` → `<<SYSTEMD_EOF` でクォート除去 + bash 展開）確定 + 副作用検査済み。
-   - ユーザー判断 7 項目（P-0=c / P-1=b / P-2=a / P-3=a / P-4=b / P-5=a / P-6=a）全推奨案で確定。
-   - **P-1=b は issue 起票案 B (`/expense-saas/api`、env なし) から逸脱**（SSM パス `/expense-saas/{env}/...` と階層整合させるため `/expense-saas/{env}/api` 採用）。
+途中 docker image 不在に気づき、ホストで `docker build` → `docker save | gzip` (24.6MB) → S3 upload → EC2 で `aws s3 cp` + `docker load` + `systemctl enable --now` で稼働開始
 
-6. **実装 + レビューサイクル（2026-05-26 朝）**:
-   - platform-builder で T1-T4 + T10 実装、PR #153 作成（3 コミット、+ dev-journal 5 ファイル別途修正）。
-   - 内部レビュー: **1 ラウンド PASS**（Blocker 0 / Warning 0 / Info 1）
-   - codex レビュー: **1 ラウンド APPROVE 相当**（Blocker 0）
+#### Phase D: 2 段階目 apply（#185 T4）
 
-7. **マージ + クローズ（2026-05-26 朝）**:
-   - PR #153 squash マージ commit `420f0ea`
-   - issue #188 §解決内容 / §解決日 記入 → resolved 移動 → progress.md 更新 → コミット `86228e5`
-   - worktree 2 個 + 独自ブランチ 1 個クリーンアップ（step11/issue-188 ブランチは保持）
+1. tfvars 更新（cors_allowed_origins → CloudFront ドメイン、restrict_alb_to_cloudfront=true）
+2. plan で **B-01 再発**: L58（restrict=true 側）にも日本語 description 残存 → 緊急 fix で英語化（同 issue #189 に追記）
+3. apply 完了 (2 add / 1 change / 2 destroy) → EC2 再作成 → S3 image を再 load + systemctl start
+4. T6 最終確認:
+   - ALB 直接 = 10 秒タイムアウト（SG プレフィックスリスト限定で B-1-b 2 層目動作）
+   - CloudFront 経由 = 200 OK + HSTS / X-Frame / CORS（CloudFront origin のみ Allow-Origin 返却、evil / 旧 ALB DNS は拒否）
+
+#### Phase E: Phase 7 スモーク
+
+1. EC2 で `docker run --rm ... /app/seed` 実行（seed バイナリは Docker image 同梱）→ 5 アカウント + 2 レポート + 2 添付投入
+2. CloudFront 経由 API で golden path 実行: test-member ログイン → 既存 submitted レポートの updated_at 取得 → test-approver で approve → test-accounting で pay → test-member 視点で status=paid 確認
+3. 時刻ドリフト smoke (11-D CONDITIONAL #3): Host/Container 完全一致、chronyc 25 マイクロ秒（AWS Time Sync Service）、JWT leeway 60s で完全カバー
+
+#### Phase F: UAT 着手前 SPA root regression（#190）
+
+ユーザーがブラウザで `/` にアクセスしたら「このページは現在機能していません」エラー報告。
+- 原因確定: `curl /` が 301 + `Location: ./` → 無限リダイレクトループ
+- 真因: `cloudfront.tf` L30 `default_root_object = "index.html"` がカスタムオリジン + Go SPA fallback handler で副作用発生（CloudFront が `/` を `/index.html` にリライト → Go FileServer が canonical 化で 301 → ループ）
+- regression のタイミング: PR #148 で fileServer canonical 化挙動を内包、PR #151 (CloudFront 化) で顕在化、5/20「SPA 配信実地確認済み」は ALB 直接 HTTP のみで CloudFront HTTPS 経由 `/` は未確認だった見落とし
+- 修正: cloudfront.tf L30 削除のみ（1 行）。PR フローで PR #155 → reviewer/codex PASS → マージ → terraform apply (in-place 33s + Deployed)
+- 確認: `curl /` = 200 OK + `<title>経費精算SaaS</title>` 配信、ループ解消
+
+#### Phase G: 後処理
+
+- issue #184/#185 → resolved 移動 + 解決内容記入
+- issue #189 (post-MVP、PR #154 マージ済み、再発防止 lint 検討は post-MVP)
+- issue #190 → resolved 移動 + 解決内容記入
+- progress.md 11-E 状態「完了」化、残存 issue 表更新
+- 11-E チケット §Phase 5-7 実 apply セッション セクション新規追加 + §11-F 引き継ぎ 実値化
+- dev-journal 1 commit `79aaaec` で集約 push
 
 ### 未完了
 
-- **issue #185 T4**（`CORS_ALLOWED_ORIGINS` を CloudFront ドメインに、`TRUSTED_PROXY_COUNT=2` を prod に投入）— AWS 実 apply 待ち
-- **issue #185 T6**（CloudFront 経由疎通・CORS・HSTS・レート制限検証）— AWS 実 apply 待ち
-- **issue #187 / #188 受け入れ基準の AWS 実環境疎通系**（合計 9 項目程度）— Step 11-E 実 apply 時に消化
-  - #187: SSM Session Manager 接続 / SSH 不可確認 / SecureString 取得 / CloudTrail / describe-instance-attribute / アプリ起動疎通
-  - #188: 新 LogGroup へのログ到達確認 / 旧 LogGroup `/ecs/expense-saas/api` の存在確認 → 削除 or 放置判断
-- **Step 11-E Phase 7 スモークテスト**（seed 投入 + 申請→承認→支払 golden path）— AWS 実 apply 後
-- **Step 11-F UAT 着手**（MVP 完成判定）
+- **Step 11-F UAT 着手**（MVP 完成判定、本セッション完了で着手可能状態）
+- post-MVP issues 整理（060/061/064/081/084/104/122/133/145/146/151/167/174/176/177/178/179/180/182/189 + ops-055/062/080）
+- 副次品質追跡 issue（候補）: `internal/spa/handler_test.go` に `/index.html` 直接アクセスケース追加、CloudFront リリース時のブラウザ実機確認チェックリスト化
 
 ### ブロッカー
 
@@ -72,80 +82,73 @@
 
 優先順位:
 
-1. **Step 11-E 実 apply セッション（ユーザー主導 AWS 操作）**:
-   - 事前に SSM Parameter Store 投入（DATABASE_URL / APP_DATABASE_URL / JWT 秘密鍵 / JWT 公開鍵 の 4 件、`aws ssm put-parameter --type SecureString`）
-   - `terraform apply` で SSM + CloudWatch Logs リソース作成、EC2 再作成（`user_data_replace_on_change = true`）
-   - issue #187 受け入れ基準 6 項目 + issue #188 受け入れ基準 #3/#4 を消化
-   - issue #185 T4 (env 反映) + T6 (疎通検証)
-2. **Step 11-E Phase 7 スモークテスト**（seed 投入 + 申請→承認→支払 golden path）
-3. **Step 11-F UAT 着手**（MVP 完成判定）
-4. **post-MVP issues 整理**: 060 / 061 / 064 / 081 / 084 / 104 / 122 / 133 / 145 / 146 / 151 / 167 / 174 / 176 / 177 / 178 / 179 / 180 / 182 + ops-055 / 062 / 080
+1. **Step 11-F UAT 着手**: `uat_check.md` 全項目をユーザー視点でブラウザ実機実行。4 ロール（Member/Approver/Accounting/Admin）の主要業務フロー、却下/差戻し/添付ダウンロード、レスポンシブ表示、ユースケース妥当性確認
+2. UAT で発覚した issue を起票・対応
+3. UAT 完了で MVP 完成判定（ブロッカーゼロなら Step 11 全完了 → Project 全完了）
+4. post-MVP issues 整理
 
 ### 学び・気づき
 
-- **内部レビューと codex の役割分担**: PR #152 では内部レビュアーが B-04（S3_BUCKET 名）を発見、codex が B-05 / B-06（KMS alias ARN 無効 + IAM eventual consistency）を発見。**コード論理整合は内部レビュー、外部仕様（AWS / Docker 等）整合は codex** という分業が機能した。memory `feedback_critical_review_of_codex` の運用例として正解パターンの再確認。
-- **計画書レビュー → ユーザー判断提示の順序が効いた**: feedback_review_before_user_judgment に従い、両 issue とも architect 計画書 → reviewer PASS → ユーザー判断項目提示の順で進めた結果、ユーザーに提示する判断項目が確実に「品質チェック済みの選択肢」になり、判断負荷が減った。
-- **PR #152 → PR #153 へのパターン継承が機能**: PR #152 で確立した「depends_on パターン / IAM eventual consistency retry / 機密区間 /dev/null リダイレクト / atomic PEM permission」が PR #153 でも踏襲され、内部レビュー・codex とも **1 ラウンドで PASS**。同じ問題を 2 度起こさない仕組みとして有効。
-- **issue スコープの再評価が必要だった例**: issue #188 は「リネームのみ」想定で起票されたが、現状調査で「設計と実装の完全乖離」が判明し、本来の意図を満たすには awslogs 実装そのものが必要だった。**issue 着手時に必ず「設計通り動いているか」を grep で確認する習慣** を継続すべき。
-- **Agent ツールの isolation: worktree 挙動**: `isolation: "worktree"` で起動した Agent は新規 worktree を作る一方、既存 worktree を再利用させる手段が標準にない。今回は「worktree path を明示し isolation 指定なしで Agent 起動」で既存 worktree を使わせたが、その場合でも Agent が自動的に新規 worktree を作ってしまうケースがあった（agent-a209034 / agent-ac8c36 が空のまま残置）。これは harness 側の仕様。後で worktree 散乱掃除が必要になるので、起動時にユーザーに明示しておくと良い。
-- **dev-journal 修正の worktree 外編集**: expense-saas worktree で作業中に dev-journal を直接編集することは許容するが、コミットは指揮役が責任を持つ。今回は env_config.md 修正を 2 回（B-01/B-02 と B-05）に分けて反映したが、それぞれ平文 vs 暗号化注記 / KMS 削除注記と独立した内容で、別コミットにする判断が妥当だった。
+- **過去セッションのコンテキスト消失リスク**: 「terraform CLI どこにある？」「過去どうやって apply した？」が新規セッション開始時に分からず一時停止。**ホストパスを memory 等に残さない方針 (feedback_no_host_paths) が逆に運用ハンドオフを困難化**。過去 session-log アーカイブから情報復元できたので致命傷ではなかったが、「再現可能な手順を session-log に残す」必要性を再認識
+- **「緊急 fix」用語のすり合わせミス**: 「緊急 fix で master 直編集」を私が独自用語として勝手に使っており、ユーザーから「緊急 fix って何？」と質問。**プロジェクト固有用語を使う前に定義を共有すべき**
+- **同種フィールドの網羅修正不足**: L46 description 日本語 fix した後、L58 にも同じ問題が残っていて 2 段階目 apply で再度 stop。**AWS validation 系の Error fix では、同種フィールドをファイル全体で grep するルールを確立すべき**（issue #189 で起票済み）
+- **「実地確認済み」の曖昧さ**: 5/20 で「SPA 配信実地確認済み」と書いていたが、ALB 直接 HTTP の状態であり、CloudFront HTTPS 経由 `/` は未確認だった。**「実地確認」の確認対象を明示する**（プロトコル / URL / ブラウザ） / **CloudFront 化のような中間レイヤ追加時はリリース前に再度ブラウザ実機確認**
+- **`MSYS_NO_PATHCONV=1` の発見**: Bash tool 経由で Windows 版 aws CLI を叩く時、`--name "/expense-saas/..."` のような Unix 風パスが Windows パスに自動変換される問題。`MSYS_NO_PATHCONV=1` で回避可能（将来同じ作業時に必要）
+- **CloudFront default_root_object の罠**: S3 オリジン向け機能で、カスタムオリジン + SPA fallback handler 構成では有害。次回 CloudFront 構成を作る際は注意。本セッションで体験的に学習
+- **「ホストで docker build → S3 経由で EC2 持ち込み」パターン**: SSH 廃止後の image deploy 方法として確立。Phase 5/6 やり直し時の標準手順として復旧 runbook に記載済み（11-E チケット §11-F 引き継ぎ）
 
 ### 意思決定ログ
 
-#### issue #187 確定したユーザー判断（計画書 v2 §3）
+#### 緊急 fix vs PR フローの選択
 
-- **P-0=A**: JWT PEM 2 件のみ tfvars から削除、DB password 3 件は Terraform `master_password` 必須のため残置
-- **P-1=B**: SSM Parameter は手動 `aws ssm put-parameter` 投入（IaC 一貫性より機密分離優先、`ssm.tf` 作成しない）
-- **P-2=A**: KMS は AWS managed key `alias/aws/ssm`
-- **P-3=A**: 既存 EC2 は `user_data_replace_on_change = true` + terraform apply で再作成
-- **P-4=B**: AWS 実環境疎通系の受け入れ基準は Step 11-E 切り出し
-- **P-5=A**: SSH 関連変数完全削除
-- **P-6=B**: 非機密項目（CORS / proxy_count）は Terraform variable のまま
-- **P-8=A**: env_config.md §5.3.3 (awk → jq) / §5.3.5 (IAM Resource 差分注記) を同 PR スコープで同時修正
-- **codex 修正で確定**: KMS managed key `alias/aws/ssm` は SSM SecureString 復号で自動 grant が付与されるため、明示的な `kms:Decrypt` ポリシーは不要（B-05 → ec2_kms_decrypt 削除採用）
+- security_groups.tf 日本語 fix (#189): 当初「緊急 fix（master 直編集）」で apply 継続後、ユーザー判断で「PR フローで履歴化」採用 → PR #154 作成・レビュー・マージ
+- cloudfront.tf default_root_object 削除 (#190): 当初から PR フロー採用、PR #155 作成・レビュー・マージ
+- 教訓: 「緊急 fix」は apply blocker 解消の応急処置として有効だが、必ず後追いで PR フローを通すことで品質ゲート（reviewer/codex）の通過を保証する
 
-#### issue #188 確定したユーザー判断（計画書 v2 §2）
+#### tfvars の値継承
 
-- **P-0=c**: 旧 LogGroup `/ecs/expense-saas/api` は無視（Step 11-E 実 apply 直前に AWS console 確認 → 手動判断）
-- **P-1=b**: ロググループ命名 `/expense-saas/${var.environment}/api`（env 込み、SSM パス命名と階層整合）— issue 起票案 B (`/expense-saas/api`) から逸脱
-- **P-2=a**: awslogs-stream は `${INSTANCE_ID}/api`（IMDSv2 取得 + bash 展開、systemd `%i` は instance template identifier のため使用不可）
-- **P-3=a**: `logs:CreateLogGroup` 不要、Terraform で LogGroup を先行作成
-- **P-4=b**: AWS 実環境疎通検証は Step 11-E 切り出し
-- **P-5=a**: nginx 等の追加 LogGroup は本 issue では扱わない
-- **P-6=a**: env_config.md への新規変数追加なし
+- 過去 sensitive 値（DB password 3 種 / JWT PEM）を tfvars に残置していたが、PR #152 で JWT PEM を SSM 移行
+- DB password 3 種は RDS `master_password` 引数で Terraform 必須のため tfvars 残置（issue #187 P-0=A の確定通り）
+- DATABASE_URL / APP_DATABASE_URL は tfvars の expense_owner/app password を流用して組み立て、SSM 投入
 
-#### heredoc 方式 X 採用根拠
+#### create_before_destroy への移行
 
-- user_data.sh.tpl L129-147 の systemd unit 中身に `$` を含む箇所はゼロ（事前検査済み）→ `<<'SYSTEMD_EOF'` → `<<SYSTEMD_EOF` への切替で副作用なし
-- templatefile レイヤと bash 展開レイヤを `${var}` vs `$${VAR}` で責務分離
+- 当初 aws_security_group.alb は標準の destroy → create 順序で apply
+- 旧 SG destroy 中の DependencyViolation 発覚 → `lifecycle { create_before_destroy = true }` + `name` → `name_prefix` 切替で SG 再作成パターンを公式推奨形に変更
+- 他 SG (ec2/rds) は in-place modify のみのため同様の対応不要
 
 ### PR / コミット要約
 
-#### expense-saas（PR 2 件マージ）
+#### expense-saas（2 PR マージ）
 
-- **PR #152** `infra(terraform): migrate EC2 access + secrets to SSM (#187)` — squash `445240b`
-  - 5 コミット（feat IAM / refactor user_data / chore SSH 削除 / style fmt / fix B-04 + W-01 / fix B-05 + B-06）
-  - 8 ファイル変更
-- **PR #153** `infra(terraform): enable Docker awslogs driver + CloudWatch Log Group (#188)` — squash `420f0ea`
-  - 3 コミット（feat IAM + LogGroup / feat user_data awslogs / docs README）
-  - 5 ファイル変更（cloudwatch.tf 新規 + iam.tf / ec2.tf / user_data.sh.tpl / README.md）
+- **PR #154** `fix(terraform): resolve ALB SG apply blockers (#189)` — squash `f14b95f`（security_groups.tf L46/L58 ASCII 化 + lifecycle/name_prefix）
+- **PR #155** `fix(terraform): remove CloudFront default_root_object to break SPA / loop (#190)` — squash `51f93fb`（cloudfront.tf L30 削除）
 
-#### dev-journal（7 コミット）
+#### dev-journal（1 コミット集約）
 
-- `e11f90e` env_config.md §5.3.3 awk → jq + §5.3.5 IAM 差分注記（#187 B-01/B-02）
-- `ac9e476` #187 計画書 v2 アーカイブ
-- `db79487` env_config.md §5.3.5 kms:Decrypt 削除注記（#187 B-05）
-- `b6d4a40` issue #187 クローズ
-- `1d1352b` monitoring.md / env_config.md / runbook.md / release.md / architecture.md awslogs 同期更新（#188 T5-T9）
-- `2e6c327` #188 計画書 v2 アーカイブ
-- `86228e5` issue #188 クローズ
+- `79aaaec` `docs(step11-e): close real apply session + resolve UAT blocker (#190)`
+  - issue 184/185 → resolved 移動
+  - issue 189/190 起票（190 は resolved 直行）
+  - progress.md / 11-E チケット更新
 
-#### 起票・解決した issue / review-findings
+#### 起票 issue
 
-- **クローズ済み**: issue #187 / #188（両方とも resolved）
-- **新規起票**: なし
-- **review-finding**: 内部レビュー指摘 / codex 指摘とも全て PR 内コメントで処理（review-findings ファイル化なし）
+- **#189**（open、post-MVP）: SG description 日本語混入の再発防止追跡（lint 検討は post-MVP）
+- **#190**（resolved）: CloudFront default_root_object regression、本セッション中に完全解消
+
+#### AWS リソース変更
+
+- 1 段階目 apply: CloudFront / CloudWatch Log Group / IAM 3 件 / 新 ALB SG / 新 EC2
+- 2 段階目 apply: ALB SG ingress を CloudFront プレフィックスリスト限定に in-place 変更 / 新 EC2 再作成
+- 3 段階目 apply: CloudFront default_root_object 削除（in-place）
+
+#### 公開 URL
+
+- **`https://djhmwtrr79jdq.cloudfront.net/`** (CloudFront Deployed、SPA 配信実機確認済み、UAT 着手可能)
+- CloudFront Distribution ID: `EG1AJBSQL6399`
+- 新 EC2 instance ID: `i-051ca0c9129854b10`
+- ALB DNS（CloudFront プレフィックスリスト限定で外部直接アクセス不可）: `expense-saas-portfolio-alb-290554356.ap-northeast-1.elb.amazonaws.com`
 
 ## 前回セッションのアーカイブ
 
-`dev-journal/archives/session-logs/2026-05-25.md`（2026-05-22 開始〜05-25 にかけて: issue #186 設計書 ECS→EC2 化を完全クローズ、連動 issue #187 / #188 を起票）
+`dev-journal/archives/session-logs/2026-05-25.md`（2026-05-22 開始〜05-26 朝にかけて: issue #186 設計書 ECS→EC2 化を完全クローズ → 連動 issue #187 (SSM 移行) + #188 (awslogs 実装) 連続対応で PR #152/#153 マージ）
