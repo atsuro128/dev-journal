@@ -18,6 +18,27 @@ post-MVP（ポートフォリオ公開準備）
 ## ブロッカー
 なし
 
+## 採用方針（2026-05-30 決定）
+
+**案 C: 開発は 4 リポジトリ構成を維持、公開用は別途 monorepo として作成（ハイブリッド）**
+
+理由:
+- 開発時の AI 駆動運用（CLAUDE.md / .claude/agents/ / 各リポジトリのルール）が 4 リポジトリ構造前提で書かれており、統合すると運用が壊れる
+- ポートフォリオ提示時は採用担当者が「4 URL を行き来する」より「1 リポジトリで全体把握」できる方が訴求力が高い
+- dev-journal の運用ログ（個人メモ・愚痴等）を公開判断する際、開発用と分離できる
+
+### 用語統一の扱い
+
+「リポジトリ / ディレクトリ」表現の混在は **公開用 root README に「分離開発 → 統合公開」の説明を追加することで吸収**。他 3 README（expense-saas / dev-journal / ai-dev-framework）の「リポジトリ」表記は文脈で正当化される（実際の開発では別リポジトリだから）。
+
+### 公開用 monorepo の構成
+
+- 配置: `root-project/.portfolio-build/`（`.gitignore` 済み）
+- リポジトリ名: `expense-saas-portfolio`
+- 4 ディレクトリをコピー（過去 git 履歴は持ち込まない、コピー時点でスナップショット）
+- `.claude/settings.local.json` / `.claude/memory/` 等のセンシティブファイルは除外
+- README は root のみ書き換え（「分離開発 → 統合公開」説明）、他 3 README は現状コピー
+
 ## 問題
 
 `expense-saas/README.md` をはじめ、Phase 2 以降で作成予定の各 README（`root-project/`, `ai-dev-framework/`, `dev-journal/`）は、設計成果物・ADR・テスト戦略への参照を `../dev-journal/...` の相対パスで記述している。

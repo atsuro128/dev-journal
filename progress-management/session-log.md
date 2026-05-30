@@ -1,6 +1,6 @@
 # 引き継ぎメモ
 
-## セッション: 2026-05-30 10:40
+## セッション: 2026-05-30 〜 2026-05-31
 
 ### ゴール
 
@@ -55,11 +55,39 @@
 | dev-journal | `7c63972` | README 新規 + issue 3 件起票 |
 | ai-dev-framework | `07270b8` | README 新規 + operations 旧エージェント名を 8 体に書き換え |
 
+#### Phase 5: ops-108 案 C 採用 → ポートフォリオ用 monorepo 公開（2026-05-31）
+
+キャリア相談から派生して、ポートフォリオの GitHub 公開に着手:
+
+1. **ops-108 を案 C 採用で更新**: 開発は 4 リポジトリ構成維持、公開用に別途 monorepo（ハイブリッド）。用語統一は公開用 root README に「分離開発 → 統合公開」説明を追加することで吸収（他 README は触らない）
+2. **公開精査**: dev-journal / .claude / expense-saas のセンシティブ情報を特定
+   - 個人メアド `atsuro-1997@outlook.jp`: 1 ファイル
+   - Windows ホストフルパス: 2 ファイル
+   - その他はクリーン（.env / keys/ / node_modules は gitignore 済み）
+3. **公開用 monorepo 作成**: `root-project/.portfolio-build/expense-saas-portfolio/`
+   - `git archive HEAD` で各リポジトリの tracked file のみ抽出（infra/.terraform 等のローカルビルド成果物混入を回避）
+   - Python で個人メアド・ホストパスを抽象化置換
+   - root-project の `.claude/`（settings.local.json / memory/ 除く）、CLAUDE.md、AGENTS.md も統合
+   - 最終: 1,142 ファイル / 12 MB
+4. **公開用 root README 作成**: 「実際は 4 リポジトリで開発、公開時に monorepo に統合した」説明 + 各 README への導線
+5. **GitHub に private リポジトリ作成 + push**: `gh repo create expense-saas-portfolio --private --source=. --push`
+   - URL: https://github.com/atsuro128/expense-saas-portfolio
+   - private で作成（GitHub UI で確認後、ユーザー判断で public 化予定）
+
+#### キャリア相談（2026-05-30 終盤）
+
+- 「やりたいことがない」「給料が上がっても忙しくなったら意味ない」「自己肯定感が低い」「ポートフォリオは AI が作ったもの」「文系・学歴低い」「技術選定間違えた」等の不安を整理
+- 客観的事実で反論: 設計判断・品質判断はユーザーがやっている / 28 歳 SES 5 年で「経験者採用」枠 / Web 系自社開発では学歴問われない / AI 駆動開発実証は新しい知識として評価される
+- 年収相場提示: 正社員 550〜900 万、フリーランス 840〜1200 万、ただし老後安定はフリーランス不利
+- 「忙しくない × 老後安定」軸の企業候補提示: Tier 1（kubell / ヌーラボ / クラスメソッド / ラクス / カオナビ）/ Tier 2（マネーフォワード / SmartHR / LayerX 等）
+- 行動への提案: Findy 登録 + エージェント 1 社カジュアル面談 + Tier 1 で市場感を掴む
+
 ### 未完了
 
 - ops-110（operations 現行化）の issue ファイルが open のまま。同セッション中に実体は対応完了済み。次セッションで「解決内容」を追記して pending-review or resolved へ移動するべき
-- ops-108（公開戦略未決）と 109（seed 整合化）は未着手のまま open
-- 「リポジトリ / ディレクトリ」用語の 4 README 統一は ops-108 決定後に一括対応予定
+- ops-108（公開戦略）は **案 C 採用で方針確定済み**、public 化判断はユーザーが GitHub UI 確認後に実施予定
+- 109（seed 整合化）は未着手のまま open
+- ポートフォリオ公開後の応募活動（Findy 登録 / カジュアル面談）はユーザー側で実施
 
 ### ブロッカー
 
@@ -69,10 +97,10 @@
 
 優先順位（ユーザー判断）:
 
-1. **ops-110 の状態遷移**: 実体対応済みなので、解決内容を追記して pending-review or resolved へ移動するか判断
-2. **ポートフォリオ用 GitHub 公開戦略の決定（ops-108）**: A 各リポジトリ public + 絶対 URL / B monorepo / C 抜粋コピー / D テキスト言及のみ を選定。決定時に 4 README の dev-journal リンクと「リポジトリ / ディレクトリ」用語を一括修正
-3. **seed 整合化（issue 109）の対応**: seed.go と test_strategy.md §4.2 の突合 + 業務的妥当性（テナント B Admin 不在問題）の決定 + 関連テスト影響確認
-4. **post-MVP issue の優先度付け**: 計 25 件（ops-108 / 109 / ops-110 / 191〜196 + 既存 #133/145/146/151/167/174/176〜180/182/189 + 運用 #060/061/064/ops-055/ops-062/ops-080/081/084/104/122）
+1. **ポートフォリオ public 化判断**: https://github.com/atsuro128/expense-saas-portfolio （現在 private）の中身を GitHub UI で確認 → 問題なければ `gh repo edit atsuro128/expense-saas-portfolio --visibility public --accept-visibility-change-consequences` で public 化
+2. **応募活動着手**: Findy 登録（GitHub 連携でスキル可視化）+ Tier 1 企業（kubell / ヌーラボ / クラスメソッド / ラクス / カオナビ）でカジュアル面談 1 本入れる
+3. **ops-110 の状態遷移**: 実体対応済みなので、解決内容を追記して pending-review or resolved へ移動
+4. **seed 整合化（issue 109）の対応**: seed.go と test_strategy.md §4.2 の突合 + 業務的妥当性（テナント B Admin 不在問題）の決定 + 関連テスト影響確認
 5. **公開デモの稼働継続 / 終了判断**: AWS リソース費用（EC2 t3.micro / RDS / CloudFront）が継続発生
 
 ### 学び・気づき
@@ -129,6 +157,19 @@ push なし。各リポジトリの master ローカルコミットのみ。
 | expense-saas | `5ad4326` | README.md（書き換え）+ docker-compose.yml（MinIO コンソール撤去） |
 | dev-journal | `7c63972` | README.md（新規）+ issues/open/ops-108-*.md（新規）+ issues/open/109-*.md（新規）+ issues/open/ops-110-*.md（新規） |
 | ai-dev-framework | `07270b8` | README.md（新規）+ operations/subagent-design.md（全面再構成）+ operations/subagent-workflow.md（旧名置換） |
+
+### ポートフォリオ公開 monorepo（2026-05-31）
+
+| 項目 | 値 |
+|---|---|
+| URL | https://github.com/atsuro128/expense-saas-portfolio |
+| 公開状態 | **private**（GitHub UI 確認後にユーザーが public 化判断） |
+| ブランチ | main |
+| ファイル数 | 1,142 |
+| サイズ | 12 MB |
+| 構成 | expense-saas / dev-journal / ai-dev-framework / .claude / CLAUDE.md / AGENTS.md / 公開用 README |
+| ローカルビルド先 | `root-project/.portfolio-build/expense-saas-portfolio/`（.gitignore 済み） |
+| author | atsuro128 / atsuro128@users.noreply.github.com |
 
 ### AWS リソース変更
 
