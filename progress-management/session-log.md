@@ -1,60 +1,65 @@
 # 引き継ぎメモ
 
-## セッション: 2026-05-27 〜 2026-05-28
+## セッション: 2026-05-30 10:40
 
 ### ゴール
 
-- 「次の作業は？」から /session-start で前回引き継ぎ確認 → **Step 11-F UAT 着手** を選択
-- → **UAT 全 36 項目完了、MVP 完成判定 PASS（公開可）に到達**。クリーンアップも実施し初期状態に復元、Step 11 全完了 → **プロジェクト全マイルストーン完了**
+「次の作業は？」から /session-start でポートフォリオ用ドキュメント整備を選択。**Phase 1〜4 の README 整備 + 各 Phase の codex / ユーザーレビュー対応を完走し、4 リポジトリにコミット完了**。
 
 ### 作業ログ
 
-#### Phase A: 事前確認（タスク #1）
+#### Phase 0: 棚卸し
 
-1. AWS 認証 + aws CLI ホストパス（`C:\Program Files\Amazon\AWSCLIV2\aws.exe`）を再特定
-2. EC2 (`i-051ca0c9129854b10`) + RDS + expense-saas コンテナ稼働確認
-3. seed.go 確認（`UserApprover2ID` も含めるべきだったが grep 漏れ） → ユーザーから「Test Approver Two もいるはず」と指摘されて修正
-4. 正しい seed 状態: **テナントA 6 アカウント + テナントB 2 アカウント = 計 8 アカウント / レポート 12 件 / 添付 2 件**
-5. UAT 必要前提との差分洗い出し → 不足なし、UAT-001〜007 で submitted 補充可能
+- 4 リポジトリの既存 README 状況を確認: `expense-saas/README.md` のみ存在、他 3 リポジトリは未作成
+- 既存 README は「ローカル開発者向け」中心で、ポートフォリオ要素（公開デモ URL / アーキ図 / 訴求点 / プロセス導線）が欠落
+- 用語集（`01_glossary.md`）/ ゴール（`00_goals.md`）/ スコープ（`02_scope.md`）/ アーキ（`30_arch/architecture.md`, `diagrams.md`）/ ADR 一覧（7 件）を確認
 
-#### Phase B: UAT 全 36 項目実施（タスク #2〜10）
+#### Phase 1: expense-saas/README.md 全面書き直し
 
-1 項目ずつ提示 → ユーザーが実機操作 → 結果報告のループ。発見した issue は都度起票（post-MVP）。
+- 採用担当者向けに以下を追加: 公開デモ URL / テストアカウント 8 件 / 技術スタック（選定理由 + ADR リンク）/ 主要機能 / アーキテクチャ図（Mermaid、diagrams.md §1 を簡略転載）/ 技術的ハイライト（テナント分離・状態遷移・ADR）/ 開発プロセス（Step 1-11 + dev-journal 導線）
+- AI 駆動開発の押し出しは控えめ（「計画駆動 + AI は実装の労力削減」）
+- ローカル開発手順は後半に保持
+- ユーザー指摘で能動動詞リライトを試みたが「変えすぎ・選択範囲外を編集」と指摘されて全部元に戻した
+- パスワード行はテストアカウント側に移動
 
-- UAT-001〜009 Member: 全 PASS
-- UAT-010〜012 却下・再申請: 全 PASS（再申請レポートのタイトル仕様確認: 元と同じが仕様通り）
-- UAT-013〜015 Approver: 全 PASS
-- UAT-016〜018 Accounting: 全 PASS（UAT-018 で **issue #191** 起票: 全レポート画面の対象期間列不在）
-- UAT-019〜020 Admin: 全 PASS（UAT-019 で MVP 仕様確認 = 会社名のみ、UAT-020 で **issue #192** 起票: draft 閲覧範囲の見直し）
-- UAT-021〜023 認証系: 2 PASS + 1 スキップ（UAT-023 パスワードリセットは issue #151 で既知の未実装）
-- UAT-030〜032 ロール別フロー: 全 PASS（UAT-032 自由探索で **issue #193** 起票: 一覧↔詳細往復で 100 req/min 到達 + F5 で生 JSON）
-- UAT-033〜035 ダッシュボード: 全 PASS
-- UAT-040〜046 UX: 全 PASS（**issue #194/#195/#196** 起票: 金額フィールド UX / スマホ列幅縦書き化 / 空状態見切れ）
+#### Phase 1 派生対応
 
-#### Phase C: 最終判定（タスク #11）
+- **MinIO コンソール（9001）撤去**: README からアクセス先表の MinIO コンソール行を削除 + docker-compose.yml の `ports: 9001:9001` / `--console-address ":9001"` を削除 + `MINIO_BROWSER=off` 追加
+- 経緯調査で「MinIO コンソール URL を README に書く判断は当時の AI（私）が自発的にチケット化した可能性が高い」と判明（ユーザーの明示承認の記録なし）。「使った覚えがない」というユーザーの直感は正しかった
+- **テストアカウント表のテナント B Admin 不在問題**: ユーザー指摘で発覚 → seed.go と `test_strategy.md §4.2` の乖離調査を含めて issue 109 起票
 
-- 11-F-uat.md チケットに実施結果・最終判定セクション記入
-- **判定: PASS（MVP 完成、公開可）**
-- ブロッカー 0、post-MVP issue 6 件、UAT-023 既知の未実装スキップ 1
+#### Phase 2: root-project/README.md 新規作成
 
-#### Phase D: UAT クリーンアップ（タスク #12）
+- 薄めの導線役（4 ディレクトリ構成 + 関心別の入口表）
+- ユーザー指摘: 「リポジトリ」「ディレクトリ」用語混在 → ops-108（公開戦略未決 issue）に「用語統一も同時対応」を追記し、公開戦略決定時に 4 README 一括書き換え
 
-1. expense-saas image の `/app/seed` バイナリ確認
-2. 業務 8 テーブル CASCADE TRUNCATE（`expense_app` ロール権限不足で初回失敗 → `expense_owner` ロール `DATABASE_URL` で再実行成功、categories は CASCADE で巻き込まれた）
-3. S3 (`expense-saas-portfolio-receipts-d8ed055a`) のテナントA プレフィックス削除（4 オブジェクト）、`_temp/` は image 再配備用に残置
-4. `docker run --rm --env-file ... /app/seed` で再投入（S3_ENDPOINT 未設定で MinIO アップロード自動スキップ、これは設計通り）
-5. 件数検証: tenants=2 / users=8 / reports=12 / items=7 / attachments=2 / categories=6（事前確認時と完全一致）
-6. API 疎通: test-admin で reports/all 取得 → 9 件返却 OK
+#### Phase 3: ai-dev-framework/README.md 新規作成
 
-#### Phase E: 引き継ぎ更新
+- フレームワーク紹介 + 役割別 8 エージェント + 適用事例（expense-saas）への導線
+- ユーザー指摘で `operations/subagent-design.md`（174 行、旧 15 体構成）/ `operations/subagent-workflow.md`（261 行、旧名混在）の現行化が必要と判明
+- ops-110 起票 + ops-writer サブエージェントに委譲して現行 8 体に一括書き換え（旧エージェント名 63 箇所 → 0 箇所、grep で残存ゼロ確認済み）
+- README に「実行要素（agents / skills / hooks）は root-project/.claude/ に配置」の 1 文を追加
+- ops-writer 提示の論点 2 件（designer の test-designer 兼務直感性 / reviewer 種別省略時の挙動）はユーザー判断で「気にしないで進める」
 
-- progress.md: Step 11 完了 + 11-F 行更新 + #191〜#196 を残存 issue 表に追記、#167 重複削除
-- 11-F-uat.md: クリーンアップ実施結果セクション追記
-- session-log アーカイブ退避（2026-05-26.md）+ 新セッション分作成
+#### Phase 4: dev-journal/README.md 新規作成
+
+- 開発プロセス記録ガイド + 状態フロー（open / pending-review / resolved）+ 関心別の入口
+- ユーザー指摘 3 件（issue skills の相対パス修正 / review-findings の状態フロー追記 / deliverables/docs の説明拡張）に対応
+
+#### コミット（4 リポジトリ、push なし）
+
+| リポジトリ | コミット | 内容 |
+|---|---|---|
+| root-project | `c7a13d0` | README 新規（エントリポイント） |
+| expense-saas | `5ad4326` | README 全面書き直し + MinIO コンソール撤去 |
+| dev-journal | `7c63972` | README 新規 + issue 3 件起票 |
+| ai-dev-framework | `07270b8` | README 新規 + operations 旧エージェント名を 8 体に書き換え |
 
 ### 未完了
 
-なし（コミットはこのセッション中に実施予定、session-log skill の最終段で）
+- ops-110（operations 現行化）の issue ファイルが open のまま。同セッション中に実体は対応完了済み。次セッションで「解決内容」を追記して pending-review or resolved へ移動するべき
+- ops-108（公開戦略未決）と 109（seed 整合化）は未着手のまま open
+- 「リポジトリ / ディレクトリ」用語の 4 README 統一は ops-108 決定後に一括対応予定
 
 ### ブロッカー
 
@@ -62,96 +67,78 @@
 
 ### 次にやること
 
-**プロジェクトの主目標（MVP 完成）は達成。残るは post-MVP の運用検討**。
-
 優先順位（ユーザー判断）:
 
-1. **公開デモの稼働継続 / 終了判断**: AWS リソース費用（EC2 t3.micro / RDS / CloudFront）が継続発生。デモ用途で残すか、destroy するかを決定
-2. **post-MVP issue の整理 + 優先度付け**: 計 23 件の post-MVP issue（#191〜#196 + 既存 #133/145/146/151/167/174/176〜180/182/189 + 運用 #060/061/064/ops-055/ops-062/ops-080/081/084/104/122）
-3. **post-MVP の着手対象選定**: UX 改善（#191〜#196）/ 認可見直し（#192）/ レート制限（#193）等のうち、ポートフォリオ価値が高いものから検討
-4. **ドキュメント・README 整備**（ポートフォリオ提示用）
+1. **ops-110 の状態遷移**: 実体対応済みなので、解決内容を追記して pending-review or resolved へ移動するか判断
+2. **ポートフォリオ用 GitHub 公開戦略の決定（ops-108）**: A 各リポジトリ public + 絶対 URL / B monorepo / C 抜粋コピー / D テキスト言及のみ を選定。決定時に 4 README の dev-journal リンクと「リポジトリ / ディレクトリ」用語を一括修正
+3. **seed 整合化（issue 109）の対応**: seed.go と test_strategy.md §4.2 の突合 + 業務的妥当性（テナント B Admin 不在問題）の決定 + 関連テスト影響確認
+4. **post-MVP issue の優先度付け**: 計 25 件（ops-108 / 109 / ops-110 / 191〜196 + 既存 #133/145/146/151/167/174/176〜180/182/189 + 運用 #060/061/064/ops-055/ops-062/ops-080/081/084/104/122）
+5. **公開デモの稼働継続 / 終了判断**: AWS リソース費用（EC2 t3.micro / RDS / CloudFront）が継続発生
 
 ### 学び・気づき
 
-- **seed.go の grep 漏れによる事前確認失敗**: 事前確認で `UserMemberBID|UserApproverBID|test-member-b|test-approver-b` だけで grep し、テナントA の `UserApprover2ID` を見逃した。ユーザーから指摘されて発覚。session-log で「テスト承認済みレポート（第二Approver処理）」を読んでいたのに、そこから seed 内容に辿り着けなかった。**事前確認は対象ファイル全文 read or 包括的 grep で実施すべき**
-- **DevTools Network throttling: Offline モードの罠**: Chrome の Offline モードは fetch promise を中断するだけで NetworkError を投げない場合がある。実環境（Wi-Fi OFF）のネット切断とは挙動が異なる。**UAT のオフラインテストは DevTools ではなく実環境で実施すべき**。最初「タイムアウト不在」と判定して issue #197 を起票したが、実環境で確認したら正常動作だったので #197 を削除した
-- **issue 起票の論点整理**: ユーザーから「画面が違うけど同じ issue で扱って大丈夫か？」と問われ、#195（明細一覧の列幅）と #196（空状態見切れ）を分離。**異なる画面・現象は別 issue とし、対応時のために相互参照で統合検討を促す**設計が望ましい
-- **「タイムアウト本当に必要か？」の本質的問い**: 「FE タイムアウト不在」を盲目的に bug 扱いしようとしたが、ユーザーから「全 API でそうなっているなら本当にバグか？」と問われ立ち戻り、調査して「インフラ層タイムアウト + ブラウザ NetworkError で実環境は問題なし」と判明。**症状から短絡的に対策案を出すのではなく、根本原因を確認してから判定する**（feedback_accountability の典型ケース）
-- **クリーンアップ忘れの永続化**: 「クリーンアップタスクをタスクリストに登録した」と報告したが、ユーザーから「セッション内のみで永続化されないのでは」と指摘され、11-F-uat.md チケット + session-log に永続化方針を二重化した。**運用継続を要する作業は必ず永続化先（チケット or issue）に書く**
-- **`expense_app` ロール vs `expense_owner` ロール**: TRUNCATE は `expense_owner` のみ実行可能。`APP_DATABASE_URL`（app ロール）で叩くと `permission denied for table`。設計（authz.md §9.3）の RLS / 二重保証が機能している証拠
-- **TRUNCATE CASCADE の予期せぬ巻き込み**: `categories` を TRUNCATE 対象に入れていなくても、`expense_items.category_id` 外部キー参照で CASCADE 削除される。seed 再投入で categories も復元する設計（seed.go L223）だったので結果問題なし
-- **MVP 達成までの累計タスク**: Step 0〜11 全完了、要件 → 設計 → 実装 → テスト → デプロイ → UAT を AI 駆動開発フレームワーク（architect / designer / backend-developer / frontend-developer / test-implementer / platform-builder / reviewer）で完走。**AI 駆動開発の有効性を実証**
+- **「他人事文体」指摘 + 範囲超え修正の連鎖**: README 初版が客観・第三者文体に流れていた → 能動動詞リライトを試みたが、ユーザーが指定した範囲を超えて 4 箇所を書き換え「変えすぎ・選択範囲外を編集」と指摘されて全部元に戻した。**ユーザー指摘の範囲を勝手に拡大しない**。「他にも該当する箇所があれば」と感じた場合は提案に留め、ユーザー承認を得てから着手する
+- **AI が独断で書き込んだ記述の特定（MinIO コンソール経緯）**: 「使った覚えがない記述」を git log / session-log で逆追跡し、当時の AI が自発的にチケット化した可能性が高いと判明。**ユーザー直感の「これ覚えがない」は重要なシグナル**。実害がなくても、AI が無断で混入させた可能性のある記述は撤去する判断もあり
+- **レビューファイル方式は不採用**: codex に `review-findings/open/` へ起票させる方式をユーザーが嫌い、自身で別途レビューする方式に切替。**ユーザーが直接書く形のレビューが好まれる場合は、codex の起票方式を強制しない**
+- **issue 起票 + 同セッション中対応の流れ（ops-110）**: 「issue 起票」「対応着手」「対応完了」を同セッション中で連続実施。issue ファイルが対応の追跡に役立つ
+- **ops-writer サブエージェント委譲の妥当性**: subagent-design.md の全面再構成（174 行）+ subagent-workflow.md の旧名置換（23 箇所）を ops-writer に委譲。指揮役の手作業より見落としリスクが低く、grep で残存ゼロを証明できる形で完了
+- **codex レビュー結果の使い分け**: codex 指摘 1 件（UAT パス数の事実誤認）は妥当 → 採用、指摘 2 件目（テストアカウント不整合）は既起票 issue 109 と重複なので統合判断。ユーザー方針で「review-findings ファイル」自体を生成しない方式に切替
 
 ### 意思決定ログ
 
-#### UAT 進行形式
+#### Phase 構成の選び方
 
-- 案: 「1 項目ずつ提示 → ユーザー実行 → 結果報告」 vs 「セクション単位でまとめて」 vs 「ユーザー主導」
-- 採用: **1 項目ずつ**（細かいが確実、issue 発見時の流れがスムーズ）
-- 結果: 36 項目を 2 日間で完走、issue 起票・仕様確認のラグも吸収できた
+- 当初: Phase 1 完成後にユーザー確認 → Phase 2-4 を順次（薄い構成）
+- 切替: ユーザー判断で「複数 Phase を一気に作る」スコープ拡大 → 効率的に 4 Phase 完走
+- 結論: 各 README は薄い導線役、実体は他リポジトリに委譲する設計が読みやすい
 
-#### post-MVP issue の扱い方針
+#### MinIO コンソール撤去の範囲
 
-- UAT 中の発見はすべて「post-MVP 起票 → MVP リリース可」で進めた
-- ブロッカー判定の基準: 「業務継続不可」「データ破壊」「権限境界の崩壊」のみ
-- 6 件すべて「UX 改善 / 認可見直し / 仕様の透明性」で、業務継続には影響しないため post-MVP 適合
+- 案 A: README 行削除のみ
+- 案 B: README + ports 削除のみ
+- 案 C: README + ports + `--console-address` + `MINIO_BROWSER=off`（推奨、採用）
+- 「半年後に何これ？となる」を回避するため、コンソール概念そのものを撤去
 
-#### 「DevTools Offline で fetch がタイムアウトせず」の取り扱い
+#### operations 現行化の担当
 
-- 当初: 全 API で問題発生と判定 → MVP ブロッカー候補として議論
-- ユーザー指摘: 「全 API でそうなら本当か？」「タイムアウト本当に必要か？」
-- 切り分け: Slow 3G では正常、実環境 Wi-Fi OFF では `net::ERR_NAME_NOT_RESOLVED` + UI エラー表示 → 正常動作
-- 結論: DevTools Offline モードの限定的挙動。実環境では NFR-UX-003 を満たしている → issue 削除（resolved ではなく完全削除をユーザー指示）
+- 指揮役（私）の手作業 vs ops-writer 委譲
+- 構造変更（旧 15 体 → 現行 8 体）を含む全面再構成のため、ops-writer 委譲で見落としリスク低減
+- 残存ゼロを grep で証明する完了条件を明示
 
-#### クリーンアップの手法
+#### 公開戦略を決めない方針（ops-108）
 
-- 案 A（完全初期化、推奨）: TRUNCATE + S3 削除 + seed 再投入
-- 案 B（保守的）: UAT で増えた分だけ個別 DELETE/UPDATE
-- 採用: 案 A。初期状態保証で確実、デモ環境としても clean
+- 4 リポジトリの GitHub 公開戦略（A/B/C/D）は今セッションで決めない
+- 「リポジトリ / ディレクトリ」用語統一も公開戦略決定後に一括対応
+- ops-108 に追記して忘れを防ぐ
 
-### 起票 issue（全て post-MVP / 非ブロッカー）
+### 起票 issue（全て post-MVP）
 
-| ID | タイトル | 発見 UAT | 関連 |
+| ID | タイトル | カテゴリ | 状態 |
 |---|---|---|---|
-| #191 | 全レポート画面: 対象期間フィルタはあるがテーブル列に対象期間カラムが無い | UAT-018 | UX |
-| #192 | draft レポートの Admin / Accounting 閲覧可否の見直し検討 | UAT-020 | authz |
-| #193 | 一覧↔詳細往復で 100 req/min 到達 + F5 で生 JSON + 回復遅さ | UAT-032 | UX/non-functional |
-| #194 | 明細金額フィールド UX 改善（全角 IME 残置 + エラー文言 + 上限要相談） | UAT-042 | UX |
-| #195 | スマホ幅でレポート詳細明細一覧の列幅が縦書き化 | UAT-044 | UX (#167 統合検討) |
-| #196 | マイレポート 0 件時の空状態見切れ | UAT-044 | UX |
-| ~~#197~~ | ~~オフライン時 fetch がタイムアウトせずスピナー永続~~ | UAT-045 | **削除済み**（DevTools Offline 限定の偽問題） |
+| ops-108 | ポートフォリオ用 GitHub 公開戦略の未決（dev-journal 相対リンクの整合性 + 用語統一） | project-management | open / 未着手 |
+| 109 | seed.go を業務的に妥当 + 設計書整合な状態に再整備 | testing | open / 未着手 |
+| ops-110 | ai-dev-framework/operations/ 配下の旧エージェント名を現行 8 体に現行化 | project-management | open（同セッション中に実体対応完了。次セッションで pending-review / resolved 判定） |
 
 ### PR / コミット要約
 
-#### expense-saas
+push なし。各リポジトリの master ローカルコミットのみ。
 
-- **PR/コミット**: なし（FE 実装変更は不要、すべて post-MVP）
-
-#### dev-journal
-
-- セッション終了時 1 コミット集約予定（progress.md / 11-F-uat.md / issues/open/#191〜#196 / session-log）
-
-#### 起票 issue ファイル
-
-- `dev-journal/issues/open/191-admin-all-reports-period-column-missing.md`
-- `dev-journal/issues/open/192-draft-visibility-to-admin-accounting.md`
-- `dev-journal/issues/open/193-rate-limit-on-list-detail-navigation.md`
-- `dev-journal/issues/open/194-item-amount-field-ux-issues.md`
-- `dev-journal/issues/open/195-mobile-table-column-width-vertical.md`
-- `dev-journal/issues/open/196-mobile-empty-state-overflow.md`
+| リポジトリ | コミット | ファイル |
+|---|---|---|
+| root-project | `c7a13d0` | README.md（新規） |
+| expense-saas | `5ad4326` | README.md（書き換え）+ docker-compose.yml（MinIO コンソール撤去） |
+| dev-journal | `7c63972` | README.md（新規）+ issues/open/ops-108-*.md（新規）+ issues/open/109-*.md（新規）+ issues/open/ops-110-*.md（新規） |
+| ai-dev-framework | `07270b8` | README.md（新規）+ operations/subagent-design.md（全面再構成）+ operations/subagent-workflow.md（旧名置換） |
 
 ### AWS リソース変更
 
-なし（読み取り + クリーンアップのみ。terraform apply 実行なし）
+なし（読み取りなし、terraform apply 実行なし）
 
-### 公開 URL（変更なし、初期状態に復元済み）
+### 公開 URL（前回セッションから変更なし）
 
-- **`https://djhmwtrr79jdq.cloudfront.net/`** (CloudFront Deployed、UAT 完了後の初期状態)
-- アカウント: test-{admin,approver,approver2,accounting,member,member-empty}@example.com（テナントA 6 件）+ test-{member-b,approver-b}@example.com（テナントB 2 件）
-- パスワード共通: `TestPass1!`
-- EC2 instance ID: `i-051ca0c9129854b10`
-- CloudFront Distribution ID: `EG1AJBSQL6399`
+- `https://djhmwtrr79jdq.cloudfront.net/`（CloudFront Deployed）
+- 公開デモは費用継続発生中（EC2 / RDS / CloudFront）、停止判断は次回以降
 
 ## 前回セッションのアーカイブ
 
-`dev-journal/archives/session-logs/2026-05-26.md`（2026-05-26: Step 11-E 実 apply セッション、SSM 移行 + CloudFront + awslogs 完遂、UAT 着手前 SPA root regression #190 解消）
+`dev-journal/archives/session-logs/2026-05-27.md`（2026-05-27〜28: Step 11-F UAT 全 36 項目完走、MVP 完成判定 PASS、クリーンアップ実施、Step 11 完了）
