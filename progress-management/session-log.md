@@ -55,24 +55,48 @@
 | dev-journal | `7c63972` | README 新規 + issue 3 件起票 |
 | ai-dev-framework | `07270b8` | README 新規 + operations 旧エージェント名を 8 体に書き換え |
 
-#### Phase 5: ops-108 案 C 採用 → ポートフォリオ用 monorepo 公開（2026-05-31）
+#### Phase 5: ops-108 案 C 採用 → 案 A 変更 → 4 リポジトリ public 化（2026-05-31）
 
-キャリア相談から派生して、ポートフォリオの GitHub 公開に着手:
+キャリア相談から派生して、ポートフォリオの GitHub 公開に着手。当初案 C（monorepo）で進めたが、コミット履歴の重要性に気付いて案 A（4 リポジトリ別公開）に方針変更:
 
-1. **ops-108 を案 C 採用で更新**: 開発は 4 リポジトリ構成維持、公開用に別途 monorepo（ハイブリッド）。用語統一は公開用 root README に「分離開発 → 統合公開」説明を追加することで吸収（他 README は触らない）
-2. **公開精査**: dev-journal / .claude / expense-saas のセンシティブ情報を特定
-   - 個人メアド `atsuro-1997@outlook.jp`: 1 ファイル
-   - Windows ホストフルパス: 2 ファイル
-   - その他はクリーン（.env / keys/ / node_modules は gitignore 済み）
-3. **公開用 monorepo 作成**: `root-project/.portfolio-build/expense-saas-portfolio/`
-   - `git archive HEAD` で各リポジトリの tracked file のみ抽出（infra/.terraform 等のローカルビルド成果物混入を回避）
-   - Python で個人メアド・ホストパスを抽象化置換
-   - root-project の `.claude/`（settings.local.json / memory/ 除く）、CLAUDE.md、AGENTS.md も統合
-   - 最終: 1,142 ファイル / 12 MB
-4. **公開用 root README 作成**: 「実際は 4 リポジトリで開発、公開時に monorepo に統合した」説明 + 各 README への導線
-5. **GitHub に private リポジトリ作成 + push**: `gh repo create expense-saas-portfolio --private --source=. --push`
-   - URL: https://github.com/atsuro128/expense-saas-portfolio
-   - private で作成（GitHub UI で確認後、ユーザー判断で public 化予定）
+##### 案 C 試行（途中で破棄）
+
+1. **ops-108 を案 C 採用で更新**: 開発は 4 リポジトリ維持、公開用は別途 monorepo
+2. **公開精査**: dev-journal / .claude / expense-saas のセンシティブ情報を特定（個人メアド 1 ファイル / Windows ホストパス 2 ファイル）
+3. **monorepo 構築**: `.portfolio-build/expense-saas-portfolio/` に git archive で集約、Python で抽象化置換、12 MB / 1,142 ファイル
+4. **GitHub に private で push**: `expense-saas-portfolio` リポジトリ作成
+5. **サブ .gitignore を root に統合**: monorepo として整える
+
+##### 案 A 変更の経緯
+
+ユーザーから「**コミット履歴がないのちょっと良くない**」「**統合版不要説**」の指摘 → 履歴の重要性 + 採用担当者の AI 警戒 + pinned 4 つの実績量感の観点から、案 A（4 リポジトリ別公開）に方針変更。
+
+##### 案 A 実装
+
+1. **commit message 精査**: 4 リポジトリ全 commit を grep → message 本文には機密ゼロ、author email のみ問題
+2. **author email 統一**: `git filter-repo --email-callback` で 215 commit（root-project: 56 / expense-saas: 147 / dev-journal: 12）を `atsuro-1997@outlook.jp` → `atsuro128@users.noreply.github.com` に書き換え。ai-dev-framework は元クリーン
+3. **バックアップ**: `.author-fix-backup/` に 3 リポジトリ mirror clone（万一の復旧用）
+4. **README の絶対 URL 化**: Python script で `../other-repo/...` を `https://github.com/atsuro128/{repo}/blob|tree/master/{path}` に置換（ディレクトリは tree/、ファイルは blob/）
+5. **既存 5 リポジトリ判明**: 全 private で過去 push 済み（atsuro128 配下）。expense-saas は description が「Rust (Actix Web)」と古い誤り
+6. **4 リポジトリへ force push + public 化 + description 更新**: ai-dev-framework / dev-journal / expense-saas / root-project
+7. **`.portfolio-build/` ローカル削除**: 不要になった monorepo ビルド成果物を破棄
+
+##### 公開済み 4 リポジトリ（PUBLIC）
+
+| リポジトリ | URL |
+|---|---|
+| root-project | https://github.com/atsuro128/root-project |
+| expense-saas | https://github.com/atsuro128/expense-saas |
+| dev-journal | https://github.com/atsuro128/dev-journal |
+| ai-dev-framework | https://github.com/atsuro128/ai-dev-framework |
+
+##### 残作業
+
+- expense-saas-portfolio（PRIVATE、案 C の残骸）を **ユーザーが手動削除**（GitHub UI 経由、delete_repo スコープを Claude に渡さない判断）
+
+##### 注意
+
+filter-repo で全 commit hash が変わったため、session-log や archives 内で過去引用していた commit hash 参照（例: `c7a13d0`）は現在の GitHub 上では存在しない。記録としての commit message subject は git log で読めるが、hash 直リンクは断片的に切れる（受容済み）。
 
 #### キャリア相談（2026-05-30 終盤）
 
@@ -85,8 +109,9 @@
 ### 未完了
 
 - ops-110（operations 現行化）の issue ファイルが open のまま。同セッション中に実体は対応完了済み。次セッションで「解決内容」を追記して pending-review or resolved へ移動するべき
-- ops-108（公開戦略）は **案 C 採用で方針確定済み**、public 化判断はユーザーが GitHub UI 確認後に実施予定
+- ops-108（公開戦略）は **案 C → 案 A に方針変更、案 A で 4 リポジトリ public 化完了**。次セッションで issue ファイルを最終形に更新し pending-review or resolved へ移動
 - 109（seed 整合化）は未着手のまま open
+- **expense-saas-portfolio（案 C の残骸、PRIVATE）はユーザーが GitHub UI で手動削除する**
 - ポートフォリオ公開後の応募活動（Findy 登録 / カジュアル面談）はユーザー側で実施
 
 ### ブロッカー
@@ -95,13 +120,14 @@
 
 ### 次にやること
 
-優先順位（ユーザー判断）:
+優先順位:
 
-1. **ポートフォリオ public 化判断**: https://github.com/atsuro128/expense-saas-portfolio （現在 private）の中身を GitHub UI で確認 → 問題なければ `gh repo edit atsuro128/expense-saas-portfolio --visibility public --accept-visibility-change-consequences` で public 化
+1. **expense-saas-portfolio 削除**: ユーザーが GitHub UI で手動削除（Danger Zone → Delete this repository）
 2. **応募活動着手**: Findy 登録（GitHub 連携でスキル可視化）+ Tier 1 企業（kubell / ヌーラボ / クラスメソッド / ラクス / カオナビ）でカジュアル面談 1 本入れる
-3. **ops-110 の状態遷移**: 実体対応済みなので、解決内容を追記して pending-review or resolved へ移動
-4. **seed 整合化（issue 109）の対応**: seed.go と test_strategy.md §4.2 の突合 + 業務的妥当性（テナント B Admin 不在問題）の決定 + 関連テスト影響確認
-5. **公開デモの稼働継続 / 終了判断**: AWS リソース費用（EC2 t3.micro / RDS / CloudFront）が継続発生
+3. **公開済み 4 リポジトリの GitHub UI 確認**: README の見栄え・リンク切れ・タイポ等を目視
+4. **ops-108 / ops-110 の状態遷移**: 実体対応済みなので、解決内容を追記して pending-review or resolved へ移動
+5. **seed 整合化（issue 109）の対応**: seed.go と test_strategy.md §4.2 の突合 + 業務的妥当性（テナント B Admin 不在問題）の決定 + 関連テスト影響確認
+6. **公開デモの稼働継続 / 終了判断**: AWS リソース費用（EC2 t3.micro / RDS / CloudFront）が継続発生
 
 ### 学び・気づき
 
