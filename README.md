@@ -1,6 +1,6 @@
 # dev-journal
 
-経費精算 SaaS（[expense-saas](../expense-saas/)）の開発プロセス記録。設計成果物・進捗・課題・意思決定の履歴をすべて残す。
+経費精算 SaaS（[expense-saas](https://github.com/atsuro128/expense-saas)）の開発プロセス記録。設計成果物・進捗・課題・意思決定の履歴をすべて残す。
 
 ---
 
@@ -51,12 +51,12 @@ open/ → pending-review/ → resolved/
 
 - ファイル命名: `NNN-kebab-case.md`（プロダクト系）/ `ops-NNN-kebab-case.md`（運用系）
 - 番号は 3 桁ゼロ埋めのグローバル連番（3 フォルダ横断で一意）
-- 詳細な運用は [`ai-dev-framework/templates/issue-template.md`](../ai-dev-framework/templates/issue-template.md) と [`../.claude/skills/issue/`](../.claude/skills/issue/) 参照
+- 詳細な運用は [`ai-dev-framework/templates/issue-template.md`](https://github.com/atsuro128/ai-dev-framework/blob/master/templates/issue-template.md) と [`../.claude/skills/issue/`](https://github.com/atsuro128/root-project/tree/master/.claude/skills/issue) 参照
 
 ## 関連リポジトリ
 
 | リポジトリ | 役割 |
 |---|---|
-| [`../expense-saas/`](../expense-saas/) | プロダクト本体 |
-| [`../ai-dev-framework/`](../ai-dev-framework/) | 本記録を生み出すための AI 駆動開発フレームワーク |
-| [`../`](../) | メタリポジトリ（全体統括） |
+| [`../expense-saas/`](https://github.com/atsuro128/expense-saas) | プロダクト本体 |
+| [`../ai-dev-framework/`](https://github.com/atsuro128/ai-dev-framework) | 本記録を生み出すための AI 駆動開発フレームワーク |
+| [`../`](https://github.com/atsuro128/root-project) | メタリポジトリ（全体統括） |
