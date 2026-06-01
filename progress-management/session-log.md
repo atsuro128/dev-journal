@@ -1,38 +1,54 @@
 # 引き継ぎメモ
 
-## セッション: 2026-06-01 13:02
+## セッション: 2026-06-01 17:51
 
 ### ゴール
 
-「次の作業は？」から /session-start。前回の残作業から **A+B 後始末（ops-110 / ops-108 の状態遷移）→ C（issue 109 seed 整合化）** の順で進めることを合意。
+「次の作業は？」から /session-start。前回の最優先残作業 **issue 109（seed フィクスチャ整合化）** を、ステップ1+2 を一気に進める方針で合意。セッション中に AWS 本番反映（ステップ4）も同 issue で対応することに拡大し、**issue 109 を全 4 ステップ完遂・resolved 化**した。
 
 ### 作業ログ
 
-#### Phase 1: A+B 後始末（ops-110 / ops-108 状態遷移）— 完了
+#### ステップ1: テナント B に Admin B 追加（PR #157 → master `2ae2f5c`）— 完了
 
-- **ops-108 残課題「リポジトリ/ディレクトリ用語統一」の現状確認**: 4 README を grep → 実態は「外部の 4 開発単位 = リポジトリ」「各リポジトリ内部の構成 = ディレクトリ」の使い分けに概ね収束。ai-dev-framework / dev-journal は整合済み。不整合は **root-project / expense-saas の「構成」セクションで見出し（リポジトリ）と表ヘッダ（ディレクトリ）が食い違う 2 箇所のみ**
-- **用語統一の修正**:
-  - root-project/README.md: 表ヘッダを「リポジトリ」に修正 → master 直コミット `635f27d`
-  - expense-saas/README.md: 本文 + 表ヘッダを「リポジトリ」に修正 → **簡略 PR**（チケット/reviewer/codex 省略、ブランチ→PR #156→/test→マージ）で `ebc3f50` マージ
-- **FE テスト（PR #156）の失敗調査**: README のみ差分だが /test の FE のみ実行 → `ItemForm.test.tsx` 4 件失敗。flaky と早合点せず単独再実行 → 同じ 4 件再現 → `testTimeout=20000` で全 44 件 PASS。**真因 = デフォルト 5000ms 超過（摘要 500/501 文字の `userEvent.type` 入力がこのローカルで約 7 秒）**。本 PR とコード同一で無関係・環境起因と確定。ユーザー判断で issue 化はしない（CI では通る・ローカルノイズのみ）
-- **ops-110 状態遷移**: 旧エージェント名残存ゼロを grep 再確認（`No matches`）→ 解決内容記入 → `issues/resolved/` へ移動
-- **ops-108 状態遷移**: 本文を案 C → 案 A 変更の経緯 + 解決内容（public 化・author email 統一・絶対 URL 化・用語統一）で更新 → `issues/resolved/` へ移動
-- **progress.md 更新**: 残存 issue（運用・基盤系）テーブルから ops-108 / ops-110 を削除
-- **コミット・push**: dev-journal `a5623c5`（issue 2 件 resolved 移動 + progress.md）、root-project `635f27d` / dev-journal `a5623c5` を public に push（expense-saas は PR #156 マージで反映済み）
+- `/issue 対応 109` → 上流確認は前セッションで完了済み（architect 突合 + reviewer 検証 + 案 4 合意）のため実装着手
+- backend-developer（worktree 隔離・ブランチ `fix/109-seed-tenant-b-admin`）で実装:
+  - `seed.go`: `UserAdminBID = bbbbbbbb-1111-1111-1111-000000000011`（email `test-admin-b@example.com` / name `Test Admin B` / RoleAdmin）を user + membership に冪等追加（`ON CONFLICT DO NOTHING`）。パスワードは共通 `TestPass1!`
+  - `fixture.go` 再エクスポート、`README.md` テストアカウント表に Admin B 行 + テナント B「クロステナント検証用・Accounting なし」注記
+  - **テナント A 不変**
+- reviewer 内部レビュー **PASS**（テナント B 件数アサーションは存在せず、唯一の件数アサーション `tenant_handler_test.go:193` want 6 はテナント A スコープで影響なし）
+- codex レビュー **指摘ゼロ**（DB 依存テストはローカル未起動で未実行と明記）
+- **BE テストはマージ後に実施する方針**（ユーザー判断）。マージ後の本体 master で `BE: full test`（lint/unit/integration）全 PASS を確認 → リグレッションなし確定
 
-#### Phase 2: C（issue 109 seed 整合化）— 調査・方針決定まで完了、実装は次セッション
+#### ステップ2: test_strategy.md §4 を seed 最終形に同期（dev-journal `e1f29b5` + `dbaf6ef`）— 完了
 
-- **architect で乖離調査**: seed.go 全フィクスチャ × test_strategy.md §4.2〜§4.5 を突合。**seed.go に誤った値は 1 件もなく、乖離はすべて「seed が先行追加 + 設計書の追従漏れ」**（U1 approver2 / U2 approver-b / RA2 approver2 承認レポート / I2 明細追加分 / RB2 テナント B 承認者 / AT1・AT2 添付フィクスチャ章なし）+ **テナント B Admin 不在（U3）が唯一の業務モデル不整合**。案 1〜4 を提示、案 4 推奨
-- **reviewer で独立検証**: 結論を実ファイルで裏付け（PASS 相当）。FIX 指摘は実装精度の軽微補足 2 点のみ（① architect の `tenant_handler_test.go:193`「6 固定」説明が不正確 = 実体は「6 = 既存 5 + approver2」で approver2 は既にアサート前提に組込済み。結論の PASS は正しい ② §4.2 見出し「4ロール」だが表は 5 行 = 設計書同期時に同時修正）
-- **ユーザー判断: 案 4 採用** = テナント B に Admin のみ追加（Accounting は置かず「クロステナント検証用」と注記）+ U3 以外の全乖離は設計書を seed に合わせて同期
-- **実装計画合意**: ステップ 1（expense-saas: seed.go に Admin B 追加 + README 更新、PR フロー）→ ステップ 2（dev-journal: test_strategy.md 同期、設計成果物フロー）の**順次**
+- designer で §4 を seed.go（正本）に同期: §4.2（テナント A 第二 Approver `test-approver2` 追記・見出し「4ロール/6ユーザー」訂正、テナント B に Admin B/Approver B 追記）、§4.3（レポート 8→9 件・明細表を 7 件に拡張・承認者/支払者列追加）、§4.5（テナント B 提出者/承認者列）、§4.6（添付フィクスチャ章新設）。改訂履歴 1.1 追記
+- reviewer が seed.go を全行突合し **PASS**（推測値混入・スコープ逸脱なし）
+- codex レビューで **FIX・指摘 2 件**:
+  - **125**: §4.2 で Test Member Empty を「明細なし用」と誤記 → 実体は「レポート 0 件ユーザー（SMK-084 用）」、`report_draft_empty` の作成者は Test Member。修正
+  - **126**: §4.6 で「seed 再実行で削除状態を復元できる」と誤記 → `ON CONFLICT DO NOTHING` のため論理削除（`deleted_at`）済み行は復元されないと訂正
+  - 両指摘とも seed.go / attachments.sql で妥当性検証 → 修正 → codex 再レビューで **両件 resolved**
+
+#### ステップ3: seed.go コメントの実態同期（PR #158 → master `b6fdaa6`）— 完了
+
+- codex 再レビューの補足指摘（コード側コメント残存）に対応。パッケージコメント `§4.2/4.3/4.4` → `§4.2〜4.6`、添付投入コメントの「再 seed で復元できる」誤記訂正。コメントのみの**簡略 PR**（reviewer/codex 省略・テスト省略）
+
+#### ステップ4: AWS 本番（公開デモ RDS）への Admin B 反映 — 完了
+
+- Explore で本番 seed 投入機構を調査: EC2 + SSM + RDS PostgreSQL 16、seed は `ON CONFLICT DO NOTHING` で冪等
+- **本番イメージの seed が旧版の可能性**があるため、イメージ再ビルドせず**直接 SQL INSERT 方式**を採用（最小・冪等・可逆）
+- この環境に AWS CLI が無いため、**ホスト側 Claude 向け指示書をチャットで提供**（ユーザーがコピペ実行）
+- ホスト側実行結果: RDS スナップショット `expense-saas-pre-admin-b-20260601-165039` 取得 → SSM `send-command` 経由で psql により Admin B の user（password_hash は既存 `test-member-b` から複製し `TestPass1!` を保証）+ membership を投入 → `INSERT 0 1` / `0 1` → 検証 SELECT 1 行 → 本番ログイン **HTTP 200**
+
+#### 後始末 — 完了
+
+- issue 109 に全 4 ステップの解決内容を記録 → `issues/resolved/` へ移動（dev-journal `7932fd5`）
+- review-findings 125/126 を `resolved/` へ移動、progress.md 残存 issue テーブルから 109 削除
+- dev-journal を public に push（`7932fd5`）
 
 ### 未完了
 
-- **issue 109 ステップ 1 実装（最優先）**: expense-saas に Admin B を追加 + README テストアカウント表更新。調査・方針（案 4）・実装計画は確定済み。実装着手は次セッション
-- **issue 109 ステップ 2**: test_strategy.md §4.2〜§4.5 / §4 を seed 最終形に同期
-- **issue 109 AWS 本番反映**: テナント B に Admin 追加後、公開デモの本番 seed に反映するか別途判断
-- **expense-saas-portfolio 削除（前回から継続）**: 案 C の残骸（PRIVATE）をユーザーが GitHub UI で手動削除
+- **expense-saas-portfolio 削除（前々回から継続）**: 案 C の残骸（PRIVATE）をユーザーが GitHub UI で手動削除
+- **公開デモ稼働継続判断**: EC2/RDS/CloudFront の費用継続発生中、停止判断は未
 
 ### ブロッカー
 
@@ -42,36 +58,35 @@
 
 優先順位:
 
-1. **issue 109 ステップ 1 実装**: `/implement` で expense-saas に **Admin B を追加**（案 4）
-   - Admin B 仕様（既存パターン準拠で確定予定）: email `test-admin-b@example.com` / UUID `bbbbbbbb-1111-...` 系 / RoleAdmin
-   - ブランチ `fix/109-seed-tenant-b-admin`
-   - 対象: `internal/seed/seed.go`（UUID 定数 + user + membership、冪等性維持）+ `internal/testutil/fixture.go`（再エクスポート慣例があれば）+ `README.md`（テストアカウント表に Admin B 行 + テナント B は「クロステナント検証用で Accounting なし」注記）
-   - **テナント A 側は触らない**（approver2 等は変更しない）。テナント B のみ変更なので `tenant_handler_test.go:193` の `!= 6`（テナント A 6 名固定）や E2E には影響しない。`TestSeed_ReportTenantBApproved_BackfillExistingRow` は approver-b を残すので PASS
-   - PR フロー（/test → reviewer → codex → マージ）
-2. **issue 109 ステップ 2**: ステップ 1 マージ後、test_strategy.md を同期（§4.2 にテナント B Admin / approver-b / approver2 追記・見出し「4ロール」修正、§4.3 を 8→9 件 + 明細追加分反映、§4.5 に承認者列追記、§4 に添付フィクスチャ章新設）
-3. **AWS 本番 seed 反映判断**
-4. （継続）expense-saas-portfolio 手動削除 / 応募活動 / 公開デモ稼働継続判断
+1. **open issue の棚卸し / 次テーマ選定**: 残存 issue は全て post-MVP（運用・基盤系 + UAT 派生 UX）。`/session-start` で一覧を確認し、着手対象をユーザーと合意
+2. （継続）expense-saas-portfolio 手動削除
+3. （継続）公開デモ停止判断 / 応募活動
 
 ### 学び・気づき
 
-- **「無関係」と断じる前に再現・切り分けで裏取りする**: PR #156 の FE テスト 4 件失敗を当初「並行作業によるマシン負荷の flaky」と推測したが、単独再実行で同じ 4 件が再現し**仮説は誤りだった**。そこで止めず `testTimeout=20000` で再実行し、真因（デフォルト 5000ms 超過・摘要 500 文字入力が約 7 秒）まで特定。flaky 仮説の訂正をユーザーに明示し、根本原因を確定させてから判断した
-- **architect → reviewer → ユーザー判断の順序厳守（feedback_review_before_user_judgment）**: issue 109 の調査結果を指揮役が直接ユーザーに渡さず reviewer の独立検証を挟んだ。reviewer が architect の因果説明 1 箇所の誤りを捕捉（結論は不変だが記述は要訂正）。設計成果物をユーザー判断前にレビューに通す価値が出た
-- **docs 修正へのテストの当て方**: README 2 行修正に対し「テストの目的（コード検証）から実行不要」と一度判断を返したが、ユーザー指示で FE のみ実行 → 結果的に既存のローカルテスト不安定を検出できた。形式実行が無価値とは限らない
+- **本番（不可逆・外向き）操作は調査 → 計画 → 承認 → 実行の順を厳守**: AWS 反映を即実行せず、まず Explore で投入機構・冪等性・接続情報所在を調査。本番イメージの seed が旧版な可能性に気づき、イメージ再ビルドより安全・最小な「直接 SQL INSERT」を選択。事前スナップショットも必須化した
+- **password_hash は再生成せず既存ユーザーから複製**: Argon2id は salt 込みのため別環境でハッシュを再生成すると照合可否が不確実。本番に既存の同パスワードユーザー（test-member-b）の hash を `INSERT ... SELECT` で複製することで `TestPass1!` を確実に通した
+- **AWS 操作はホスト側 Claude にチャット指示書を渡して委譲**: devcontainer に AWS CLI が無い制約下で、自己完結した指示書（前提・安全制約・正確なコマンド・検証・報告事項）をチャットで提供しユーザー経由で実行。識別子の実値（`expense-saas-portfolio-*`）はホスト側が特定
+- **codex 指摘の妥当性は実コードで裏取りしてから対応（feedback_critical_review_of_codex）**: 125/126 とも seed.go / attachments.sql を実際に確認し妥当と判断してから修正。形式的に従うのでなく根拠を確認した
+- **seed を正本とした設計書同期で、コード側コメントの追従漏れも検出**: codex 再レビューが seed.go コメントの実態ズレ（ステップ3）を捕捉。設計書だけでなくコード内コメントも正本同期の対象になる
 
 ### 意思決定ログ
 
-#### 用語統一の expense-saas 修正フロー
+#### issue 109 を分割せず 1 issue で AWS まで対応
 
-- docs 2 行修正にフル PR フロー（チケット→reviewer→codex）は過剰 → **簡略 PR**（ブランチ→PR→/test→ユーザー承認スカッシュマージ）で合意
+- 当初「core 完了 → resolved、AWS は別 issue」を提案したが、ユーザー判断で **AWS 反映も issue 109 内のステップ4として対応**。全 4 ステップ完遂後に resolved 化した
 
-#### ItemForm テスト失敗の issue 化見送り
+#### BE テストをマージ後に実施
 
-- 真因はローカルマシンの入力速度 × デフォルト testTimeout。CI では通り実害がローカルノイズのみのため、issue 化せず session-log に記録のみ
+- ステップ1 で「BE テストは master マージ後に行う」とユーザー判断。reviewer/codex とも「テナント B 追加に件数アサーションの影響なし」を裏取り済みだったためリスク低。マージ後 BE full test 全 PASS で結果的に問題なし
 
-#### issue 109 案 4 採用の理由
+#### 本番反映は直接 SQL INSERT 方式
 
-- 業務モデル懸念（テナント B Admin 不在）を **Admin 1 名追加の最小変更**で解消しつつ、UAT 済み・AWS 本番投入済みの seed への変更をリグレッション最小に抑える
-- U3 以外の乖離は「seed が正・設計書が追従漏れ」なので、**設計書を seed に合わせて同期**（seed を正本とする）。approver-b / approver2 / 追加明細 / 添付を seed から削除する逆方向は SMK-104/105/037/038 が壊れるため非推奨
+- 本番 Docker イメージの seed が #157 前の旧版な可能性 → イメージ再ビルド + 再デプロイ（ダウンタイム・スコープ大）より、Admin B 1 名を直接 SQL で冪等追加する方が最小・安全。事前 RDS スナップショットでロールバック担保
+
+#### seed.go コメント修正は簡略 PR
+
+- コメントのみ・修正文言は codex/reviewer 指摘で確定済み → チケット/reviewer/codex/テストを省略した簡略 PR（README 用語統一 PR #156 と同じ運用）
 
 ### 起票 issue
 
@@ -81,13 +96,17 @@
 
 | リポジトリ | コミット / PR | 内容 | push |
 |---|---|---|---|
-| expense-saas | PR #156 → `ebc3f50` | README リポジトリ構成セクションの用語統一 | 済（マージ） |
-| root-project | `635f27d` | README リポジトリ構成表のヘッダ用語統一 | 済 |
-| dev-journal | `a5623c5` | ops-108 / ops-110 を resolved へ移動 + progress.md | 済 |
+| expense-saas | PR #157 → `2ae2f5c` | テナント B に Admin B 追加（seed.go / fixture.go / README） | 済（マージ） |
+| expense-saas | PR #158 → `b6fdaa6` | seed.go コメントを実態同期（§4.2〜4.6 / 添付復元説明） | 済（マージ） |
+| dev-journal | `e1f29b5` | test_strategy.md §4 を seed に同期 | 済 |
+| dev-journal | `dbaf6ef` | codex 指摘 125/126 修正 | 済 |
+| dev-journal | `7932fd5` | issue 109 / 指摘 125/126 を resolved 化 + progress.md | 済 |
 
 ### AWS リソース変更
 
-なし
+- 本番 RDS（`expense-saas-portfolio-db` / ap-northeast-1 / アカウント 832106934606）に **Admin B（test-admin-b@example.com / テナント B / role=admin）を 1 行追加**（user + membership）。冪等 INSERT のみ・既存データ不変
+- RDS スナップショット **`expense-saas-pre-admin-b-20260601-165039`** を作業前に取得（available）
+- 本番識別子メモ: RDS = `expense-saas-portfolio-db` / EC2 = `i-051ca0c9129854b10`（`expense-saas-portfolio-app`）
 
 ### 公開 URL（変更なし）
 
@@ -96,4 +115,4 @@
 
 ## 前回セッションのアーカイブ
 
-`dev-journal/archives/session-logs/2026-05-30.md`（2026-05-30〜31: ポートフォリオ用 README を 4 リポジトリ整備、ops-108 案 A で 4 リポジトリ public 化、author email 統一・絶対 URL 化、キャリア相談）
+`dev-journal/archives/session-logs/2026-06-01.md`（2026-06-01 13:02: ops-108/110 resolved 化・用語統一、issue 109 案 4 方針決定）
