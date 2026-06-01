@@ -18,7 +18,9 @@ post-MVP（ポートフォリオ公開準備）
 ## ブロッカー
 なし
 
-## 採用方針（2026-05-30 決定）
+## 採用方針（2026-05-30 決定 → 2026-05-31 案 A に変更）
+
+> **注記**: 当初は下記の案 C（ハイブリッド monorepo）を採用したが、構築途中で「コミット履歴が残らない」「統合版は不要」という判断から **案 A（4 リポジトリ別公開・絶対 URL 参照）に変更**した。最終的な対応は末尾の「解決内容」を参照。
 
 **案 C: 開発は 4 リポジトリ構成を維持、公開用は別途 monorepo として作成（ハイブリッド）**
 
@@ -80,7 +82,44 @@ post-MVP（ポートフォリオ公開準備）
 ---
 
 ## 解決内容
-<!-- pending-review へ移動する前に記入 -->
+
+**案 A（4 リポジトリをそれぞれ public 公開し、絶対 URL で相互参照）を採用**して解決した。
+
+### 案 C → 案 A への変更経緯（2026-05-31）
+
+案 C（公開用 monorepo）で一度 `expense-saas-portfolio` リポジトリを private push まで進めたが、ユーザーから「コミット履歴がないのは良くない」「統合版は不要」との指摘を受け、以下の観点から案 A に方針変更した。
+
+- コミット履歴（215 commit の開発プロセス）こそポートフォリオの訴求点
+- 採用担当者の AI 警戒に対し、リポジトリ分離 + 履歴で「人間が設計判断した」ことを示せる
+- pinned 4 リポジトリの実績量感
+
+### 案 A の実装内容
+
+1. **author email 統一**: `git filter-repo` で 215 commit（root-project 56 / expense-saas 147 / dev-journal 12）の author email を `atsuro128@users.noreply.github.com` に書き換え（個人メアド露出を排除）
+2. **README の絶対 URL 化**: 各 README の `../other-repo/...` 相対参照を `https://github.com/atsuro128/{repo}/blob|tree/master/{path}` に置換
+3. **4 リポジトリを public 化 + description 更新**: root-project / expense-saas / dev-journal / ai-dev-framework
+4. **バックアップ**: `.author-fix-backup/` に 3 リポジトリの mirror clone を保持
+
+### 用語統一（2026-06-01 完了）
+
+issue 本文の残課題「リポジトリ / ディレクトリ用語の混在」を解消した。
+
+- 実態は「外部の 4 開発単位 = リポジトリ」「各リポジトリ内部の構成 = ディレクトリ」の使い分けに概ね収束しており、ai-dev-framework / dev-journal は整合済みだった
+- 不整合は root-project / expense-saas の「構成」セクションで見出し（リポジトリ）と表ヘッダ（ディレクトリ）が食い違う 2 箇所のみ
+- 両 README の該当箇所を「リポジトリ」に統一（root-project: master 直コミット `635f27d` / expense-saas: PR #156 マージ `ebc3f50`）
+
+### 公開済み 4 リポジトリ（PUBLIC）
+
+| リポジトリ | URL |
+|---|---|
+| root-project | https://github.com/atsuro128/root-project |
+| expense-saas | https://github.com/atsuro128/expense-saas |
+| dev-journal | https://github.com/atsuro128/dev-journal |
+| ai-dev-framework | https://github.com/atsuro128/ai-dev-framework |
+
+### 残務（issue スコープ外）
+
+- 案 C の残骸 `expense-saas-portfolio`（PRIVATE）は、delete_repo スコープを Claude に渡さない判断によりユーザーが GitHub UI で手動削除する
 
 ## 解決日
-<!-- YYYY-MM-DD -->
+2026-05-31（公開・絶対 URL 化）/ 2026-06-01（用語統一・状態遷移）

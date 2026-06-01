@@ -69,7 +69,25 @@ post-MVP（運用フレームワーク整備）
 ---
 
 ## 解決内容
-<!-- pending-review へ移動する前に記入 -->
+
+`ops-writer` サブエージェントに委譲し、`ai-dev-framework/operations/` 配下の旧エージェント名を現行 8 体構成（architect / designer / backend-developer / frontend-developer / test-implementer / platform-builder / ops-writer / reviewer）に一括書き換えた。
+
+### 対応詳細
+
+- **subagent-design.md**: 旧 15 体構成の記述を全面再構成。章立ても現行 8 体に合わせた（174 行）
+- **subagent-workflow.md**: 旧名（basic-designer / design-unit-reviewer 等）を現行名に置換（23 箇所）
+- **branch-strategy.md**: 旧エージェント名の言及 1 箇所を修正
+- **README**: 「実行要素（agents / skills / hooks）は root-project/.claude/ に配置」の 1 文を追加
+- 旧エージェント名 63 箇所 → **0 箇所**（grep で残存ゼロを確認。2026-06-01 の再確認でも `No matches found`）
+
+### 検討した論点（ユーザー判断で「気にしないで進める」）
+
+- `designer` の test-designer 兼務の直感性
+- `reviewer` 種別省略時の挙動
+
+### コミット
+
+- ai-dev-framework: README 新規 + operations 旧エージェント名を 8 体に書き換え（filter-repo による hash 書き換えのため、現在の GitHub 上の hash は当時と異なる可能性あり）
 
 ## 解決日
-<!-- YYYY-MM-DD -->
+2026-05-31（実体対応）/ 2026-06-01（状態遷移）
