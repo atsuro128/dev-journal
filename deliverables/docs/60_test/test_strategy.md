@@ -158,7 +158,9 @@
 
 ### 4.2 ユーザー構成
 
-#### テナントAのユーザー（4ロール）
+#### テナントAのユーザー（4ロール / 6ユーザー）
+
+ロールは Admin・Approver・Member・Accounting の 4 種類。Member は明細あり用・明細なし用の 2 名、Approver は SMK-105（同テナント内の別 Approver 検証）用に第二 Approver を加えた 2 名で、合計 6 ユーザー。
 
 | ロール | ユーザー名 | メールアドレス | ユーザーID | テスト用パスワード |
 |--------|----------|--------------|-----------|-----------------|
@@ -167,37 +169,57 @@
 | Member | Test Member | `test-member@example.com` | `aaaaaaaa-3333-3333-3333-000000000003` | `TestPass1!` |
 | Accounting | Test Accounting | `test-accounting@example.com` | `aaaaaaaa-4444-4444-4444-000000000004` | `TestPass1!` |
 | Member | Test Member Empty | `test-member-empty@example.com` | `aaaaaaaa-3333-3333-3333-000000000004` | `TestPass1!` |
+| Approver | Test Approver Two | `test-approver2@example.com` | `aaaaaaaa-2222-2222-2222-000000000023` | `TestPass1!` |
+
+**Test Approver Two の用途**: SMK-105（同テナント内の別 Approver が処理したレポートの検証）用の第二 Approver。後述の `report_approved_by_approver2`（`cccccccc-9999-9999-9999-000000000099`）を承認した状態で投入される。
 
 #### テナントBのユーザー（クロステナント検証用）
 
 | ロール | ユーザー名 | メールアドレス | ユーザーID | テスト用パスワード |
 |--------|----------|--------------|-----------|-----------------|
 | Member | Test Member B | `test-member-b@example.com` | `bbbbbbbb-3333-3333-3333-000000000003` | `TestPass1!` |
+| Approver | Test Approver B | `test-approver-b@example.com` | `bbbbbbbb-2222-2222-2222-000000000022` | `TestPass1!` |
+| Admin | Test Admin B | `test-admin-b@example.com` | `bbbbbbbb-1111-1111-1111-000000000011` | `TestPass1!` |
+
+**Test Approver B の用途**: SMK-104 用。テナント B 側で承認済みレポート（`report_tenant_b_approved`）の承認者として機能する。
+**Test Admin B の用途**: issue-109 ステップ1 で業務モデル整合のため追加。テナント B にも Admin を置き、クロステナント検証時の権限境界を実態に合わせる。
+**注記**: テナント B はクロステナント検証用のため Accounting を置かない（支払処理ロールはテナント A 側でのみ検証する）。
 
 **注意**: テストデータには本物のパスワードを含めない。`TestPass1!` はテスト専用の仮パスワードである。
 
 ### 4.3 経費レポートのフィクスチャ（テナントA所属、作成者: Test Member）
 
-合計 8 件。issue-087 対応で月別ダッシュボード集計を観察可能にするため、paid を直近 3 ヶ月に分散。
+合計 9 件。issue-087 対応で月別ダッシュボード集計を観察可能にするため、paid を直近 3 ヶ月に分散。`report_approved_by_approver2` は SMK-105（同テナント内の別 Approver が処理したレポートの検証）用。
 
 | フィクスチャ名 | 状態 | レポートID | タイトル | 補足 |
 |-------------|------|----------|---------|------|
 | `report_draft` | `draft` | `cccccccc-0001-0001-0001-000000000001` | テスト下書きレポート | 明細1件あり |
 | `report_draft_empty` | `draft` | `cccccccc-0001-0001-0001-000000000002` | テスト下書き（明細なし） | 提出不可テスト用 |
-| `report_submitted` | `submitted` | `cccccccc-0002-0002-0002-000000000002` | テスト提出済みレポート | 承認・却下テスト用 |
-| `report_approved` | `approved` | `cccccccc-0003-0003-0003-000000000003` | テスト承認済みレポート | 支払完了テスト用 |
-| `report_rejected` | `rejected` | `cccccccc-0004-0004-0004-000000000004` | テスト却下レポート | 再申請テスト用 |
-| `report_paid`（前月） | `paid` | `cccccccc-0005-0005-0005-000000000005` | テスト支払済みレポート（前月） | 終端状態テスト用・period は直近3ヶ月の前月 |
-| `report_paid_prev2`（前々月） | `paid` | `dddddddd-0002-0002-0002-000000000001` | テスト支払済みレポート（前々月） | issue-087: 月別集計分散用 |
-| `report_paid_cur`（当月） | `paid` | `dddddddd-0003-0003-0003-000000000001` | テスト支払済みレポート（当月） | issue-087: 月別集計分散用 |
+| `report_submitted` | `submitted` | `cccccccc-0002-0002-0002-000000000002` | テスト提出済みレポート | 承認・却下テスト用・明細1件あり・添付1件あり |
+| `report_approved` | `approved` | `cccccccc-0003-0003-0003-000000000003` | テスト承認済みレポート | 支払完了テスト用・明細1件あり・承認者: Test Approver |
+| `report_rejected` | `rejected` | `cccccccc-0004-0004-0004-000000000004` | テスト却下レポート | 再申請テスト用・明細1件あり・却下者: Test Approver |
+| `report_paid`（前月） | `paid` | `cccccccc-0005-0005-0005-000000000005` | テスト支払済みレポート（前月） | 終端状態テスト用・period は直近3ヶ月の前月・明細1件あり・支払者: Test Accounting |
+| `report_paid_prev2`（前々月） | `paid` | `dddddddd-0002-0002-0002-000000000001` | テスト支払済みレポート（前々月） | issue-087: 月別集計分散用・明細1件あり・支払者: Test Accounting |
+| `report_paid_cur`（当月） | `paid` | `dddddddd-0003-0003-0003-000000000001` | テスト支払済みレポート（当月） | issue-087: 月別集計分散用・明細1件あり・支払者: Test Accounting |
+| `report_approved_by_approver2` | `approved` | `cccccccc-9999-9999-9999-000000000099` | テスト承認済みレポート（第二Approver処理） | SMK-105 用・承認者: Test Approver Two |
 
-`paid` レポート 3 件の `period_start`/`period_end` は `seed.Run()` 呼び出し時の `time.Now()` を基準に動的生成される（当月・前月・前々月の月初〜月末）。固定日付ではないため、時間経過で集計範囲が変わらない。
+`paid` レポート 3 件の `period_start`/`period_end` は `seed.Run()` 呼び出し時の `time.Now()` を基準に動的生成される（当月・前月・前々月の月初〜月末）。固定日付ではないため、時間経過で集計範囲が変わらない。`report_approved_by_approver2` の `period_start`/`period_end` は他の固定レポートと同じく 2026-03-01〜2026-03-31。
 
-**report_draft の明細**:
+**経費明細（expense_items）**:
 
-| 明細ID | 金額 | カテゴリ | 支出日 |
-|--------|------|---------|--------|
-| `dddddddd-0001-0001-0001-000000000001` | 1000 | `transportation` | 2026-03-01 |
+`report_draft` / `report_submitted` / `report_approved` / `report_rejected` および paid 3 件にそれぞれ明細 1 件を投入する。各レポートの `total_amount` は明細金額に合わせて更新される。`report_draft_empty` と `report_approved_by_approver2` には明細を投入しない。
+
+| 明細ID | 紐付くレポート | 金額 | カテゴリ | 支出日 | 摘要 |
+|--------|--------------|------|---------|--------|------|
+| `dddddddd-0001-0001-0001-000000000001` | `report_draft` | 1000 | `transportation` | 2026-03-01 | テスト交通費 |
+| `dddddddd-0002-0002-0002-000000000002` | `report_submitted` | 2000 | `transportation` | 2026-03-01 | テスト交通費（提出済み） |
+| `eeeeeeee-0002-0002-0002-000000000001` | `report_approved` | 3000 | `transportation` | 2026-03-10 | テスト交通費（承認済み） |
+| `eeeeeeee-0003-0003-0003-000000000001` | `report_rejected` | 1500 | `transportation` | 2026-03-10 | テスト交通費（却下） |
+| `eeeeeeee-0006-0006-0006-000000000001` | `report_paid`（前月） | 5000 | `transportation` | 前月10日（動的） | テスト交通費（支払済み・前月） |
+| `eeeeeeee-0004-0004-0004-000000000001` | `report_paid_prev2`（前々月） | 4000 | `transportation` | 前々月10日（動的） | テスト交通費（支払済み・前々月） |
+| `eeeeeeee-0005-0005-0005-000000000001` | `report_paid_cur`（当月） | 6000 | `transportation` | 当月10日（動的） | テスト交通費（支払済み・当月） |
+
+paid レポートの支出日は `seed.Run()` 呼び出し時の `time.Now()` を基準に各月の 10 日へ動的設定される。
 
 ### 4.4 カテゴリのフィクスチャ
 
@@ -214,13 +236,28 @@
 
 ### 4.5 テナントBのレポートフィクスチャ（クロステナント検証用）
 
-| フィクスチャ名 | 状態 | レポートID | テナント | 用途 |
-|-------------|------|----------|--------|------|
-| `report_tenant_b_draft` | `draft` | `eeeeeeee-0001-0001-0001-000000000001` | テナントB | テナント分離テスト用（読み取り操作） |
-| `report_tenant_b_submitted` | `submitted` | `eeeeeeee-0002-0002-0002-000000000002` | テナントB | テナント分離テスト用（承認操作） |
-| `report_tenant_b_approved` | `approved` | `eeeeeeee-0003-0003-0003-000000000003` | テナントB | テナント分離テスト用（支払操作） |
+作成者はいずれも Test Member B（`bbbbbbbb-3333-3333-3333-000000000003`）。
+
+| フィクスチャ名 | 状態 | レポートID | テナント | 提出者 | 承認者 | 用途 |
+|-------------|------|----------|--------|--------|--------|------|
+| `report_tenant_b_draft` | `draft` | `eeeeeeee-0001-0001-0001-000000000001` | テナントB | — | — | テナント分離テスト用（読み取り操作） |
+| `report_tenant_b_submitted` | `submitted` | `eeeeeeee-0002-0002-0002-000000000002` | テナントB | Test Member B | — | テナント分離テスト用（承認操作） |
+| `report_tenant_b_approved` | `approved` | `eeeeeeee-0003-0003-0003-000000000003` | テナントB | Test Member B | Test Approver B | テナント分離テスト用（支払操作）・SMK-104 用 |
+
+`report_tenant_b_approved` は SMK-104 用に Test Approver B（`bbbbbbbb-2222-2222-2222-000000000022`）が承認した状態で投入される。既存環境で `approved_by` / `approved_at` が NULL のまま残るケースに備え、INSERT 後に補完 UPDATE で承認者・承認時刻を冪等に補完する。これらテナント B レポートは明細を投入しないため `total_amount` は 0 のまま。
 
 **用途**: テナントAのユーザーがテナントBのレポートにアクセスしようとしたとき、404 が返ることを検証する。
+
+### 4.6 添付ファイルのフィクスチャ
+
+`attachments` テーブルに 2 件投入する。いずれもテナント A 所属で、`s3_key` は `files.md` §2.2 の形式 `{tenant_id}/{report_id}/{attachment_id}` に従う。`mime_type` は `image/jpeg`、ファイル名は `receipt_sample.jpg`。テスト環境（`testutil.SeedFixtures`）では S3 クライアントに nil を渡すため DB レコードのみ投入し、MinIO への実ファイルアップロードはスキップする（seed CLI 実行時はダミー JPEG をアップロードする）。
+
+| 添付ID | 紐付くレポート | 紐付く明細 | file_size | 用途 |
+|--------|--------------|-----------|-----------|------|
+| `ffffffff-0001-0001-0001-000000000001` | `report_submitted`（`cccccccc-0002-...`） | `report_submitted` の明細（`dddddddd-0002-...`） | 埋め込みダミー JPEG の実バイト長 | SMK-037（ダウンロード起動確認）用 |
+| `ffffffff-0002-0002-0002-000000000002` | `report_draft`（`cccccccc-0001-...0001`） | `report_draft` の明細（`dddddddd-0001-...`） | 1024 | SMK-038（削除確認）用 |
+
+`s3_key` は前者が `{TenantAID}/{ReportSubmittedID}/{AttachmentSubmittedID}`、後者が `{TenantAID}/{ReportDraftID}/{AttachmentDraftID}`。SMK-038 で削除した後も seed 再実行で削除前状態を復元できる（`ON CONFLICT DO NOTHING` による冪等投入）。
 
 ---
 
@@ -685,3 +722,4 @@ test('申請→承認→支払完了フロー', async ({ page, browser }) => {
 | 版 | 日付 | 変更内容 |
 |----|------|---------|
 | 1.0 | 2026-03-23 | 初版作成 |
+| 1.1 | 2026-06-01 | §4 フィクスチャ定義を seed.go 実装に同期（テナントA 第二Approver・テナントB Admin/Approver 追記、レポート9件・明細7件化、テナントB承認者明記、§4.6 添付フィクスチャ新設）。issue-109 |
