@@ -1,118 +1,38 @@
 # 引き継ぎメモ
 
-## セッション: 2026-05-30 〜 2026-05-31
+## セッション: 2026-06-01 13:02
 
 ### ゴール
 
-「次の作業は？」から /session-start でポートフォリオ用ドキュメント整備を選択。**Phase 1〜4 の README 整備 + 各 Phase の codex / ユーザーレビュー対応を完走し、4 リポジトリにコミット完了**。
+「次の作業は？」から /session-start。前回の残作業から **A+B 後始末（ops-110 / ops-108 の状態遷移）→ C（issue 109 seed 整合化）** の順で進めることを合意。
 
 ### 作業ログ
 
-#### Phase 0: 棚卸し
+#### Phase 1: A+B 後始末（ops-110 / ops-108 状態遷移）— 完了
 
-- 4 リポジトリの既存 README 状況を確認: `expense-saas/README.md` のみ存在、他 3 リポジトリは未作成
-- 既存 README は「ローカル開発者向け」中心で、ポートフォリオ要素（公開デモ URL / アーキ図 / 訴求点 / プロセス導線）が欠落
-- 用語集（`01_glossary.md`）/ ゴール（`00_goals.md`）/ スコープ（`02_scope.md`）/ アーキ（`30_arch/architecture.md`, `diagrams.md`）/ ADR 一覧（7 件）を確認
+- **ops-108 残課題「リポジトリ/ディレクトリ用語統一」の現状確認**: 4 README を grep → 実態は「外部の 4 開発単位 = リポジトリ」「各リポジトリ内部の構成 = ディレクトリ」の使い分けに概ね収束。ai-dev-framework / dev-journal は整合済み。不整合は **root-project / expense-saas の「構成」セクションで見出し（リポジトリ）と表ヘッダ（ディレクトリ）が食い違う 2 箇所のみ**
+- **用語統一の修正**:
+  - root-project/README.md: 表ヘッダを「リポジトリ」に修正 → master 直コミット `635f27d`
+  - expense-saas/README.md: 本文 + 表ヘッダを「リポジトリ」に修正 → **簡略 PR**（チケット/reviewer/codex 省略、ブランチ→PR #156→/test→マージ）で `ebc3f50` マージ
+- **FE テスト（PR #156）の失敗調査**: README のみ差分だが /test の FE のみ実行 → `ItemForm.test.tsx` 4 件失敗。flaky と早合点せず単独再実行 → 同じ 4 件再現 → `testTimeout=20000` で全 44 件 PASS。**真因 = デフォルト 5000ms 超過（摘要 500/501 文字の `userEvent.type` 入力がこのローカルで約 7 秒）**。本 PR とコード同一で無関係・環境起因と確定。ユーザー判断で issue 化はしない（CI では通る・ローカルノイズのみ）
+- **ops-110 状態遷移**: 旧エージェント名残存ゼロを grep 再確認（`No matches`）→ 解決内容記入 → `issues/resolved/` へ移動
+- **ops-108 状態遷移**: 本文を案 C → 案 A 変更の経緯 + 解決内容（public 化・author email 統一・絶対 URL 化・用語統一）で更新 → `issues/resolved/` へ移動
+- **progress.md 更新**: 残存 issue（運用・基盤系）テーブルから ops-108 / ops-110 を削除
+- **コミット・push**: dev-journal `a5623c5`（issue 2 件 resolved 移動 + progress.md）、root-project `635f27d` / dev-journal `a5623c5` を public に push（expense-saas は PR #156 マージで反映済み）
 
-#### Phase 1: expense-saas/README.md 全面書き直し
+#### Phase 2: C（issue 109 seed 整合化）— 調査・方針決定まで完了、実装は次セッション
 
-- 採用担当者向けに以下を追加: 公開デモ URL / テストアカウント 8 件 / 技術スタック（選定理由 + ADR リンク）/ 主要機能 / アーキテクチャ図（Mermaid、diagrams.md §1 を簡略転載）/ 技術的ハイライト（テナント分離・状態遷移・ADR）/ 開発プロセス（Step 1-11 + dev-journal 導線）
-- AI 駆動開発の押し出しは控えめ（「計画駆動 + AI は実装の労力削減」）
-- ローカル開発手順は後半に保持
-- ユーザー指摘で能動動詞リライトを試みたが「変えすぎ・選択範囲外を編集」と指摘されて全部元に戻した
-- パスワード行はテストアカウント側に移動
-
-#### Phase 1 派生対応
-
-- **MinIO コンソール（9001）撤去**: README からアクセス先表の MinIO コンソール行を削除 + docker-compose.yml の `ports: 9001:9001` / `--console-address ":9001"` を削除 + `MINIO_BROWSER=off` 追加
-- 経緯調査で「MinIO コンソール URL を README に書く判断は当時の AI（私）が自発的にチケット化した可能性が高い」と判明（ユーザーの明示承認の記録なし）。「使った覚えがない」というユーザーの直感は正しかった
-- **テストアカウント表のテナント B Admin 不在問題**: ユーザー指摘で発覚 → seed.go と `test_strategy.md §4.2` の乖離調査を含めて issue 109 起票
-
-#### Phase 2: root-project/README.md 新規作成
-
-- 薄めの導線役（4 ディレクトリ構成 + 関心別の入口表）
-- ユーザー指摘: 「リポジトリ」「ディレクトリ」用語混在 → ops-108（公開戦略未決 issue）に「用語統一も同時対応」を追記し、公開戦略決定時に 4 README 一括書き換え
-
-#### Phase 3: ai-dev-framework/README.md 新規作成
-
-- フレームワーク紹介 + 役割別 8 エージェント + 適用事例（expense-saas）への導線
-- ユーザー指摘で `operations/subagent-design.md`（174 行、旧 15 体構成）/ `operations/subagent-workflow.md`（261 行、旧名混在）の現行化が必要と判明
-- ops-110 起票 + ops-writer サブエージェントに委譲して現行 8 体に一括書き換え（旧エージェント名 63 箇所 → 0 箇所、grep で残存ゼロ確認済み）
-- README に「実行要素（agents / skills / hooks）は root-project/.claude/ に配置」の 1 文を追加
-- ops-writer 提示の論点 2 件（designer の test-designer 兼務直感性 / reviewer 種別省略時の挙動）はユーザー判断で「気にしないで進める」
-
-#### Phase 4: dev-journal/README.md 新規作成
-
-- 開発プロセス記録ガイド + 状態フロー（open / pending-review / resolved）+ 関心別の入口
-- ユーザー指摘 3 件（issue skills の相対パス修正 / review-findings の状態フロー追記 / deliverables/docs の説明拡張）に対応
-
-#### コミット（4 リポジトリ、push なし）
-
-| リポジトリ | コミット | 内容 |
-|---|---|---|
-| root-project | `c7a13d0` | README 新規（エントリポイント） |
-| expense-saas | `5ad4326` | README 全面書き直し + MinIO コンソール撤去 |
-| dev-journal | `7c63972` | README 新規 + issue 3 件起票 |
-| ai-dev-framework | `07270b8` | README 新規 + operations 旧エージェント名を 8 体に書き換え |
-
-#### Phase 5: ops-108 案 C 採用 → 案 A 変更 → 4 リポジトリ public 化（2026-05-31）
-
-キャリア相談から派生して、ポートフォリオの GitHub 公開に着手。当初案 C（monorepo）で進めたが、コミット履歴の重要性に気付いて案 A（4 リポジトリ別公開）に方針変更:
-
-##### 案 C 試行（途中で破棄）
-
-1. **ops-108 を案 C 採用で更新**: 開発は 4 リポジトリ維持、公開用は別途 monorepo
-2. **公開精査**: dev-journal / .claude / expense-saas のセンシティブ情報を特定（個人メアド 1 ファイル / Windows ホストパス 2 ファイル）
-3. **monorepo 構築**: `.portfolio-build/expense-saas-portfolio/` に git archive で集約、Python で抽象化置換、12 MB / 1,142 ファイル
-4. **GitHub に private で push**: `expense-saas-portfolio` リポジトリ作成
-5. **サブ .gitignore を root に統合**: monorepo として整える
-
-##### 案 A 変更の経緯
-
-ユーザーから「**コミット履歴がないのちょっと良くない**」「**統合版不要説**」の指摘 → 履歴の重要性 + 採用担当者の AI 警戒 + pinned 4 つの実績量感の観点から、案 A（4 リポジトリ別公開）に方針変更。
-
-##### 案 A 実装
-
-1. **commit message 精査**: 4 リポジトリ全 commit を grep → message 本文には機密ゼロ、author email のみ問題
-2. **author email 統一**: `git filter-repo --email-callback` で 215 commit（root-project: 56 / expense-saas: 147 / dev-journal: 12）を `atsuro-1997@outlook.jp` → `atsuro128@users.noreply.github.com` に書き換え。ai-dev-framework は元クリーン
-3. **バックアップ**: `.author-fix-backup/` に 3 リポジトリ mirror clone（万一の復旧用）
-4. **README の絶対 URL 化**: Python script で `../other-repo/...` を `https://github.com/atsuro128/{repo}/blob|tree/master/{path}` に置換（ディレクトリは tree/、ファイルは blob/）
-5. **既存 5 リポジトリ判明**: 全 private で過去 push 済み（atsuro128 配下）。expense-saas は description が「Rust (Actix Web)」と古い誤り
-6. **4 リポジトリへ force push + public 化 + description 更新**: ai-dev-framework / dev-journal / expense-saas / root-project
-7. **`.portfolio-build/` ローカル削除**: 不要になった monorepo ビルド成果物を破棄
-
-##### 公開済み 4 リポジトリ（PUBLIC）
-
-| リポジトリ | URL |
-|---|---|
-| root-project | https://github.com/atsuro128/root-project |
-| expense-saas | https://github.com/atsuro128/expense-saas |
-| dev-journal | https://github.com/atsuro128/dev-journal |
-| ai-dev-framework | https://github.com/atsuro128/ai-dev-framework |
-
-##### 残作業
-
-- expense-saas-portfolio（PRIVATE、案 C の残骸）を **ユーザーが手動削除**（GitHub UI 経由、delete_repo スコープを Claude に渡さない判断）
-
-##### 注意
-
-filter-repo で全 commit hash が変わったため、session-log や archives 内で過去引用していた commit hash 参照（例: `c7a13d0`）は現在の GitHub 上では存在しない。記録としての commit message subject は git log で読めるが、hash 直リンクは断片的に切れる（受容済み）。
-
-#### キャリア相談（2026-05-30 終盤）
-
-- 「やりたいことがない」「給料が上がっても忙しくなったら意味ない」「自己肯定感が低い」「ポートフォリオは AI が作ったもの」「文系・学歴低い」「技術選定間違えた」等の不安を整理
-- 客観的事実で反論: 設計判断・品質判断はユーザーがやっている / 28 歳 SES 5 年で「経験者採用」枠 / Web 系自社開発では学歴問われない / AI 駆動開発実証は新しい知識として評価される
-- 年収相場提示: 正社員 550〜900 万、フリーランス 840〜1200 万、ただし老後安定はフリーランス不利
-- 「忙しくない × 老後安定」軸の企業候補提示: Tier 1（kubell / ヌーラボ / クラスメソッド / ラクス / カオナビ）/ Tier 2（マネーフォワード / SmartHR / LayerX 等）
-- 行動への提案: Findy 登録 + エージェント 1 社カジュアル面談 + Tier 1 で市場感を掴む
+- **architect で乖離調査**: seed.go 全フィクスチャ × test_strategy.md §4.2〜§4.5 を突合。**seed.go に誤った値は 1 件もなく、乖離はすべて「seed が先行追加 + 設計書の追従漏れ」**（U1 approver2 / U2 approver-b / RA2 approver2 承認レポート / I2 明細追加分 / RB2 テナント B 承認者 / AT1・AT2 添付フィクスチャ章なし）+ **テナント B Admin 不在（U3）が唯一の業務モデル不整合**。案 1〜4 を提示、案 4 推奨
+- **reviewer で独立検証**: 結論を実ファイルで裏付け（PASS 相当）。FIX 指摘は実装精度の軽微補足 2 点のみ（① architect の `tenant_handler_test.go:193`「6 固定」説明が不正確 = 実体は「6 = 既存 5 + approver2」で approver2 は既にアサート前提に組込済み。結論の PASS は正しい ② §4.2 見出し「4ロール」だが表は 5 行 = 設計書同期時に同時修正）
+- **ユーザー判断: 案 4 採用** = テナント B に Admin のみ追加（Accounting は置かず「クロステナント検証用」と注記）+ U3 以外の全乖離は設計書を seed に合わせて同期
+- **実装計画合意**: ステップ 1（expense-saas: seed.go に Admin B 追加 + README 更新、PR フロー）→ ステップ 2（dev-journal: test_strategy.md 同期、設計成果物フロー）の**順次**
 
 ### 未完了
 
-- ops-110（operations 現行化）の issue ファイルが open のまま。同セッション中に実体は対応完了済み。次セッションで「解決内容」を追記して pending-review or resolved へ移動するべき
-- ops-108（公開戦略）は **案 C → 案 A に方針変更、案 A で 4 リポジトリ public 化完了**。次セッションで issue ファイルを最終形に更新し pending-review or resolved へ移動
-- 109（seed 整合化）は未着手のまま open
-- **expense-saas-portfolio（案 C の残骸、PRIVATE）はユーザーが GitHub UI で手動削除する**
-- ポートフォリオ公開後の応募活動（Findy 登録 / カジュアル面談）はユーザー側で実施
+- **issue 109 ステップ 1 実装（最優先）**: expense-saas に Admin B を追加 + README テストアカウント表更新。調査・方針（案 4）・実装計画は確定済み。実装着手は次セッション
+- **issue 109 ステップ 2**: test_strategy.md §4.2〜§4.5 / §4 を seed 最終形に同期
+- **issue 109 AWS 本番反映**: テナント B に Admin 追加後、公開デモの本番 seed に反映するか別途判断
+- **expense-saas-portfolio 削除（前回から継続）**: 案 C の残骸（PRIVATE）をユーザーが GitHub UI で手動削除
 
 ### ブロッカー
 
@@ -122,90 +42,58 @@ filter-repo で全 commit hash が変わったため、session-log や archives 
 
 優先順位:
 
-1. **expense-saas-portfolio 削除**: ユーザーが GitHub UI で手動削除（Danger Zone → Delete this repository）
-2. **応募活動着手**: Findy 登録（GitHub 連携でスキル可視化）+ Tier 1 企業（kubell / ヌーラボ / クラスメソッド / ラクス / カオナビ）でカジュアル面談 1 本入れる
-3. **公開済み 4 リポジトリの GitHub UI 確認**: README の見栄え・リンク切れ・タイポ等を目視
-4. **ops-108 / ops-110 の状態遷移**: 実体対応済みなので、解決内容を追記して pending-review or resolved へ移動
-5. **seed 整合化（issue 109）の対応**: seed.go と test_strategy.md §4.2 の突合 + 業務的妥当性（テナント B Admin 不在問題）の決定 + 関連テスト影響確認
-6. **公開デモの稼働継続 / 終了判断**: AWS リソース費用（EC2 t3.micro / RDS / CloudFront）が継続発生
+1. **issue 109 ステップ 1 実装**: `/implement` で expense-saas に **Admin B を追加**（案 4）
+   - Admin B 仕様（既存パターン準拠で確定予定）: email `test-admin-b@example.com` / UUID `bbbbbbbb-1111-...` 系 / RoleAdmin
+   - ブランチ `fix/109-seed-tenant-b-admin`
+   - 対象: `internal/seed/seed.go`（UUID 定数 + user + membership、冪等性維持）+ `internal/testutil/fixture.go`（再エクスポート慣例があれば）+ `README.md`（テストアカウント表に Admin B 行 + テナント B は「クロステナント検証用で Accounting なし」注記）
+   - **テナント A 側は触らない**（approver2 等は変更しない）。テナント B のみ変更なので `tenant_handler_test.go:193` の `!= 6`（テナント A 6 名固定）や E2E には影響しない。`TestSeed_ReportTenantBApproved_BackfillExistingRow` は approver-b を残すので PASS
+   - PR フロー（/test → reviewer → codex → マージ）
+2. **issue 109 ステップ 2**: ステップ 1 マージ後、test_strategy.md を同期（§4.2 にテナント B Admin / approver-b / approver2 追記・見出し「4ロール」修正、§4.3 を 8→9 件 + 明細追加分反映、§4.5 に承認者列追記、§4 に添付フィクスチャ章新設）
+3. **AWS 本番 seed 反映判断**
+4. （継続）expense-saas-portfolio 手動削除 / 応募活動 / 公開デモ稼働継続判断
 
 ### 学び・気づき
 
-- **「他人事文体」指摘 + 範囲超え修正の連鎖**: README 初版が客観・第三者文体に流れていた → 能動動詞リライトを試みたが、ユーザーが指定した範囲を超えて 4 箇所を書き換え「変えすぎ・選択範囲外を編集」と指摘されて全部元に戻した。**ユーザー指摘の範囲を勝手に拡大しない**。「他にも該当する箇所があれば」と感じた場合は提案に留め、ユーザー承認を得てから着手する
-- **AI が独断で書き込んだ記述の特定（MinIO コンソール経緯）**: 「使った覚えがない記述」を git log / session-log で逆追跡し、当時の AI が自発的にチケット化した可能性が高いと判明。**ユーザー直感の「これ覚えがない」は重要なシグナル**。実害がなくても、AI が無断で混入させた可能性のある記述は撤去する判断もあり
-- **レビューファイル方式は不採用**: codex に `review-findings/open/` へ起票させる方式をユーザーが嫌い、自身で別途レビューする方式に切替。**ユーザーが直接書く形のレビューが好まれる場合は、codex の起票方式を強制しない**
-- **issue 起票 + 同セッション中対応の流れ（ops-110）**: 「issue 起票」「対応着手」「対応完了」を同セッション中で連続実施。issue ファイルが対応の追跡に役立つ
-- **ops-writer サブエージェント委譲の妥当性**: subagent-design.md の全面再構成（174 行）+ subagent-workflow.md の旧名置換（23 箇所）を ops-writer に委譲。指揮役の手作業より見落としリスクが低く、grep で残存ゼロを証明できる形で完了
-- **codex レビュー結果の使い分け**: codex 指摘 1 件（UAT パス数の事実誤認）は妥当 → 採用、指摘 2 件目（テストアカウント不整合）は既起票 issue 109 と重複なので統合判断。ユーザー方針で「review-findings ファイル」自体を生成しない方式に切替
+- **「無関係」と断じる前に再現・切り分けで裏取りする**: PR #156 の FE テスト 4 件失敗を当初「並行作業によるマシン負荷の flaky」と推測したが、単独再実行で同じ 4 件が再現し**仮説は誤りだった**。そこで止めず `testTimeout=20000` で再実行し、真因（デフォルト 5000ms 超過・摘要 500 文字入力が約 7 秒）まで特定。flaky 仮説の訂正をユーザーに明示し、根本原因を確定させてから判断した
+- **architect → reviewer → ユーザー判断の順序厳守（feedback_review_before_user_judgment）**: issue 109 の調査結果を指揮役が直接ユーザーに渡さず reviewer の独立検証を挟んだ。reviewer が architect の因果説明 1 箇所の誤りを捕捉（結論は不変だが記述は要訂正）。設計成果物をユーザー判断前にレビューに通す価値が出た
+- **docs 修正へのテストの当て方**: README 2 行修正に対し「テストの目的（コード検証）から実行不要」と一度判断を返したが、ユーザー指示で FE のみ実行 → 結果的に既存のローカルテスト不安定を検出できた。形式実行が無価値とは限らない
 
 ### 意思決定ログ
 
-#### Phase 構成の選び方
+#### 用語統一の expense-saas 修正フロー
 
-- 当初: Phase 1 完成後にユーザー確認 → Phase 2-4 を順次（薄い構成）
-- 切替: ユーザー判断で「複数 Phase を一気に作る」スコープ拡大 → 効率的に 4 Phase 完走
-- 結論: 各 README は薄い導線役、実体は他リポジトリに委譲する設計が読みやすい
+- docs 2 行修正にフル PR フロー（チケット→reviewer→codex）は過剰 → **簡略 PR**（ブランチ→PR→/test→ユーザー承認スカッシュマージ）で合意
 
-#### MinIO コンソール撤去の範囲
+#### ItemForm テスト失敗の issue 化見送り
 
-- 案 A: README 行削除のみ
-- 案 B: README + ports 削除のみ
-- 案 C: README + ports + `--console-address` + `MINIO_BROWSER=off`（推奨、採用）
-- 「半年後に何これ？となる」を回避するため、コンソール概念そのものを撤去
+- 真因はローカルマシンの入力速度 × デフォルト testTimeout。CI では通り実害がローカルノイズのみのため、issue 化せず session-log に記録のみ
 
-#### operations 現行化の担当
+#### issue 109 案 4 採用の理由
 
-- 指揮役（私）の手作業 vs ops-writer 委譲
-- 構造変更（旧 15 体 → 現行 8 体）を含む全面再構成のため、ops-writer 委譲で見落としリスク低減
-- 残存ゼロを grep で証明する完了条件を明示
+- 業務モデル懸念（テナント B Admin 不在）を **Admin 1 名追加の最小変更**で解消しつつ、UAT 済み・AWS 本番投入済みの seed への変更をリグレッション最小に抑える
+- U3 以外の乖離は「seed が正・設計書が追従漏れ」なので、**設計書を seed に合わせて同期**（seed を正本とする）。approver-b / approver2 / 追加明細 / 添付を seed から削除する逆方向は SMK-104/105/037/038 が壊れるため非推奨
 
-#### 公開戦略を決めない方針（ops-108）
+### 起票 issue
 
-- 4 リポジトリの GitHub 公開戦略（A/B/C/D）は今セッションで決めない
-- 「リポジトリ / ディレクトリ」用語統一も公開戦略決定後に一括対応
-- ops-108 に追記して忘れを防ぐ
-
-### 起票 issue（全て post-MVP）
-
-| ID | タイトル | カテゴリ | 状態 |
-|---|---|---|---|
-| ops-108 | ポートフォリオ用 GitHub 公開戦略の未決（dev-journal 相対リンクの整合性 + 用語統一） | project-management | open / 未着手 |
-| 109 | seed.go を業務的に妥当 + 設計書整合な状態に再整備 | testing | open / 未着手 |
-| ops-110 | ai-dev-framework/operations/ 配下の旧エージェント名を現行 8 体に現行化 | project-management | open（同セッション中に実体対応完了。次セッションで pending-review / resolved 判定） |
+なし（今セッション）
 
 ### PR / コミット要約
 
-push なし。各リポジトリの master ローカルコミットのみ。
-
-| リポジトリ | コミット | ファイル |
-|---|---|---|
-| root-project | `c7a13d0` | README.md（新規） |
-| expense-saas | `5ad4326` | README.md（書き換え）+ docker-compose.yml（MinIO コンソール撤去） |
-| dev-journal | `7c63972` | README.md（新規）+ issues/open/ops-108-*.md（新規）+ issues/open/109-*.md（新規）+ issues/open/ops-110-*.md（新規） |
-| ai-dev-framework | `07270b8` | README.md（新規）+ operations/subagent-design.md（全面再構成）+ operations/subagent-workflow.md（旧名置換） |
-
-### ポートフォリオ公開 monorepo（2026-05-31）
-
-| 項目 | 値 |
-|---|---|
-| URL | https://github.com/atsuro128/expense-saas-portfolio |
-| 公開状態 | **private**（GitHub UI 確認後にユーザーが public 化判断） |
-| ブランチ | main |
-| ファイル数 | 1,142 |
-| サイズ | 12 MB |
-| 構成 | expense-saas / dev-journal / ai-dev-framework / .claude / CLAUDE.md / AGENTS.md / 公開用 README |
-| ローカルビルド先 | `root-project/.portfolio-build/expense-saas-portfolio/`（.gitignore 済み） |
-| author | atsuro128 / atsuro128@users.noreply.github.com |
+| リポジトリ | コミット / PR | 内容 | push |
+|---|---|---|---|
+| expense-saas | PR #156 → `ebc3f50` | README リポジトリ構成セクションの用語統一 | 済（マージ） |
+| root-project | `635f27d` | README リポジトリ構成表のヘッダ用語統一 | 済 |
+| dev-journal | `a5623c5` | ops-108 / ops-110 を resolved へ移動 + progress.md | 済 |
 
 ### AWS リソース変更
 
-なし（読み取りなし、terraform apply 実行なし）
+なし
 
-### 公開 URL（前回セッションから変更なし）
+### 公開 URL（変更なし）
 
 - `https://djhmwtrr79jdq.cloudfront.net/`（CloudFront Deployed）
 - 公開デモは費用継続発生中（EC2 / RDS / CloudFront）、停止判断は次回以降
 
 ## 前回セッションのアーカイブ
 
-`dev-journal/archives/session-logs/2026-05-27.md`（2026-05-27〜28: Step 11-F UAT 全 36 項目完走、MVP 完成判定 PASS、クリーンアップ実施、Step 11 完了）
+`dev-journal/archives/session-logs/2026-05-30.md`（2026-05-30〜31: ポートフォリオ用 README を 4 リポジトリ整備、ops-108 案 A で 4 リポジトリ public 化、author email 統一・絶対 URL 化、キャリア相談）
