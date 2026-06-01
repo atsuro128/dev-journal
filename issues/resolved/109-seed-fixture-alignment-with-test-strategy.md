@@ -97,7 +97,24 @@ seed.go のフィクスチャ定義に以下の問題がある。
 ---
 
 ## 解決内容
-<!-- pending-review へ移動する前に記入 -->
+
+前セッションの architect 調査 + reviewer 検証で「seed.go に誤った値はなく、乖離はすべて『seed が先行 + 設計書の追従漏れ』。唯一の業務モデル不整合はテナント B の Admin 不在」と確定。**案 4（テナント B に Admin のみ追加 + 設計書を seed に同期）** を採用し、以下 4 ステップで対応した。
+
+### ステップ1: テナント B に Admin 追加（PR #157、master `2ae2f5c`）
+- `internal/seed/seed.go` に `UserAdminBID = bbbbbbbb-1111-1111-1111-000000000011`（email `test-admin-b@example.com` / RoleAdmin）を user + membership として冪等追加。`internal/testutil/fixture.go` 再エクスポート、`README.md` テストアカウント表に Admin B 行 + テナント B「クロステナント検証用・Accounting なし」注記を追加
+- テナント A は不変。reviewer / codex とも PASS（指摘ゼロ）。マージ後の BE full test（lint/unit/integration）全 PASS
+
+### ステップ2: test_strategy.md §4 を seed 最終形に同期（dev-journal `e1f29b5` + `dbaf6ef`）
+- §4.2（テナント A 第二 Approver、テナント B Admin/Approver 追記・見出しロール数訂正）、§4.3（レポート 9 件・明細 7 件化 + 承認者/支払者列）、§4.5（テナント B 提出者/承認者列）、§4.6（添付フィクスチャ章新設）を seed.go に一致させた。改訂履歴 1.1 追記
+- reviewer PASS → codex 指摘 125（Test Member Empty の用途誤記）/ 126（添付の再 seed 復元説明の誤記）を修正 → codex 再レビューで両件 resolved
+
+### ステップ3: seed.go コメントの実態同期（PR #158、master `b6fdaa6`）
+- パッケージコメントの準拠範囲を §4.2/4.3/4.4 → §4.2〜4.6 に修正。添付投入コメントの「再 seed で復元できる」誤記を訂正（ON CONFLICT DO NOTHING のため論理削除済み行は復元されない旨）。コメントのみの簡略 PR
+
+### ステップ4: AWS 本番（公開デモ RDS）への反映
+- 本番イメージの seed が旧版の可能性があるため、直接 SQL INSERT 方式を採用（イメージ再ビルド不要・最小・冪等）
+- 事前に RDS スナップショット `expense-saas-pre-admin-b-20260601-165039` 取得 → SSM 経由で psql により Admin B の user（password_hash は既存 test-member-b から複製し TestPass1! を保証）+ membership を `ON CONFLICT DO NOTHING` で投入 → 検証 SELECT 1 行・本番ログイン HTTP 200 を確認
+- 本番識別子は `expense-saas-portfolio-db`（RDS）/ `expense-saas-portfolio-app`（EC2）
 
 ## 解決日
-<!-- YYYY-MM-DD -->
+2026-06-01
