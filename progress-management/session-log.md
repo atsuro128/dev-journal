@@ -1,54 +1,39 @@
 # 引き継ぎメモ
 
-## セッション: 2026-06-01 17:51
+## セッション: 2026-06-04 16:04
 
 ### ゴール
 
-「次の作業は？」から /session-start。前回の最優先残作業 **issue 109（seed フィクスチャ整合化）** を、ステップ1+2 を一気に進める方針で合意。セッション中に AWS 本番反映（ステップ4）も同 issue で対応することに拡大し、**issue 109 を全 4 ステップ完遂・resolved 化**した。
+AWS から届いた予算アラート（`monthly-5usd-alert` が $5 超過）の調査依頼から開始。「無料のはずでは」というユーザー指摘を起点に、**公開デモのコスト実態を実データで確定 → ALB 除去による lean 化 + 手動 destroy/apply 運用への移行方針を決定 → issue #197 起票・計画/レビュー完了**まで実施。実装は次セッション（ホスト側）へ引き継ぐ。
 
 ### 作業ログ
 
-#### ステップ1: テナント B に Admin B 追加（PR #157 → master `2ae2f5c`）— 完了
+#### コスト調査（ホスト側 AWS CLI 実行をユーザー経由で）
 
-- `/issue 対応 109` → 上流確認は前セッションで完了済み（architect 突合 + reviewer 検証 + 案 4 合意）のため実装着手
-- backend-developer（worktree 隔離・ブランチ `fix/109-seed-tenant-b-admin`）で実装:
-  - `seed.go`: `UserAdminBID = bbbbbbbb-1111-1111-1111-000000000011`（email `test-admin-b@example.com` / name `Test Admin B` / RoleAdmin）を user + membership に冪等追加（`ON CONFLICT DO NOTHING`）。パスワードは共通 `TestPass1!`
-  - `fixture.go` 再エクスポート、`README.md` テストアカウント表に Admin B 行 + テナント B「クロステナント検証用・Accounting なし」注記
-  - **テナント A 不変**
-- reviewer 内部レビュー **PASS**（テナント B 件数アサーションは存在せず、唯一の件数アサーション `tenant_handler_test.go:193` want 6 はテナント A スコープで影響なし）
-- codex レビュー **指摘ゼロ**（DB 依存テストはローカル未起動で未実行と明記）
-- **BE テストはマージ後に実施する方針**（ユーザー判断）。マージ後の本体 master で `BE: full test`（lint/unit/integration）全 PASS を確認 → リグレッションなし確定
+- 予算アラートの内訳を Cost Explorer / Budgets / クレジットで確認。**当初フィッシングを疑ったが誤りで、正規の予算アラートと確定**（撤回済み）
+- 実データで判明: グロス稼働コスト **約$60/月**（RDS ~$20 / ALB ~$18 / 公開IPv4×3 ~$11 / EC2 ~$10 / 他）。アカウント `<AWS_ACCOUNT_ID>` は **2026-05-16作成 = 新方式クレジット制 Free Tier**（750h無料が無く定価課金）。**クレジットが全額相殺 → 現状の自腹は実質$0**
+- クレジット残 **$132.53**（4件・全て 2027-05-16 失効、消費は AWS Free Tier $100 のうち $27.47）→ ~$60/月で **枯渇は2026年9月頃**
+- 自分の見積もり（当初 $45、ALB除去で$15）を実データで複数回訂正。最終的に gross 内訳（`RECORD_TYPE=Usage` フィルタ）で確定
 
-#### ステップ2: test_strategy.md §4 を seed 最終形に同期（dev-journal `e1f29b5` + `dbaf6ef`）— 完了
+#### 方針決定（ALB の意味を議論した上で）
 
-- designer で §4 を seed.go（正本）に同期: §4.2（テナント A 第二 Approver `test-approver2` 追記・見出し「4ロール/6ユーザー」訂正、テナント B に Admin B/Approver B 追記）、§4.3（レポート 8→9 件・明細表を 7 件に拡張・承認者/支払者列追加）、§4.5（テナント B 提出者/承認者列）、§4.6（添付フィクスチャ章新設）。改訂履歴 1.1 追記
-- reviewer が seed.go を全行突合し **PASS**（推測値混入・スコープ逸脱なし）
-- codex レビューで **FIX・指摘 2 件**:
-  - **125**: §4.2 で Test Member Empty を「明細なし用」と誤記 → 実体は「レポート 0 件ユーザー（SMK-084 用）」、`report_draft_empty` の作成者は Test Member。修正
-  - **126**: §4.6 で「seed 再実行で削除状態を復元できる」と誤記 → `ON CONFLICT DO NOTHING` のため論理削除（`deleted_at`）済み行は復元されないと訂正
-  - 両指摘とも seed.go / attachments.sql で妥当性検証 → 修正 → codex 再レビューで **両件 resolved**
+- ALB の役割（負荷分散・フェイルオーバー・無停止デプロイ・オリジン保護）を整理。EC2 1台の現状では ALB は過剰。ただし「**ALBを置くか外すかの判断を言語化できること**」がポートフォリオ価値、という結論
+- ユーザー決定: **ALB 除去で lean 化（→ gross 約$36/月）**、設計思想（スケール時 ALB+ASG）は ADR に残す。運用は **手動 destroy/apply**（自動 stop/start は作らない）。「常時 on か全 off か」がポートフォリオには合理的
 
-#### ステップ3: seed.go コメントの実態同期（PR #158 → master `b6fdaa6`）— 完了
+#### 計画・レビュー
 
-- codex 再レビューの補足指摘（コード側コメント残存）に対応。パッケージコメント `§4.2/4.3/4.4` → `§4.2〜4.6`、添付投入コメントの「再 seed で復元できる」誤記訂正。コメントのみの**簡略 PR**（reviewer/codex 省略・テスト省略）
+- architect で実装計画策定 → reviewer で技術検証（判定 **FIX = 方向性妥当・軽微修正**）。**最重要リスク（CloudFront × EIP public_dns）は実現可能と確定**
+- プロダクト判断を確定: 添付2ファイルは本番S3投入でデモ完全化 / X-Origin-Verify は本番フェイルクローズ / 外形ヘルスチェック省略 / ADR 更新実施
 
-#### ステップ4: AWS 本番（公開デモ RDS）への Admin B 反映 — 完了
+#### 成果物
 
-- Explore で本番 seed 投入機構を調査: EC2 + SSM + RDS PostgreSQL 16、seed は `ON CONFLICT DO NOTHING` で冪等
-- **本番イメージの seed が旧版の可能性**があるため、イメージ再ビルドせず**直接 SQL INSERT 方式**を採用（最小・冪等・可逆）
-- この環境に AWS CLI が無いため、**ホスト側 Claude 向け指示書をチャットで提供**（ユーザーがコピペ実行）
-- ホスト側実行結果: RDS スナップショット `expense-saas-pre-admin-b-20260601-165039` 取得 → SSM `send-command` 経由で psql により Admin B の user（password_hash は既存 `test-member-b` から複製し `TestPass1!` を保証）+ membership を投入 → `INSERT 0 1` / `0 1` → 検証 SELECT 1 行 → 本番ログイン **HTTP 200**
-
-#### 後始末 — 完了
-
-- issue 109 に全 4 ステップの解決内容を記録 → `issues/resolved/` へ移動（dev-journal `7932fd5`）
-- review-findings 125/126 を `resolved/` へ移動、progress.md 残存 issue テーブルから 109 削除
-- dev-journal を public に push（`7932fd5`）
+- **issue #197 起票**: `dev-journal/issues/open/197-aws-demo-alb-removal-lean-cost-optimization.md`（追跡の正本）
+- **詳細計画・apply順序・reviewer FIX**: ローカル非公開の作業資料に保存（本セッション作成。要点は issue #197 に集約済み）
 
 ### 未完了
 
-- **expense-saas-portfolio 削除（前々回から継続）**: 案 C の残骸（PRIVATE）をユーザーが GitHub UI で手動削除
-- **公開デモ稼働継続判断**: EC2/RDS/CloudFront の費用継続発生中、停止判断は未
+- **issue #197 の実装全体（未着手）**: フェーズ A（Goミドルウェア）→ B（user_data/env）→ C（Terraform lean）→ D（Makefile/seed手順）→ E（ADR/README/security.md）
+- **本番 apply**（ホスト側 AWS 操作）: 無防備窓を作らない移行順序で実施
 
 ### ブロッカー
 
@@ -56,63 +41,53 @@
 
 ### 次にやること
 
-優先順位:
+> **このセッションはホスト側環境（AWS CLI あり）へ引き継ぐ。次セッションは AWS 操作を Claude が直接実行する前提。**
 
-1. **open issue の棚卸し / 次テーマ選定**: 残存 issue は全て post-MVP（運用・基盤系 + UAT 派生 UX）。`/session-start` で一覧を確認し、着手対象をユーザーと合意
-2. （継続）expense-saas-portfolio 手動削除
-3. （継続）公開デモ停止判断 / 応募活動
+1. **issue #197 の実装に着手**（`/issue 対応 197` または `/implement`）。正本は issue #197（詳細計画はローカル非公開の作業資料に保存済み）
+   - 起票時の上流確認は実施済み（ADR-0004/0007・security.md 突合、reviewer検証済み）
+   - 実装順序: フェーズ A（アプリのヘッダ検証）を**必ず先に**デプロイ → C（Terraform）。worktree 隔離・別ブランチ。Go と Terraform は対象重複なく並列化可
+   - reviewer FIX（outputs.tf の alb_dns_name 削除 / origin_id 整合 / SG同時変更 / ミドルウェアCORS前 / security.md更新 / trusted_proxy_count を origin切替と同一apply / seed の owner DATABASE_URL は SSM）を織り込む
+2. **本番 apply**（ホスト側）: ローカル作業資料の「apply 順序」に従う。各 apply 前に plan 保存、手順3の疎通確認（CloudFront経由200 / 直IP:8080→403）を厳格化、ALB削除は最後
+3. ADR-0004/0007 追記コミット（設計成果物フロー）
 
 ### 学び・気づき
 
-- **本番（不可逆・外向き）操作は調査 → 計画 → 承認 → 実行の順を厳守**: AWS 反映を即実行せず、まず Explore で投入機構・冪等性・接続情報所在を調査。本番イメージの seed が旧版な可能性に気づき、イメージ再ビルドより安全・最小な「直接 SQL INSERT」を選択。事前スナップショットも必須化した
-- **password_hash は再生成せず既存ユーザーから複製**: Argon2id は salt 込みのため別環境でハッシュを再生成すると照合可否が不確実。本番に既存の同パスワードユーザー（test-member-b）の hash を `INSERT ... SELECT` で複製することで `TestPass1!` を確実に通した
-- **AWS 操作はホスト側 Claude にチャット指示書を渡して委譲**: devcontainer に AWS CLI が無い制約下で、自己完結した指示書（前提・安全制約・正確なコマンド・検証・報告事項）をチャットで提供しユーザー経由で実行。識別子の実値（`expense-saas-portfolio-*`）はホスト側が特定
-- **codex 指摘の妥当性は実コードで裏取りしてから対応（feedback_critical_review_of_codex）**: 125/126 とも seed.go / attachments.sql を実際に確認し妥当と判断してから修正。形式的に従うのでなく根拠を確認した
-- **seed を正本とした設計書同期で、コード側コメントの追従漏れも検出**: codex 再レビューが seed.go コメントの実態ズレ（ステップ3）を捕捉。設計書だけでなくコード内コメントも正本同期の対象になる
+- **見積もりは推測を重ねず実データで確定する**: コスト額を会話中に複数回（$45→$0→$60、ALB除去後 $15→$36）訂正した。Terraform 構成からの概算と、Cost Explorer の net/gross の違い（クレジット相殺で net=$0 に見えた）を取り違えたのが原因。`RECORD_TYPE` 分解で gross を出して決着。**最初から gross を取りに行くべきだった**
+- **フィッシングと早合点しない**: net=$0 を見て「メールは嘘＝フィッシング」と傾いたが、`describe-budgets` で正規予算と確定。自分の仮説を撤回してデータに従った
+- **追跡すべき作業・決定は issue 化（メモリではない）**: 移行方針を一度メモリに保存したらユーザーから「issue 化してほしかった」と指摘。メモリ削除 → issue #197 + feedback メモリ（[[feedback_work_items_as_issues]]）に修正
+- **PowerShell の AWS CLI**: 複数行 `\` 継続・インライン JSON の `--filter` は不可。1行化 + `--filter file://...json` で回避
 
 ### 意思決定ログ
 
-#### issue 109 を分割せず 1 issue で AWS まで対応
+#### ALB 除去（lean 化）を採用、enable_alb フラグ化は見送り
 
-- 当初「core 完了 → resolved、AWS は別 issue」を提案したが、ユーザー判断で **AWS 反映も issue 109 内のステップ4として対応**。全 4 ステップ完遂後に resolved 化した
+- 床コストは RDS+EC2（ALB除去でも約$36/月残る）。$0 化は destroy/apply のみ。ALB は設計として ADR に残し、物理的には除去。フラグ化は origin 切替の CloudFront 再デプロイ遅延・可読性低下に対し価値が低く見送り
 
-#### BE テストをマージ後に実施
+#### 運用は手動 destroy/apply（自動 stop/start なし）
 
-- ステップ1 で「BE テストは master マージ後に行う」とユーザー判断。reviewer/codex とも「テナント B 追加に件数アサーションの影響なし」を裏取り済みだったためリスク低。マージ後 BE full test 全 PASS で結果的に問題なし
+- 定期 destroy は RDS が遅く壊れやすいため不可。stop/start も床（ストレージ+EIP ~$8）が残り中途半端。ポートフォリオは「見せる時 apply / 普段 destroy で $0」が最適。夜間停止は「時差の閲覧者に落ちて見える」リスクで不採用
 
-#### 本番反映は直接 SQL INSERT 方式
+#### アカウントID露出は履歴書き換えしない
 
-- 本番 Docker イメージの seed が #157 前の旧版な可能性 → イメージ再ビルド + 再デプロイ（ダウンタイム・スコープ大）より、Admin B 1 名を直接 SQL で冪等追加する方が最小・安全。事前 RDS スナップショットでロールバック担保
-
-#### seed.go コメント修正は簡略 PR
-
-- コメントのみ・修正文言は codex/reviewer 指摘で確定済み → チケット/reviewer/codex/テストを省略した簡略 PR（README 用語統一 PR #156 と同じ運用）
+- 公開 dev-journal の git 履歴にアカウントID `<AWS_ACCOUNT_ID>` が露出。だがアクセスキー等の機密漏れは無く、アカウントIDは非機密のため履歴の force-push 書き換えはコスト対効果で見送り。現ファイルのスクラブも今回は未実施（必要なら別途）
 
 ### 起票 issue
 
-なし（今セッション）
+- **#197**: AWS公開デモの ALB 除去による lean 化（コスト最適化 + 手動 destroy/apply 運用）
 
 ### PR / コミット要約
 
-| リポジトリ | コミット / PR | 内容 | push |
-|---|---|---|---|
-| expense-saas | PR #157 → `2ae2f5c` | テナント B に Admin B 追加（seed.go / fixture.go / README） | 済（マージ） |
-| expense-saas | PR #158 → `b6fdaa6` | seed.go コメントを実態同期（§4.2〜4.6 / 添付復元説明） | 済（マージ） |
-| dev-journal | `e1f29b5` | test_strategy.md §4 を seed に同期 | 済 |
-| dev-journal | `dbaf6ef` | codex 指摘 125/126 修正 | 済 |
-| dev-journal | `7932fd5` | issue 109 / 指摘 125/126 を resolved 化 + progress.md | 済 |
+なし（コード変更なし。issue 起票・計画・メモリ整理・session-log のみ）
 
 ### AWS リソース変更
 
-- 本番 RDS（`expense-saas-portfolio-db` / ap-northeast-1 / アカウント 832106934606）に **Admin B（test-admin-b@example.com / テナント B / role=admin）を 1 行追加**（user + membership）。冪等 INSERT のみ・既存データ不変
-- RDS スナップショット **`expense-saas-pre-admin-b-20260601-165039`** を作業前に取得（available）
-- 本番識別子メモ: RDS = `expense-saas-portfolio-db` / EC2 = `i-051ca0c9129854b10`（`expense-saas-portfolio-app`）
+- なし（読み取り専用の Cost Explorer / Budgets 照会のみ）。**次セッションで lean 化 apply を実施予定**
 
 ### 公開 URL（変更なし）
 
 - `https://djhmwtrr79jdq.cloudfront.net/`（CloudFront Deployed）
-- 公開デモは費用継続発生中（EC2 / RDS / CloudFront）、停止判断は次回以降
+- 現状コスト: グロス ~$60/月だがクレジットで自腹$0。クレジット枯渇は ~2026年9月。lean 化で ~$36/月（稼働時）、destroy で $0
 
 ## 前回セッションのアーカイブ
 
-`dev-journal/archives/session-logs/2026-06-01.md`（2026-06-01 13:02: ops-108/110 resolved 化・用語統一、issue 109 案 4 方針決定）
+`dev-journal/archives/session-logs/2026-06-01.md`（2026-06-01 13:02 + 17:51 の2セッション。17:51 で issue 109 全4ステップ完遂・Admin B を本番 RDS に反映）
