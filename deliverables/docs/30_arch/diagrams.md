@@ -14,7 +14,7 @@
 
 > 対応: [architecture.md](architecture.md) 2 システム全体構成
 > 前提: EC2 t3.micro × 1 構成（[ADR-0004](adr/0004-infra.md) §ポートフォリオ対応 / issue #186, #187）
-> 参照: CloudFront → ALB → EC2 経路は [ADR-0007](adr/0007-cloudfront-https.md)
+> 参照: CloudFront → EC2(EIP):8080 直結経路（ALB 除去・lean 化）は [ADR-0007](adr/0007-cloudfront-https.md) / issue #197
 
 ```mermaid
 graph LR
@@ -24,10 +24,9 @@ graph LR
 
     subgraph AWS["AWS"]
         CF["CloudFront<br/>TLS 終端 / HTTPS 化<br/>(ADR-0007)"]
-        ALB["ALB<br/>ヘルスチェック<br/>CloudFront 経由を強制 (B-1-b)"]
 
         subgraph Compute["コンピュート<br/>(ADR-0004 §ポートフォリオ対応)"]
-            EC2["EC2 t3.micro<br/>単一インスタンス<br/>(Docker コンテナ + SPA embed)"]
+            EC2["EC2 t3.micro (EIP:8080)<br/>単一インスタンス<br/>(Docker コンテナ + SPA embed)<br/>SG=CloudFront prefix list 限定 (B-1-b)"]
         end
 
         subgraph Storage["ストレージ"]
@@ -42,9 +41,8 @@ graph LR
     end
 
     Browser -->|HTTPS| CF
-    CF -->|HTTP /api/* 非キャッシュ| ALB
-    CF -->|HTTP /* SPA エッジキャッシュ| ALB
-    ALB -->|/api/*, /health, /*| EC2
+    CF -->|HTTP:8080 /api/* 非キャッシュ| EC2
+    CF -->|HTTP:8080 /* SPA エッジキャッシュ| EC2
     EC2 --> RDS
     EC2 -->|署名付きURL発行| S3
     Browser -->|署名付きURL| S3
@@ -65,7 +63,6 @@ graph LR
 sequenceDiagram
     participant C as クライアント
     participant CF as CloudFront
-    participant ALB
     participant MW as ミドルウェア
     participant H as ハンドラ
     participant S as サービス
@@ -74,8 +71,7 @@ sequenceDiagram
     participant DB as PostgreSQL
 
     C->>CF: HTTPS リクエスト
-    CF->>ALB: HTTP リクエスト（X-Origin-Verify ヘッダ付与）
-    ALB->>MW: HTTP リクエスト（ヘッダ検証通過分のみ転送）
+    CF->>MW: HTTP リクエスト（EC2 EIP:8080。SG=CloudFront prefix list 限定で到達制御）
 
     Note over MW: [1] CORS チェック
     Note over MW: [2] セキュリティヘッダー付与
@@ -101,8 +97,7 @@ sequenceDiagram
     MW->>DB: COMMIT（SET LOCAL 自動リセット）
     Note over MW: Release conn + ログ記録完了（duration_ms）
 
-    MW-->>ALB: HTTP レスポンス
-    ALB-->>CF: HTTP レスポンス
+    MW-->>CF: HTTP レスポンス
     CF-->>C: HTTPS レスポンス
 ```
 

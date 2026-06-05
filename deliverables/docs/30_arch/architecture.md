@@ -36,7 +36,7 @@
 
 > 図については [diagrams.md](diagrams.md) 1 システム構成図 および 2 リクエスト処理フロー を参照
 
-クライアント（React + TypeScript + Vite）からのリクエストは CloudFront（HTTPS 終端）→ ALB を経由し、EC2 t3.micro 上の Go API サーバー（Docker コンテナ）が処理する（経路: `Browser → CloudFront → ALB → EC2`、ADR-0004 §ポートフォリオ対応）。CloudFront は ALB の前段で TLS を終端し、エンドユーザー〜サーバー間を HTTPS 化する（issue #185 / ADR-0007）。`/api/*` は非キャッシュ、それ以外（SPA 静的ファイル）はエッジキャッシュする 2 ビヘイビア構成とし、ALB へのオリジン直アクセスはカスタムヘッダ検証 + CloudFront マネージドプレフィックスリストで遮断する（B-1-b）。サーバー内部は以下のレイヤーで構成される。
+クライアント（React + TypeScript + Vite）からのリクエストは CloudFront（HTTPS 終端）を経由し、EC2 t3.micro 上の Go API サーバー（Docker コンテナ、EIP:8080）が処理する（経路: `Browser → CloudFront → EC2(EIP):8080`、ADR-0004 §ポートフォリオ対応 / lean 化 issue #197）。CloudFront は EC2 のオリジン前段で TLS を終端し、エンドユーザー〜サーバー間を HTTPS 化する（issue #185 / ADR-0007）。当初は ALB を維持し前段に CloudFront を置く構成だったが、issue #197（lean 化）で ALB を除去し CloudFront を EC2 直結した。`/api/*` は非キャッシュ、それ以外（SPA 静的ファイル）はエッジキャッシュする 2 ビヘイビア構成とし、EC2:8080 へのオリジン直アクセスは SG（CloudFront マネージドプレフィックスリスト限定）1 層で遮断する（B-1-b）。サーバー内部は以下のレイヤーで構成される。
 
 | レイヤー | 責務 |
 |---------|------|
@@ -367,8 +367,8 @@ GET /api/reports?page=1&per_page=20
 
 ```
 [1] ネットワーク層
-    - CloudFront で TLS 終端（HTTPS 化、ADR-0007）
-    - ALB はカスタムヘッダ検証 + CloudFront マネージドプレフィックスリストで CloudFront 経由を強制（B-1-b）
+    - CloudFront で TLS 終端（HTTPS 化、ADR-0007）。CloudFront を EC2(EIP):8080 へ直結（ALB 除去・lean 化 issue #197）
+    - EC2 SG（CloudFront マネージドプレフィックスリスト限定）1 層で CloudFront 経由を強制（B-1-b）。X-Origin-Verify カスタムヘッダ検証は廃止（ADR-0007）。安全網はアプリのレート制限（§4）
     - セキュリティグループで EC2 / RDS のアクセス制御
 
 [2] トランスポート層

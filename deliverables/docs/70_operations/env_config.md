@@ -43,12 +43,13 @@
 | コンピュート | Docker Compose | EC2 t3.micro（2 vCPU / 1 GB × 1 インスタンス） | EC2 t3.micro（2 vCPU / 1 GB × 1 インスタンス） |
 | DB | PostgreSQL（Docker） | RDS db.t3.micro Single-AZ | RDS db.t3.micro Single-AZ（MVP） |
 | オブジェクトストレージ | MinIO（Docker） | S3 | S3 |
-| ロードバランサ | なし | ALB | ALB |
-| CDN | なし | CloudFront（ALB 前段、TLS 終端） | CloudFront（ALB 前段、TLS 終端、ADR-0007） |
+| ロードバランサ | なし | ALB | なし（lean 化で ALB 除去。CloudFront を EC2(EIP):8080 直結、issue #197 / ADR-0007） |
+| CDN | なし | CloudFront（ALB 前段、TLS 終端） | CloudFront（EC2(EIP):8080 直結、TLS 終端、ADR-0007） |
 | TLS | なし（HTTP） | ACM 証明書 | CloudFront デフォルト証明書（`*.cloudfront.net`）。viewer TLS 終端は CloudFront。最小 TLS バージョン TLSv1（security.md §11「TLS 1.2 以上」と乖離、B-5 受容逸脱、ADR-0007、issue #185 C 案） |
+| オリジン保護 | なし | カスタムヘッダ + SG | SG 1 層（CloudFront prefix list 限定）。X-Origin-Verify 廃止。安全網はアプリのレート制限（ADR-0007 / issue #197） |
 | ドメイン | localhost | staging.expense-saas.example.com | `<dist>.cloudfront.net`（CloudFront ドメイン。独自ドメイン不採用、ADR-0007） |
 
-※ portfolio MVP の prod は ADR-0007（issue #185）により CloudFront を ALB 前段に置き、`*.cloudfront.net` デフォルト証明書で HTTPS 化している。CloudFront〜ALB 間 HTTP（B-3）と viewer TLS 最小 TLSv1（B-5）は ADR-0007 に「受容する逸脱」として記録済み。stg 列の ACM 証明書は将来構築時の推奨値（独自ドメイン採用時）。
+※ portfolio MVP の prod は ADR-0007（issue #185 → issue #197 で lean 化）により ALB を除去し CloudFront を EC2(EIP):8080 へ直結、`*.cloudfront.net` デフォルト証明書で HTTPS 化している。CloudFront〜EC2 間 HTTP（B-3）と viewer TLS 最小 TLSv1（B-5）は ADR-0007 に「受容する逸脱」として記録済み。オリジン保護は SG 1 層（CloudFront prefix list 限定）に簡素化し、安全網はアプリのレート制限（§4）。stg 列は ALB を維持する将来構築時（実務想定）の推奨値で、ACM 証明書は独自ドメイン採用時の値。
 
 ### 3.2 アプリケーション設定差分
 
@@ -62,7 +63,7 @@
 | CloudWatch Agent | 無効 | 有効（メトリクスのみモード） | 有効（メトリクスのみモード） |
 | CloudWatch Alarms | なし | 設定あり | 設定あり |
 | CloudWatch Logs LogGroup | なし | `/expense-saas/stg/api` | `/expense-saas/prod/api` |
-| ALB ヘルスチェック | なし（手動確認） | 有効（30 秒間隔） | 有効（30 秒間隔） |
+| ALB ヘルスチェック | なし（手動確認） | 有効（30 秒間隔） | なし（lean 化で ALB 除去。外形ヘルスチェックは省略許容。プロセス再起動は systemd `Restart=always`。issue #197 / ADR-0004） |
 
 ※ stg/prod 列は将来構築時の推奨値。portfolio MVP は dev 相当の単一環境で運用しており、NFR-AVAIL-003 は AWS Free Tier 制約により 1 日間保持に緩和済み（issue #181 参照）。
 
@@ -89,9 +90,9 @@
 |--------|------|-----|-----|-----|------|
 | `PORT` | HTTP サーバーのリッスンポート | int | `8080` | `8080` | `8080` |
 | `LOG_LEVEL` | ログ出力レベル | string | `debug` | `info` | `info` |
-| `TRUSTED_PROXY_COUNT` | 信頼するリバースプロキシ段数。実クライアント IP = `X-Forwarded-For[len - TRUSTED_PROXY_COUNT]`。レート制限のキーとなるクライアント IP の取得に使う（issue #185 B-2-c / ADR-0007） | int | `0` | `2` | `2` |
+| `TRUSTED_PROXY_COUNT` | 信頼するリバースプロキシ段数。実クライアント IP = `X-Forwarded-For[len - TRUSTED_PROXY_COUNT]`。レート制限のキーとなるクライアント IP の取得に使う（issue #185 B-2-c / ADR-0007 / lean 化 issue #197） | int | `0` | `2` | `1` |
 
-`TRUSTED_PROXY_COUNT` は prod で `2`（CloudFront 追記 1 段 + ALB 追記 1 段）を設定する。dev はプロキシ段がないため `0`（`X-Forwarded-For` を無視し `RemoteAddr` を採用）。CloudFront を ALB 前段に追加したことでプロキシ段が増えており、未設定だとレート制限のクライアント IP 判定が誤動作する（ADR-0007 影響・結果を参照）。
+`TRUSTED_PROXY_COUNT` は prod で `1`（CloudFront 1 段経由。lean 化で ALB を除去し CloudFront を EC2 直結したため、当初の `2` から `1` へ変更。issue #197 / ADR-0007）を設定する。dev はプロキシ段がないため `0`（`X-Forwarded-For` を無視し `RemoteAddr` を採用）。stg 列の `2` は ALB を維持する将来構築時（CloudFront 1 段 + ALB 1 段）の推奨値。未設定だとレート制限のクライアント IP 判定が誤動作する（ADR-0007 影響・結果を参照）。
 
 ### 4.2 データベース接続
 
@@ -266,7 +267,7 @@ JWT_PUBLIC_KEY_PATH=/app/keys/public.pem
 S3_BUCKET=expense-saas-receipts-${ENV_NAME}
 AWS_REGION=${REGION}
 CORS_ALLOWED_ORIGINS=https://<dist>.cloudfront.net
-TRUSTED_PROXY_COUNT=2
+TRUSTED_PROXY_COUNT=1
 EOF
 chmod 640 "${SECRET_DIR}/app.env"
 chown root:appgroup "${SECRET_DIR}/app.env"
