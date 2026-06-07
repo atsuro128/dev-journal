@@ -1,93 +1,96 @@
 # 引き継ぎメモ
 
-## セッション: 2026-06-04 16:04
+## セッション: 2026-06-05 12:57
 
 ### ゴール
 
-AWS から届いた予算アラート（`monthly-5usd-alert` が $5 超過）の調査依頼から開始。「無料のはずでは」というユーザー指摘を起点に、**公開デモのコスト実態を実データで確定 → ALB 除去による lean 化 + 手動 destroy/apply 運用への移行方針を決定 → issue #197 起票・計画/レビュー完了**まで実施。実装は次セッション（ホスト側）へ引き継ぐ。
+issue #197（AWS公開デモの lean 化）を **方針再決定 → 実装 → 本番 apply → 障害 → 復旧** まで一気通貫で完遂する。「動作検証（料金含め）」まで実施。
 
 ### 作業ログ
 
-#### コスト調査（ホスト側 AWS CLI 実行をユーザー経由で）
+#### 方針再決定（長い対話で確定）
 
-- 予算アラートの内訳を Cost Explorer / Budgets / クレジットで確認。**当初フィッシングを疑ったが誤りで、正規の予算アラートと確定**（撤回済み）
-- 実データで判明: グロス稼働コスト **約$60/月**（RDS ~$20 / ALB ~$18 / 公開IPv4×3 ~$11 / EC2 ~$10 / 他）。アカウント `<AWS_ACCOUNT_ID>` は **2026-05-16作成 = 新方式クレジット制 Free Tier**（750h無料が無く定価課金）。**クレジットが全額相殺 → 現状の自腹は実質$0**
-- クレジット残 **$132.53**（4件・全て 2027-05-16 失効、消費は AWS Free Tier $100 のうち $27.47）→ ~$60/月で **枯渇は2026年9月頃**
-- 自分の見積もり（当初 $45、ALB除去で$15）を実データで複数回訂正。最終的に gross 内訳（`RECORD_TYPE=Usage` フィルタ）で確定
+- 前回（第1セッション）の「Go ミドルウェアで X-Origin-Verify 移設 + 手動 destroy/apply」から方針転換。
+- 確定方針: **ALB除去 / CloudFront直結（HTTPS終端・独自ドメイン不要）/ オリジン保護を SG 一枚（CloudFront prefix list）に簡素化（X-Origin-Verify 廃止、安全網はアプリのレート制限 login 5/min 等）/ Go 不介入 / EventBridge 深夜 stop/start**。
+- 対話の論点: 「常時公開 vs 見せる時だけ」「CDN/HTTPS/オリジン保護の一般性」「独自ドメイン有無」「stop/start と destroy の違い」「EIP は停止中も課金」等をユーザーと議論して確定。
 
-#### 方針決定（ALB の意味を議論した上で）
+#### 実装（設計成果物フロー + PR フロー）
 
-- ALB の役割（負荷分散・フェイルオーバー・無停止デプロイ・オリジン保護）を整理。EC2 1台の現状では ALB は過剰。ただし「**ALBを置くか外すかの判断を言語化できること**」がポートフォリオ価値、という結論
-- ユーザー決定: **ALB 除去で lean 化（→ gross 約$36/月）**、設計思想（スケール時 ALB+ASG）は ADR に残す。運用は **手動 destroy/apply**（自動 stop/start は作らない）。「常時 on か全 off か」がポートフォリオには合理的
+- architect 計画 → reviewer 検証（FIX）→ ユーザー判断（security.md 本文更新 / 移行ダウンタイム許容）。
+- platform-builder（Terraform・PR #159）と designer（dev-journal 設計成果物）を**並列**実行 → reviewer 両方 PASS。
+- codex 指摘 3 件（systemd start limit / IAM EC2 ARN アカウント固定 / ADR-0004 旧750h記述）を妥当と判断し対応 → codex APPROVE。
+- PR #159 マージ（32a8112）。dev-journal は 4 コミット（設計成果物・issue#197更新・ADR-0004修正・review-finding 127 resolved）。
 
-#### 計画・レビュー
+#### 環境整備（Windows ネイティブ）
 
-- architect で実装計画策定 → reviewer で技術検証（判定 **FIX = 方向性妥当・軽微修正**）。**最重要リスク（CloudFront × EIP public_dns）は実現可能と確定**
-- プロダクト判断を確定: 添付2ファイルは本番S3投入でデモ完全化 / X-Origin-Verify は本番フェイルクローズ / 外形ヘルスチェック省略 / ADR 更新実施
+- worktree フックが devcontainer 用 `/root-project` ハードコードで動かず → **`$CLAUDE_PROJECT_DIR` 化 + 自己位置解決 + cygpath で Windows 形式変換**（root-project コミット 79c22d2）。
+- `jq` / `terraform 1.9.8` / `aws cli`（pip）をローカル導入（~/bin・git 管理外）。
 
-#### 成果物
+#### 本番 apply（障害 → 復旧）
 
-- **issue #197 起票**: `dev-journal/issues/open/197-aws-demo-alb-removal-lean-cost-optimization.md`（追跡の正本）
-- **詳細計画・apply順序・reviewer FIX**: ローカル非公開の作業資料に保存（本セッション作成。要点は issue #197 に集約済み）
+- **1回目失敗**: IAM role description に日本語（非ASCII制約違反）/ EC2 SG が `create_before_destroy` 無しで `DependencyViolation`。→ description を ASCII 化、EC2 SG を `name_prefix + create_before_destroy` 化で修正。
+- **2回目成功**（create_before_destroy で SG 置換順序が解決）。だが **EC2 が replace され docker イメージ消失 + user_data の `image_tag=""` 分岐でアプリ起動スキップ → CloudFront 502/504**。
+- **復旧**: ローカルに残っていた `expense-saas:portfolio` イメージを `docker save`+gzip → 本番 S3 の `_temp/` へ → SSM `send-command` で EC2 が `docker load` + `systemctl enable --now` → **CloudFront 経由 200 復旧・DB 接続 OK・オリジン保護（直 EIP:8080 遮断）も確認**。
+
+#### 追加修正
+
+- scheduler の **cron timezone バグ**発見（`schedule_expression_timezone=Asia/Tokyo` なのに cron が UTC 前提で書かれ、意図と異なる時刻に動作）→ JST 直書きに修正。停止 **JST 00:00 / 起動 08:30** に変更（コミット 6dd814d）。
+- README に「EC2 replace を伴う apply の後はアプリ再デプロイ必須」の注意を追記（7c3855c）。
+
+#### コスト確認（料金含め）
+
+- Cost Explorer 実データで **ALB が月 ~$13-16 かかっていた**ことを確認（今日削除で今後消える）。lean 稼働 ~$36/月、深夜 stop/start でさらに削減。**自腹はクレジット相殺で $0 継続**。実請求への反映は来月から。
 
 ### 未完了
 
-- **issue #197 の実装全体（未着手）**: フェーズ A（Goミドルウェア）→ B（user_data/env）→ C（Terraform lean）→ D（Makefile/seed手順）→ E（ADR/README/security.md）
-- **本番 apply**（ホスト側 AWS 操作）: 無防備窓を作らない移行順序で実施
+- なし（issue #197 のコード・設計・apply・復旧・コスト確認まで完了）。ただし下記「次にやること」の明朝確認が残る。
 
 ### ブロッカー
 
-なし
+なし（本番は lean 構成で 200 稼働中）。
 
 ### 次にやること
 
-> **このセッションはホスト側環境（AWS CLI あり）へ引き継ぐ。次セッションは AWS 操作を Claude が直接実行する前提。**
+1. **明朝（JST 08:30 以降）に深夜 stop/start の初回サイクル後、CloudFront 経由 200 を確認**。EC2 の stop/start は電源 off/on でイメージ保持されるため自動復帰する想定だが、**初回は要確認**（万一起動しない場合は SSM で `systemctl restart expense-saas`）。
+2. 公開URL: `https://djhmwtrr79jdq.cloudfront.net/`（lean 構成で稼働）。
 
-1. **issue #197 の実装に着手**（`/issue 対応 197` または `/implement`）。正本は issue #197（詳細計画はローカル非公開の作業資料に保存済み）
-   - 起票時の上流確認は実施済み（ADR-0004/0007・security.md 突合、reviewer検証済み）
-   - 実装順序: フェーズ A（アプリのヘッダ検証）を**必ず先に**デプロイ → C（Terraform）。worktree 隔離・別ブランチ。Go と Terraform は対象重複なく並列化可
-   - reviewer FIX（outputs.tf の alb_dns_name 削除 / origin_id 整合 / SG同時変更 / ミドルウェアCORS前 / security.md更新 / trusted_proxy_count を origin切替と同一apply / seed の owner DATABASE_URL は SSM）を織り込む
-2. **本番 apply**（ホスト側）: ローカル作業資料の「apply 順序」に従う。各 apply 前に plan 保存、手順3の疎通確認（CloudFront経由200 / 直IP:8080→403）を厳格化、ALB削除は最後
-3. ADR-0004/0007 追記コミット（設計成果物フロー）
+### 学び・気づき（重要）
 
-### 学び・気づき
-
-- **見積もりは推測を重ねず実データで確定する**: コスト額を会話中に複数回（$45→$0→$60、ALB除去後 $15→$36）訂正した。Terraform 構成からの概算と、Cost Explorer の net/gross の違い（クレジット相殺で net=$0 に見えた）を取り違えたのが原因。`RECORD_TYPE` 分解で gross を出して決着。**最初から gross を取りに行くべきだった**
-- **フィッシングと早合点しない**: net=$0 を見て「メールは嘘＝フィッシング」と傾いたが、`describe-budgets` で正規予算と確定。自分の仮説を撤回してデータに従った
-- **追跡すべき作業・決定は issue 化（メモリではない）**: 移行方針を一度メモリに保存したらユーザーから「issue 化してほしかった」と指摘。メモリ削除 → issue #197 + feedback メモリ（[[feedback_work_items_as_issues]]）に修正
-- **PowerShell の AWS CLI**: 複数行 `\` 継続・インライン JSON の `--filter` は不可。1行化 + `--filter file://...json` で回避
+1. **EC2 replace を伴う apply は「アプリ再デプロイ」が必須**。今回 lean 移行で EC2 が再作成されイメージが消え本番停止。**計画（architect）・reviewer・codex すべてが見落とした**。`terraform plan` で `aws_instance.app` が `must be replaced` と出たら再デプロイ（`tickets/step11/11-E-deploy.md`：docker save→S3→SSM load）を想起する観点を持つ。デプロイ方式は ECR でなく S3 持ち込み。
+2. **本番への破壊的 apply 前に影響を十分に洗い出すべきだった**。本番を長時間停止させた。plan の replace 行を軽視しないこと。
+3. **issue 起票は「対応すべき作業」がある時に限る**。当初 #198 を影響度「高」で起票したが、デプロイ手順は既存（11-E-deploy.md）・復旧実証済み・発生稀のため過剰と判断しユーザーと合意の上で削除。代わりに README 1行注意 + 本 session-log の教訓で対応。
+4. **機密情報をコミットや session-log に書かない**（ユーザー指示）。`terraform.tfvars.bak` のような機密バックアップが gitignore 外に残らないよう注意（今回 sed 編集時に作り、検知して削除）。
+5. **timezone 指定時の cron はその timezone で書く**。PR #159・reviewer・codex 全てが cron timezone バグ（Asia/Tokyo 指定 + UTC 前提 cron）を見逃した。
 
 ### 意思決定ログ
 
-#### ALB 除去（lean 化）を採用、enable_alb フラグ化は見送り
+#### オリジン保護を SG 一枚に簡素化（X-Origin-Verify 廃止）
 
-- 床コストは RDS+EC2（ALB除去でも約$36/月残る）。$0 化は destroy/apply のみ。ALB は設計として ADR に残し、物理的には除去。フラグ化は origin 切替の CloudFront 再デプロイ遅延・可読性低下に対し価値が低く見送り
+- ALB 除去で X-Origin-Verify 検証（ALB リスナールール）が消える。Go 移設せず SG（CloudFront prefix list）一枚に簡素化。残存リスク「他人の CloudFront 踏み台」はダミーデータ・標的型限定・アプリのレート制限（login 5/min 等）で受容。判断は ADR-0007 に記録。
 
-#### 運用は手動 destroy/apply（自動 stop/start なし）
+#### 深夜停止は EC2/RDS の電源 stop/start（destroy ではない）
 
-- 定期 destroy は RDS が遅く壊れやすいため不可。stop/start も床（ストレージ+EIP ~$8）が残り中途半端。ポートフォリオは「見せる時 apply / 普段 destroy で $0」が最適。夜間停止は「時差の閲覧者に落ちて見える」リスクで不採用
+- 「毎日やるなら destroy/apply（RDS 20分・データ消失）でなく stop/start（1-2分・データ保持）」と整理。EventBridge Scheduler で JST 00:00 停止 / 08:30 起動。ALB は stop 不可のため除去が前提（残すと停止しても課金継続）。
 
-#### アカウントID露出は履歴書き換えしない
+#### lean は維持しつつ保護は一般手法（ユーザーの「特有デザイン回避」意向）
 
-- 公開 dev-journal の git 履歴にアカウントID `<AWS_ACCOUNT_ID>` が露出。だがアクセスキー等の機密漏れは無く、アカウントIDは非機密のため履歴の force-push 書き換えはコスト対効果で見送り。現ファイルのスクラブも今回は未実施（必要なら別途）
+- 「ポートフォリオ特有の構成にしたくない」意向に対し、オリジン保護（カスタムヘッダ検証）は CloudFront/Cloudflare 公式推奨の一般手法、ALB 除去はコスト都合の割り切り、と切り分け。lean 維持 + 保護は標準手法（SG + レート制限）で決着。
 
 ### 起票 issue
 
-- **#197**: AWS公開デモの ALB 除去による lean 化（コスト最適化 + 手動 destroy/apply 運用）
+- なし（#198 は起票後に過剰と判断し削除。教訓は本 session-log + README 注記へ）
 
 ### PR / コミット要約
 
-なし（コード変更なし。issue 起票・計画・メモリ整理・session-log のみ）
+- **expense-saas**: PR #159 マージ（32a8112）/ fix 6dd814d（IAM description ASCII・create_before_destroy・rds fmt・cron JST修正）/ docs 7c3855c（README 再デプロイ注意）
+- **dev-journal**: 設計成果物・issue#197更新・ADR-0004修正・review-finding 127 resolved の 4 コミット
+- **root-project**: 環境修正 79c22d2（worktree フックの環境非依存化）push 済み
 
-### AWS リソース変更
+### AWS リソース変更（本番）
 
-- なし（読み取り専用の Cost Explorer / Budgets 照会のみ）。**次セッションで lean 化 apply を実施予定**
-
-### 公開 URL（変更なし）
-
-- `https://djhmwtrr79jdq.cloudfront.net/`（CloudFront Deployed）
-- 現状コスト: グロス ~$60/月だがクレジットで自腹$0。クレジット枯渇は ~2026年9月。lean 化で ~$36/月（稼働時）、destroy で $0
+- ALB 一式削除 / EIP 新設 / CloudFront origin を EIP:8080 へ差替 / EC2 SG を CloudFront prefix list 限定 / EventBridge stop/start（JST 00:00 停止・08:30 起動）/ RDS skip_final_snapshot=true。
+- **本番は lean 構成で 200 稼働中**。RDS データは保持。
 
 ## 前回セッションのアーカイブ
 
-`dev-journal/archives/session-logs/2026-06-01.md`（2026-06-01 13:02 + 17:51 の2セッション。17:51 で issue 109 全4ステップ完遂・Admin B を本番 RDS に反映）
+`dev-journal/archives/session-logs/2026-06-04.md`（2026-06-04 16:04。issue #197 起票・方針決定・計画/レビューまで。実装は本セッションで実施）
